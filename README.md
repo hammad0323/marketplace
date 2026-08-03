@@ -61,6 +61,9 @@ database/
   schema/          01_*.sql .. 11_*.sql — one file per table/concern
   seeds/           marketplace types, categories, demo admin + official store
   migrate.php      runs schema/ then seeds/ (--seed flag) in filename order
+  full-install.sql schema/ + seeds/ concatenated in order, for hosts
+                   with no CLI access — import this one file via
+                   phpMyAdmin instead of running migrate.php
 storage/           logs/ (notify() output), uploads/ (reserved)
 ```
 
@@ -82,6 +85,8 @@ require __DIR__ . '/../../partials/header.php';
 
 ## Setup
 
+### Option A — VPS / SSH access
+
 1. Create a MySQL database and export connection details as env vars
    (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`) — see defaults in
    `includes/config.php`.
@@ -93,10 +98,46 @@ require __DIR__ . '/../../partials/header.php';
    virtual host at its root — `index.php` sits right there, so there's
    no subdirectory to configure. Just make sure `mod_rewrite` is on and
    `.htaccess` overrides are allowed (`AllowOverride All`); nearly all
-   shared PHP hosts (cPanel etc.) support this by default.
-4. Demo logins (**change before any shared/production use**):
-   - Admin: `admin@marketplace.test` / `admin123` at `/admin/login`
-   - Official Store vendor: `store@marketplace.test` / `admin123`
+   PHP hosts support this by default.
+
+### Option B — Shared hosting (cPanel, Hostinger, etc.), no terminal access
+
+1. **Database**: in cPanel → *MySQL Databases*, create a database and
+   a user, add the user to the database with **All Privileges**. Note
+   the full names — shared hosts prefix them, e.g.
+   `cpaneluser_marketplace` / `cpaneluser_dbuser`.
+2. **Configure credentials**: since env vars usually aren't available
+   on shared hosting, edit `includes/config.php` directly and hardcode
+   your real `db.host` (usually `localhost`), `db.name`, `db.user`,
+   `db.pass` in place of the `getenv(...) ?:` defaults, before
+   uploading (or edit it afterwards via cPanel's File Manager code
+   editor).
+3. **Upload files**: cPanel *File Manager* → go to `public_html` (or
+   your subdomain's folder) → *Upload* → upload the zip → select it →
+   *Extract*. (Or upload via FTP instead.) When done, `index.php`
+   should sit directly inside `public_html`, not in a subfolder.
+4. **Import the database**: cPanel → *phpMyAdmin* → select your new
+   database → *Import* tab → choose file → pick
+   **`database/full-install.sql`** (one file, applies the whole schema
+   + seed data in the correct order — no need to import the 15 files
+   under `database/schema/` and `database/seeds/` one at a time) →
+   *Go*.
+5. **Folder permissions**: make `storage/logs/` and `storage/uploads/`
+   writable (755, or 775 if 755 isn't enough) — File Manager → right
+   click each folder → *Permissions*.
+6. Visit your domain. If you get a blank page or 500 error, check
+   cPanel's *Errors* log (or `Metrics → Errors`) — it's almost always
+   a wrong DB credential in step 2.
+
+### Demo logins (change before any shared/production use)
+
+- Admin: `admin@marketplace.test` / `admin123` at `/admin/login`
+- Official Store vendor: `store@marketplace.test` / `admin123`
+
+There's no "change password" screen yet (out of scope for this PR) —
+to change one, generate a new hash locally with
+`php -r "echo password_hash('yournewpassword', PASSWORD_DEFAULT);"`
+and update the `password_hash` column for that row via phpMyAdmin.
 
 ### Deploying: what's actually web-facing
 
