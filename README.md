@@ -22,7 +22,9 @@ themselves.
 
 - PHP, no framework, no classes for app logic — plain functions and
   page scripts throughout. The only "routing" is a ~40-line regex
-  match-and-`require` loop in `public/index.php`.
+  match-and-`require` loop in `index.php`, at the project root so it
+  can be hit directly by hosts that only let you point a domain at one
+  fixed folder.
 - MySQL, schema organized **folder-wise** by domain under
   `database/schema/`, applied in numeric order by `database/migrate.php`.
 - Plain CSS, one shared base (`global.css`) plus a theme file per
@@ -32,10 +34,13 @@ themselves.
 ## Folder structure
 
 ```
-public/
-  index.php        front controller — matches the URL against a route
-                    table and requires the matching file in modules/
-  assets/           css/, js/, img/
+index.php          front controller, at the project root — matches the
+                    URL against a route table and requires the
+                    matching file in modules/
+.htaccess           rewrites clean URLs to index.php, and blocks direct
+                    web access to includes/ modules/ partials/
+                    database/ storage/ (see "Deploying" below)
+assets/             css/, js/, img/ — the only other web-facing folder
 includes/
   config.php, database.php   plain config array + db() PDO helper
   helpers.php                e(), slugify(), csrf, flash, redirect, ...
@@ -84,12 +89,27 @@ require __DIR__ . '/../../partials/header.php';
    ```
    php database/migrate.php --seed
    ```
-3. Point your web server's document root at `public/` (preferred), or
-   at the repo root — a fallback root `.htaccess` rewrites into
-   `public/` for hosts that can't be pointed at a subdirectory.
+3. Upload the whole project as one folder and point your domain /
+   virtual host at its root — `index.php` sits right there, so there's
+   no subdirectory to configure. Just make sure `mod_rewrite` is on and
+   `.htaccess` overrides are allowed (`AllowOverride All`); nearly all
+   shared PHP hosts (cPanel etc.) support this by default.
 4. Demo logins (**change before any shared/production use**):
    - Admin: `admin@marketplace.test` / `admin123` at `/admin/login`
    - Official Store vendor: `store@marketplace.test` / `admin123`
+
+### Deploying: what's actually web-facing
+
+Since `index.php` lives at the project root instead of behind a
+`public/` boundary, `.htaccess` explicitly blocks direct HTTP access
+to `includes/`, `modules/`, `partials/`, `database/`, and `storage/` —
+otherwise things like `/database/seeds/03_admin_seed.sql` (which
+contains a password hash) or `/database/migrate.php` (which would
+re-run schema/seed SQL if hit over HTTP) would be directly reachable.
+Only `index.php`, `.htaccess`, and `assets/` are meant to be served
+directly; everything else is `require`d internally by `index.php`. If
+you deploy behind Nginx or another server instead of Apache, replicate
+that same deny rule for those five folders before going live.
 
 Verified end-to-end against a real MariaDB 10.11 instance and PHP's
 built-in server during development: schema + seeds apply cleanly,
