@@ -1,0 +1,6 @@
+# Convenience for hosts that point the document root at the repo root
+# instead of /public. Configuring the vhost's document root to /public
+# directly is the preferred setup (see README) — this is a fallback.
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule ^(.*)$ /public/$1 [L]

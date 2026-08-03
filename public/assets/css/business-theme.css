@@ -1,0 +1,75 @@
+/* Business Shops theme: clean, modern, commercial. Cooler palette,
+   sans-serif type, sharper edges than the artisan theme. */
+
+.theme-business {
+    --biz-blue: #1957d6;
+    --biz-ink: #16202b;
+    --biz-bg: #f5f7fa;
+    background: var(--biz-bg);
+    color: var(--biz-ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.theme-business .site-nav { background: #fff; }
+.theme-business .cta-link { background: var(--biz-blue); }
+.theme-business .site-search button { background: var(--biz-blue); border-color: var(--biz-blue); }
+
+.business-hero {
+    padding: 3.5rem 2rem;
+    background: linear-gradient(120deg, #103a94, var(--biz-blue));
+    color: #fff;
+    border-radius: 12px;
+    margin-bottom: 2.5rem;
+}
+.business-hero h1 { font-size: 2.2rem; margin: 0 0 0.75rem; }
+.business-hero p { font-size: 1.05rem; opacity: 0.9; max-width: 560px; }
+
+.business-section-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 2.5rem 0 1.1rem;
+}
+
+.business-category-chip {
+    display: inline-block;
+    padding: 0.45rem 1rem;
+    margin: 0.2rem;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px solid #dde3ec;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+.business-category-chip:hover { border-color: var(--biz-blue); color: var(--biz-blue); }
+
+.business-main .product-card, .business-main .vendor-card {
+    background: #fff;
+    border-color: #dde3ec;
+    border-radius: 8px;
+}
+
+.business-shop-header {
+    background: #fff;
+    border: 1px solid #dde3ec;
+    border-radius: 10px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.business-shop-header img.shop-logo {
+    width: 84px; height: 84px; border-radius: 8px; object-fit: cover; background: #f0f2f5;
+}
+
+.verified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: #e8f0ff;
+    color: var(--biz-blue);
+    padding: 0.25rem 0.7rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.8rem;
+}

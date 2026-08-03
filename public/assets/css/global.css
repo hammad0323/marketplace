@@ -1,0 +1,166 @@
+/* Shared base styles: reset, nav, footer, flash messages, form
+   controls. Marketplace-specific look-and-feel lives in
+   artisan-theme.css / business-theme.css, layered on top of this. */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #222;
+    background: #fff;
+    line-height: 1.5;
+}
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; display: block; }
+
+.site-nav {
+    border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 10;
+}
+.site-nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+.site-brand { font-weight: 700; font-size: 1.25rem; margin-right: 1rem; }
+.marketplace-nav { display: flex; gap: 1.25rem; font-weight: 600; }
+.marketplace-nav a:hover { text-decoration: underline; }
+.site-search { flex: 1; display: flex; min-width: 200px; }
+.site-search input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px 0 0 4px;
+    border-right: none;
+}
+.site-search button {
+    padding: 0.5rem 1rem;
+    border: 1px solid #333;
+    background: #333;
+    color: #fff;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+}
+.account-nav { display: flex; gap: 1rem; align-items: center; }
+.cta-link {
+    background: #111;
+    color: #fff !important;
+    padding: 0.4rem 0.9rem;
+    border-radius: 20px;
+}
+
+.flash {
+    max-width: 1200px;
+    margin: 1rem auto 0;
+    padding: 0.75rem 1.25rem;
+    border-radius: 6px;
+}
+.flash-success { background: #e6f6ea; color: #1a7431; border: 1px solid #b7e4c3; }
+.flash-error { background: #fdecea; color: #a3231a; border: 1px solid #f3b7b0; }
+
+.site-footer {
+    border-top: 1px solid #eee;
+    margin-top: 4rem;
+    padding: 2rem 1.5rem;
+}
+.site-footer-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    color: #666;
+    font-size: 0.9rem;
+}
+.footer-links { display: flex; gap: 1.25rem; }
+
+.site-main { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+/* Generic form + card styles reused by vendor/admin/customer pages */
+.form-card {
+    max-width: 480px;
+    margin: 2rem auto;
+    padding: 2rem;
+    border: 1px solid #eee;
+    border-radius: 10px;
+}
+.form-card.form-card-wide { max-width: 720px; }
+.form-group { margin-bottom: 1.1rem; }
+.form-group label { display: block; font-weight: 600; margin-bottom: 0.35rem; }
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font: inherit;
+}
+.form-group small { color: #777; }
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.5rem;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 1rem;
+}
+.checkbox-grid label { font-weight: 400; display: flex; gap: 0.4rem; align-items: center; }
+.btn {
+    display: inline-block;
+    padding: 0.65rem 1.4rem;
+    border-radius: 6px;
+    border: none;
+    background: #111;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-secondary { background: #eee; color: #111; }
+.btn-danger { background: #a3231a; color: #fff; }
+.link-button { background: none; border: none; color: inherit; cursor: pointer; padding: 0; font: inherit; }
+.inline-form { display: inline; }
+
+.badge {
+    display: inline-block;
+    font-size: 0.8rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    background: #f2f2f2;
+}
+.badge-pending { background: #fff4d6; color: #8a6300; }
+.badge-approved { background: #e6f6ea; color: #1a7431; }
+.badge-rejected { background: #fdecea; color: #a3231a; }
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 1.5rem;
+}
+.product-card, .vendor-card {
+    border: 1px solid #eee;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.product-card img, .vendor-card img { height: 160px; object-fit: cover; width: 100%; background: #f4f4f4; }
+.product-card-body, .vendor-card-body { padding: 0.9rem; }
+
+table.admin-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+table.admin-table th, table.admin-table td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid #eee; }
+table.admin-table th { background: #fafafa; }
+
+.content-panel {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
