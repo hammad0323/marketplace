@@ -1,0 +1,92 @@
+<?php
+$type = find_marketplace_type_by_slug('artisan');
+$vendor = $type ? find_vendor_by_slug($slug) : null;
+
+if (!$vendor || (int) $vendor['marketplace_type_id'] !== (int) $type['id'] || $vendor['status'] !== 'approved') {
+    http_response_code(404);
+    require __DIR__ . '/../../partials/404.php';
+    return;
+}
+
+$profile = find_artisan_profile($vendor['id']) ?? [];
+$products = products_by_vendor($vendor['id']);
+$rating = vendor_average_rating($vendor['id']);
+$followers = vendor_follower_count($vendor['id']);
+
+$social = $profile['social_links'] ?? [];
+$gallery = $profile['gallery_images'] ?? [];
+$achievements = $profile['achievements'] ?? [];
+$portfolio = $profile['portfolio_items'] ?? [];
+$isFollowing = isset($_SESSION['customer_id']) && vendor_is_followed_by($vendor['id'], $_SESSION['customer_id']);
+
+$pageTitle = $vendor['store_name'] . ' — Artisan Story';
+$theme = 'artisan';
+require __DIR__ . '/../../partials/header.php';
+?>
+
+<section class="artisan-story">
+    <span class="artisan-badge">🏺 Handmade</span>
+    <?php if ($vendor['is_featured']): ?><span class="artisan-badge">Featured Artist</span><?php endif; ?>
+
+    <h1><?= e($vendor['store_name']) ?></h1>
+    <p>
+        ⭐ <?= $rating['average'] ?: 'No ratings yet' ?> <?= $rating['total'] ? "({$rating['total']} reviews)" : '' ?>
+        &nbsp;·&nbsp; <?= $followers ?> followers
+    </p>
+
+    <form method="post" action="/vendor/<?= (int) $vendor['id'] ?>/follow" class="inline-form">
+        <?= csrf_field() ?>
+        <input type="hidden" name="redirect_to" value="/artisan/<?= e($vendor['slug']) ?>">
+        <button type="submit" class="btn btn-secondary"><?= $isFollowing ? 'Following ✓' : 'Follow Artist' ?></button>
+    </form>
+
+    <?php if (!empty($profile['biography'])): ?>
+        <h2>Artist Biography</h2>
+        <p><?= nl2br(e($profile['biography'])) ?></p>
+    <?php endif; ?>
+
+    <?php if (!empty($profile['brand_story'])): ?>
+        <h2>The Story Behind the Brand</h2>
+        <p><?= nl2br(e($profile['brand_story'])) ?></p>
+    <?php endif; ?>
+
+    <?php if ($gallery): ?>
+        <h2>Artist Gallery</h2>
+        <div class="artisan-gallery">
+            <?php foreach ($gallery as $image): ?><img src="<?= e($image) ?>" alt="Gallery image"><?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($achievements): ?>
+        <h2>Achievements</h2>
+        <ul>
+            <?php foreach ($achievements as $achievement): ?><li><?= e($achievement) ?></li><?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
+
+    <?php if ($portfolio): ?>
+        <h2>Portfolio</h2>
+        <div class="artisan-gallery">
+            <?php foreach ($portfolio as $item): ?><img src="<?= e($item['image'] ?? '') ?>" alt="<?= e($item['title'] ?? '') ?>"><?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if (array_filter($social)): ?>
+        <h2>Follow the Artist</h2>
+        <p>
+            <?php foreach ($social as $platform => $url): ?>
+                <?php if ($url): ?><a href="<?= e($url) ?>" target="_blank" rel="noopener"><?= e(ucfirst($platform)) ?></a> &nbsp;<?php endif; ?>
+            <?php endforeach; ?>
+        </p>
+    <?php endif; ?>
+</section>
+
+<h2 class="artisan-section-title">Handcrafted Collection</h2>
+<div class="card-grid">
+    <?php foreach ($products as $product): ?>
+        <?php render_product_card($product); ?>
+    <?php endforeach; ?>
+    <?php if (!$products): ?><p>This artist hasn't listed any products yet.</p><?php endif; ?>
+</div>
+
+<?php require __DIR__ . '/../../partials/footer.php'; ?>

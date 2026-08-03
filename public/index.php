@@ -1,66 +1,69 @@
 <?php
+/**
+ * Front controller. This is the one piece of routing "glue" in the
+ * app — everything else is plain PHP page files organized by feature
+ * folder under modules/. Routes are matched by regex; named capture
+ * groups (e.g. {slug}, {id}) become plain variables the matched page
+ * file can use directly.
+ */
 
-require __DIR__ . '/../app/bootstrap.php';
+require __DIR__ . '/../includes/bootstrap.php';
 
-$router = new Router();
+$routes = [
+    '#^/$#'                                              => '/../modules/home/index.php',
+    '#^/search$#'                                        => '/../modules/search/index.php',
+    '#^/category/(?<slug>[^/]+)$#'                       => '/../modules/category/resolve.php',
+    '#^/product/(?<slug>[^/]+)$#'                        => '/../modules/product/show.php',
 
-// -- Global home & search -----------------------------------------------
-$router->get('/', fn () => (new HomeController())->index());
-$router->get('/search', fn () => (new SearchController())->index());
-$router->get('/category/{slug}', fn ($p) => (new CategoryController())->resolve($p));
-$router->get('/product/{slug}', fn ($p) => (new ProductController())->show($p));
+    '#^/artisan$#'                                       => '/../modules/artisan/landing.php',
+    '#^/artisan/category/(?<slug>[^/]+)$#'               => '/../modules/artisan/category.php',
+    '#^/artisan/(?<slug>[^/]+)$#'                        => '/../modules/artisan/store.php',
 
-// -- Artisan Marketplace ---------------------------------------------------
-$router->get('/artisan', fn () => (new ArtisanMarketplaceController())->landing());
-$router->get('/artisan/category/{slug}', fn ($p) => (new ArtisanMarketplaceController())->category($p));
-$router->get('/artisan/{slug}', fn ($p) => (new ArtisanMarketplaceController())->store($p));
+    '#^/business$#'                                      => '/../modules/business/landing.php',
+    '#^/business/category/(?<slug>[^/]+)$#'              => '/../modules/business/category.php',
+    '#^/business/(?<slug>[^/]+)$#'                       => '/../modules/business/store.php',
 
-// -- Business Shops ---------------------------------------------------------
-$router->get('/business', fn () => (new BusinessMarketplaceController())->landing());
-$router->get('/business/category/{slug}', fn ($p) => (new BusinessMarketplaceController())->category($p));
-$router->get('/business/{slug}', fn ($p) => (new BusinessMarketplaceController())->store($p));
+    '#^/store/official-store$#'                          => '/../modules/official-store/index.php',
 
-// -- Official Store ----------------------------------------------------------
-$router->get('/store/official-store', fn () => (new StoreController())->showOfficial());
+    '#^/vendor/(?<id>\d+)/follow$#'                      => '/../modules/vendor/follow.php',
 
-// -- Follow / rate a vendor (customer-gated) ---------------------------------
-$router->post('/vendor/{id}/follow', fn ($p) => (new StoreController())->follow($p));
+    '#^/customer/register$#'                             => '/../modules/customer/register.php',
+    '#^/customer/login$#'                                => '/../modules/customer/login.php',
+    '#^/customer/logout$#'                               => '/../modules/customer/logout.php',
 
-// -- Customer auth ------------------------------------------------------------
-$router->get('/customer/register', fn () => (new CustomerAuthController())->showRegister());
-$router->post('/customer/register', fn () => (new CustomerAuthController())->register());
-$router->get('/customer/login', fn () => (new CustomerAuthController())->showLogin());
-$router->post('/customer/login', fn () => (new CustomerAuthController())->login());
-$router->post('/customer/logout', fn () => (new CustomerAuthController())->logout());
+    '#^/vendor/register$#'                               => '/../modules/vendor/register.php',
+    '#^/vendor/login$#'                                  => '/../modules/vendor/login.php',
+    '#^/vendor/logout$#'                                 => '/../modules/vendor/logout.php',
+    '#^/vendor/dashboard$#'                              => '/../modules/vendor/dashboard.php',
+    '#^/vendor/dashboard/profile$#'                      => '/../modules/vendor/profile.php',
+    '#^/vendor/dashboard/categories$#'                   => '/../modules/vendor/categories.php',
+    '#^/vendor/dashboard/products$#'                     => '/../modules/vendor/products.php',
+    '#^/vendor/dashboard/products/create$#'              => '/../modules/vendor/product-form.php',
 
-// -- Vendor auth ---------------------------------------------------------------
-$router->get('/vendor/register', fn () => (new VendorAuthController())->showRegister());
-$router->post('/vendor/register', fn () => (new VendorAuthController())->register());
-$router->get('/vendor/login', fn () => (new VendorAuthController())->showLogin());
-$router->post('/vendor/login', fn () => (new VendorAuthController())->login());
-$router->post('/vendor/logout', fn () => (new VendorAuthController())->logout());
+    '#^/admin/login$#'                                   => '/../modules/admin/login.php',
+    '#^/admin/logout$#'                                  => '/../modules/admin/logout.php',
+    '#^/admin$#'                                         => '/../modules/admin/dashboard.php',
+    '#^/admin/vendors$#'                                 => '/../modules/admin/vendors.php',
+    '#^/admin/vendors/(?<id>\d+)/approve$#'              => '/../modules/admin/vendor-approve.php',
+    '#^/admin/vendors/(?<id>\d+)/reject$#'               => '/../modules/admin/vendor-reject.php',
+    '#^/admin/category-requests$#'                       => '/../modules/admin/category-requests.php',
+    '#^/admin/category-requests/(?<id>\d+)/decide$#'     => '/../modules/admin/category-decide.php',
+    '#^/admin/category-requests/(?<id>\d+)/toggle$#'     => '/../modules/admin/category-toggle.php',
+];
 
-// -- Vendor dashboard (pending vendors get a restricted view; enforced -------
-//    inside the controllers themselves) --------------------------------------
-$router->get('/vendor/dashboard', fn () => (new VendorDashboardController())->index());
-$router->get('/vendor/dashboard/profile', fn () => (new VendorDashboardController())->showProfile());
-$router->post('/vendor/dashboard/profile', fn () => (new VendorDashboardController())->saveProfile());
-$router->get('/vendor/dashboard/categories', fn () => (new VendorDashboardController())->showCategories());
-$router->post('/vendor/dashboard/categories', fn () => (new VendorDashboardController())->requestCategories());
-$router->get('/vendor/dashboard/products', fn () => (new VendorDashboardController())->showProducts());
-$router->get('/vendor/dashboard/products/create', fn () => (new VendorDashboardController())->showCreateProduct());
-$router->post('/vendor/dashboard/products/create', fn () => (new VendorDashboardController())->createProduct());
+$path = rtrim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+if ($path === '') {
+    $path = '/';
+}
 
-// -- Admin ------------------------------------------------------------------
-$router->get('/admin/login', fn () => (new AdminAuthController())->showLogin());
-$router->post('/admin/login', fn () => (new AdminAuthController())->login());
-$router->post('/admin/logout', fn () => (new AdminAuthController())->logout());
-$router->get('/admin', fn () => (new AdminDashboardController())->index());
-$router->get('/admin/vendors', fn () => (new VendorApprovalController())->index());
-$router->post('/admin/vendors/{id}/approve', fn ($p) => (new VendorApprovalController())->approve($p));
-$router->post('/admin/vendors/{id}/reject', fn ($p) => (new VendorApprovalController())->reject($p));
-$router->get('/admin/category-requests', fn () => (new CategoryApprovalController())->index());
-$router->post('/admin/category-requests/{id}/decide', fn ($p) => (new CategoryApprovalController())->decide($p));
-$router->post('/admin/category-requests/{id}/toggle', fn ($p) => (new CategoryApprovalController())->toggle($p));
+foreach ($routes as $pattern => $file) {
+    if (preg_match($pattern, $path, $matches)) {
+        $params = array_filter($matches, fn ($key) => is_string($key), ARRAY_FILTER_USE_KEY);
+        extract($params);
+        require __DIR__ . $file;
+        exit;
+    }
+}
 
-$router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);
+http_response_code(404);
+require __DIR__ . '/../partials/404.php';

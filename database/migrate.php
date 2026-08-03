@@ -7,7 +7,7 @@
  * Usage: php database/migrate.php [--seed]
  */
 
-require __DIR__ . '/../app/config/database.php';
+require __DIR__ . '/../includes/database.php';
 
 function run_sql_directory(PDO $pdo, string $dir): void
 {
@@ -28,7 +28,7 @@ function run_sql_directory(PDO $pdo, string $dir): void
     }
 }
 
-$pdo = Database::connection();
+$pdo = db();
 
 echo "== Applying schema ==\n";
 run_sql_directory($pdo, __DIR__ . '/schema');
