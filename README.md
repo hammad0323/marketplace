@@ -1,254 +1,206 @@
 # Marketplace — Multi Marketplace Architecture
 
-Vanilla PHP (no framework), organized **folder-wise by feature** — not
-MVC, no OOP. There's no controller/model/view class hierarchy and no
-custom classes anywhere in the app; every function is a plain global
-function prefixed `mp_` (to avoid collisions), grouped into folders by
-what they do. Folder layout mirrors a standard vanilla-PHP storefront
-structure (`config.php` + `config/`, `data/`, `includes/`, `pages/`,
-`services/`, plus feature-area folders), with one addition: a small
-router in `index.php` so public pages keep clean, query-string-free
-URLs.
+Vanilla PHP (no framework, no classes). **Every page is its own real
+`.php` file sitting directly in the project root** — there are no
+subfolders to upload correctly, no router, no build step. Upload the
+whole folder, edit four lines in `config.php`, import `database.sql`,
+done.
 
-This PR lays the **core architecture** for running two distinct
+This build lays the **core architecture** for running two distinct
 marketplace experiences — the **Artisan Marketplace** and **Business
 Shops** — plus a single platform-owned **Official Store**, under one
 site and one admin panel.
 
-Out of scope for this PR (tracked as future work): the enterprise SEO
-module, the centralized email notification engine, and the full admin
-CRUD panel over every entity. See "What's deferred" below — this PR
-builds the seams those systems will plug into, not the systems
-themselves.
+Out of scope (tracked as future work): the enterprise SEO module, the
+centralized email notification engine, and the full admin CRUD panel
+over every entity. See "What's deferred" below.
 
-## Stack
+## Deploy in 3 steps
 
-- PHP, no framework, no classes anywhere — plain functions and page
-  scripts throughout, every custom function name prefixed `mp_`.
-- The only "routing" is a ~40-line regex match-and-`require` loop in
-  `index.php`, at the project root so it can be hit directly by hosts
-  that only let you point a domain at one fixed folder.
-- MySQL, schema organized **folder-wise** by domain under
-  `database/schema/`, applied in numeric order by `database/migrate.php`.
-- Plain CSS, one shared base (`global.css`) plus a theme file per
-  marketplace (`artisan-theme.css`, `business-theme.css`) so the two
-  marketplaces can look completely different while sharing structure.
-
-## Folder structure
-
-```
-index.php           front controller, at the project root — matches
-                     the URL against a route table and requires the
-                     matching file below
-.htaccess            rewrites clean URLs to index.php; blocks direct
-                     web access to every folder below except assets/
-config.php           bootstrap — session start, requires everything
-                     below, in order, once per request
-config/
-  database.php        DB_HOST/DB_NAME/DB_USER/DB_PASS constants + mp_db()
-  settings.php         app name, session config, marketplace type labels
-data/                 plain query functions, one file per table
-                     (mirrors database/schema/ folder-wise):
-                     marketplace_types.php, vendors.php, categories.php,
-                     vendor_category_requests.php, artisan_profiles.php,
-                     business_profiles.php, products.php, customers.php,
-                     admin_users.php
-includes/             shared partials + general helpers
-  header.php, footer.php, nav.php, flash.php, product-card.php,
-  site-footer.php, helpers.php (mp_e, mp_slugify, mp_csrf_*, ...),
-  auth.php (mp_current_vendor, mp_require_admin, ...)
-services/
-  notifier.php         mp_notify() — logs "would send email" events
-pages/                public pages — each file is GET display + POST
-                     logic + HTML in one script:
-                     home.php, artisan-landing.php, artisan-category.php,
-                     artisan-store.php, business-landing.php,
-                     business-category.php, business-store.php,
-                     official-store.php, product.php, category.php,
-                     search.php, vendor-login.php, vendor-register.php,
-                     vendor-logout.php, customer-login.php,
-                     customer-register.php, customer-logout.php, 404.php
-vendor/                authenticated vendor dashboard (parallel to a
-                     typical storefront's account/ area, but for the
-                     seller side): dashboard.php, profile.php,
-                     categories.php, products.php, product-form.php
-account/               authenticated customer actions: follow.php
-admin/                 admin panel — pages + their own private chrome
-                     (_header.php, _footer.php) live together here:
-                     login.php, logout.php, dashboard.php, vendors.php,
-                     vendor-approve.php, vendor-reject.php,
-                     category-requests.php, category-decide.php,
-                     category-toggle.php
-database/
-  schema/            01_*.sql .. 11_*.sql — one file per table/concern
-  seeds/             marketplace types, categories, demo admin + official store
-  migrate.php        runs schema/ then seeds/ (--seed flag) in filename order
-  full-install.sql   schema/ + seeds/ concatenated in order, for hosts
-                     with no CLI access — import this one file via
-                     phpMyAdmin instead of running migrate.php
-assets/                css/, js/, img/ — the only web-facing folder
-                     besides index.php and .htaccess
-uploads/               reserved for future file-upload features
-logs/                  mp_notify() writes notifications.log here
-```
-
-A page file looks like a classic PHP script — no template layer, no
-separate "view":
-
-```php
-<?php
-$vendor = mp_require_vendor();                    // includes/auth.php
-$products = mp_products_by_vendor($vendor['id']);  // data/products.php
-
-$pageTitle = 'My Products';
-$theme = 'main';
-require __DIR__ . '/../includes/header.php';
-?>
-<h1>My Products</h1>
-<?php foreach ($products as $product): mp_render_product_card($product); endforeach; ?>
-<?php require __DIR__ . '/../includes/footer.php'; ?>
-```
-
-## Setup
-
-### Option A — VPS / SSH access
-
-1. Create a MySQL database and export connection details as env vars
-   (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`) — see defaults in
-   `config/database.php`.
-2. Apply schema + seed data:
+1. **Upload everything** — the whole project as one folder, to your
+   site's document root (e.g. `public_html/`, or an addon domain's
+   folder). There is nothing to extract into a subfolder and nothing
+   to point a document root at — `index.php` is right there.
+2. **Edit `config.php`** — open it and change these four lines to your
+   real database details (get them from cPanel → MySQL Databases):
+   ```php
+   define('DB_HOST', 'localhost');
+   define('DB_NAME', 'your_database_name');
+   define('DB_USER', 'your_database_user');
+   define('DB_PASS', 'your_database_password');
    ```
-   php database/migrate.php --seed
-   ```
-3. Upload the whole project as one folder and point your domain /
-   virtual host at its root — `index.php` sits right there, so there's
-   no subdirectory to configure. Just make sure `mod_rewrite` is on and
-   `.htaccess` overrides are allowed (`AllowOverride All`); nearly all
-   PHP hosts support this by default.
+   That is the only file you need to edit.
+3. **Import `database.sql`** — cPanel → phpMyAdmin → select your
+   database → Import tab → choose `database.sql` → Go. One file, every
+   table and all seed data, done in one import.
 
-### Option B — Shared hosting (cPanel, Hostinger, etc.), no terminal access
+Visit your domain. If something's wrong, `config.php` shows a plain-
+English error (bad DB credentials, or the import didn't run) instead
+of a blank page or PHP warning wall.
 
-1. **Database**: in cPanel → *MySQL Databases*, create a database and
-   a user, add the user to the database with **All Privileges**. Note
-   the full names — shared hosts prefix them, e.g.
-   `cpaneluser_marketplace` / `cpaneluser_dbuser`.
-2. **Configure credentials**: since env vars usually aren't available
-   on shared hosting, edit `config/database.php` directly and hardcode
-   your real `DB_HOST` (usually `localhost`), `DB_NAME`, `DB_USER`,
-   `DB_PASS` in place of the `getenv(...) ?:` defaults, before
-   uploading (or edit it afterwards via cPanel's File Manager code
-   editor).
-3. **Upload files**: cPanel *File Manager* → go to `public_html` (or
-   your subdomain's folder) → *Upload* → upload the zip → select it →
-   *Extract*. (Or upload via FTP instead.) When done, `index.php`
-   should sit directly inside `public_html`, not in a subfolder.
-4. **Import the database**: cPanel → *phpMyAdmin* → select your new
-   database → *Import* tab → choose file → pick
-   **`database/full-install.sql`** (one file, applies the whole schema
-   + seed data in the correct order — no need to import the 15 files
-   under `database/schema/` and `database/seeds/` one at a time) →
-   *Go*.
-5. **Folder permissions**: make `logs/` and `uploads/` writable (755,
-   or 775 if 755 isn't enough) — File Manager → right click each
-   folder → *Permissions*.
-6. Visit your domain. If you get a blank page or 500 error, check
-   cPanel's *Errors* log (or `Metrics → Errors`) — it's almost always
-   a wrong DB credential in step 2.
+### Demo logins (change before anyone else can reach the site)
 
-### Demo logins (change before any shared/production use)
-
-- Admin: `admin@marketplace.test` / `admin123` at `/admin/login`
+- Admin: `admin@marketplace.test` / `admin123` at `/admin-login.php`
 - Official Store vendor: `store@marketplace.test` / `admin123`
 
-There's no "change password" screen yet (out of scope for this PR) —
-to change one, generate a new hash locally with
+There's no "change password" screen yet — generate a new hash with
 `php -r "echo password_hash('yournewpassword', PASSWORD_DEFAULT);"`
 and update the `password_hash` column for that row via phpMyAdmin.
 
-### Deploying: what's actually web-facing
+## Why it's flat
 
-`.htaccess` blocks direct HTTP access to every app folder except
-`assets/` — `includes/`, `data/`, `config/`, `services/`, `pages/`,
-`vendor/`, `account/`, `admin/`, `database/`, `logs/` are all meant to
-be reached only through `index.php`'s router, never hit directly.
-Concretely, without this: `/database/seeds/03_admin_seed.sql` (which
-contains a password hash), `/database/migrate.php` (which would re-run
-schema/seed SQL if hit over HTTP), or `/pages/home.php` (which would
-fatal-error since it assumes `config.php` already ran) would all be
-directly reachable. The block only triggers for requests that resolve
-to a **real file** (e.g. `admin/login.php`) — the extension-less clean
-URLs the router serves (`/admin/login`) never match a real file, so
-they correctly fall through to the rewrite-to-`index.php` rule
-instead. If you deploy behind Nginx or another server instead of
-Apache, replicate that same logic before going live.
+Earlier versions of this project split code across `pages/`, `admin/`,
+`includes/`, `data/`, etc., with a router matching clean URLs like
+`/artisan/wooden-crafts` to files in those folders. That broke on
+upload — if even one subfolder didn't transfer completely (which is
+easy to have happen with a File Manager zip-extract or a partial FTP
+upload), the router would throw a fatal error trying to `require` a
+file that wasn't there, taking down pages that had nothing to do with
+the missing file.
+
+This version trades pretty URLs for reliability: every page is
+reachable at its own literal filename
+(`/artisan.php`, `/product.php?slug=...`, `/vendor-dashboard.php`,
+...), so there's no routing layer that depends on the whole folder
+tree being intact. If a file is ever missing, only that one page 404s
+— nothing else breaks.
+
+## What's in the project
+
+```
+index.php            → requires home.php (the front page)
+config.php            THE file you edit — DB credentials + bootstrap
+                       (starts the session, connects to the DB, loads
+                       functions.php). Refuses direct access on its own.
+functions.php          every function used site-wide, in one file:
+                       generic helpers, session/auth, the notification
+                       log seam, and all database queries (grouped by
+                       table with a comment divider) — all prefixed
+                       mp_ to avoid name collisions
+header.php, footer.php public-site chrome (nav, flash messages,
+                       footer), theme-aware (main / artisan / business)
+admin-header.php, admin-footer.php   admin panel chrome
+product-card.php       small reusable product tile, used by every
+                       listing page
+404.php                 fully self-contained — no dependency on
+                       config.php or anything else, so it can never
+                       itself be the thing that's broken
+
+home.php, artisan.php, artisan-category.php, artisan-store.php,
+business.php, business-category.php, business-store.php,
+official-store.php, product.php, category.php, search.php
+                        public pages
+
+vendor-login.php, vendor-register.php, vendor-logout.php,
+vendor-dashboard.php, vendor-profile.php, vendor-categories.php,
+vendor-products.php, vendor-product-form.php
+                        vendor auth + the vendor's own dashboard
+
+customer-login.php, customer-register.php, customer-logout.php,
+follow.php              customer auth + following a vendor
+
+admin-login.php, admin-logout.php, admin-dashboard.php,
+admin-vendors.php, admin-vendor-approve.php, admin-vendor-reject.php,
+admin-category-requests.php, admin-category-decide.php,
+admin-category-toggle.php
+                        the admin panel
+
+database.sql            every CREATE TABLE + all seed data, one file
+assets/                 css/, img/ — the only other web-facing folder
+uploads/                reserved for future file-upload features
+logs/                   mp_notify() writes notifications.log here
+```
+
+A page looks like a classic PHP script — no template layer, no
+separate "view", logic and HTML together in one file:
+
+```php
+<?php
+require __DIR__ . '/config.php';
+
+$vendor = mp_require_vendor();
+$products = mp_products_by_vendor($vendor['id']);
+
+$pageTitle = 'My Products';
+$theme = 'main';
+require __DIR__ . '/header.php';
+?>
+<h1>My Products</h1>
+<?php foreach ($products as $product): mp_render_product_card($product); endforeach; ?>
+<?php require __DIR__ . '/footer.php'; ?>
+```
+
+## What's actually web-facing
+
+Since every page is a real file, there's no "internal" folder that
+routing keeps hidden. Two things are worth knowing:
+
+- `config.php` refuses to run if it's requested directly (checked in
+  PHP itself, at the top of the file — this works even if `.htaccess`
+  isn't respected by your host, unlike relying on server config alone).
+- `.htaccess` adds an optional second layer blocking direct access to
+  `config.php`, `functions.php`, and any `.sql` file (so `database.sql`
+  isn't downloadable once imported) — but the site works correctly
+  even if `.htaccess`/`mod_rewrite` isn't honored at all, since nothing
+  here depends on URL rewriting.
 
 Verified end-to-end against a real MariaDB 10.11 instance and PHP's
-built-in server during development: schema + seeds apply cleanly,
-vendor registration → admin approval → category approval → product
-creation (including limit enforcement) → store pages → global search
-→ follow/CSRF all work, and the folder-blocking rule was confirmed to
-block real files (`admin/login.php` → 403) while still allowing the
-clean URLs the router serves (`/admin/login` → 200).
+built-in server: `database.sql` imports cleanly with a single
+`mysql < database.sql` (equivalent to phpMyAdmin's Import), and the
+full flow — vendor registration → admin approval → category approval
+→ product creation (including per-category limit enforcement) → store
+pages → global search → follow → CSRF protection — all pass. Also
+caught and fixed a real encoding bug this way: emoji in the marketplace
+badges (🏺 🏪 ⭐) got corrupted on import by clients that don't default
+to `utf8mb4` (including the plain `mysql` CLI) — fixed by adding
+`SET NAMES utf8mb4;` as the first line of `database.sql`.
 
 ## Architecture decisions worth knowing
 
 - **Marketplace types are data, not code.** `marketplace_types` is a
   lookup table (`artisan` / `business` / `official`); a new marketplace
-  type is a new row + a config entry, not a new set of `if` branches.
+  type is a new row, not a new set of `if` branches.
 - **Categories are scoped per marketplace type** and share one
   auto-increment ID space. Anywhere a category ID comes from user
   input (vendor registration, category requests), it's filtered
   through `mp_filter_category_ids_by_marketplace()` before being
   trusted — otherwise a business vendor could end up with a request
   against an artisan category.
-- **URL structure**: the spec's example URLs (`/artisan/wooden-crafts`
-  as a category and `/artisan/artist-name` as a vendor) share one path
-  shape, which would collide. This PR resolves it as:
-  - `/artisan/{vendorSlug}` — artisan store page
-  - `/artisan/category/{slug}` — artisan category listing
-  - `/business/{vendorSlug}` / `/business/category/{slug}` — same
-    split for Business Shops
-  - `/category/{slug}` — the spec's generic form, resolved by looking
-    the slug up across marketplace types and redirecting into the
-    correct themed listing above
-  - `/product/{slug}`, `/store/official-store` — as specified
-  - `/vendor/{id}/follow` — a customer action on a vendor; the URL
-    lives under `/vendor/` but the handling file is `account/follow.php`
-    since it's fundamentally something a customer does, not part of
-    the vendor's own dashboard
-- **Vendor approval workflow** is enforced in the page scripts, not
-  just the UI: `vendor/product-form.php` blocks product creation
+- **Vendor approval workflow** is enforced in the pages themselves,
+  not just the UI: `vendor-product-form.php` blocks product creation
   server-side unless `vendor.status = approved`, and the store pages
-  404 a vendor's public page unless approved — so there's no way to
+  show a 404 for a vendor that isn't approved — so there's no way to
   make a pending store "go live" by hitting a URL directly.
 - **Category approval workflow**: a Business Shop vendor's submitted
   product `category_id` is checked against
   `mp_approved_category_ids_for_vendor()` (status = approved **and**
   `is_enabled = 1`) and, if the admin set a `usage_limit`, against the
-  vendor's current product count in that category — all enforced at
+  vendor's current product count in that category — enforced at
   product-creation time, verified in testing (limit of 1 correctly
   blocked a 2nd product).
 - **Notifier seam, not an email system**: every point the vendor
-  onboarding spec says "send an email" calls `mp_notify()`
-  (`services/notifier.php`), which writes to `logs/notifications.log`.
-  It's a drop-in seam for the future centralized email engine — no
-  page script will need to change when that's built.
+  onboarding flow should "send an email" calls `mp_notify()`, which
+  writes to `logs/notifications.log`. It's a drop-in seam for a future
+  centralized email engine — no page will need to change when that's
+  built.
 - **Customers/follow/ratings**: a minimal `customers` table plus
   `vendor_follows` and `vendor_ratings` back the "Follow Artist" and
-  "Artist/Store Ratings" features called out in the marketplace spec.
-  Full customer commerce (orders, checkout, rewards) is not part of
-  this PR.
+  "Artist/Store Ratings" features. Full customer commerce (orders,
+  checkout, rewards) is not part of this build.
 
-## What's deferred to future PRs
+## What's deferred to future work
 
-- **Enterprise SEO module** — global + per-page meta management,
-  sitemaps, JSON-LD structured data, vendor SEO Assistant/score.
-- **Centralized email notification engine** — templates, admin-managed
-  placeholders, actual sending (currently stubbed via `mp_notify()`).
-- **Full admin CRUD panel** — this PR ships only the two admin screens
-  the architecture depends on (vendor approval, category approval).
-  Products/orders/CMS/banners/reports/etc. admin management is a
-  separate build.
+- **Enterprise SEO module** — meta management, sitemaps, structured
+  data, vendor SEO score.
+- **Centralized email notification engine** — templates, actual
+  sending (currently stubbed via `mp_notify()`).
+- **Full admin CRUD panel** — this build ships only the two admin
+  screens the architecture depends on (vendor approval, category
+  approval). Products/orders/CMS/banners/reports admin management is
+  separate work.
 - **Vendor logo/banner file uploads** — profile forms currently take
   text fields and (for products) pasted image URLs; a real upload
   pipeline is future work (`uploads/` is reserved for it).
+- **Clean URLs** — traded away for deployment reliability, see "Why
+  it's flat" above. Can be reintroduced later via `.htaccess` rewrites
+  once the site is confirmed working, without changing any PHP logic.
