@@ -3,9 +3,10 @@
  * Front controller — lives at the project root so hosts that can only
  * point a domain at one fixed folder can serve this directly. This is
  * the one piece of routing "glue" in the app; everything else is
- * plain PHP page files organized by feature folder under modules/.
- * Routes are matched by regex; named capture groups (e.g. {slug},
- * {id}) become plain variables the matched page file can use directly.
+ * plain PHP page files organized by feature folder (pages/, vendor/,
+ * account/, admin/). Routes are matched by regex; named capture
+ * groups (e.g. {slug}, {id}) become plain variables the matched page
+ * file can use directly.
  */
 
 // Apache's .htaccess already serves real files (assets/, etc.) directly
@@ -15,60 +16,65 @@
 // this far for them.
 if (PHP_SAPI === 'cli-server') {
     $requestPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-
-    if (preg_match('#^/(includes|modules|partials|database|storage)(/|$)#', $requestPath)) {
-        http_response_code(403);
-        exit('Forbidden');
-    }
-
     $requestedFile = __DIR__ . $requestPath;
-    if ($requestedFile !== __FILE__ && is_file($requestedFile)) {
-        return false;
+
+    // Only real files are subject to either rule below — extension-less
+    // clean URLs like /admin/login never match an actual file, so they
+    // correctly fall through to the router regardless of which folder
+    // name they start with.
+    if (is_file($requestedFile)) {
+        if (preg_match('#^/(includes|data|config|services|pages|vendor|account|admin|database|logs)/#', $requestPath)) {
+            http_response_code(403);
+            exit('Forbidden');
+        }
+        if ($requestedFile !== __FILE__) {
+            return false;
+        }
     }
 }
 
-require __DIR__ . '/includes/bootstrap.php';
+require __DIR__ . '/config.php';
 
 $routes = [
-    '#^/$#'                                              => '/modules/home/index.php',
-    '#^/search$#'                                        => '/modules/search/index.php',
-    '#^/category/(?<slug>[^/]+)$#'                       => '/modules/category/resolve.php',
-    '#^/product/(?<slug>[^/]+)$#'                        => '/modules/product/show.php',
+    '#^/$#'                                              => '/pages/home.php',
+    '#^/search$#'                                        => '/pages/search.php',
+    '#^/category/(?<slug>[^/]+)$#'                       => '/pages/category.php',
+    '#^/product/(?<slug>[^/]+)$#'                        => '/pages/product.php',
 
-    '#^/artisan$#'                                       => '/modules/artisan/landing.php',
-    '#^/artisan/category/(?<slug>[^/]+)$#'               => '/modules/artisan/category.php',
-    '#^/artisan/(?<slug>[^/]+)$#'                        => '/modules/artisan/store.php',
+    '#^/artisan$#'                                       => '/pages/artisan-landing.php',
+    '#^/artisan/category/(?<slug>[^/]+)$#'               => '/pages/artisan-category.php',
+    '#^/artisan/(?<slug>[^/]+)$#'                        => '/pages/artisan-store.php',
 
-    '#^/business$#'                                      => '/modules/business/landing.php',
-    '#^/business/category/(?<slug>[^/]+)$#'              => '/modules/business/category.php',
-    '#^/business/(?<slug>[^/]+)$#'                       => '/modules/business/store.php',
+    '#^/business$#'                                      => '/pages/business-landing.php',
+    '#^/business/category/(?<slug>[^/]+)$#'              => '/pages/business-category.php',
+    '#^/business/(?<slug>[^/]+)$#'                       => '/pages/business-store.php',
 
-    '#^/store/official-store$#'                          => '/modules/official-store/index.php',
+    '#^/store/official-store$#'                          => '/pages/official-store.php',
 
-    '#^/vendor/(?<id>\d+)/follow$#'                      => '/modules/vendor/follow.php',
+    '#^/vendor/(?<id>\d+)/follow$#'                      => '/account/follow.php',
 
-    '#^/customer/register$#'                             => '/modules/customer/register.php',
-    '#^/customer/login$#'                                => '/modules/customer/login.php',
-    '#^/customer/logout$#'                               => '/modules/customer/logout.php',
+    '#^/customer/register$#'                             => '/pages/customer-register.php',
+    '#^/customer/login$#'                                => '/pages/customer-login.php',
+    '#^/customer/logout$#'                               => '/pages/customer-logout.php',
 
-    '#^/vendor/register$#'                               => '/modules/vendor/register.php',
-    '#^/vendor/login$#'                                  => '/modules/vendor/login.php',
-    '#^/vendor/logout$#'                                 => '/modules/vendor/logout.php',
-    '#^/vendor/dashboard$#'                              => '/modules/vendor/dashboard.php',
-    '#^/vendor/dashboard/profile$#'                      => '/modules/vendor/profile.php',
-    '#^/vendor/dashboard/categories$#'                   => '/modules/vendor/categories.php',
-    '#^/vendor/dashboard/products$#'                     => '/modules/vendor/products.php',
-    '#^/vendor/dashboard/products/create$#'              => '/modules/vendor/product-form.php',
+    '#^/vendor/register$#'                               => '/pages/vendor-register.php',
+    '#^/vendor/login$#'                                  => '/pages/vendor-login.php',
+    '#^/vendor/logout$#'                                 => '/pages/vendor-logout.php',
+    '#^/vendor/dashboard$#'                              => '/vendor/dashboard.php',
+    '#^/vendor/dashboard/profile$#'                      => '/vendor/profile.php',
+    '#^/vendor/dashboard/categories$#'                   => '/vendor/categories.php',
+    '#^/vendor/dashboard/products$#'                     => '/vendor/products.php',
+    '#^/vendor/dashboard/products/create$#'              => '/vendor/product-form.php',
 
-    '#^/admin/login$#'                                   => '/modules/admin/login.php',
-    '#^/admin/logout$#'                                  => '/modules/admin/logout.php',
-    '#^/admin$#'                                         => '/modules/admin/dashboard.php',
-    '#^/admin/vendors$#'                                 => '/modules/admin/vendors.php',
-    '#^/admin/vendors/(?<id>\d+)/approve$#'              => '/modules/admin/vendor-approve.php',
-    '#^/admin/vendors/(?<id>\d+)/reject$#'               => '/modules/admin/vendor-reject.php',
-    '#^/admin/category-requests$#'                       => '/modules/admin/category-requests.php',
-    '#^/admin/category-requests/(?<id>\d+)/decide$#'     => '/modules/admin/category-decide.php',
-    '#^/admin/category-requests/(?<id>\d+)/toggle$#'     => '/modules/admin/category-toggle.php',
+    '#^/admin/login$#'                                   => '/admin/login.php',
+    '#^/admin/logout$#'                                  => '/admin/logout.php',
+    '#^/admin$#'                                         => '/admin/dashboard.php',
+    '#^/admin/vendors$#'                                 => '/admin/vendors.php',
+    '#^/admin/vendors/(?<id>\d+)/approve$#'              => '/admin/vendor-approve.php',
+    '#^/admin/vendors/(?<id>\d+)/reject$#'               => '/admin/vendor-reject.php',
+    '#^/admin/category-requests$#'                       => '/admin/category-requests.php',
+    '#^/admin/category-requests/(?<id>\d+)/decide$#'     => '/admin/category-decide.php',
+    '#^/admin/category-requests/(?<id>\d+)/toggle$#'     => '/admin/category-toggle.php',
 ];
 
 $path = rtrim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
@@ -86,4 +92,4 @@ foreach ($routes as $pattern => $file) {
 }
 
 http_response_code(404);
-require __DIR__ . '/partials/404.php';
+require __DIR__ . '/pages/404.php';

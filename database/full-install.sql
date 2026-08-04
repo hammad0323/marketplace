@@ -11,7 +11,7 @@
 
 -- ---- schema: 01_marketplace_types.sql ----
 -- Lookup table for the marketplaces the platform operates.
--- New marketplace types are added here (row + includes/config.php)
+-- New marketplace types are added here (row + config/settings.php)
 -- rather than by hardcoding a marketplace name anywhere in code.
 CREATE TABLE IF NOT EXISTS marketplace_types (
     id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

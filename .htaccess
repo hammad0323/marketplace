@@ -2,9 +2,15 @@ Options -MultiViews -Indexes
 RewriteEngine On
 
 # App internals are only ever require()'d by index.php — never serve
-# them directly. Without this, requesting e.g. /database/seeds/..sql
-# or /database/migrate.php over HTTP would be possible.
-RewriteRule ^(includes|modules|partials|database|storage)(/|$) - [F,L]
+# them directly as real files. Without this, requesting e.g.
+# /database/seeds/..sql, /database/migrate.php, or /pages/home.php
+# directly would be possible. The -f check matters: it only blocks
+# requests that resolve to an actual file (e.g. admin/login.php) —
+# the extension-less clean URLs the router serves (e.g. /admin/login)
+# don't match any real file, so they correctly fall through to the
+# rewrite-to-index.php rule below instead of being blocked here.
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^(includes|data|config|services|pages|vendor|account|admin|database|logs)/ - [F,L]
 
 # Serve real files (assets, etc.) directly.
 RewriteCond %{REQUEST_FILENAME} -f [OR]

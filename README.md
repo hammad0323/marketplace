@@ -1,11 +1,14 @@
 # Marketplace — Multi Marketplace Architecture
 
 Vanilla PHP (no framework), organized **folder-wise by feature** — not
-MVC. There's no controller/model/view class hierarchy; each URL maps
-to one plain PHP file that queries the database and outputs its own
-HTML, grouped into feature folders. Shared plumbing (DB connection,
-session helpers, query functions) lives in small `include`d function
-libraries, not classes.
+MVC, no OOP. There's no controller/model/view class hierarchy and no
+custom classes anywhere in the app; every function is a plain global
+function prefixed `mp_` (to avoid collisions), grouped into folders by
+what they do. Folder layout mirrors a standard vanilla-PHP storefront
+structure (`config.php` + `config/`, `data/`, `includes/`, `pages/`,
+`services/`, plus feature-area folders), with one addition: a small
+router in `index.php` so public pages keep clean, query-string-free
+URLs.
 
 This PR lays the **core architecture** for running two distinct
 marketplace experiences — the **Artisan Marketplace** and **Business
@@ -20,11 +23,11 @@ themselves.
 
 ## Stack
 
-- PHP, no framework, no classes for app logic — plain functions and
-  page scripts throughout. The only "routing" is a ~40-line regex
-  match-and-`require` loop in `index.php`, at the project root so it
-  can be hit directly by hosts that only let you point a domain at one
-  fixed folder.
+- PHP, no framework, no classes anywhere — plain functions and page
+  scripts throughout, every custom function name prefixed `mp_`.
+- The only "routing" is a ~40-line regex match-and-`require` loop in
+  `index.php`, at the project root so it can be hit directly by hosts
+  that only let you point a domain at one fixed folder.
 - MySQL, schema organized **folder-wise** by domain under
   `database/schema/`, applied in numeric order by `database/migrate.php`.
 - Plain CSS, one shared base (`global.css`) plus a theme file per
@@ -34,53 +37,76 @@ themselves.
 ## Folder structure
 
 ```
-index.php          front controller, at the project root — matches the
-                    URL against a route table and requires the
-                    matching file in modules/
-.htaccess           rewrites clean URLs to index.php, and blocks direct
-                    web access to includes/ modules/ partials/
-                    database/ storage/ (see "Deploying" below)
-assets/             css/, js/, img/ — the only other web-facing folder
-includes/
-  config.php, database.php   plain config array + db() PDO helper
-  helpers.php                e(), slugify(), csrf, flash, redirect, ...
-  auth.php                   session helpers: current_vendor(), require_admin(), ...
-  notifier.php               notify() — logs "would send email" events
-  queries/                   plain query functions, one file per table
-                              (mirrors database/schema/ folder-wise)
-partials/
-  header.php, footer.php          public-site chrome (theme-aware)
-  admin-header.php, admin-footer.php
-  nav.php, flash.php, product-card.php, 404.php
-modules/                     one folder per feature area — the actual
-                              pages. Each file handles its own
-                              GET display + POST logic + HTML.
-  home/, artisan/, business/, official-store/, product/, category/,
-  search/, vendor/, customer/, admin/
+index.php           front controller, at the project root — matches
+                     the URL against a route table and requires the
+                     matching file below
+.htaccess            rewrites clean URLs to index.php; blocks direct
+                     web access to every folder below except assets/
+config.php           bootstrap — session start, requires everything
+                     below, in order, once per request
+config/
+  database.php        DB_HOST/DB_NAME/DB_USER/DB_PASS constants + mp_db()
+  settings.php         app name, session config, marketplace type labels
+data/                 plain query functions, one file per table
+                     (mirrors database/schema/ folder-wise):
+                     marketplace_types.php, vendors.php, categories.php,
+                     vendor_category_requests.php, artisan_profiles.php,
+                     business_profiles.php, products.php, customers.php,
+                     admin_users.php
+includes/             shared partials + general helpers
+  header.php, footer.php, nav.php, flash.php, product-card.php,
+  site-footer.php, helpers.php (mp_e, mp_slugify, mp_csrf_*, ...),
+  auth.php (mp_current_vendor, mp_require_admin, ...)
+services/
+  notifier.php         mp_notify() — logs "would send email" events
+pages/                public pages — each file is GET display + POST
+                     logic + HTML in one script:
+                     home.php, artisan-landing.php, artisan-category.php,
+                     artisan-store.php, business-landing.php,
+                     business-category.php, business-store.php,
+                     official-store.php, product.php, category.php,
+                     search.php, vendor-login.php, vendor-register.php,
+                     vendor-logout.php, customer-login.php,
+                     customer-register.php, customer-logout.php, 404.php
+vendor/                authenticated vendor dashboard (parallel to a
+                     typical storefront's account/ area, but for the
+                     seller side): dashboard.php, profile.php,
+                     categories.php, products.php, product-form.php
+account/               authenticated customer actions: follow.php
+admin/                 admin panel — pages + their own private chrome
+                     (_header.php, _footer.php) live together here:
+                     login.php, logout.php, dashboard.php, vendors.php,
+                     vendor-approve.php, vendor-reject.php,
+                     category-requests.php, category-decide.php,
+                     category-toggle.php
 database/
-  schema/          01_*.sql .. 11_*.sql — one file per table/concern
-  seeds/           marketplace types, categories, demo admin + official store
-  migrate.php      runs schema/ then seeds/ (--seed flag) in filename order
-  full-install.sql schema/ + seeds/ concatenated in order, for hosts
-                   with no CLI access — import this one file via
-                   phpMyAdmin instead of running migrate.php
-storage/           logs/ (notify() output), uploads/ (reserved)
+  schema/            01_*.sql .. 11_*.sql — one file per table/concern
+  seeds/             marketplace types, categories, demo admin + official store
+  migrate.php        runs schema/ then seeds/ (--seed flag) in filename order
+  full-install.sql   schema/ + seeds/ concatenated in order, for hosts
+                     with no CLI access — import this one file via
+                     phpMyAdmin instead of running migrate.php
+assets/                css/, js/, img/ — the only web-facing folder
+                     besides index.php and .htaccess
+uploads/               reserved for future file-upload features
+logs/                  mp_notify() writes notifications.log here
 ```
 
-A page file looks like a classic PHP script:
+A page file looks like a classic PHP script — no template layer, no
+separate "view":
 
 ```php
 <?php
-$vendor = require_vendor();               // includes/auth.php
-$products = products_by_vendor($vendor['id']); // includes/queries/products.php
+$vendor = mp_require_vendor();                    // includes/auth.php
+$products = mp_products_by_vendor($vendor['id']);  // data/products.php
 
 $pageTitle = 'My Products';
 $theme = 'main';
-require __DIR__ . '/../../partials/header.php';
+require __DIR__ . '/../includes/header.php';
 ?>
 <h1>My Products</h1>
-<?php foreach ($products as $product): render_product_card($product); endforeach; ?>
-<?php require __DIR__ . '/../../partials/footer.php'; ?>
+<?php foreach ($products as $product): mp_render_product_card($product); endforeach; ?>
+<?php require __DIR__ . '/../includes/footer.php'; ?>
 ```
 
 ## Setup
@@ -89,7 +115,7 @@ require __DIR__ . '/../../partials/header.php';
 
 1. Create a MySQL database and export connection details as env vars
    (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`) — see defaults in
-   `includes/config.php`.
+   `config/database.php`.
 2. Apply schema + seed data:
    ```
    php database/migrate.php --seed
@@ -107,9 +133,9 @@ require __DIR__ . '/../../partials/header.php';
    the full names — shared hosts prefix them, e.g.
    `cpaneluser_marketplace` / `cpaneluser_dbuser`.
 2. **Configure credentials**: since env vars usually aren't available
-   on shared hosting, edit `includes/config.php` directly and hardcode
-   your real `db.host` (usually `localhost`), `db.name`, `db.user`,
-   `db.pass` in place of the `getenv(...) ?:` defaults, before
+   on shared hosting, edit `config/database.php` directly and hardcode
+   your real `DB_HOST` (usually `localhost`), `DB_NAME`, `DB_USER`,
+   `DB_PASS` in place of the `getenv(...) ?:` defaults, before
    uploading (or edit it afterwards via cPanel's File Manager code
    editor).
 3. **Upload files**: cPanel *File Manager* → go to `public_html` (or
@@ -122,9 +148,9 @@ require __DIR__ . '/../../partials/header.php';
    + seed data in the correct order — no need to import the 15 files
    under `database/schema/` and `database/seeds/` one at a time) →
    *Go*.
-5. **Folder permissions**: make `storage/logs/` and `storage/uploads/`
-   writable (755, or 775 if 755 isn't enough) — File Manager → right
-   click each folder → *Permissions*.
+5. **Folder permissions**: make `logs/` and `uploads/` writable (755,
+   or 775 if 755 isn't enough) — File Manager → right click each
+   folder → *Permissions*.
 6. Visit your domain. If you get a blank page or 500 error, check
    cPanel's *Errors* log (or `Metrics → Errors`) — it's almost always
    a wrong DB credential in step 2.
@@ -141,22 +167,28 @@ and update the `password_hash` column for that row via phpMyAdmin.
 
 ### Deploying: what's actually web-facing
 
-Since `index.php` lives at the project root instead of behind a
-`public/` boundary, `.htaccess` explicitly blocks direct HTTP access
-to `includes/`, `modules/`, `partials/`, `database/`, and `storage/` —
-otherwise things like `/database/seeds/03_admin_seed.sql` (which
-contains a password hash) or `/database/migrate.php` (which would
-re-run schema/seed SQL if hit over HTTP) would be directly reachable.
-Only `index.php`, `.htaccess`, and `assets/` are meant to be served
-directly; everything else is `require`d internally by `index.php`. If
-you deploy behind Nginx or another server instead of Apache, replicate
-that same deny rule for those five folders before going live.
+`.htaccess` blocks direct HTTP access to every app folder except
+`assets/` — `includes/`, `data/`, `config/`, `services/`, `pages/`,
+`vendor/`, `account/`, `admin/`, `database/`, `logs/` are all meant to
+be reached only through `index.php`'s router, never hit directly.
+Concretely, without this: `/database/seeds/03_admin_seed.sql` (which
+contains a password hash), `/database/migrate.php` (which would re-run
+schema/seed SQL if hit over HTTP), or `/pages/home.php` (which would
+fatal-error since it assumes `config.php` already ran) would all be
+directly reachable. The block only triggers for requests that resolve
+to a **real file** (e.g. `admin/login.php`) — the extension-less clean
+URLs the router serves (`/admin/login`) never match a real file, so
+they correctly fall through to the rewrite-to-`index.php` rule
+instead. If you deploy behind Nginx or another server instead of
+Apache, replicate that same logic before going live.
 
 Verified end-to-end against a real MariaDB 10.11 instance and PHP's
 built-in server during development: schema + seeds apply cleanly,
 vendor registration → admin approval → category approval → product
 creation (including limit enforcement) → store pages → global search
-→ follow/CSRF all work.
+→ follow/CSRF all work, and the folder-blocking rule was confirmed to
+block real files (`admin/login.php` → 403) while still allowing the
+clean URLs the router serves (`/admin/login` → 200).
 
 ## Architecture decisions worth knowing
 
@@ -166,9 +198,9 @@ creation (including limit enforcement) → store pages → global search
 - **Categories are scoped per marketplace type** and share one
   auto-increment ID space. Anywhere a category ID comes from user
   input (vendor registration, category requests), it's filtered
-  through `filter_category_ids_by_marketplace()` before being trusted —
-  otherwise a business vendor could end up with a request against an
-  artisan category.
+  through `mp_filter_category_ids_by_marketplace()` before being
+  trusted — otherwise a business vendor could end up with a request
+  against an artisan category.
 - **URL structure**: the spec's example URLs (`/artisan/wooden-crafts`
   as a category and `/artisan/artist-name` as a vendor) share one path
   shape, which would collide. This PR resolves it as:
@@ -180,24 +212,27 @@ creation (including limit enforcement) → store pages → global search
     the slug up across marketplace types and redirecting into the
     correct themed listing above
   - `/product/{slug}`, `/store/official-store` — as specified
+  - `/vendor/{id}/follow` — a customer action on a vendor; the URL
+    lives under `/vendor/` but the handling file is `account/follow.php`
+    since it's fundamentally something a customer does, not part of
+    the vendor's own dashboard
 - **Vendor approval workflow** is enforced in the page scripts, not
-  just the UI: `modules/vendor/product-form.php` blocks product
-  creation server-side unless `vendor.status = approved`, and the
-  store pages 404 a vendor's public page unless approved — so there's
-  no way to make a pending store "go live" by hitting a URL directly.
+  just the UI: `vendor/product-form.php` blocks product creation
+  server-side unless `vendor.status = approved`, and the store pages
+  404 a vendor's public page unless approved — so there's no way to
+  make a pending store "go live" by hitting a URL directly.
 - **Category approval workflow**: a Business Shop vendor's submitted
   product `category_id` is checked against
-  `approved_category_ids_for_vendor()` (status = approved **and**
+  `mp_approved_category_ids_for_vendor()` (status = approved **and**
   `is_enabled = 1`) and, if the admin set a `usage_limit`, against the
   vendor's current product count in that category — all enforced at
-  product-creation time, verified in testing (limit of 2 correctly
-  blocked a 3rd product).
+  product-creation time, verified in testing (limit of 1 correctly
+  blocked a 2nd product).
 - **Notifier seam, not an email system**: every point the vendor
-  onboarding spec says "send an email" calls `notify()`
-  (`includes/notifier.php`), which writes to
-  `storage/logs/notifications.log`. It's a drop-in seam for the future
-  centralized email engine — no page script will need to change when
-  that's built.
+  onboarding spec says "send an email" calls `mp_notify()`
+  (`services/notifier.php`), which writes to `logs/notifications.log`.
+  It's a drop-in seam for the future centralized email engine — no
+  page script will need to change when that's built.
 - **Customers/follow/ratings**: a minimal `customers` table plus
   `vendor_follows` and `vendor_ratings` back the "Follow Artist" and
   "Artist/Store Ratings" features called out in the marketplace spec.
@@ -209,11 +244,11 @@ creation (including limit enforcement) → store pages → global search
 - **Enterprise SEO module** — global + per-page meta management,
   sitemaps, JSON-LD structured data, vendor SEO Assistant/score.
 - **Centralized email notification engine** — templates, admin-managed
-  placeholders, actual sending (currently stubbed via `notify()`).
+  placeholders, actual sending (currently stubbed via `mp_notify()`).
 - **Full admin CRUD panel** — this PR ships only the two admin screens
   the architecture depends on (vendor approval, category approval).
   Products/orders/CMS/banners/reports/etc. admin management is a
   separate build.
 - **Vendor logo/banner file uploads** — profile forms currently take
   text fields and (for products) pasted image URLs; a real upload
-  pipeline is future work.
+  pipeline is future work (`uploads/` is reserved for it).

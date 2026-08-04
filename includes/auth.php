@@ -6,56 +6,56 @@
  * panel build-out, not the core marketplace architecture.
  */
 
-function login_vendor(array $vendor): void
+function mp_login_vendor(array $vendor): void
 {
     $_SESSION['vendor_id'] = $vendor['id'];
 }
 
-function current_vendor(): ?array
+function mp_current_vendor(): ?array
 {
     if (empty($_SESSION['vendor_id'])) {
         return null;
     }
-    return find_vendor((int) $_SESSION['vendor_id']);
+    return mp_find_vendor((int) $_SESSION['vendor_id']);
 }
 
-function require_vendor(): array
+function mp_require_vendor(): array
 {
-    $vendor = current_vendor();
+    $vendor = mp_current_vendor();
     if (!$vendor) {
-        redirect('/vendor/login');
+        mp_redirect('/vendor/login');
     }
     return $vendor;
 }
 
-function logout_vendor(): void
+function mp_logout_vendor(): void
 {
     unset($_SESSION['vendor_id']);
 }
 
-function login_admin(array $admin): void
+function mp_login_admin(array $admin): void
 {
     $_SESSION['admin_id'] = $admin['id'];
 }
 
-function current_admin(): ?array
+function mp_current_admin(): ?array
 {
     if (empty($_SESSION['admin_id'])) {
         return null;
     }
-    return find_admin((int) $_SESSION['admin_id']);
+    return mp_find_admin((int) $_SESSION['admin_id']);
 }
 
-function require_admin(): array
+function mp_require_admin(): array
 {
-    $admin = current_admin();
+    $admin = mp_current_admin();
     if (!$admin) {
-        redirect('/admin/login');
+        mp_redirect('/admin/login');
     }
     return $admin;
 }
 
-function logout_admin(): void
+function mp_logout_admin(): void
 {
     unset($_SESSION['admin_id']);
 }

@@ -3,15 +3,15 @@
  * Small stateless helper functions used across page scripts.
  */
 
-function config_get(string $key, $default = null)
+function mp_config(string $key, $default = null)
 {
-    static $config = null;
-    if ($config === null) {
-        $config = require __DIR__ . '/config.php';
+    static $settings = null;
+    if ($settings === null) {
+        $settings = require __DIR__ . '/../config/settings.php';
     }
 
     $segments = explode('.', $key);
-    $value = $config;
+    $value = $settings;
     foreach ($segments as $segment) {
         if (!is_array($value) || !array_key_exists($segment, $value)) {
             return $default;
@@ -22,12 +22,12 @@ function config_get(string $key, $default = null)
     return $value;
 }
 
-function e(?string $value): string
+function mp_e(?string $value): string
 {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
 
-function slugify(string $text): string
+function mp_slugify(string $text): string
 {
     $text = preg_replace('~[^\pL\d]+~u', '-', $text);
     $text = trim($text, '-');
@@ -38,18 +38,18 @@ function slugify(string $text): string
     return $text !== '' ? $text : 'n-a';
 }
 
-function redirect(string $path): void
+function mp_redirect(string $path): void
 {
     header('Location: ' . $path);
     exit;
 }
 
-function old(string $key, $default = '')
+function mp_old(string $key, $default = '')
 {
     return $_SESSION['_old_input'][$key] ?? $default;
 }
 
-function flash(string $key, ?string $message = null)
+function mp_flash(string $key, ?string $message = null)
 {
     if ($message !== null) {
         $_SESSION['_flash'][$key] = $message;
@@ -61,7 +61,7 @@ function flash(string $key, ?string $message = null)
     return $value;
 }
 
-function csrf_token(): string
+function mp_csrf_token(): string
 {
     if (empty($_SESSION['_csrf_token'])) {
         $_SESSION['_csrf_token'] = bin2hex(random_bytes(32));
@@ -69,12 +69,12 @@ function csrf_token(): string
     return $_SESSION['_csrf_token'];
 }
 
-function csrf_field(): string
+function mp_csrf_field(): string
 {
-    return '<input type="hidden" name="_csrf" value="' . e(csrf_token()) . '">';
+    return '<input type="hidden" name="_csrf" value="' . mp_e(mp_csrf_token()) . '">';
 }
 
-function verify_csrf(): void
+function mp_verify_csrf(): void
 {
     $token = $_POST['_csrf'] ?? '';
     if (!hash_equals($_SESSION['_csrf_token'] ?? '', $token)) {
@@ -83,13 +83,13 @@ function verify_csrf(): void
     }
 }
 
-function marketplace_badge(string $marketplaceType): string
+function mp_marketplace_badge(string $marketplaceType): string
 {
-    $types = config_get('marketplace_types', []);
+    $types = mp_config('marketplace_types', []);
     return $types[$marketplaceType]['badge'] ?? $marketplaceType;
 }
 
-function render_product_card(array $product): void
+function mp_render_product_card(array $product): void
 {
-    require __DIR__ . '/../partials/product-card.php';
+    require __DIR__ . '/product-card.php';
 }

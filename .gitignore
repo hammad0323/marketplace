@@ -1,2 +1,2 @@
-storage/logs/*.log
+logs/*.log
 .DS_Store
