@@ -15,16 +15,19 @@ $theme = 'main';
 require __DIR__ . '/header.php';
 ?>
 
-<section class="content-panel" style="text-align:center;">
-    <span class="badge">⭐ Official Store</span>
-    <h1><?= mp_e($vendor['store_name']) ?></h1>
-    <?php if (!empty($profile['business_info'])): ?>
-        <p><?= nl2br(mp_e($profile['business_info'])) ?></p>
-    <?php endif; ?>
+<section class="parallax-hero official-hero">
+    <div class="parallax-hero-bg"></div>
+    <div class="reveal">
+        <span class="badge" style="background:rgba(255,255,255,.6);">⭐ Official Store</span>
+        <h1><?= mp_e($vendor['store_name']) ?></h1>
+        <?php if (!empty($profile['business_info'])): ?>
+            <p><?= nl2br(mp_e($profile['business_info'])) ?></p>
+        <?php endif; ?>
+    </div>
 </section>
 
-<h2>Products</h2>
-<div class="card-grid">
+<h2 class="section-title reveal">Products</h2>
+<div class="card-grid reveal">
     <?php foreach ($products as $product): ?>
         <?php mp_render_product_card($product); ?>
     <?php endforeach; ?>

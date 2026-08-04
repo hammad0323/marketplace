@@ -26,7 +26,7 @@ $theme = 'artisan';
 require __DIR__ . '/header.php';
 ?>
 
-<section class="artisan-story">
+<section class="artisan-story reveal">
     <span class="artisan-badge">🏺 Handmade</span>
     <?php if ($vendor['is_featured']): ?><span class="artisan-badge">Featured Artist</span><?php endif; ?>
 
@@ -83,8 +83,8 @@ require __DIR__ . '/header.php';
     <?php endif; ?>
 </section>
 
-<h2 class="artisan-section-title">Handcrafted Collection</h2>
-<div class="card-grid">
+<h2 class="artisan-section-title reveal">Handcrafted Collection</h2>
+<div class="card-grid reveal">
     <?php foreach ($products as $product): ?>
         <?php mp_render_product_card($product); ?>
     <?php endforeach; ?>

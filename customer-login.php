@@ -22,7 +22,7 @@ $theme = 'main';
 require __DIR__ . '/header.php';
 ?>
 
-<div class="form-card">
+<div class="form-card reveal">
     <h1>Login</h1>
     <form method="post" action="/customer-login.php">
         <?= mp_csrf_field() ?>

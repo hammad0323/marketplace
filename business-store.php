@@ -20,7 +20,7 @@ $theme = 'business';
 require __DIR__ . '/header.php';
 ?>
 
-<section class="business-shop-header">
+<section class="business-shop-header reveal">
     <img class="shop-logo" src="<?= mp_e($profile['logo_image'] ?? '/assets/img/placeholder.svg') ?>" alt="<?= mp_e($vendor['store_name']) ?> logo">
     <div>
         <span class="badge">🏪 Business Shop</span>
@@ -37,6 +37,7 @@ require __DIR__ . '/header.php';
     </div>
 <?php endif; ?>
 
+<?php if (!empty($profile['contact_email']) || !empty($profile['contact_phone']) || !empty($profile['contact_address']) || $hours || !empty($profile['delivery_info']) || !empty($profile['shop_policies'])): ?>
 <div class="content-panel" style="display:flex; gap:2rem; flex-wrap:wrap;">
     <?php if (!empty($profile['contact_email']) || !empty($profile['contact_phone']) || !empty($profile['contact_address'])): ?>
     <div>
@@ -70,9 +71,10 @@ require __DIR__ . '/header.php';
     </div>
     <?php endif; ?>
 </div>
+<?php endif; ?>
 
-<h2 class="business-section-title">Products</h2>
-<div class="card-grid">
+<h2 class="business-section-title reveal">Products</h2>
+<div class="card-grid reveal">
     <?php foreach ($products as $product): ?>
         <?php mp_render_product_card($product); ?>
     <?php endforeach; ?>

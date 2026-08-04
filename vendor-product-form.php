@@ -87,7 +87,7 @@ $theme = 'main';
 require __DIR__ . '/header.php';
 ?>
 
-<div class="form-card form-card-wide">
+<div class="form-card form-card-wide reveal">
     <h1>Add Product</h1>
 
     <?php if (!$categories): ?>

@@ -16,27 +16,29 @@ $theme = 'main';
 require __DIR__ . '/header.php';
 ?>
 
-<section style="text-align:center; padding: 3rem 0;">
-    <h1>One Platform. Two Worlds of Shopping.</h1>
-    <p style="max-width:640px;margin:0 auto;color:#555;">
-        Discover handmade treasures from independent artisans, or shop trusted
-        everyday retail businesses — all in one place.
-    </p>
-    <div style="display:flex; gap:1rem; justify-content:center; margin-top:2rem; flex-wrap:wrap;">
-        <a class="btn" href="/artisan.php">Explore Artisan Marketplace</a>
-        <a class="btn btn-secondary" href="/business.php">Explore Business Shops</a>
+<section class="parallax-hero home-hero">
+    <div class="parallax-hero-bg"></div>
+    <div class="home-hero-content reveal">
+        <span class="section-eyebrow">Two Marketplaces. One Platform.</span>
+        <h1>Handmade Treasures &amp; Trusted Retail, All in One Place</h1>
+        <p>Discover one-of-a-kind creations from independent artisans, or shop everyday
+           essentials from verified business owners — start exploring below.</p>
+        <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+            <a class="btn btn-accent" href="/artisan.php">Explore Artisan Marketplace</a>
+            <a class="btn btn-secondary" href="/business.php">Explore Business Shops</a>
+        </div>
     </div>
 </section>
 
 <?php if ($officialStore): ?>
-<section style="text-align:center; margin: 3rem 0;">
+<section class="official-strip reveal">
     <span class="badge">⭐ Official Store</span>
-    <p><a href="/official-store.php"><?= mp_e($officialStore['store_name']) ?></a> — verified and curated directly by the platform.</p>
+    <p style="margin:0;"><a href="/official-store.php"><strong><?= mp_e($officialStore['store_name']) ?></strong></a> — verified and curated directly by the platform.</p>
 </section>
 <?php endif; ?>
 
-<section>
-    <h2>Featured Artisans</h2>
+<section class="reveal">
+    <h2 class="section-title">Featured Artisans</h2>
     <div class="card-grid">
         <?php foreach ($featuredArtisans as $vendor): ?>
             <div class="vendor-card">
@@ -50,8 +52,8 @@ require __DIR__ . '/header.php';
     </div>
 </section>
 
-<section>
-    <h2>Featured Business Shops</h2>
+<section class="reveal">
+    <h2 class="section-title">Featured Business Shops</h2>
     <div class="card-grid">
         <?php foreach ($featuredBusinesses as $vendor): ?>
             <div class="vendor-card">
@@ -65,8 +67,8 @@ require __DIR__ . '/header.php';
     </div>
 </section>
 
-<section>
-    <h2>Trending in Artisan Marketplace</h2>
+<section class="reveal">
+    <h2 class="section-title">Trending in Artisan Marketplace</h2>
     <div class="card-grid">
         <?php foreach ($trendingArtisanProducts as $product): ?>
             <?php mp_render_product_card($product); ?>
@@ -75,8 +77,8 @@ require __DIR__ . '/header.php';
     </div>
 </section>
 
-<section>
-    <h2>Trending in Business Shops</h2>
+<section class="reveal">
+    <h2 class="section-title">Trending in Business Shops</h2>
     <div class="card-grid">
         <?php foreach ($trendingBusinessProducts as $product): ?>
             <?php mp_render_product_card($product); ?>

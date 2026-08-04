@@ -1,75 +1,109 @@
 /* Business Shops theme: clean, modern, commercial. Cooler palette,
-   sans-serif type, sharper edges than the artisan theme. */
+   sharper geometry, a confident gradient-mesh parallax hero. */
 
 .theme-business {
     --biz-blue: #1957d6;
-    --biz-ink: #16202b;
+    --biz-blue-dark: #103a94;
+    --biz-ink: #0b1220;
     --biz-bg: #f5f7fa;
     background: var(--biz-bg);
     color: var(--biz-ink);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
-.theme-business .site-nav { background: #fff; }
+.theme-business .site-nav { background: rgba(255, 255, 255, .92); }
+.theme-business .site-brand { background: linear-gradient(120deg, var(--biz-blue), #0ea5e9); -webkit-background-clip: text; background-clip: text; }
+.theme-business .marketplace-nav a:hover { color: var(--biz-blue); }
+.theme-business .marketplace-nav a::after { background: var(--biz-blue); }
 .theme-business .cta-link { background: var(--biz-blue); }
-.theme-business .site-search button { background: var(--biz-blue); border-color: var(--biz-blue); }
+.theme-business .cta-link:hover { background: var(--biz-blue-dark); }
+.theme-business .site-search button { background: var(--biz-blue); }
+.theme-business .site-search button:hover { background: var(--biz-blue-dark); }
+.theme-business .btn { background: var(--biz-blue); border-radius: var(--radius-sm); }
+.theme-business .btn:hover { background: var(--biz-blue-dark); }
+.theme-business .form-group input:focus,
+.theme-business .form-group select:focus,
+.theme-business .form-group textarea:focus { border-color: var(--biz-blue); box-shadow: 0 0 0 4px rgba(25, 87, 214, .12); }
 
+/* ---- Parallax hero ------------------------------------------------- */
 .business-hero {
-    padding: 3.5rem 2rem;
-    background: linear-gradient(120deg, #103a94, var(--biz-blue));
+    min-height: 46vh;
+    display: flex;
+    align-items: center;
+    border-radius: 0 0 28px 28px;
     color: #fff;
-    border-radius: 12px;
-    margin-bottom: 2.5rem;
+    padding: 2rem 2rem;
+    margin-bottom: 3rem;
 }
-.business-hero h1 { font-size: 2.2rem; margin: 0 0 0.75rem; }
-.business-hero p { font-size: 1.05rem; opacity: 0.9; max-width: 560px; }
+.business-hero .parallax-hero-bg {
+    background:
+        radial-gradient(circle at 15% 20%, rgba(14, 165, 233, .35), transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(124, 58, 237, .28), transparent 50%),
+        linear-gradient(125deg, var(--biz-blue-dark) 0%, var(--biz-blue) 55%, #0ea5e9 120%);
+}
+.business-hero-content { max-width: 620px; }
+.business-hero h1 { font-size: clamp(2rem, 4.4vw, 2.9rem); margin: 0 0 .85rem; }
+.business-hero p { font-size: 1.08rem; opacity: .92; max-width: 560px; margin: 0 0 1.5rem; }
+.business-hero .btn-secondary { background: rgba(255, 255, 255, .12); color: #fff; border-color: rgba(255, 255, 255, .5); backdrop-filter: blur(4px); }
+.business-hero .btn-secondary:hover { background: rgba(255, 255, 255, .2); }
 
 .business-section-title {
-    font-size: 1.35rem;
-    font-weight: 700;
-    margin: 2.5rem 0 1.1rem;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 3rem 0 1.25rem;
 }
 
 .business-category-chip {
     display: inline-block;
-    padding: 0.45rem 1rem;
-    margin: 0.2rem;
-    border-radius: 6px;
+    padding: .5rem 1.1rem;
+    margin: .25rem .25rem .25rem 0;
+    border-radius: var(--radius-sm);
     background: #fff;
-    border: 1px solid #dde3ec;
-    font-weight: 600;
-    font-size: 0.9rem;
+    border: 1.5px solid #dde3ec;
+    font-weight: 700;
+    font-size: .88rem;
+    transition: all .2s var(--ease);
 }
-.business-category-chip:hover { border-color: var(--biz-blue); color: var(--biz-blue); }
+.business-category-chip:hover {
+    border-color: var(--biz-blue);
+    color: #fff;
+    background: var(--biz-blue);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
 
 .business-main .product-card, .business-main .vendor-card {
     background: #fff;
     border-color: #dde3ec;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
 }
 
 .business-shop-header {
     background: #fff;
     border: 1px solid #dde3ec;
-    border-radius: 10px;
+    border-radius: var(--radius-lg);
     padding: 2rem;
     margin-bottom: 2rem;
     display: flex;
     gap: 1.5rem;
     align-items: center;
     flex-wrap: wrap;
+    box-shadow: var(--shadow-sm);
 }
 .business-shop-header img.shop-logo {
-    width: 84px; height: 84px; border-radius: 8px; object-fit: cover; background: #f0f2f5;
+    width: 84px; height: 84px; border-radius: var(--radius-md); object-fit: cover; background: #f0f2f5;
 }
 
 .verified-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: .3rem;
     background: #e8f0ff;
     color: var(--biz-blue);
-    padding: 0.25rem 0.7rem;
+    padding: .3rem .8rem;
     border-radius: 20px;
-    font-weight: 600;
-    font-size: 0.8rem;
+    font-weight: 700;
+    font-size: .8rem;
+}
+
+@media (max-width: 640px) {
+    .business-hero { min-height: 40vh; border-radius: 0 0 18px 18px; }
 }

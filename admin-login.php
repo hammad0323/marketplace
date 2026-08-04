@@ -21,7 +21,7 @@ $pageTitle = 'Admin Login';
 require __DIR__ . '/admin-header.php';
 ?>
 
-<div class="form-card">
+<div class="form-card reveal">
     <h1>Admin Login</h1>
     <form method="post" action="/admin-login.php">
         <?= mp_csrf_field() ?>

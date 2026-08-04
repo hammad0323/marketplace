@@ -106,7 +106,7 @@ admin-category-toggle.php
                         the admin panel
 
 database.sql            every CREATE TABLE + all seed data, one file
-assets/                 css/, img/ — the only other web-facing folder
+assets/                 css/, js/, img/ — the only other web-facing folder
 uploads/                reserved for future file-upload features
 logs/                   mp_notify() writes notifications.log here
 ```
@@ -154,6 +154,38 @@ caught and fixed a real encoding bug this way: emoji in the marketplace
 badges (🏺 🏪 ⭐) got corrupted on import by clients that don't default
 to `utf8mb4` (including the plain `mysql` CLI) — fixed by adding
 `SET NAMES utf8mb4;` as the first line of `database.sql`.
+
+## Design system
+
+Every page uses a shared, modern design system defined with CSS custom
+properties in `assets/css/global.css` (colors, spacing, shadows, border
+radius, easing), plus a theme file per marketplace
+(`artisan-theme.css` — warm terracotta/gold with Playfair Display serif
+headings; `business-theme.css` — blue/cyan; `admin.css` — calm, no
+animation on purpose).
+
+- **Parallax hero sections**: each landing/hero (`home.php`,
+  `artisan.php`, `business.php`, `official-store.php`) has a
+  `.parallax-hero` / `.parallax-hero-bg` layer that moves at a fraction
+  of scroll speed for a depth effect. Implemented with
+  `transform: translate3d()` driven by `requestAnimationFrame` in
+  `assets/js/main.js` — not `background-attachment: fixed`, so it's
+  smooth on mobile too.
+- **Scroll-reveal animations**: sections and cards fade/slide into
+  view via `IntersectionObserver` (`.reveal` → `.reveal-visible`).
+  This degrades safely on purpose — see below.
+- **Progressive enhancement, not a dependency**: `.reveal` is only
+  hidden by CSS once `assets/js/main.js` has confirmed it's actually
+  running (an inline script sets `class="js"` on `<html>` before first
+  paint). If JavaScript is blocked, errors, or hasn't loaded yet,
+  every `.reveal` element is simply visible with no animation — content
+  can never end up permanently hidden because of a script failure.
+  Motion also fully respects `prefers-reduced-motion`.
+- **External dependency added by this design**: Google Fonts (Inter,
+  Plus Jakarta Sans, Playfair Display), loaded via `<link>` in
+  `header.php`. Nothing else in the project calls out to an external
+  service — if you need a fully offline/self-hosted build, swap that
+  `<link>` for local font files.
 
 ## Architecture decisions worth knowing
 

@@ -17,21 +17,29 @@ $theme = 'business';
 require __DIR__ . '/header.php';
 ?>
 
-<section class="business-hero">
-    <h1>Shop Trusted Business Stores</h1>
-    <p>Fashion, electronics, home goods and more — from verified retail businesses,
-       all in one convenient marketplace.</p>
+<section class="parallax-hero business-hero">
+    <div class="parallax-hero-bg"></div>
+    <div class="business-hero-content reveal">
+        <span class="section-eyebrow" style="color:#bfdbfe;">Verified Retail Businesses</span>
+        <h1>Shop Trusted Business Stores</h1>
+        <p>Fashion, electronics, home goods and more — from verified retail businesses,
+           all in one convenient marketplace.</p>
+        <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+            <a class="btn btn-accent" href="#featured-shops">Browse Shops</a>
+            <a class="btn btn-secondary" href="/vendor-register.php">Sell With Us</a>
+        </div>
+    </div>
 </section>
 
-<h2 class="business-section-title">Shop by Category</h2>
-<div>
+<h2 class="business-section-title reveal">Shop by Category</h2>
+<div class="reveal">
     <?php foreach ($categories as $category): ?>
         <a class="business-category-chip" href="/business-category.php?slug=<?= mp_e($category['slug']) ?>"><?= mp_e($category['name']) ?></a>
     <?php endforeach; ?>
 </div>
 
-<h2 class="business-section-title">Featured Shops</h2>
-<div class="card-grid">
+<h2 class="business-section-title reveal" id="featured-shops">Featured Shops</h2>
+<div class="card-grid reveal">
     <?php foreach ($featuredShops as $vendor): ?>
         <div class="vendor-card">
             <div class="vendor-card-body">
@@ -43,16 +51,16 @@ require __DIR__ . '/header.php';
     <?php if (!$featuredShops): ?><p>No approved shops yet — be the first to join!</p><?php endif; ?>
 </div>
 
-<h2 class="business-section-title">Best Sellers</h2>
-<div class="card-grid">
+<h2 class="business-section-title reveal">Best Sellers</h2>
+<div class="card-grid reveal">
     <?php foreach ($bestSellers as $product): ?>
         <?php mp_render_product_card($product); ?>
     <?php endforeach; ?>
     <?php if (!$bestSellers): ?><p>No best sellers yet.</p><?php endif; ?>
 </div>
 
-<h2 class="business-section-title">Trending Products</h2>
-<div class="card-grid">
+<h2 class="business-section-title reveal">Trending Products</h2>
+<div class="card-grid reveal">
     <?php foreach ($trendingProducts as $product): ?>
         <?php mp_render_product_card($product); ?>
     <?php endforeach; ?>

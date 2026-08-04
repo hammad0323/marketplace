@@ -16,22 +16,26 @@ $theme = 'artisan';
 require __DIR__ . '/header.php';
 ?>
 
-<section class="artisan-hero">
-    <span class="artisan-badge">🏺 Handmade &amp; Handcrafted</span>
-    <h1>Where Every Piece Tells a Story</h1>
-    <p>Discover one-of-a-kind creations from independent artisans — pottery, paintings,
-       jewelry, and more, each carrying the maker's own journey.</p>
+<section class="parallax-hero artisan-hero">
+    <div class="parallax-hero-bg"></div>
+    <div class="artisan-hero-content reveal">
+        <span class="artisan-badge">🏺 Handmade &amp; Handcrafted</span>
+        <h1>Where Every Piece Tells a Story</h1>
+        <p>Discover one-of-a-kind creations from independent artisans — pottery, paintings,
+           jewelry, and more, each carrying the maker's own journey.</p>
+        <a class="btn" href="#featured-artists">Meet the Artists</a>
+    </div>
 </section>
 
-<h2 class="artisan-section-title">Featured Categories</h2>
-<div>
+<h2 class="artisan-section-title reveal">Featured Categories</h2>
+<div class="reveal">
     <?php foreach ($categories as $category): ?>
         <a class="artisan-category-chip" href="/artisan-category.php?slug=<?= mp_e($category['slug']) ?>"><?= mp_e($category['name']) ?></a>
     <?php endforeach; ?>
 </div>
 
-<h2 class="artisan-section-title">Featured Artists</h2>
-<div class="card-grid">
+<h2 class="artisan-section-title reveal" id="featured-artists">Featured Artists</h2>
+<div class="card-grid reveal">
     <?php foreach ($featuredArtisans as $vendor): ?>
         <div class="vendor-card">
             <div class="vendor-card-body">
@@ -43,8 +47,8 @@ require __DIR__ . '/header.php';
     <?php if (!$featuredArtisans): ?><p>No approved artists yet — be the first to join!</p><?php endif; ?>
 </div>
 
-<h2 class="artisan-section-title">Trending Handmade Products</h2>
-<div class="card-grid">
+<h2 class="artisan-section-title reveal">Trending Handmade Products</h2>
+<div class="card-grid reveal">
     <?php foreach ($trendingProducts as $product): ?>
         <?php mp_render_product_card($product); ?>
     <?php endforeach; ?>

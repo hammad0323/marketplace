@@ -69,7 +69,7 @@ $theme = 'main';
 require __DIR__ . '/header.php';
 ?>
 
-<div class="form-card form-card-wide">
+<div class="form-card form-card-wide reveal">
     <h1>Become a Vendor</h1>
     <p>Choose the marketplace you want to sell in. Your store stays in <strong>pending</strong>
        status — you can complete your profile right away, but products and orders unlock only

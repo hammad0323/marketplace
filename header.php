@@ -8,11 +8,15 @@ $theme = $theme ?? 'main';
 $pageTitle = $pageTitle ?? SITE_NAME;
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="en" class="no-js">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>document.documentElement.className = 'js';</script>
     <title><?= mp_e($pageTitle) ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/assets/css/global.css">
     <?php if ($theme === 'artisan'): ?>
         <link rel="stylesheet" href="/assets/css/artisan-theme.css">

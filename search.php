@@ -15,15 +15,15 @@ $theme = 'main';
 require __DIR__ . '/header.php';
 ?>
 
-<h1><?= $term !== '' ? 'Search results for "' . mp_e($term) . '"' : 'Search' ?></h1>
+<h1 class="reveal"><?= $term !== '' ? 'Search results for "' . mp_e($term) . '"' : 'Search' ?></h1>
 
 <?php if ($term === ''): ?>
     <p>Enter a search term above to find products across every marketplace.</p>
 <?php elseif (!$results): ?>
     <p>No products found for "<?= mp_e($term) ?>".</p>
 <?php else: ?>
-    <p><?= count($results) ?> result(s) — badges show which marketplace each item comes from.</p>
-    <div class="card-grid">
+    <p class="reveal"><?= count($results) ?> result(s) — badges show which marketplace each item comes from.</p>
+    <div class="card-grid reveal">
         <?php foreach ($results as $product): ?>
             <?php mp_render_product_card($product); ?>
         <?php endforeach; ?>

@@ -1,95 +1,136 @@
-/* Artisan Marketplace theme: elegant, warm, premium — a handcrafted
-   feel via serif type, textured earthy palette and soft motion. */
+/* Artisan Marketplace theme: elegant, warm, premium. Serif display type,
+   a warm terracotta/gold palette, and a parallax hero with a soft
+   gradient-mesh backdrop (no photography required, still feels rich). */
 
 .theme-artisan {
     --artisan-ink: #2c211b;
     --artisan-cream: #faf4ec;
     --artisan-clay: #b3552f;
+    --artisan-clay-dark: #8f4224;
     --artisan-gold: #c79a4b;
     background: var(--artisan-cream);
     color: var(--artisan-ink);
-    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
 }
-.theme-artisan .site-nav { background: var(--artisan-cream); border-bottom-color: #e6d9c6; }
+.theme-artisan h1, .theme-artisan h2, .theme-artisan h3,
+.theme-artisan .artisan-section-title {
+    font-family: 'Playfair Display', Georgia, 'Iowan Old Style', serif;
+}
+.theme-artisan .site-nav { background: rgba(250, 244, 236, .92); }
+.theme-artisan .site-nav.site-nav-scrolled { border-bottom-color: #e6d9c6; }
+.theme-artisan .site-brand { background: linear-gradient(120deg, var(--artisan-clay), var(--artisan-gold)); -webkit-background-clip: text; background-clip: text; }
+.theme-artisan .marketplace-nav a:hover { color: var(--artisan-clay); }
+.theme-artisan .marketplace-nav a::after { background: var(--artisan-clay); }
 .theme-artisan .cta-link { background: var(--artisan-clay); }
-.theme-artisan .site-search button { background: var(--artisan-clay); border-color: var(--artisan-clay); }
+.theme-artisan .cta-link:hover { background: var(--artisan-clay-dark); }
+.theme-artisan .site-search button { background: var(--artisan-clay); }
+.theme-artisan .site-search button:hover { background: var(--artisan-clay-dark); }
+.theme-artisan .btn { background: var(--artisan-clay); }
+.theme-artisan .btn:hover { background: var(--artisan-clay-dark); }
+.theme-artisan .form-group input:focus,
+.theme-artisan .form-group select:focus,
+.theme-artisan .form-group textarea:focus { border-color: var(--artisan-clay); box-shadow: 0 0 0 4px rgba(179, 85, 47, .12); }
 
+/* ---- Parallax hero ------------------------------------------------- */
 .artisan-hero {
+    min-height: 62vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
-    padding: 5rem 1.5rem;
-    background: linear-gradient(180deg, #f3e6d3, var(--artisan-cream));
-    border-radius: 18px;
-    margin-bottom: 3rem;
-    animation: artisan-fade-in 0.9s ease both;
+    border-radius: 0 0 32px 32px;
+    margin-bottom: 3.5rem;
+    padding: 2rem 1.5rem;
 }
+.artisan-hero .parallax-hero-bg {
+    background:
+        radial-gradient(circle at 20% 25%, rgba(199, 154, 75, .35), transparent 45%),
+        radial-gradient(circle at 82% 70%, rgba(179, 85, 47, .30), transparent 50%),
+        linear-gradient(160deg, #f3e6d3 0%, #f8ede0 45%, #efd9bd 100%);
+}
+.artisan-hero-content { max-width: 640px; }
 .artisan-hero h1 {
-    font-size: 2.6rem;
-    margin: 0 0 1rem;
-    letter-spacing: 0.02em;
+    font-size: clamp(2.2rem, 5vw, 3.4rem);
+    margin: 0 0 1.1rem;
+    letter-spacing: .01em;
 }
-.artisan-hero p { font-size: 1.15rem; color: #5b4a3d; max-width: 640px; margin: 0 auto; }
+.artisan-hero p { font-size: 1.15rem; color: #5b4a3d; margin: 0 auto 1.75rem; }
+.artisan-hero .btn { margin: 0 .35rem; }
 
 .artisan-section-title {
-    font-size: 1.5rem;
-    margin: 3rem 0 1.25rem;
-    border-bottom: 2px solid var(--artisan-gold);
-    padding-bottom: 0.5rem;
+    font-size: 1.7rem;
+    margin: 3.5rem 0 1.5rem;
+    padding-bottom: .5rem;
     display: inline-block;
+    position: relative;
+}
+.artisan-section-title::after {
+    content: '';
+    position: absolute; left: 0; bottom: 0;
+    width: 46px; height: 3px;
+    background: var(--artisan-gold);
+    border-radius: 2px;
 }
 
 .artisan-category-chip {
     display: inline-block;
-    padding: 0.5rem 1.1rem;
-    margin: 0.25rem;
-    border: 1px solid var(--artisan-gold);
+    padding: .55rem 1.2rem;
+    margin: .3rem .3rem .3rem 0;
+    border: 1.5px solid var(--artisan-gold);
     border-radius: 30px;
     background: #fff;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    font-weight: 600;
+    font-size: .92rem;
+    transition: transform .25s var(--ease), box-shadow .25s var(--ease), background .25s;
 }
 .artisan-category-chip:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(179, 85, 47, 0.18);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(179, 85, 47, .2);
+    background: var(--artisan-clay);
+    color: #fff;
+    border-color: var(--artisan-clay);
 }
 
 .artisan-main .product-card, .artisan-main .vendor-card {
-    border-color: #e6d9c6;
+    border-color: #ecdfc9;
     background: #fff;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 .artisan-main .product-card:hover, .artisan-main .vendor-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 28px rgba(44, 33, 27, 0.12);
+    box-shadow: 0 20px 40px rgba(44, 33, 27, .14);
 }
 
 .artisan-story {
     background: #fff;
-    border: 1px solid #e6d9c6;
-    border-radius: 16px;
-    padding: 2.5rem;
-    margin-bottom: 2rem;
+    border: 1px solid #ecdfc9;
+    border-radius: 24px;
+    padding: 2.75rem;
+    margin-bottom: 2.5rem;
+    box-shadow: var(--shadow-sm);
 }
 .artisan-story h2 { margin-top: 0; }
 .artisan-gallery {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 0.75rem;
+    gap: .9rem;
     margin: 1.5rem 0;
 }
-.artisan-gallery img { border-radius: 10px; height: 150px; object-fit: cover; }
+.artisan-gallery img {
+    border-radius: 14px; height: 160px; object-fit: cover;
+    transition: transform .4s var(--ease);
+}
+.artisan-gallery img:hover { transform: scale(1.04); }
 
 .artisan-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    background: var(--artisan-gold);
+    gap: .35rem;
+    background: linear-gradient(120deg, var(--artisan-gold), #e0b76a);
     color: #2c211b;
-    padding: 0.3rem 0.8rem;
+    padding: .35rem .9rem;
     border-radius: 20px;
-    font-weight: 600;
-    font-size: 0.85rem;
+    font-weight: 700;
+    font-size: .85rem;
 }
 
-@keyframes artisan-fade-in {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
+@media (max-width: 640px) {
+    .artisan-hero { min-height: 52vh; border-radius: 0 0 20px 20px; }
 }

@@ -17,8 +17,8 @@ $theme = 'business';
 require __DIR__ . '/header.php';
 ?>
 
-<h1><?= mp_e($category['name']) ?></h1>
-<div class="card-grid">
+<h1 class="reveal"><?= mp_e($category['name']) ?></h1>
+<div class="card-grid reveal">
     <?php foreach ($products as $product): ?>
         <?php mp_render_product_card($product); ?>
     <?php endforeach; ?>
