@@ -68,6 +68,7 @@ $navCartCount = $navCustomer ? mp_cart_item_count($navCustomer['id']) : 0;
             <?php endif; ?>
         </nav>
     </div>
+    <div class="scroll-progress"></div>
 </header>
 
 <?php

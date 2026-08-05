@@ -39,6 +39,15 @@ function mp_all_categories_by_marketplace(int $marketplaceTypeId): array
     );
 }
 
+/** Active category count for one marketplace type — for stat counters. */
+function mp_count_active_categories(int $marketplaceTypeId): int
+{
+    return (int) mp_db_fetch_value(
+        'SELECT COUNT(*) FROM categories WHERE marketplace_type_id = ? AND is_active = 1',
+        [$marketplaceTypeId]
+    );
+}
+
 /**
  * Filters an arbitrary list of category IDs down to only those that
  * actually belong to the given marketplace type. Used to sanitize

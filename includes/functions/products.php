@@ -45,6 +45,18 @@ function mp_products_by_vendor(int $vendorId): array
     return mp_db_fetch_all('SELECT * FROM products WHERE vendor_id = ? ORDER BY created_at DESC', [$vendorId]);
 }
 
+/** Published product count, optionally scoped to one marketplace type — for stat counters. */
+function mp_count_published_products(?int $marketplaceTypeId = null): int
+{
+    if ($marketplaceTypeId !== null) {
+        return (int) mp_db_fetch_value(
+            "SELECT COUNT(*) FROM products WHERE status = 'published' AND marketplace_type_id = ?",
+            [$marketplaceTypeId]
+        );
+    }
+    return (int) mp_db_fetch_value("SELECT COUNT(*) FROM products WHERE status = 'published'");
+}
+
 function mp_products_by_category(int $categoryId, int $limit = 24): array
 {
     return mp_db_fetch_all(

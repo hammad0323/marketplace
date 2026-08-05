@@ -57,6 +57,18 @@ function mp_all_vendors(): array
     return mp_db_fetch_all('SELECT * FROM vendors ORDER BY created_at DESC');
 }
 
+/** Approved vendor count, optionally scoped to one marketplace type — for stat counters. */
+function mp_count_approved_vendors(?int $marketplaceTypeId = null): int
+{
+    if ($marketplaceTypeId !== null) {
+        return (int) mp_db_fetch_value(
+            "SELECT COUNT(*) FROM vendors WHERE status = 'approved' AND marketplace_type_id = ?",
+            [$marketplaceTypeId]
+        );
+    }
+    return (int) mp_db_fetch_value("SELECT COUNT(*) FROM vendors WHERE status = 'approved'");
+}
+
 function mp_approve_vendor(int $vendorId, int $adminId): void
 {
     mp_db_execute(

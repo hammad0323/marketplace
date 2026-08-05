@@ -104,10 +104,55 @@ html.js .reveal:not(.reveal-visible) {
 .reveal-delay-3 { transition-delay: .24s; }
 .reveal-delay-4 { transition-delay: .32s; }
 
+/* Entrance variants — pair with "reveal" (e.g. class="reveal reveal-scale"). */
+html.js .reveal-scale:not(.reveal-visible) { opacity: 0; transform: scale(.88); }
+html.js .reveal-blur:not(.reveal-visible) { opacity: 0; transform: translateY(16px); filter: blur(10px); }
+html.js .reveal-left:not(.reveal-visible) { opacity: 0; transform: translateX(-42px); }
+html.js .reveal-right:not(.reveal-visible) { opacity: 0; transform: translateX(42px); }
+.reveal-scale.reveal-visible, .reveal-blur.reveal-visible,
+.reveal-left.reveal-visible, .reveal-right.reveal-visible {
+    opacity: 1; transform: none; filter: none;
+}
+.reveal-blur { transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease), filter var(--dur) var(--ease); }
+
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
-    html.js .reveal:not(.reveal-visible) { opacity: 1; transform: none; }
-    .reveal { transition: none; }
+    html.js .reveal:not(.reveal-visible),
+    html.js .reveal-scale:not(.reveal-visible),
+    html.js .reveal-blur:not(.reveal-visible),
+    html.js .reveal-left:not(.reveal-visible),
+    html.js .reveal-right:not(.reveal-visible) { opacity: 1; transform: none; filter: none; }
+    .reveal, .reveal-scale, .reveal-blur, .reveal-left, .reveal-right { transition: none; }
+}
+
+/* ==========================================================================
+   Scroll progress bar (assets/js/main.js sets its width)
+   ========================================================================== */
+/* Lives as the last child inside .site-nav (already position:sticky),
+   so it rides along the bottom edge of the nav bar as one sticky unit
+   instead of needing its own sticky context. */
+.scroll-progress {
+    height: 3px;
+    width: 0%;
+    background: linear-gradient(90deg, var(--brand), var(--gold));
+    transition: width .1s linear;
+}
+
+/* ==========================================================================
+   Cursor glow (created by assets/js/main.js, hero sections only)
+   ========================================================================== */
+.cursor-glow {
+    position: fixed;
+    top: 0; left: 0;
+    width: 420px; height: 420px;
+    margin-left: -210px; margin-top: -210px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, .16), transparent 68%);
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity .3s var(--ease);
+    will-change: transform;
 }
 
 .parallax-hero {
@@ -136,6 +181,61 @@ html.js .reveal:not(.reveal-visible) {
     z-index: 0;
 }
 
+/* Decorative depth layer inside a .parallax-hero — assets/js/main.js
+   sets this wrapper's transform (translate3d) per-frame for the
+   scroll-driven parallax offset. The idle float/spin motion lives on
+   an INNER element (.floating-blob / .floating-geo) instead of here,
+   deliberately: a CSS animation and a JS-set inline style can't both
+   drive the same element's `transform` (the animation always wins the
+   cascade), so splitting parallax-position (outer) from idle-motion
+   (inner) is what lets both play at once. */
+.parallax-layer {
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+    will-change: transform;
+}
+.floating-blob, .floating-geo {
+    width: 100%;
+    height: 100%;
+}
+.floating-blob {
+    border-radius: 42% 58% 65% 35% / 45% 40% 60% 55%;
+    filter: blur(2px);
+    animation: blob-float 9s ease-in-out infinite, blob-morph 14s ease-in-out infinite;
+}
+.floating-blob-alt { animation-duration: 12s, 18s; }
+
+/* Sharp-edged counterpart to .floating-blob, for the Business theme's
+   "engineered" identity — a rotating outlined square instead of an
+   organic morphing shape. */
+.floating-geo {
+    border: 2px solid rgba(255, 255, 255, .35);
+    animation: geo-drift 18s ease-in-out infinite;
+}
+
+@keyframes blob-float {
+    0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+    50% { transform: translate3d(0, -22px, 0) rotate(8deg); }
+}
+@keyframes blob-morph {
+    0%, 100% { border-radius: 42% 58% 65% 35% / 45% 40% 60% 55%; }
+    50% { border-radius: 60% 40% 35% 65% / 55% 65% 35% 45%; }
+}
+@keyframes geo-drift {
+    0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
+    50%  { transform: translate3d(0, -18px, 0) rotate(180deg); }
+    100% { transform: translate3d(0, 0, 0) rotate(360deg); }
+}
+@keyframes gradient-drift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .floating-blob, .floating-geo { animation: none; }
+}
+
 .home-hero {
     min-height: 64vh;
     display: flex;
@@ -151,7 +251,13 @@ html.js .reveal:not(.reveal-visible) {
     background:
         radial-gradient(circle at 15% 15%, rgba(209, 80, 47, .55), transparent 45%),
         radial-gradient(circle at 88% 78%, rgba(22, 125, 104, .45), transparent 50%),
-        linear-gradient(150deg, #1b1611 0%, #35281f 55%, #56321f 130%);
+        linear-gradient(150deg, #1b1611 0%, #35281f 30%, #56321f 65%, #1e3a30 100%);
+    background-size: 100% 100%, 100% 100%, 260% 260%;
+    animation: gradient-drift 16s ease-in-out infinite;
+}
+.home-hero .floating-blob {
+    background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, .5), transparent 70%), var(--gold);
+    opacity: .35;
 }
 .home-hero-content { max-width: 680px; position: relative; z-index: 1; }
 .home-hero .section-eyebrow { color: #f0b8a1; }
@@ -159,6 +265,79 @@ html.js .reveal:not(.reveal-visible) {
 .home-hero p { font-size: 1.15rem; opacity: .9; max-width: 560px; margin: 0 auto 1.75rem; }
 .home-hero .btn-secondary { background: rgba(255, 255, 255, .1); color: #fff; border-color: rgba(255, 255, 255, .45); backdrop-filter: blur(4px); }
 .home-hero .btn-secondary:hover { background: rgba(255, 255, 255, .18); }
+
+@media (prefers-reduced-motion: reduce) {
+    .home-hero .parallax-hero-bg { animation: none; }
+}
+
+/* ==========================================================================
+   Stat counters (animated by assets/js/main.js)
+   ========================================================================== */
+.stats-row {
+    display: flex;
+    justify-content: center;
+    gap: clamp(1.5rem, 5vw, 4rem);
+    flex-wrap: wrap;
+    margin-top: 2.25rem;
+    position: relative;
+    z-index: 1;
+}
+.stat-item { text-align: center; }
+.stat-counter {
+    display: block;
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+    font-weight: 700;
+    line-height: 1;
+}
+.stat-label {
+    display: block;
+    margin-top: .4rem;
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    opacity: .75;
+}
+
+/* ==========================================================================
+   Marquee ticker — a continuously scrolling strip, content duplicated
+   once so the loop is seamless. Pauses entirely for reduced-motion.
+   ========================================================================== */
+.marquee {
+    overflow: hidden;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-alt);
+    margin: 0 0 3.5rem;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+}
+.marquee-track {
+    display: flex;
+    width: max-content;
+    gap: 3rem;
+    padding: 1rem 0;
+    animation: marquee-scroll 26s linear infinite;
+}
+.marquee-track span {
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--ink-500);
+    white-space: nowrap;
+}
+.marquee-track span::before { content: '✦'; color: var(--brand); }
+@keyframes marquee-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .marquee-track { animation: none; overflow-x: auto; }
+}
 
 .official-strip {
     display: flex;
@@ -525,7 +704,10 @@ html.js .reveal:not(.reveal-visible) {
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     overflow: hidden;
-    transition: transform .35s var(--ease), box-shadow .35s var(--ease), border-color .35s;
+    transform-style: preserve-3d;
+    /* transform transitions fast (tracks the cursor for the JS tilt
+       effect); shadow/border stay on the slower shared easing. */
+    transition: transform .15s linear, box-shadow .35s var(--ease), border-color .35s;
 }
 .product-card:hover, .vendor-card:hover {
     transform: translateY(-6px);
