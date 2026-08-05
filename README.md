@@ -31,6 +31,17 @@ Visit your domain. If something's wrong, `config/database.php` shows a
 plain-English error (bad DB credentials, or the import didn't run)
 instead of a blank page or PHP warning wall.
 
+### Want to see it populated instead of empty?
+
+Import `database-demo-data.sql` right after `database.sql` (same way —
+phpMyAdmin Import, or `mysql -u user -p db < database-demo-data.sql`).
+It adds 8 vendors, 20 products, 3 customers, and 3 orders in different
+statuses (pending / processing / delivered) so every page — storefronts,
+product pages, cart, checkout, "My Orders", the vendor order queue, and
+the admin order list — has real content instead of empty states. Every
+demo account (vendors and customers) uses password `admin123`. Safe to
+re-run; entirely optional.
+
 ### Demo logins (change before anyone else can reach the site)
 
 - Admin: `admin@marketplace.test` / `admin123` at `/admin/login.php`
