@@ -5,6 +5,7 @@ $vendor = mp_require_vendor();
 $marketplaceSlug = mp_find_marketplace_type($vendor['marketplace_type_id'])['slug'];
 $productCount = count(mp_products_by_vendor($vendor['id']));
 $categoryRequests = $marketplaceSlug === 'business' ? mp_vendor_category_requests_for_vendor($vendor['id']) : [];
+$pendingOrderCount = count(array_filter(mp_order_items_for_vendor($vendor['id']), fn ($i) => $i['status'] === 'pending'));
 
 $pageTitle = 'Vendor Dashboard';
 $theme = 'main';
@@ -57,6 +58,12 @@ $statusClass = 'badge-' . $vendor['status'];
         <?php if ($vendor['status'] === 'approved'): ?>
             <a class="btn" href="product-form.php">Add Product</a>
         <?php endif; ?>
+    </div>
+
+    <div class="content-panel">
+        <h3>Orders</h3>
+        <p><?= $pendingOrderCount ?> new order item(s) awaiting action.</p>
+        <a class="btn btn-secondary" href="orders.php">View Orders</a>
     </div>
 </div>
 

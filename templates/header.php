@@ -6,6 +6,8 @@
  */
 $theme = $theme ?? 'main';
 $pageTitle = $pageTitle ?? SITE_NAME;
+$navCustomer = mp_current_customer();
+$navCartCount = $navCustomer ? mp_cart_item_count($navCustomer['id']) : 0;
 ?>
 <!doctype html>
 <html lang="en" class="no-js">
@@ -42,10 +44,26 @@ $pageTitle = $pageTitle ?? SITE_NAME;
         </form>
 
         <nav class="account-nav">
+            <a href="<?= mp_e(ROUTE_CART) ?>view.php" class="cart-link" aria-label="Cart">
+                🛒<?php if ($navCartCount > 0): ?><span class="cart-badge"><?= $navCartCount ?></span><?php endif; ?>
+            </a>
+
+            <?php if ($navCustomer): ?>
+                <div class="account-menu">
+                    <button type="button" class="account-menu-trigger"><?= mp_e($navCustomer['name']) ?> ▾</button>
+                    <div class="account-menu-panel">
+                        <a href="<?= mp_e(ROUTE_CUSTOMER) ?>orders.php">My Orders</a>
+                        <form method="post" action="<?= mp_e(ROUTE_CUSTOMER) ?>logout.php"><?= mp_csrf_field() ?><button type="submit" class="link-button">Logout</button></form>
+                    </div>
+                </div>
+            <?php else: ?>
+                <a href="<?= mp_e(ROUTE_CUSTOMER) ?>login.php">Login</a>
+            <?php endif; ?>
+
             <?php if (mp_current_vendor()): ?>
                 <a href="<?= mp_e(ROUTE_VENDOR) ?>dashboard.php">My Store</a>
             <?php else: ?>
-                <a href="<?= mp_e(ROUTE_VENDOR) ?>login.php">Vendor Login</a>
+                <a href="<?= mp_e(ROUTE_VENDOR) ?>login.php" class="vendor-login-link">Vendor Login</a>
                 <a href="<?= mp_e(ROUTE_VENDOR) ?>register.php" class="cta-link">Sell With Us</a>
             <?php endif; ?>
         </nav>

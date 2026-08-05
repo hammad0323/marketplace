@@ -149,3 +149,26 @@ function mp_db_update(string $table, array $data, string $whereSql, array $where
 
     mp_db_execute($sql, array_merge(array_values($data), $whereParams));
 }
+
+/**
+ * Real multi-statement transactions (procedural mysqli_* API) for
+ * operations that must all-or-nothing succeed — e.g. mp_create_order()
+ * writing an order, its line items, and the first status-history row
+ * together. mysqli_report(MYSQLI_REPORT_OFF) (set in mp_db()) means
+ * failures surface as false/empty results rather than exceptions, so
+ * callers check each step and roll back explicitly.
+ */
+function mp_db_begin_transaction(): void
+{
+    mysqli_begin_transaction(mp_db());
+}
+
+function mp_db_commit(): void
+{
+    mysqli_commit(mp_db());
+}
+
+function mp_db_rollback(): void
+{
+    mysqli_rollback(mp_db());
+}

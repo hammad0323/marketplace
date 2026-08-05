@@ -17,6 +17,7 @@ $pageTitle = $pageTitle ?? 'Admin';
     <nav class="admin-nav">
         <a href="<?= mp_e(ROUTE_ADMIN) ?>vendors.php">Vendor Approvals</a>
         <a href="<?= mp_e(ROUTE_ADMIN) ?>category-requests.php">Category Approvals</a>
+        <a href="<?= mp_e(ROUTE_ADMIN) ?>orders.php">Orders</a>
         <form method="post" action="<?= mp_e(ROUTE_ADMIN) ?>logout.php" class="inline-form">
             <?= mp_csrf_field() ?>
             <button type="submit" class="link-button">Logout</button>

@@ -36,6 +36,22 @@ instead of a blank page or PHP warning wall.
 - Admin: `admin@marketplace.test` / `admin123` at `/admin/login.php`
 - Official Store vendor: `store@marketplace.test` / `admin123`
 
+## Design system
+
+`assets/css/global.css` defines the shared identity: warm ink-and-cream
+neutrals (not stark white/slate), a signature coral brand color instead
+of generic SaaS blue, `Playfair Display` for headings over `Inter` body
+text, an asymmetric "blob" corner radius on buttons/pills, a subtle
+SVG paper-grain texture on hero sections and the footer, status chips
+with a colored dot for every order/payment state, and sticky account
+menus with a cart badge. Each theme layers its own personality on top:
+`artisan-theme.css` is warm terracotta/gold and organic;
+`business-theme.css` is a deep indigo/teal duotone with a fine
+structural grid texture and sharp corners — deliberately more
+"engineered" to contrast with artisan's warmth; `admin.css` stays calm
+and undecorated on purpose. Verified visually with real Chromium
+screenshots (Playwright) against seeded data, not just read from source.
+
 ## Folder structure
 
 Every module lives in its own top-level folder, and every page inside
@@ -54,8 +70,13 @@ official-store/   the platform's own Official Store
 categories/       generic ?slug= category resolver (redirects into artisan/business)
 products/         product detail page + the shared product-card partial
 
-orders/ checkout/ cart/ wishlist/ payments/ pickup/ shipping/ wallet/
-rewards/ notifications/ support/ reports/ analytics/ blog/ cms/ api/ cron/
+cart/             persisted cart: view/add/update/remove
+checkout/         address + payment method -> places the order
+orders/           shared order invoice view (details.php), any of the
+                  three parties (customer/vendor/admin) involved may view it
+
+wishlist/ payments/ pickup/ shipping/ wallet/ rewards/ notifications/
+support/ reports/ analytics/ blog/ cms/ api/ cron/
                   scaffolded for future development — each has a README
                   describing what will live there; not yet implemented
 
@@ -141,21 +162,43 @@ helpers instead of touching `mysqli_connect()` directly.
 - **Customers/follow/ratings**: a minimal `customers` table plus
   `vendor_follows` and `vendor_ratings` back the "Follow Artist" and
   "Artist/Store Ratings" features.
+- **Cart → checkout → order → fulfillment, for real.** `cart_items` is
+  a persisted per-customer cart. `checkout/place.php` calls
+  `mp_create_order()` (`includes/functions/orders.php`), which wraps
+  stock validation, the `orders` row, every `order_items` row (each
+  carrying its own `vendor_id` so a multi-vendor cart still ships as
+  one checkout), a `transactions` row, and clearing the cart in **one
+  real MySQLi transaction** (`mp_db_begin_transaction()` /
+  `mp_db_commit()` / `mp_db_rollback()`, procedural `mysqli_*`, no ORM)
+  — nothing is left half-written if any step fails. Every order-level
+  status change is written to `order_status_history` as an audit
+  trail. Vendors update only their own `order_items` (scoped by
+  `vendor_id`); `mp_recompute_order_status()` rolls per-item statuses
+  up into the order's own status automatically. `orders/details.php`
+  is one shared invoice view — the customer who placed it, any vendor
+  with items in it, and admins can all view it, each seeing only what
+  they should.
+- **Payments are gateway-ready, not gateway-integrated.** `transactions`
+  already has `stripe`/`paypal` as valid `gateway` values alongside the
+  `cod`/`manual` methods this build actually processes — wiring up real
+  payment processing later needs a new code path, not a schema change.
 
 Verified end-to-end against a real MariaDB instance and PHP's built-in
 server: vendor registration → admin approval → category approval →
 product creation (including per-category limit enforcement) → store
-pages → global search → follow → CSRF protection — all pass.
+pages → global search → follow → add to cart → checkout → order
+placement (stock decremented, transaction recorded) → vendor status
+update → order status roll-up → CSRF protection — all pass.
 
 ## What's deferred to future work
 
-The `orders/`, `checkout/`, `cart/`, `wishlist/`, `payments/`,
-`pickup/`, `shipping/`, `wallet/`, `rewards/`, `notifications/`,
-`support/`, `reports/`, `analytics/`, `blog/`, `cms/`, `api/`, and
-`cron/` folders are scaffolded (each with a short README) so these
-modules can be built without restructuring the project, but none of
-them are implemented yet. Also deferred: enterprise SEO module, the
-real PHPMailer-backed email engine, full admin CRUD over every entity,
+The `wishlist/`, `payments/`, `pickup/`, `shipping/`, `wallet/`,
+`rewards/`, `notifications/`, `support/`, `reports/`, `analytics/`,
+`blog/`, `cms/`, `api/`, and `cron/` folders are scaffolded (each with
+a short README) so these modules can be built without restructuring
+the project, but none of them are implemented yet. Also deferred:
+enterprise SEO module, the real PHPMailer-backed email engine, full
+admin CRUD over every entity, real Stripe/PayPal payment processing,
 vendor logo/banner file uploads (`assets/uploads/` is reserved for
 this), and clean/pretty URLs (every page is still reachable at its own
 literal filename by design — see the folder structure above).

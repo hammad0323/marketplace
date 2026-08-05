@@ -62,3 +62,20 @@ function mp_logout_admin(): void
 {
     unset($_SESSION['admin_id']);
 }
+
+function mp_current_customer(): ?array
+{
+    if (empty($_SESSION['customer_id'])) {
+        return null;
+    }
+    return mp_find_customer((int) $_SESSION['customer_id']);
+}
+
+function mp_require_customer(): array
+{
+    $customer = mp_current_customer();
+    if (!$customer) {
+        mp_redirect(ROUTE_CUSTOMER . 'login.php?redirect_to=' . urlencode($_SERVER['REQUEST_URI'] ?? ROUTE_HOME));
+    }
+    return $customer;
+}

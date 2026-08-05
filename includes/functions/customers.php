@@ -7,6 +7,11 @@ if (!defined('MP_BOOTSTRAP')) {
     exit('Direct access not permitted.');
 }
 
+function mp_find_customer(int $id): ?array
+{
+    return mp_db_fetch_one('SELECT * FROM customers WHERE id = ? LIMIT 1', [$id]);
+}
+
 function mp_find_customer_by_email(string $email): ?array
 {
     return mp_db_fetch_one('SELECT * FROM customers WHERE email = ? LIMIT 1', [$email]);

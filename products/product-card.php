@@ -10,8 +10,8 @@ $thumb = $images[0] ?? null;
         <?php endif; ?>
         <div><a href="<?= mp_e(ROUTE_PRODUCTS) ?>details.php?slug=<?= mp_e($product['slug']) ?>"><strong><?= mp_e($product['title']) ?></strong></a></div>
         <?php if (!empty($product['store_name'])): ?>
-            <div style="color:#777;font-size:0.9rem;"><?= mp_e($product['store_name']) ?></div>
+            <div class="product-card-store"><?= mp_e($product['store_name']) ?></div>
         <?php endif; ?>
-        <div>$<?= number_format((float) $product['price'], 2) ?></div>
+        <div class="product-card-price">$<?= number_format((float) $product['price'], 2) ?></div>
     </div>
 </div>

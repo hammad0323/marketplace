@@ -184,6 +184,9 @@ CREATE TABLE IF NOT EXISTS products (
     price DECIMAL(12,2) NOT NULL DEFAULT 0,
     images JSON NULL,                       -- array of image URLs
 
+    sku VARCHAR(64) NULL,
+    stock_quantity INT UNSIGNED NOT NULL DEFAULT 0,
+
     is_best_seller TINYINT(1) NOT NULL DEFAULT 0,
     is_featured TINYINT(1) NOT NULL DEFAULT 0,
     status ENUM('draft', 'published') NOT NULL DEFAULT 'draft',
@@ -202,9 +205,12 @@ CREATE TABLE IF NOT EXISTS products (
     FULLTEXT KEY ft_products_search (title, description)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Minimal customer accounts: only what's needed to support "Follow
--- Artist" and store/product ratings. Full customer commerce (orders,
--- rewards, etc.) is out of scope for this build.
+-- Re-running this file against a database created before stock/SKU
+-- tracking existed adds the columns without disturbing existing rows
+-- (MySQL 8.0.29+ / MariaDB 10.0.2+ both support ADD COLUMN IF NOT EXISTS).
+ALTER TABLE products ADD COLUMN IF NOT EXISTS sku VARCHAR(64) NULL AFTER images;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS stock_quantity INT UNSIGNED NOT NULL DEFAULT 0 AFTER sku;
+
 CREATE TABLE IF NOT EXISTS customers (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(150) NOT NULL,
@@ -243,6 +249,174 @@ CREATE TABLE IF NOT EXISTS vendor_ratings (
     CONSTRAINT chk_rating_range CHECK (rating BETWEEN 1 AND 5),
 
     UNIQUE KEY uq_customer_vendor_rating (customer_id, vendor_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------
+-- Commerce: addresses, cart, orders, order items, status history,
+-- transactions. An order can contain products from several vendors
+-- (one checkout, one payment) — order_items carries its own vendor_id
+-- and fulfillment status so each vendor manages only their own items,
+-- while orders/transactions track the checkout and payment as a whole.
+-- ---------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS addresses (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT UNSIGNED NOT NULL,
+
+    label VARCHAR(50) NULL,             -- "Home", "Office", ...
+    full_name VARCHAR(150) NOT NULL,
+    phone VARCHAR(30) NOT NULL,
+    line1 VARCHAR(255) NOT NULL,
+    line2 VARCHAR(255) NULL,
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(100) NULL,
+    postal_code VARCHAR(20) NULL,
+    country VARCHAR(100) NOT NULL DEFAULT 'Pakistan',
+    is_default TINYINT(1) NOT NULL DEFAULT 0,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_addresses_customer FOREIGN KEY (customer_id)
+        REFERENCES customers (id) ON DELETE CASCADE,
+
+    INDEX idx_addresses_customer (customer_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Persisted cart so it survives across sessions/devices — one row per
+-- (customer, product), quantity incremented on repeat "Add to Cart".
+CREATE TABLE IF NOT EXISTS cart_items (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT UNSIGNED NOT NULL,
+    product_id INT UNSIGNED NOT NULL,
+    quantity INT UNSIGNED NOT NULL DEFAULT 1,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_cart_items_customer FOREIGN KEY (customer_id)
+        REFERENCES customers (id) ON DELETE CASCADE,
+    CONSTRAINT fk_cart_items_product FOREIGN KEY (product_id)
+        REFERENCES products (id) ON DELETE CASCADE,
+
+    UNIQUE KEY uq_cart_customer_product (customer_id, product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- One order per checkout. Shipping details are snapshotted onto the
+-- order itself (not just linked via address_id) so editing or deleting
+-- a saved address later never rewrites order history.
+CREATE TABLE IF NOT EXISTS orders (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    order_number VARCHAR(30) NOT NULL UNIQUE,   -- e.g. ORD-20260805-00001
+    customer_id INT UNSIGNED NOT NULL,
+    address_id INT UNSIGNED NULL,
+
+    shipping_name VARCHAR(150) NOT NULL,
+    shipping_phone VARCHAR(30) NOT NULL,
+    shipping_line1 VARCHAR(255) NOT NULL,
+    shipping_line2 VARCHAR(255) NULL,
+    shipping_city VARCHAR(100) NOT NULL,
+    shipping_state VARCHAR(100) NULL,
+    shipping_postal_code VARCHAR(20) NULL,
+    shipping_country VARCHAR(100) NOT NULL,
+
+    subtotal_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+    shipping_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+    discount_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+    total_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+    currency CHAR(3) NOT NULL DEFAULT 'USD',
+
+    -- Order-level aggregate status; each order_item also carries its
+    -- own per-vendor fulfillment status (see order_items below).
+    status ENUM('pending', 'processing', 'completed', 'cancelled') NOT NULL DEFAULT 'pending',
+    payment_status ENUM('unpaid', 'paid', 'refunded') NOT NULL DEFAULT 'unpaid',
+    payment_method ENUM('cod', 'manual', 'stripe', 'paypal') NOT NULL DEFAULT 'cod',
+
+    placed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id)
+        REFERENCES customers (id),
+    CONSTRAINT fk_orders_address FOREIGN KEY (address_id)
+        REFERENCES addresses (id) ON DELETE SET NULL,
+
+    INDEX idx_orders_customer (customer_id, placed_at),
+    INDEX idx_orders_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Line items. product_title/unit_price are snapshotted at purchase
+-- time so a later product edit or deletion never rewrites what a
+-- customer was actually charged.
+CREATE TABLE IF NOT EXISTS order_items (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    order_id INT UNSIGNED NOT NULL,
+    vendor_id INT UNSIGNED NOT NULL,
+    product_id INT UNSIGNED NULL,
+
+    product_title VARCHAR(200) NOT NULL,
+    unit_price DECIMAL(12,2) NOT NULL,
+    quantity INT UNSIGNED NOT NULL,
+    line_total DECIMAL(12,2) NOT NULL,
+
+    -- Per-vendor fulfillment status: each vendor updates only the
+    -- items that belong to them within a shared multi-vendor order.
+    status ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled') NOT NULL DEFAULT 'pending',
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_order_items_order FOREIGN KEY (order_id)
+        REFERENCES orders (id) ON DELETE CASCADE,
+    CONSTRAINT fk_order_items_vendor FOREIGN KEY (vendor_id)
+        REFERENCES vendors (id),
+    CONSTRAINT fk_order_items_product FOREIGN KEY (product_id)
+        REFERENCES products (id) ON DELETE SET NULL,
+
+    INDEX idx_order_items_order (order_id),
+    INDEX idx_order_items_vendor_status (vendor_id, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Audit trail of order-level status changes — who changed it and when,
+-- independent of the current row's mutable status column.
+CREATE TABLE IF NOT EXISTS order_status_history (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    order_id INT UNSIGNED NOT NULL,
+    old_status VARCHAR(30) NULL,
+    new_status VARCHAR(30) NOT NULL,
+    note VARCHAR(255) NULL,
+    changed_by_type ENUM('customer', 'vendor', 'admin', 'system') NOT NULL DEFAULT 'system',
+    changed_by_id INT UNSIGNED NULL,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_order_status_history_order FOREIGN KEY (order_id)
+        REFERENCES orders (id) ON DELETE CASCADE,
+
+    INDEX idx_order_status_history_order (order_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Payment attempts against an order. gateway is deliberately an ENUM
+-- that already includes 'stripe'/'paypal' so wiring up real payment
+-- processing later (per the project's Stripe/PayPal "future ready"
+-- requirement) is a new row shape, not a schema change. 'cod'/'manual'
+-- are what this build actually uses today.
+CREATE TABLE IF NOT EXISTS transactions (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    order_id INT UNSIGNED NOT NULL,
+    gateway ENUM('cod', 'manual', 'stripe', 'paypal') NOT NULL DEFAULT 'cod',
+    amount DECIMAL(12,2) NOT NULL,
+    currency CHAR(3) NOT NULL DEFAULT 'USD',
+    status ENUM('pending', 'completed', 'failed', 'refunded') NOT NULL DEFAULT 'pending',
+    gateway_reference VARCHAR(150) NULL,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_transactions_order FOREIGN KEY (order_id)
+        REFERENCES orders (id) ON DELETE CASCADE,
+
+    INDEX idx_transactions_order (order_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ---------------------------------------------------------------

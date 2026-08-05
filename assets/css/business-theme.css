@@ -1,16 +1,18 @@
-/* Business Shops theme: clean, modern, commercial. Cooler palette,
-   sharper geometry, a confident gradient-mesh parallax hero. */
+/* Business Shops theme: clean, modern, commercial — a deep indigo/teal
+   duotone with sharp geometry and a fine structural grid, deliberately
+   more "engineered" than the artisan theme's warm organic feel. */
 
 .theme-business {
-    --biz-blue: #1957d6;
-    --biz-blue-dark: #103a94;
+    --biz-blue: #14507a;
+    --biz-blue-dark: #0b3455;
+    --biz-teal: #0f9b8e;
     --biz-ink: #0b1220;
-    --biz-bg: #f5f7fa;
+    --biz-bg: #f4f7f7;
     background: var(--biz-bg);
     color: var(--biz-ink);
 }
 .theme-business .site-nav { background: rgba(255, 255, 255, .92); }
-.theme-business .site-brand { background: linear-gradient(120deg, var(--biz-blue), #0ea5e9); -webkit-background-clip: text; background-clip: text; }
+.theme-business .site-brand { background: linear-gradient(120deg, var(--biz-blue), var(--biz-teal)); -webkit-background-clip: text; background-clip: text; }
 .theme-business .marketplace-nav a:hover { color: var(--biz-blue); }
 .theme-business .marketplace-nav a::after { background: var(--biz-blue); }
 .theme-business .cta-link { background: var(--biz-blue); }
@@ -28,16 +30,24 @@
     min-height: 46vh;
     display: flex;
     align-items: center;
-    border-radius: 0 0 28px 28px;
+    border-radius: 0 0 4px 28px;
     color: #fff;
     padding: 2rem 2rem;
     margin-bottom: 3rem;
+    position: relative;
 }
 .business-hero .parallax-hero-bg {
     background:
-        radial-gradient(circle at 15% 20%, rgba(14, 165, 233, .35), transparent 45%),
-        radial-gradient(circle at 85% 80%, rgba(124, 58, 237, .28), transparent 50%),
-        linear-gradient(125deg, var(--biz-blue-dark) 0%, var(--biz-blue) 55%, #0ea5e9 120%);
+        repeating-linear-gradient(115deg, rgba(255, 255, 255, .05) 0 1px, transparent 1px 64px),
+        repeating-linear-gradient(25deg, rgba(255, 255, 255, .05) 0 1px, transparent 1px 64px),
+        radial-gradient(circle at 88% 15%, rgba(15, 155, 142, .5), transparent 48%),
+        linear-gradient(150deg, var(--biz-blue-dark) 0%, var(--biz-blue) 60%, #0c2b45 130%);
+}
+.business-hero::after {
+    content: '';
+    position: absolute; left: 2rem; top: 2rem;
+    width: 46px; height: 4px;
+    background: var(--biz-teal);
 }
 .business-hero-content { max-width: 620px; }
 .business-hero h1 { font-size: clamp(2rem, 4.4vw, 2.9rem); margin: 0 0 .85rem; }
@@ -49,6 +59,8 @@
     font-size: 1.5rem;
     font-weight: 800;
     margin: 3rem 0 1.25rem;
+    padding-left: .85rem;
+    border-left: 4px solid var(--biz-teal);
 }
 
 .business-category-chip {

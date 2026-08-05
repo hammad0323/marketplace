@@ -40,7 +40,25 @@ require __DIR__ . '/../templates/header.php';
         <span class="badge"><?= mp_e(mp_marketplace_badge($marketplaceType['slug'])) ?></span>
         <h1><?= mp_e($product['title']) ?></h1>
         <p class="product-detail-price">$<?= number_format((float) $product['price'], 2) ?></p>
+
+        <?php if ((int) $product['stock_quantity'] > 0): ?>
+            <p class="stock-note stock-in">✓ In stock (<?= (int) $product['stock_quantity'] ?> available)</p>
+        <?php else: ?>
+            <p class="stock-note stock-out">Out of stock</p>
+        <?php endif; ?>
+
         <p><?= nl2br(mp_e($product['description'])) ?></p>
+
+        <?php if ((int) $product['stock_quantity'] > 0): ?>
+        <form method="post" action="<?= mp_e(ROUTE_CART) ?>add.php" class="add-to-cart-form">
+            <?= mp_csrf_field() ?>
+            <input type="hidden" name="product_id" value="<?= (int) $product['id'] ?>">
+            <input type="hidden" name="redirect_to" value="<?= mp_e(ROUTE_PRODUCTS . 'details.php?slug=' . $product['slug']) ?>">
+            <input type="number" name="quantity" value="1" min="1" max="<?= (int) $product['stock_quantity'] ?>">
+            <button type="submit" class="btn">Add to Cart</button>
+        </form>
+        <?php endif; ?>
+
         <div class="product-detail-meta">
             <a href="<?= mp_e($storeUrl) ?>">Sold by <?= mp_e($vendor['store_name']) ?> &rarr;</a>
             <a href="<?= mp_e($categoryUrl) ?>">Browse more in <?= mp_e($category['name']) ?> &rarr;</a>
