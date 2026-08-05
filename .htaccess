@@ -1,14 +1,9 @@
 # Optional hardening — the site works without this file (every page is
 # a real .php file, no URL rewriting is needed). This just adds a
-# couple of extra safety nets.
+# couple of extra safety nets on top of the guards already built into
+# config/, includes/, and templates/ (see their own .htaccess files).
 
 Options -Indexes
-
-# config.php already refuses direct access on its own (see the guard
-# at the top of the file), this is just a second layer.
-<FilesMatch "^(config|functions)\.php$">
-    Require all denied
-</FilesMatch>
 
 # database.sql contains your schema and demo data (including a
 # password hash) — no reason for it to be downloadable once imported.

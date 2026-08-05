@@ -1,6 +1,6 @@
 <?php
 /**
- * Front door — delegates to home.php so the homepage is a normal,
- * self-contained page like any other, reachable directly too.
+ * Front door — delegates to store/home.php so the homepage is a
+ * normal, self-contained module page like any other.
  */
-require __DIR__ . '/home.php';
+require __DIR__ . '/store/home.php';

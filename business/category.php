@@ -1,0 +1,28 @@
+<?php
+require __DIR__ . '/../config/config.php';
+
+$slug = $_GET['slug'] ?? '';
+$type = mp_find_marketplace_type_by_slug('business');
+$category = $type ? mp_find_category_by_slug_in_marketplace($slug, $type['id']) : null;
+
+if (!$category) {
+    require __DIR__ . '/../404.php';
+    return;
+}
+
+$products = mp_products_by_category($category['id']);
+
+$pageTitle = $category['name'] . ' — Business Shops';
+$theme = 'business';
+require __DIR__ . '/../templates/header.php';
+?>
+
+<h1 class="reveal"><?= mp_e($category['name']) ?></h1>
+<div class="card-grid reveal">
+    <?php foreach ($products as $product): ?>
+        <?php mp_render_product_card($product); ?>
+    <?php endforeach; ?>
+    <?php if (!$products): ?><p>No products in this category yet.</p><?php endif; ?>
+</div>
+
+<?php require __DIR__ . '/../templates/footer.php'; ?>
