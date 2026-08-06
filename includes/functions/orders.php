@@ -234,3 +234,86 @@ function mp_recompute_order_status(int $orderId, string $changedByType = 'system
         'changed_by_id'   => $changedById,
     ]);
 }
+
+// =====================================================================
+// Reporting — admin/reports.php (Chart.js reads these as plain arrays)
+// =====================================================================
+
+function mp_total_revenue(): float
+{
+    return (float) mp_db_fetch_value("SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status != 'cancelled'");
+}
+
+function mp_count_orders(): int
+{
+    return (int) mp_db_fetch_value('SELECT COUNT(*) FROM orders');
+}
+
+/** Order counts grouped by status, as [status => count] — always includes every known status, even at 0. */
+function mp_orders_count_by_status(): array
+{
+    $counts = array_fill_keys(['pending', 'processing', 'completed', 'cancelled'], 0);
+    foreach (mp_db_fetch_all('SELECT status, COUNT(*) AS total FROM orders GROUP BY status') as $row) {
+        $counts[$row['status']] = (int) $row['total'];
+    }
+    return $counts;
+}
+
+/** Daily order count + revenue for the last $days days, oldest first — zero-filled for days with no orders. */
+function mp_revenue_by_day(int $days = 14): array
+{
+    $rows = mp_db_fetch_all(
+        "SELECT DATE(placed_at) AS day, COUNT(*) AS orders, COALESCE(SUM(total_amount), 0) AS revenue
+         FROM orders
+         WHERE placed_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY) AND status != 'cancelled'
+         GROUP BY DATE(placed_at)
+         ORDER BY day ASC",
+        [$days - 1]
+    );
+
+    $byDay = [];
+    foreach ($rows as $row) {
+        $byDay[$row['day']] = ['orders' => (int) $row['orders'], 'revenue' => (float) $row['revenue']];
+    }
+
+    $series = [];
+    for ($i = $days - 1; $i >= 0; $i--) {
+        $day = date('Y-m-d', strtotime("-{$i} days"));
+        $series[] = [
+            'day'     => $day,
+            'orders'  => $byDay[$day]['orders'] ?? 0,
+            'revenue' => $byDay[$day]['revenue'] ?? 0.0,
+        ];
+    }
+
+    return $series;
+}
+
+/** Vendors ranked by delivered/completed order-item revenue. */
+function mp_top_vendors_by_revenue(int $limit = 5): array
+{
+    return mp_db_fetch_all(
+        "SELECT vendors.store_name, SUM(order_items.line_total) AS revenue, COUNT(*) AS items_sold
+         FROM order_items
+         JOIN vendors ON vendors.id = order_items.vendor_id
+         WHERE order_items.status != 'cancelled'
+         GROUP BY order_items.vendor_id
+         ORDER BY revenue DESC
+         LIMIT ?",
+        [$limit]
+    );
+}
+
+/** Products ranked by units sold. */
+function mp_top_products_by_quantity(int $limit = 5): array
+{
+    return mp_db_fetch_all(
+        "SELECT order_items.product_title, SUM(order_items.quantity) AS units_sold, SUM(order_items.line_total) AS revenue
+         FROM order_items
+         WHERE order_items.status != 'cancelled'
+         GROUP BY order_items.product_title
+         ORDER BY units_sold DESC
+         LIMIT ?",
+        [$limit]
+    );
+}

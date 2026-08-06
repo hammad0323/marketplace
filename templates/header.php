@@ -5,9 +5,38 @@
  * file. Includes the site nav and flash messages inline.
  */
 $theme = $theme ?? 'main';
-$pageTitle = $pageTitle ?? SITE_NAME;
+$siteName = mp_get_setting('site_name', SITE_NAME);
+$pageTitle = $pageTitle ?? $siteName;
 $navCustomer = mp_current_customer();
 $navCartCount = $navCustomer ? mp_cart_item_count($navCustomer['id']) : 0;
+
+// Maintenance mode blocks the public site for everyone except a
+// logged-in admin (who needs to be able to reach admin/settings.php
+// to turn it back off) or an already-logged-in vendor checking their
+// own dashboard.
+if (mp_get_setting('maintenance_mode', false) && !mp_current_admin()) {
+    http_response_code(503);
+    ?>
+    <!doctype html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title><?= mp_e($siteName) ?> — Down for Maintenance</title>
+        <link rel="stylesheet" href="<?= mp_e(ROUTE_ASSETS) ?>css/global.css">
+    </head>
+    <body class="theme-main">
+        <main class="site-main" style="text-align:center; padding: 6rem 1rem;">
+            <span class="empty-state-icon">🛠️</span>
+            <h1><?= mp_e($siteName) ?> is down for maintenance</h1>
+            <p>We'll be back shortly. Thanks for your patience.</p>
+            <p><a href="<?= mp_e(ROUTE_ADMIN) ?>login.php" style="font-size:.85rem; color:var(--ink-500);">Admin login</a></p>
+        </main>
+    </body>
+    </html>
+    <?php
+    exit;
+}
 ?>
 <!doctype html>
 <html lang="en" class="no-js">
@@ -30,7 +59,7 @@ $navCartCount = $navCustomer ? mp_cart_item_count($navCustomer['id']) : 0;
 
 <header class="site-nav">
     <div class="site-nav-inner">
-        <a href="<?= mp_e(ROUTE_HOME) ?>" class="site-brand"><?= mp_e(SITE_NAME) ?></a>
+        <a href="<?= mp_e(ROUTE_HOME) ?>" class="site-brand"><?= mp_e($siteName) ?></a>
 
         <nav class="marketplace-nav">
             <a href="<?= mp_e(ROUTE_ARTISAN) ?>index.php">Artisan Marketplace</a>
@@ -50,9 +79,14 @@ $navCartCount = $navCustomer ? mp_cart_item_count($navCustomer['id']) : 0;
 
             <?php if ($navCustomer): ?>
                 <div class="account-menu">
-                    <button type="button" class="account-menu-trigger"><?= mp_e($navCustomer['name']) ?> ▾</button>
+                    <button type="button" class="account-menu-trigger">
+                        <?= mp_e($navCustomer['name']) ?><?php if (!$navCustomer['email_verified_at']): ?><span class="cart-badge" style="position:static; margin-left:.35rem;">!</span><?php endif; ?> ▾
+                    </button>
                     <div class="account-menu-panel">
                         <a href="<?= mp_e(ROUTE_CUSTOMER) ?>orders.php">My Orders</a>
+                        <?php if (!$navCustomer['email_verified_at']): ?>
+                            <form method="post" action="<?= mp_e(ROUTE_CUSTOMER) ?>resend-verification.php"><?= mp_csrf_field() ?><button type="submit" class="link-button">Verify Email</button></form>
+                        <?php endif; ?>
                         <form method="post" action="<?= mp_e(ROUTE_CUSTOMER) ?>logout.php"><?= mp_csrf_field() ?><button type="submit" class="link-button">Logout</button></form>
                     </div>
                 </div>

@@ -55,9 +55,9 @@ require __DIR__ . '/../templates/header.php';
                     <tr>
                         <td><?= mp_e($item['product_title']) ?></td>
                         <td><?= mp_e($item['store_name']) ?></td>
-                        <td>$<?= number_format((float) $item['unit_price'], 2) ?></td>
+                        <td><?= mp_currency((float) $item['unit_price']) ?></td>
                         <td><?= (int) $item['quantity'] ?></td>
-                        <td>$<?= number_format((float) $item['line_total'], 2) ?></td>
+                        <td><?= mp_currency((float) $item['line_total']) ?></td>
                         <td><span class="status-chip status-<?= mp_e($item['status']) ?>"><?= mp_e(ucfirst($item['status'])) ?></span></td>
                     </tr>
                 <?php endforeach; ?>
@@ -80,12 +80,12 @@ require __DIR__ . '/../templates/header.php';
 
         <aside class="cart-summary">
             <h2>Summary</h2>
-            <div class="cart-summary-row"><span>Subtotal</span><span>$<?= number_format((float) $order['subtotal_amount'], 2) ?></span></div>
-            <div class="cart-summary-row"><span>Shipping</span><span>$<?= number_format((float) $order['shipping_amount'], 2) ?></span></div>
+            <div class="cart-summary-row"><span>Subtotal</span><span><?= mp_currency((float) $order['subtotal_amount']) ?></span></div>
+            <div class="cart-summary-row"><span>Shipping</span><span><?= mp_currency((float) $order['shipping_amount']) ?></span></div>
             <?php if ((float) $order['discount_amount'] > 0): ?>
-                <div class="cart-summary-row"><span>Discount</span><span>-$<?= number_format((float) $order['discount_amount'], 2) ?></span></div>
+                <div class="cart-summary-row"><span>Discount</span><span>-<?= mp_currency((float) $order['discount_amount']) ?></span></div>
             <?php endif; ?>
-            <div class="cart-summary-row cart-summary-total"><span>Total</span><span>$<?= number_format((float) $order['total_amount'], 2) ?></span></div>
+            <div class="cart-summary-row cart-summary-total"><span>Total</span><span><?= mp_currency((float) $order['total_amount']) ?></span></div>
             <p style="margin-top:1rem; font-size:.85rem; color:var(--ink-500);">Payment: <?= mp_e(strtoupper($order['payment_method'])) ?></p>
 
             <h3 style="margin-top:1.5rem;">Shipping To</h3>

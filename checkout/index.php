@@ -95,10 +95,10 @@ require __DIR__ . '/../templates/header.php';
     <aside class="cart-summary">
         <h2>Order Summary</h2>
         <?php foreach ($items as $item): ?>
-            <div class="cart-summary-row"><span><?= mp_e($item['title']) ?> &times; <?= (int) $item['quantity'] ?></span><span>$<?= number_format((float) $item['price'] * (int) $item['quantity'], 2) ?></span></div>
+            <div class="cart-summary-row"><span><?= mp_e($item['title']) ?> &times; <?= (int) $item['quantity'] ?></span><span><?= mp_currency((float) $item['price'] * (int) $item['quantity']) ?></span></div>
         <?php endforeach; ?>
         <div class="cart-summary-row"><span>Shipping</span><span>Free</span></div>
-        <div class="cart-summary-row cart-summary-total"><span>Total</span><span>$<?= number_format($subtotal, 2) ?></span></div>
+        <div class="cart-summary-row cart-summary-total"><span>Total</span><span><?= mp_currency($subtotal) ?></span></div>
         <button type="submit" class="btn" style="width:100%; margin-top:1rem;">Place Order</button>
     </aside>
 </form>

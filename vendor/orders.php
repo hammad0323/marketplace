@@ -39,7 +39,7 @@ $nextLabel = [
                     <td><?= mp_e(date('M j, Y', strtotime($item['placed_at']))) ?></td>
                     <td><?= mp_e($item['product_title']) ?></td>
                     <td><?= (int) $item['quantity'] ?></td>
-                    <td>$<?= number_format((float) $item['line_total'], 2) ?></td>
+                    <td><?= mp_currency((float) $item['line_total']) ?></td>
                     <td><?= mp_e($item['shipping_city']) ?>, <?= mp_e($item['shipping_country']) ?></td>
                     <td><span class="status-chip status-<?= mp_e($item['status']) ?>"><?= mp_e(ucfirst($item['status'])) ?></span></td>
                     <td>

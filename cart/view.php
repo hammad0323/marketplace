@@ -29,7 +29,7 @@ require __DIR__ . '/../templates/header.php';
                     <div class="cart-row-info">
                         <a href="<?= mp_e(ROUTE_PRODUCTS) ?>details.php?slug=<?= mp_e($item['slug']) ?>"><strong><?= mp_e($item['title']) ?></strong></a>
                         <div class="cart-row-store"><?= mp_e($item['store_name']) ?></div>
-                        <div class="cart-row-price">$<?= number_format((float) $item['price'], 2) ?></div>
+                        <div class="cart-row-price"><?= mp_currency((float) $item['price']) ?></div>
                     </div>
                     <form method="post" action="update.php" class="cart-row-qty">
                         <?= mp_csrf_field() ?>
@@ -37,7 +37,7 @@ require __DIR__ . '/../templates/header.php';
                         <input type="number" name="quantity" value="<?= (int) $item['quantity'] ?>" min="1" max="<?= (int) $item['stock_quantity'] ?>" onchange="this.form.submit()">
                         <button type="submit" class="btn btn-secondary btn-sm">Update</button>
                     </form>
-                    <div class="cart-row-total">$<?= number_format((float) $item['price'] * (int) $item['quantity'], 2) ?></div>
+                    <div class="cart-row-total"><?= mp_currency((float) $item['price'] * (int) $item['quantity']) ?></div>
                     <form method="post" action="remove.php" class="cart-row-remove">
                         <?= mp_csrf_field() ?>
                         <input type="hidden" name="product_id" value="<?= (int) $item['product_id'] ?>">
@@ -49,9 +49,9 @@ require __DIR__ . '/../templates/header.php';
 
         <aside class="cart-summary">
             <h2>Order Summary</h2>
-            <div class="cart-summary-row"><span>Subtotal</span><span>$<?= number_format($subtotal, 2) ?></span></div>
+            <div class="cart-summary-row"><span>Subtotal</span><span><?= mp_currency($subtotal) ?></span></div>
             <div class="cart-summary-row"><span>Shipping</span><span>Calculated at checkout</span></div>
-            <div class="cart-summary-row cart-summary-total"><span>Total</span><span>$<?= number_format($subtotal, 2) ?></span></div>
+            <div class="cart-summary-row cart-summary-total"><span>Total</span><span><?= mp_currency($subtotal) ?></span></div>
             <a class="btn" style="width:100%; margin-top:1rem;" href="<?= mp_e(ROUTE_CHECKOUT) ?>index.php">Proceed to Checkout</a>
         </aside>
     </div>

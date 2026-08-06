@@ -35,8 +35,15 @@ CREATE TABLE IF NOT EXISTS admin_users (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
+    role ENUM('super_admin', 'admin') NOT NULL DEFAULT 'admin',
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    last_login_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS role ENUM('super_admin', 'admin') NOT NULL DEFAULT 'admin' AFTER password_hash;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS is_active TINYINT(1) NOT NULL DEFAULT 1 AFTER role;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP NULL AFTER is_active;
 
 -- A vendor is either an Artisan (handmade creator) or a Business Shop.
 -- The platform's own Official Store is represented as a vendor with
@@ -50,6 +57,24 @@ CREATE TABLE IF NOT EXISTS vendors (
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     phone VARCHAR(30) NULL,
+
+    -- Registration detail collected during the multi-step signup wizard
+    -- (vendor/register.php) — optional at signup, editable later from
+    -- vendor/profile.php. Payout fields are collected now so the future
+    -- wallet/payouts module has something to pay out to without another
+    -- registration-flow change.
+    tax_id VARCHAR(50) NULL,                -- business registration / tax / CNIC number
+    bank_name VARCHAR(100) NULL,
+    bank_account_title VARCHAR(150) NULL,
+    bank_account_number VARCHAR(50) NULL,
+    terms_accepted_at TIMESTAMP NULL,
+
+    -- Email verification (see includes/functions/verification.php) —
+    -- a vendor can browse their dashboard unverified, but mp_require_vendor()
+    -- surfaces a reminder banner until this is set.
+    email_verified_at TIMESTAMP NULL,
+    verification_token VARCHAR(64) NULL,
+    verification_token_expires_at TIMESTAMP NULL,
 
     -- Vendor approval workflow: a vendor cannot list products or receive
     -- orders until an admin approves them.
@@ -71,6 +96,17 @@ CREATE TABLE IF NOT EXISTS vendors (
 
     INDEX idx_vendors_marketplace_status (marketplace_type_id, status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Re-running against a database created before these columns existed
+-- adds them without disturbing existing rows.
+ALTER TABLE vendors ADD COLUMN IF NOT EXISTS tax_id VARCHAR(50) NULL AFTER phone;
+ALTER TABLE vendors ADD COLUMN IF NOT EXISTS bank_name VARCHAR(100) NULL AFTER tax_id;
+ALTER TABLE vendors ADD COLUMN IF NOT EXISTS bank_account_title VARCHAR(150) NULL AFTER bank_name;
+ALTER TABLE vendors ADD COLUMN IF NOT EXISTS bank_account_number VARCHAR(50) NULL AFTER bank_account_title;
+ALTER TABLE vendors ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMP NULL AFTER bank_account_number;
+ALTER TABLE vendors ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMP NULL AFTER terms_accepted_at;
+ALTER TABLE vendors ADD COLUMN IF NOT EXISTS verification_token VARCHAR(64) NULL AFTER email_verified_at;
+ALTER TABLE vendors ADD COLUMN IF NOT EXISTS verification_token_expires_at TIMESTAMP NULL AFTER verification_token;
 
 -- Categories are scoped to a marketplace type so Artisan categories
 -- (Pottery, Resin Art...) never mix with Business categories
@@ -216,8 +252,19 @@ CREATE TABLE IF NOT EXISTS customers (
     name VARCHAR(150) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
+    phone VARCHAR(30) NULL,
+
+    email_verified_at TIMESTAMP NULL,
+    verification_token VARCHAR(64) NULL,
+    verification_token_expires_at TIMESTAMP NULL,
+
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS phone VARCHAR(30) NULL AFTER password_hash;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMP NULL AFTER phone;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS verification_token VARCHAR(64) NULL AFTER email_verified_at;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS verification_token_expires_at TIMESTAMP NULL AFTER verification_token;
 
 -- "Follow Artist" feature (also usable for following a business shop).
 CREATE TABLE IF NOT EXISTS vendor_follows (
@@ -420,6 +467,65 @@ CREATE TABLE IF NOT EXISTS transactions (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ---------------------------------------------------------------
+-- Platform administration: dynamic settings, audit trail, homepage
+-- CMS banners. This is what makes the admin panel actually "control
+-- the site" rather than just moderate it — see includes/functions/
+-- settings.php, activity.php, cms.php.
+-- ---------------------------------------------------------------
+
+-- Site-wide configuration as key/value rows instead of hardcoded PHP
+-- constants, so admin/settings.php can edit them without touching
+-- code or redeploying. setting_type tells the settings helper how to
+-- cast setting_value back to a PHP value on read.
+CREATE TABLE IF NOT EXISTS settings (
+    setting_key VARCHAR(100) NOT NULL PRIMARY KEY,
+    setting_value TEXT NULL,
+    setting_type ENUM('string', 'number', 'boolean', 'json') NOT NULL DEFAULT 'string',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Generic audit trail — every admin/vendor action that changes
+-- platform state writes one row here (see mp_log_activity()),
+-- independent of the narrower order_status_history above.
+CREATE TABLE IF NOT EXISTS activity_log (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    actor_type ENUM('admin', 'vendor', 'customer', 'system') NOT NULL,
+    actor_id INT UNSIGNED NULL,
+    action VARCHAR(100) NOT NULL,          -- e.g. "vendor.approved", "product.deleted"
+    entity_type VARCHAR(50) NULL,          -- e.g. "vendor", "product", "order"
+    entity_id INT UNSIGNED NULL,
+    description VARCHAR(500) NULL,
+    ip_address VARCHAR(45) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX idx_activity_log_actor (actor_type, actor_id),
+    INDEX idx_activity_log_entity (entity_type, entity_id),
+    INDEX idx_activity_log_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Homepage/marketplace hero content, editable from admin/banners.php.
+-- marketplace_type_id NULL = shown on the main homepage; set it to
+-- show a banner on one marketplace's own landing page instead.
+CREATE TABLE IF NOT EXISTS cms_banners (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    marketplace_type_id TINYINT UNSIGNED NULL,
+    title VARCHAR(200) NOT NULL,
+    subtitle VARCHAR(500) NULL,
+    cta_label VARCHAR(60) NULL,
+    cta_url VARCHAR(255) NULL,
+    sort_order INT UNSIGNED NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_cms_banners_marketplace_type FOREIGN KEY (marketplace_type_id)
+        REFERENCES marketplace_types (id) ON DELETE CASCADE,
+
+    INDEX idx_cms_banners_marketplace (marketplace_type_id, is_active, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------
 -- Seed data
 -- ---------------------------------------------------------------
 
@@ -484,17 +590,17 @@ ON DUPLICATE KEY UPDATE name = VALUES(name);
 
 -- Default admin login: admin@marketplace.test / admin123
 -- CHANGE THIS PASSWORD before deploying to any shared environment.
-INSERT INTO admin_users (name, email, password_hash) VALUES
-    ('Platform Admin', 'admin@marketplace.test', '$2y$12$Mx0ULFFE4UcnVa5zvui2UOiC1/R26pQYrlnfPUhcE.lWLpNVOFZZW')
-ON DUPLICATE KEY UPDATE name = VALUES(name);
+INSERT INTO admin_users (name, email, password_hash, role) VALUES
+    ('Platform Admin', 'admin@marketplace.test', '$2y$12$Mx0ULFFE4UcnVa5zvui2UOiC1/R26pQYrlnfPUhcE.lWLpNVOFZZW', 'super_admin')
+ON DUPLICATE KEY UPDATE name = VALUES(name), role = VALUES(role);
 
 -- The platform's own Official Store: pre-approved, verified, and
 -- attached to the 'official' marketplace type. Demo login:
 -- store@marketplace.test / admin123 (change before going live).
-INSERT INTO vendors (marketplace_type_id, store_name, slug, email, password_hash, status, is_verified, is_featured, approved_at)
+INSERT INTO vendors (marketplace_type_id, store_name, slug, email, password_hash, status, is_verified, is_featured, approved_at, email_verified_at, terms_accepted_at)
 SELECT mt.id, 'Official Store', 'official-store', 'store@marketplace.test',
        '$2y$12$Mx0ULFFE4UcnVa5zvui2UOiC1/R26pQYrlnfPUhcE.lWLpNVOFZZW',
-       'approved', 1, 1, NOW()
+       'approved', 1, 1, NOW(), NOW(), NOW()
 FROM marketplace_types mt
 WHERE mt.slug = 'official'
 ON DUPLICATE KEY UPDATE store_name = VALUES(store_name);
@@ -504,3 +610,33 @@ SELECT v.id, 'The official platform-operated store, verified and curated directl
 FROM vendors v
 WHERE v.slug = 'official-store'
 ON DUPLICATE KEY UPDATE business_info = VALUES(business_info);
+
+-- Default site settings — every value here is editable from
+-- admin/settings.php; these rows are just sane starting values.
+INSERT INTO settings (setting_key, setting_value, setting_type) VALUES
+    ('site_name', 'Marketplace', 'string'),
+    ('site_tagline', 'Handmade Treasures & Trusted Retail, All in One Place', 'string'),
+    ('contact_email', 'support@marketplace.test', 'string'),
+    ('contact_phone', '+92 300 0000000', 'string'),
+    ('currency_code', 'USD', 'string'),
+    ('currency_symbol', '$', 'string'),
+    ('commission_rate_artisan', '10', 'number'),
+    ('commission_rate_business', '12', 'number'),
+    ('social_facebook', '', 'string'),
+    ('social_instagram', '', 'string'),
+    ('social_twitter', '', 'string'),
+    ('maintenance_mode', '0', 'boolean'),
+    ('vendor_registration_enabled', '1', 'boolean'),
+    ('footer_about_text', 'A multi-vendor marketplace connecting independent artisans and trusted retail businesses with customers in one place.', 'string')
+ON DUPLICATE KEY UPDATE setting_value = setting_value;
+
+-- Default homepage banner (shown when no admin-authored banner exists
+-- for a given marketplace) so cms_banners has at least one real row
+-- to edit instead of an empty admin/banners.php on first install.
+-- Guarded by WHERE NOT EXISTS (cms_banners.id has no natural unique
+-- key to upsert against) so re-running this file doesn't duplicate it.
+INSERT INTO cms_banners (marketplace_type_id, title, subtitle, cta_label, cta_url, sort_order, is_active)
+SELECT NULL, 'Handmade Treasures & Trusted Retail, All in One Place',
+       'Discover one-of-a-kind creations from independent artisans, or shop everyday essentials from verified business owners — start exploring below.',
+       'Explore Artisan Marketplace', '/artisan/index.php', 1, 1
+WHERE NOT EXISTS (SELECT 1 FROM cms_banners WHERE marketplace_type_id IS NULL);

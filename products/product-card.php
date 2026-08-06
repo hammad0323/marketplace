@@ -12,6 +12,6 @@ $thumb = $images[0] ?? null;
         <?php if (!empty($product['store_name'])): ?>
             <div class="product-card-store"><?= mp_e($product['store_name']) ?></div>
         <?php endif; ?>
-        <div class="product-card-price">$<?= number_format((float) $product['price'], 2) ?></div>
+        <div class="product-card-price"><?= mp_currency((float) $product['price']) ?></div>
     </div>
 </div>

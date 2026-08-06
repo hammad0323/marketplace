@@ -28,7 +28,7 @@ require __DIR__ . '/../templates/admin-header.php';
         Total Orders
     </a>
     <a class="admin-stat" href="orders.php">
-        <strong>$<?= number_format($totalRevenue, 2) ?></strong>
+        <strong><?= mp_currency($totalRevenue) ?></strong>
         Total Order Value
     </a>
 </div>

@@ -39,7 +39,7 @@ require __DIR__ . '/../templates/header.php';
     <div>
         <span class="badge"><?= mp_e(mp_marketplace_badge($marketplaceType['slug'])) ?></span>
         <h1><?= mp_e($product['title']) ?></h1>
-        <p class="product-detail-price">$<?= number_format((float) $product['price'], 2) ?></p>
+        <p class="product-detail-price"><?= mp_currency((float) $product['price']) ?></p>
 
         <?php if ((int) $product['stock_quantity'] > 0): ?>
             <p class="stock-note stock-in">✓ In stock (<?= (int) $product['stock_quantity'] ?> available)</p>

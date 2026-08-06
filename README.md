@@ -71,7 +71,9 @@ and no front controller, so a missing file only 404s that one page
 instead of taking down the site.
 
 ```
-admin/            admin panel: dashboard, vendor approvals, category approvals
+admin/            admin panel: dashboard, reports, orders, products,
+                  categories, vendor/category approvals, customers,
+                  banners, settings, admin users, activity log
 vendor/           vendor auth + the vendor's own dashboard/profile/products
 customer/         customer auth
 store/            marketplace-wide pages: homepage, global search, follow action
@@ -193,6 +195,10 @@ helpers instead of touching `mysqli_connect()` directly.
   already has `stripe`/`paypal` as valid `gateway` values alongside the
   `cod`/`manual` methods this build actually processes — wiring up real
   payment processing later needs a new code path, not a schema change.
+- **Full admin CRUD**, dynamic settings, activity audit trail, admin-editable
+  homepage banners, and detailed multi-step vendor registration with
+  simulated email verification — see `DOCUMENTATION.md` for the complete
+  breakdown of every admin capability and every table.
 
 Verified end-to-end against a real MariaDB instance and PHP's built-in
 server: vendor registration → admin approval → category approval →
@@ -208,8 +214,14 @@ The `wishlist/`, `payments/`, `pickup/`, `shipping/`, `wallet/`,
 `blog/`, `cms/`, `api/`, and `cron/` folders are scaffolded (each with
 a short README) so these modules can be built without restructuring
 the project, but none of them are implemented yet. Also deferred:
-enterprise SEO module, the real PHPMailer-backed email engine, full
-admin CRUD over every entity, real Stripe/PayPal payment processing,
-vendor logo/banner file uploads (`assets/uploads/` is reserved for
-this), and clean/pretty URLs (every page is still reachable at its own
-literal filename by design — see the folder structure above).
+enterprise SEO module, the real PHPMailer-backed email engine, real
+Stripe/PayPal payment processing, vendor logo/banner file uploads
+(`assets/uploads/` is reserved for this), and clean/pretty URLs (every
+page is still reachable at its own literal filename by design — see the
+folder structure above).
+
+## Full documentation
+
+See `DOCUMENTATION.md` for the complete database schema, every user
+role's flow (customer/vendor/admin), the full list of admin panel
+capabilities, and extension points for future modules.

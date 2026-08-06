@@ -79,6 +79,54 @@ function mp_insert_product(array $data): int
     return mp_db_insert('products', $data);
 }
 
+function mp_update_product(int $id, array $data): void
+{
+    mp_db_update('products', $data, 'id = ?', [$id]);
+}
+
+function mp_delete_product(int $id): void
+{
+    mp_db_execute('DELETE FROM products WHERE id = ?', [$id]);
+}
+
+function mp_set_product_status(int $id, string $status): void
+{
+    mp_db_execute('UPDATE products SET status = ? WHERE id = ?', [$status, $id]);
+}
+
+/** Every product site-wide, for admin/products.php — newest first, with vendor/category/marketplace names joined in. */
+function mp_all_products_admin(): array
+{
+    return mp_db_fetch_all(
+        'SELECT products.*, vendors.store_name, categories.name AS category_name,
+                marketplace_types.slug AS marketplace_slug, marketplace_types.badge_label
+         FROM products
+         JOIN vendors ON vendors.id = products.vendor_id
+         JOIN categories ON categories.id = products.category_id
+         JOIN marketplace_types ON marketplace_types.id = products.marketplace_type_id
+         ORDER BY products.created_at DESC'
+    );
+}
+
+function mp_count_all_products(): int
+{
+    return (int) mp_db_fetch_value('SELECT COUNT(*) FROM products');
+}
+
+/** Products with stock at or below $threshold — for the admin dashboard/reports low-stock widget. */
+function mp_low_stock_products(int $threshold = 5, int $limit = 10): array
+{
+    return mp_db_fetch_all(
+        "SELECT products.*, vendors.store_name
+         FROM products
+         JOIN vendors ON vendors.id = products.vendor_id
+         WHERE products.status = 'published' AND products.stock_quantity <= ?
+         ORDER BY products.stock_quantity ASC
+         LIMIT ?",
+        [$threshold, $limit]
+    );
+}
+
 /**
  * Global search across every marketplace, tagged with marketplace
  * slug/badge so results can be labelled Handmade / Business Shop /

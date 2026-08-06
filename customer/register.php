@@ -6,9 +6,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $name = trim($_POST['name'] ?? '');
     $email = trim($_POST['email'] ?? '');
+    $phone = trim($_POST['phone'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    if ($name === '' || $email === '' || strlen($password) < 8) {
+    if ($name === '' || $email === '' || $phone === '' || strlen($password) < 8) {
         mp_flash('error', 'Please fill in all fields (password must be at least 8 characters).');
         mp_redirect('register.php');
     }
@@ -21,13 +22,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $customerId = mp_insert_customer([
         'name'          => $name,
         'email'         => $email,
+        'phone'         => $phone,
         'password_hash' => password_hash($password, PASSWORD_DEFAULT),
     ]);
 
-    mp_notify('customer.welcome', $email, ['name' => $name]);
+    $verifyToken = mp_set_customer_verification_token($customerId);
+    $verifyUrl = ROUTE_CUSTOMER . 'verify.php?token=' . $verifyToken;
+    mp_notify('customer.welcome', $email, ['name' => $name, 'verify_url' => $verifyUrl]);
+    mp_log_activity('customer', $customerId, 'customer.registered', 'customer', $customerId);
 
     $_SESSION['customer_id'] = $customerId;
-    mp_redirect($_POST['redirect_to'] ?? ROUTE_HOME);
+    $_SESSION['_just_registered_verify_url'] = $verifyUrl;
+    $redirectAfter = $_POST['redirect_to'] ?? ROUTE_HOME;
+    mp_redirect(ROUTE_CUSTOMER . 'registered.php?redirect_to=' . urlencode($redirectAfter));
 }
 
 $pageTitle = 'Create Account';
@@ -47,6 +54,10 @@ require __DIR__ . '/../templates/header.php';
         <div class="form-group">
             <label for="email">Email</label>
             <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="phone">Phone</label>
+            <input type="text" id="phone" name="phone" required placeholder="+92 300 1234567">
         </div>
         <div class="form-group">
             <label for="password">Password</label>

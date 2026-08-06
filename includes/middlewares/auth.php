@@ -46,7 +46,16 @@ function mp_current_admin(): ?array
     if (empty($_SESSION['admin_id'])) {
         return null;
     }
-    return mp_find_admin((int) $_SESSION['admin_id']);
+    $admin = mp_find_admin((int) $_SESSION['admin_id']);
+
+    // Re-checked on every request (not just at login) so disabling an
+    // admin account takes effect immediately, not just on their next login.
+    if ($admin && !$admin['is_active']) {
+        mp_logout_admin();
+        return null;
+    }
+
+    return $admin;
 }
 
 function mp_require_admin(): array

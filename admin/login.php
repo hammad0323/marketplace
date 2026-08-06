@@ -13,6 +13,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mp_redirect('login.php');
     }
 
+    if (!$admin['is_active']) {
+        mp_flash('error', 'This admin account has been disabled.');
+        mp_redirect('login.php');
+    }
+
+    mp_touch_admin_last_login($admin['id']);
     mp_login_admin($admin);
     mp_redirect('dashboard.php');
 }

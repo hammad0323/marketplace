@@ -692,6 +692,68 @@ html.js .reveal-right:not(.reveal-visible) { opacity: 0; transform: translateX(4
 .checkbox-grid label { font-weight: 500; display: flex; gap: .5rem; align-items: center; font-size: .9rem; }
 
 /* ==========================================================================
+   Multi-step registration wizard
+   ========================================================================== */
+.wizard-steps {
+    display: flex;
+    list-style: none;
+    margin: 1.75rem 0 2rem;
+    padding: 0;
+    counter-reset: none;
+}
+.wizard-step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+    font-size: .8rem;
+    font-weight: 700;
+    color: var(--ink-500);
+    position: relative;
+    text-align: center;
+}
+.wizard-step::before {
+    content: '';
+    position: absolute;
+    top: 15px; left: -50%; right: 50%;
+    height: 2px;
+    background: var(--border);
+    z-index: 0;
+}
+.wizard-step:first-child::before { display: none; }
+.wizard-step span {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface-alt);
+    border: 1.5px solid var(--border);
+    color: var(--ink-500);
+    font-family: var(--font-heading);
+    position: relative;
+    z-index: 1;
+    transition: background .25s, border-color .25s, color .25s;
+}
+.wizard-step.is-active span { background: var(--ink-900); border-color: var(--ink-900); color: #fff; }
+.wizard-step.is-active { color: var(--ink-900); }
+.wizard-step.is-done span { background: var(--brand); border-color: var(--brand); color: #fff; }
+.wizard-step.is-done::before { background: var(--brand); }
+
+.wizard-panel { display: none; border: none; padding: 0; margin: 0; }
+.wizard-panel.is-active { display: block; animation: fade-up-blur .35s var(--ease); }
+@keyframes fade-up-blur { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+.wizard-nav { display: flex; justify-content: space-between; margin-top: 1.5rem; }
+.wizard-review { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+.wizard-review-row { display: flex; justify-content: space-between; gap: 1rem; padding: .7rem 1rem; font-size: .9rem; border-bottom: 1px solid var(--border); background: var(--surface); }
+.wizard-review-row:last-child { border-bottom: none; }
+.wizard-review-row span { color: var(--ink-500); }
+
+@media (prefers-reduced-motion: reduce) {
+    .wizard-panel.is-active { animation: none; }
+}
+
+/* ==========================================================================
    Product / vendor cards
    ========================================================================== */
 .card-grid {

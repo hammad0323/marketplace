@@ -17,6 +17,16 @@ $statusClass = 'badge-' . $vendor['status'];
 <h1><?= mp_e($vendor['store_name']) ?></h1>
 <span class="badge <?= $statusClass ?>"><?= $statusLabels[$vendor['status']] ?></span>
 
+<?php if (!$vendor['email_verified_at']): ?>
+    <div class="flash flash-error" style="max-width:none; margin:1rem 0 0; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+        <span>Please verify your email address (<?= mp_e($vendor['email']) ?>).</span>
+        <form method="post" action="resend-verification.php" class="inline-form">
+            <?= mp_csrf_field() ?>
+            <button type="submit" class="link-button" style="font-weight:700; text-decoration:underline;">Resend verification link</button>
+        </form>
+    </div>
+<?php endif; ?>
+
 <?php if ($vendor['status'] === 'pending'): ?>
     <div class="content-panel" style="margin-top:1rem;">
         <strong>Your store is pending admin approval.</strong>

@@ -70,6 +70,16 @@ function mp_verify_csrf(): void
     }
 }
 
+/** Formats a price using the admin-configurable currency symbol (settings table), e.g. mp_currency(48) => "$48.00". */
+function mp_currency(float $amount): string
+{
+    static $symbol = null;
+    if ($symbol === null) {
+        $symbol = mp_get_setting('currency_symbol', '$');
+    }
+    return $symbol . number_format($amount, 2);
+}
+
 /** Badge shown next to products/stores so customers know which marketplace they're in. */
 function mp_marketplace_badge(string $marketplaceType): string
 {

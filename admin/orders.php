@@ -23,7 +23,7 @@ require __DIR__ . '/../templates/admin-header.php';
                     <td><?= mp_e($order['order_number']) ?></td>
                     <td><?= mp_e($order['customer_name']) ?><br><small style="color:var(--ink-500);"><?= mp_e($order['customer_email']) ?></small></td>
                     <td><?= mp_e(date('M j, Y', strtotime($order['placed_at']))) ?></td>
-                    <td>$<?= number_format((float) $order['total_amount'], 2) ?></td>
+                    <td><?= mp_currency((float) $order['total_amount']) ?></td>
                     <td><span class="status-chip status-<?= mp_e($order['status']) ?>"><?= mp_e(ucfirst($order['status'])) ?></span></td>
                     <td><span class="status-chip status-payment-<?= mp_e($order['payment_status']) ?>"><?= mp_e(ucfirst($order['payment_status'])) ?></span></td>
                     <td><a href="<?= mp_e(ROUTE_ORDERS) ?>details.php?number=<?= mp_e($order['order_number']) ?>">View</a></td>

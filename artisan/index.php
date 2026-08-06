@@ -14,6 +14,12 @@ $artistCount = mp_count_approved_vendors($type['id']);
 $productCount = mp_count_published_products($type['id']);
 $categoryCount = mp_count_active_categories($type['id']);
 
+$banner = mp_active_banner($type['id']);
+$heroTitle = $banner['title'] ?? 'Where Every Piece Tells a Story';
+$heroSubtitle = $banner['subtitle'] ?? "Discover one-of-a-kind creations from independent artisans — pottery, paintings, jewelry, and more, each carrying the maker's own journey.";
+$heroCtaLabel = $banner['cta_label'] ?? 'Meet the Artists';
+$heroCtaUrl = $banner['cta_url'] ?? '#featured-artists';
+
 $pageTitle = 'Artisan Marketplace — Handmade with Heart';
 $theme = 'artisan';
 require __DIR__ . '/../templates/header.php';
@@ -25,10 +31,9 @@ require __DIR__ . '/../templates/header.php';
     <div class="parallax-layer" data-speed="0.32" style="bottom:10%; right:8%; width:150px; height:150px;"><div class="floating-blob floating-blob-alt"></div></div>
     <div class="artisan-hero-content reveal reveal-blur">
         <span class="artisan-badge">🏺 Handmade &amp; Handcrafted</span>
-        <h1>Where Every Piece Tells a Story</h1>
-        <p>Discover one-of-a-kind creations from independent artisans — pottery, paintings,
-           jewelry, and more, each carrying the maker's own journey.</p>
-        <a class="btn btn-magnetic" href="#featured-artists">Meet the Artists</a>
+        <h1><?= mp_e($heroTitle) ?></h1>
+        <p><?= mp_e($heroSubtitle) ?></p>
+        <a class="btn btn-magnetic" href="<?= mp_e($heroCtaUrl) ?>"><?= mp_e($heroCtaLabel) ?></a>
 
         <div class="stats-row">
             <div class="stat-item">

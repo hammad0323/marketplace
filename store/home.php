@@ -16,6 +16,10 @@ $totalProducts = mp_count_published_products();
 $totalCategories = ($artisanType ? mp_count_active_categories($artisanType['id']) : 0)
     + ($businessType ? mp_count_active_categories($businessType['id']) : 0);
 
+$banner = mp_active_banner(null);
+$heroTitle = $banner['title'] ?? 'Handmade Treasures & Trusted Retail, All in One Place';
+$heroSubtitle = $banner['subtitle'] ?? 'Discover one-of-a-kind creations from independent artisans, or shop everyday essentials from verified business owners — start exploring below.';
+
 $pageTitle = 'Discover Handmade Artisans & Trusted Business Shops';
 $theme = 'main';
 require __DIR__ . '/../templates/header.php';
@@ -28,9 +32,8 @@ require __DIR__ . '/../templates/header.php';
     <div class="parallax-layer" data-speed="0.45" style="bottom:6%; left:20%; width:80px; height:80px;"><div class="floating-blob"></div></div>
     <div class="home-hero-content reveal reveal-blur">
         <span class="section-eyebrow">Two Marketplaces. One Platform.</span>
-        <h1>Handmade Treasures &amp; Trusted Retail, All in One Place</h1>
-        <p>Discover one-of-a-kind creations from independent artisans, or shop everyday
-           essentials from verified business owners — start exploring below.</p>
+        <h1><?= mp_e($heroTitle) ?></h1>
+        <p><?= mp_e($heroSubtitle) ?></p>
         <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
             <a class="btn btn-accent btn-magnetic" href="<?= mp_e(ROUTE_ARTISAN) ?>index.php">Explore Artisan Marketplace</a>
             <a class="btn btn-secondary btn-magnetic" href="<?= mp_e(ROUTE_BUSINESS) ?>index.php">Explore Business Shops</a>

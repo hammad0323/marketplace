@@ -7,15 +7,17 @@
     color: #fff;
     padding: 1rem 1.5rem;
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
+    gap: .75rem;
     position: sticky;
     top: 0;
     z-index: 50;
 }
 .admin-brand { font-family: var(--font-heading); font-weight: 800; }
-.admin-nav { display: flex; gap: 1.5rem; align-items: center; font-size: .9rem; font-weight: 600; }
-.admin-nav a, .admin-nav .link-button { color: var(--ink-300); transition: color .2s; }
+.admin-nav { display: flex; flex-wrap: wrap; gap: .5rem 1.1rem; align-items: center; font-size: .85rem; font-weight: 600; }
+.admin-nav a, .admin-nav .link-button { color: var(--ink-300); transition: color .2s; white-space: nowrap; }
 .admin-nav a:hover, .admin-nav .link-button:hover { color: #fff; }
 .admin-main { max-width: 1140px; }
 .admin-panel {
@@ -27,6 +29,7 @@
     box-shadow: var(--shadow-sm);
 }
 .admin-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; }
+.report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.75rem; }
 .admin-stat {
     background: var(--surface);
     border: 1px solid var(--border);

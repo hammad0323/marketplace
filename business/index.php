@@ -15,6 +15,10 @@ $shopCount = mp_count_approved_vendors($type['id']);
 $productCount = mp_count_published_products($type['id']);
 $categoryCount = mp_count_active_categories($type['id']);
 
+$banner = mp_active_banner($type['id']);
+$heroTitle = $banner['title'] ?? 'Shop Trusted Business Stores';
+$heroSubtitle = $banner['subtitle'] ?? 'Fashion, electronics, home goods and more — from verified retail businesses, all in one convenient marketplace.';
+
 $pageTitle = 'Business Shops — Shop Trusted Retail Stores';
 $theme = 'business';
 require __DIR__ . '/../templates/header.php';
@@ -26,9 +30,8 @@ require __DIR__ . '/../templates/header.php';
     <div class="parallax-layer" data-speed="0.35" style="bottom:14%; right:28%; width:56px; height:56px;"><div class="floating-geo"></div></div>
     <div class="business-hero-content reveal reveal-blur">
         <span class="section-eyebrow" style="color:#bfdbfe;">Verified Retail Businesses</span>
-        <h1>Shop Trusted Business Stores</h1>
-        <p>Fashion, electronics, home goods and more — from verified retail businesses,
-           all in one convenient marketplace.</p>
+        <h1><?= mp_e($heroTitle) ?></h1>
+        <p><?= mp_e($heroSubtitle) ?></p>
         <div style="display:flex; gap:1rem; flex-wrap:wrap;">
             <a class="btn btn-accent btn-magnetic" href="#featured-shops">Browse Shops</a>
             <a class="btn btn-secondary btn-magnetic" href="<?= mp_e(ROUTE_VENDOR) ?>register.php">Sell With Us</a>

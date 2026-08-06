@@ -22,6 +22,25 @@ function mp_insert_customer(array $data): int
     return mp_db_insert('customers', $data);
 }
 
+/** All customers with their order count/total spend, for admin/customers.php. */
+function mp_all_customers_admin(): array
+{
+    return mp_db_fetch_all(
+        'SELECT customers.*,
+                COUNT(orders.id) AS order_count,
+                COALESCE(SUM(orders.total_amount), 0) AS total_spent
+         FROM customers
+         LEFT JOIN orders ON orders.customer_id = customers.id
+         GROUP BY customers.id
+         ORDER BY customers.created_at DESC'
+    );
+}
+
+function mp_count_customers(): int
+{
+    return (int) mp_db_fetch_value('SELECT COUNT(*) FROM customers');
+}
+
 function mp_customer_follow_vendor(int $customerId, int $vendorId): void
 {
     mp_db_execute(

@@ -48,6 +48,38 @@ function mp_count_active_categories(int $marketplaceTypeId): int
     );
 }
 
+/** All categories site-wide (both marketplaces), for admin/categories.php. */
+function mp_all_categories_admin(): array
+{
+    return mp_db_fetch_all(
+        'SELECT categories.*, marketplace_types.name AS marketplace_name, marketplace_types.slug AS marketplace_slug,
+                (SELECT COUNT(*) FROM products WHERE products.category_id = categories.id) AS product_count
+         FROM categories
+         JOIN marketplace_types ON marketplace_types.id = categories.marketplace_type_id
+         ORDER BY marketplace_types.slug ASC, categories.sort_order ASC, categories.name ASC'
+    );
+}
+
+function mp_insert_category(array $data): int
+{
+    return mp_db_insert('categories', $data);
+}
+
+function mp_update_category(int $id, array $data): void
+{
+    mp_db_update('categories', $data, 'id = ?', [$id]);
+}
+
+function mp_delete_category(int $id): void
+{
+    mp_db_execute('DELETE FROM categories WHERE id = ?', [$id]);
+}
+
+function mp_set_category_active(int $id, bool $active): void
+{
+    mp_db_execute('UPDATE categories SET is_active = ? WHERE id = ?', [$active ? 1 : 0, $id]);
+}
+
 /**
  * Filters an arbitrary list of category IDs down to only those that
  * actually belong to the given marketplace type. Used to sanitize
