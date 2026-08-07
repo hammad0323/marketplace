@@ -1,17 +1,42 @@
-# Optional hardening — the site works without this file (every page is
-# a real .php file, no URL rewriting is needed). This just adds a
-# couple of extra safety nets.
+# Every page is a real .php file — no URL rewriting required for the site
+# to function. This file only adds defense-in-depth hardening.
 
 Options -Indexes
+ServerSignature Off
 
-# config.php already refuses direct access on its own (see the guard
-# at the top of the file), this is just a second layer.
-<FilesMatch "^(config|functions)\.php$">
+# config.php, functions.php and auth.php already refuse direct access on
+# their own (see the guards at the top of each file); this blocks the HTTP
+# route entirely as a second layer.
+<FilesMatch "^(config|functions|auth)\.php$">
     Require all denied
 </FilesMatch>
 
-# database.sql contains your schema and demo data (including a
-# password hash) — no reason for it to be downloadable once imported.
-<FilesMatch "\.sql$">
+# Never serve the schema/seed SQL, .env, or log files over HTTP.
+<FilesMatch "\.(sql|log|md)$">
     Require all denied
 </FilesMatch>
+
+# Block direct access to include/config directories even though every file
+# inside also guards itself.
+RewriteEngine On
+RewriteRule ^(config|includes)/ - [F,L]
+
+# Uploaded files must never execute as PHP, even if something slips past
+# the upload whitelist.
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<FilesMatch "\.(php|phtml|php\d)$">
+    <If "%{REQUEST_URI} =~ m#^/uploads/#">
+        Require all denied
+    </If>
+</FilesMatch>
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+ErrorDocument 404 /404.php

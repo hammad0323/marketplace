@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /doctor/
+Disallow: /patient/
+Disallow: /ajax/
+Disallow: /includes/
+Disallow: /config/
+Disallow: /database/
+Disallow: /uploads/certificates/
+
+Sitemap: /sitemap.php

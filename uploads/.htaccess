@@ -1,0 +1,10 @@
+# Uploaded files are user-supplied — never execute anything in this folder
+# as a script, regardless of extension or PHP handler (mod_php or php-fpm).
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<FilesMatch "\.(php|phtml|php\d|pl|py|cgi|asp|aspx|sh)$">
+    Require all denied
+</FilesMatch>
+Options -Indexes -ExecCGI
+AddHandler cgi-script .php .phtml .pl .py .cgi .asp .aspx .sh

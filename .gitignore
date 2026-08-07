@@ -1,2 +1,11 @@
 logs/*.log
 .DS_Store
+
+# User-uploaded content — keep the folder structure, not the files
+uploads/avatars/*
+uploads/certificates/*
+uploads/reports/*
+!uploads/avatars/.gitkeep
+!uploads/certificates/.gitkeep
+!uploads/reports/.gitkeep
+!uploads/.htaccess
