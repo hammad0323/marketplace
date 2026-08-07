@@ -46,6 +46,7 @@ function mp_create_order(int $customerId, array $shippingAddress, array $cartIte
     $subtotal = mp_cart_subtotal($cartItems);
     $shippingAmount = 0.0;
     $total = $subtotal + $shippingAmount;
+    $tenantId = mp_tenant_id();
 
     mp_db_begin_transaction();
 
@@ -72,7 +73,10 @@ function mp_create_order(int $customerId, array $shippingAddress, array $cartIte
 
         foreach ($cartItems as $item) {
             $lineTotal = (float) $item['price'] * (int) $item['quantity'];
-            $vendorId = (int) mp_db_fetch_value('SELECT vendor_id FROM products WHERE id = ?', [$item['product_id']]);
+            $vendorId = (int) mp_db_fetch_value(
+                'SELECT vendor_id FROM products WHERE id = ? AND tenant_id = ?',
+                [$item['product_id'], $tenantId]
+            );
 
             mp_db_insert('order_items', [
                 'order_id'      => $orderId,
@@ -117,14 +121,15 @@ function mp_create_order(int $customerId, array $shippingAddress, array $cartIte
     return mp_find_order($orderId);
 }
 
+/** Reached via URL parameters (order confirmation/detail pages), so scoped defensively — not just naturally scoped via a session-derived customer/vendor id. */
 function mp_find_order(int $orderId): ?array
 {
-    return mp_db_fetch_one('SELECT * FROM orders WHERE id = ? LIMIT 1', [$orderId]);
+    return mp_db_fetch_one('SELECT * FROM orders WHERE id = ? AND tenant_id = ? LIMIT 1', [$orderId, mp_tenant_id()]);
 }
 
 function mp_find_order_by_number(string $orderNumber): ?array
 {
-    return mp_db_fetch_one('SELECT * FROM orders WHERE order_number = ? LIMIT 1', [$orderNumber]);
+    return mp_db_fetch_one('SELECT * FROM orders WHERE tenant_id = ? AND order_number = ? LIMIT 1', [mp_tenant_id(), $orderNumber]);
 }
 
 function mp_orders_for_customer(int $customerId): array
@@ -138,7 +143,9 @@ function mp_all_orders(): array
         'SELECT orders.*, customers.name AS customer_name, customers.email AS customer_email
          FROM orders
          JOIN customers ON customers.id = orders.customer_id
-         ORDER BY orders.placed_at DESC'
+         WHERE orders.tenant_id = ?
+         ORDER BY orders.placed_at DESC',
+        [mp_tenant_id()]
     );
 }
 
@@ -148,9 +155,9 @@ function mp_order_items(int $orderId): array
         'SELECT order_items.*, vendors.store_name
          FROM order_items
          JOIN vendors ON vendors.id = order_items.vendor_id
-         WHERE order_items.order_id = ?
+         WHERE order_items.order_id = ? AND order_items.tenant_id = ?
          ORDER BY order_items.id ASC',
-        [$orderId]
+        [$orderId, mp_tenant_id()]
     );
 }
 
@@ -170,8 +177,8 @@ function mp_order_items_for_vendor(int $vendorId): array
 function mp_order_status_history(int $orderId): array
 {
     return mp_db_fetch_all(
-        'SELECT * FROM order_status_history WHERE order_id = ? ORDER BY created_at ASC',
-        [$orderId]
+        'SELECT * FROM order_status_history WHERE order_id = ? AND tenant_id = ? ORDER BY created_at ASC',
+        [$orderId, mp_tenant_id()]
     );
 }
 
@@ -241,19 +248,22 @@ function mp_recompute_order_status(int $orderId, string $changedByType = 'system
 
 function mp_total_revenue(): float
 {
-    return (float) mp_db_fetch_value("SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status != 'cancelled'");
+    return (float) mp_db_fetch_value(
+        "SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE tenant_id = ? AND status != 'cancelled'",
+        [mp_tenant_id()]
+    );
 }
 
 function mp_count_orders(): int
 {
-    return (int) mp_db_fetch_value('SELECT COUNT(*) FROM orders');
+    return (int) mp_db_fetch_value('SELECT COUNT(*) FROM orders WHERE tenant_id = ?', [mp_tenant_id()]);
 }
 
 /** Order counts grouped by status, as [status => count] — always includes every known status, even at 0. */
 function mp_orders_count_by_status(): array
 {
     $counts = array_fill_keys(['pending', 'processing', 'completed', 'cancelled'], 0);
-    foreach (mp_db_fetch_all('SELECT status, COUNT(*) AS total FROM orders GROUP BY status') as $row) {
+    foreach (mp_db_fetch_all('SELECT status, COUNT(*) AS total FROM orders WHERE tenant_id = ? GROUP BY status', [mp_tenant_id()]) as $row) {
         $counts[$row['status']] = (int) $row['total'];
     }
     return $counts;
@@ -265,10 +275,10 @@ function mp_revenue_by_day(int $days = 14): array
     $rows = mp_db_fetch_all(
         "SELECT DATE(placed_at) AS day, COUNT(*) AS orders, COALESCE(SUM(total_amount), 0) AS revenue
          FROM orders
-         WHERE placed_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY) AND status != 'cancelled'
+         WHERE tenant_id = ? AND placed_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY) AND status != 'cancelled'
          GROUP BY DATE(placed_at)
          ORDER BY day ASC",
-        [$days - 1]
+        [mp_tenant_id(), $days - 1]
     );
 
     $byDay = [];
@@ -296,11 +306,11 @@ function mp_top_vendors_by_revenue(int $limit = 5): array
         "SELECT vendors.store_name, SUM(order_items.line_total) AS revenue, COUNT(*) AS items_sold
          FROM order_items
          JOIN vendors ON vendors.id = order_items.vendor_id
-         WHERE order_items.status != 'cancelled'
+         WHERE order_items.tenant_id = ? AND order_items.status != 'cancelled'
          GROUP BY order_items.vendor_id
          ORDER BY revenue DESC
          LIMIT ?",
-        [$limit]
+        [mp_tenant_id(), $limit]
     );
 }
 
@@ -310,10 +320,10 @@ function mp_top_products_by_quantity(int $limit = 5): array
     return mp_db_fetch_all(
         "SELECT order_items.product_title, SUM(order_items.quantity) AS units_sold, SUM(order_items.line_total) AS revenue
          FROM order_items
-         WHERE order_items.status != 'cancelled'
+         WHERE order_items.tenant_id = ? AND order_items.status != 'cancelled'
          GROUP BY order_items.product_title
          ORDER BY units_sold DESC
          LIMIT ?",
-        [$limit]
+        [mp_tenant_id(), $limit]
     );
 }

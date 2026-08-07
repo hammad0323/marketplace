@@ -43,3 +43,8 @@ foreach (glob(__DIR__ . '/../includes/middlewares/*.php') as $middlewareFile) {
 foreach (glob(__DIR__ . '/../includes/functions/*.php') as $functionFile) {
     require $functionFile;
 }
+
+// Resolves which tenant this request belongs to from the Host header.
+// Must run last — it needs mp_find_tenant_by_subdomain(), mp_e(), and
+// mp_set_current_tenant(), all loaded by the three loops above.
+require __DIR__ . '/tenant.php';

@@ -70,25 +70,25 @@ function mp_verify_csrf(): void
     }
 }
 
-/** Formats a price using the admin-configurable currency symbol (settings table), e.g. mp_currency(48) => "$48.00". */
+/**
+ * Formats a price using the current tenant's admin-configurable
+ * currency symbol (settings table), e.g. mp_currency(48) => "$48.00".
+ * Falls back to a plain "$" outside any tenant context (platform/
+ * pages showing cross-tenant totals) — there's no single tenant's
+ * currency to use there, so a neutral fallback is the correct
+ * behavior, not just a technical workaround.
+ */
 function mp_currency(float $amount): string
 {
-    static $symbol = null;
-    if ($symbol === null) {
-        $symbol = mp_get_setting('currency_symbol', '$');
-    }
+    $symbol = mp_current_tenant() ? mp_get_setting('currency_symbol', '$') : '$';
     return $symbol . number_format($amount, 2);
 }
 
-/** Badge shown next to products/stores so customers know which marketplace they're in. */
+/** Badge shown next to products/stores so customers know which marketplace they're in — reads this tenant's own marketplace_types row instead of a hardcoded label. */
 function mp_marketplace_badge(string $marketplaceType): string
 {
-    $badges = [
-        'artisan'  => '🏺 Handmade',
-        'business' => '🏪 Business Shop',
-        'official' => '⭐ Official Store',
-    ];
-    return $badges[$marketplaceType] ?? $marketplaceType;
+    $type = mp_find_marketplace_type_by_slug($marketplaceType);
+    return $type['badge_label'] ?? $marketplaceType;
 }
 
 function mp_render_product_card(array $product): void

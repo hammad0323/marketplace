@@ -1,25 +1,28 @@
 <?php
 /**
- * admin_users
+ * admin_users — one tenant's own admin panel accounts. Distinct from
+ * platform_admins, which manages tenants themselves and belongs to no
+ * tenant (see includes/functions/tenants.php, platform/).
  */
 
 if (!defined('MP_BOOTSTRAP')) {
     exit('Direct access not permitted.');
 }
 
+/** Defense-in-depth: reached via a raw id from a session cookie, so scoped even though the id alone already uniquely identifies a row. */
 function mp_find_admin(int $id): ?array
 {
-    return mp_db_fetch_one('SELECT * FROM admin_users WHERE id = ? LIMIT 1', [$id]);
+    return mp_db_fetch_one('SELECT * FROM admin_users WHERE id = ? AND tenant_id = ? LIMIT 1', [$id, mp_tenant_id()]);
 }
 
 function mp_find_admin_by_email(string $email): ?array
 {
-    return mp_db_fetch_one('SELECT * FROM admin_users WHERE email = ? LIMIT 1', [$email]);
+    return mp_db_fetch_one('SELECT * FROM admin_users WHERE tenant_id = ? AND email = ? LIMIT 1', [mp_tenant_id(), $email]);
 }
 
 function mp_all_admins(): array
 {
-    return mp_db_fetch_all('SELECT * FROM admin_users ORDER BY created_at DESC');
+    return mp_db_fetch_all('SELECT * FROM admin_users WHERE tenant_id = ? ORDER BY created_at DESC', [mp_tenant_id()]);
 }
 
 function mp_insert_admin(array $data): int

@@ -1,9 +1,11 @@
 <?php
 /**
- * settings — site-wide configuration as key/value rows instead of
- * hardcoded PHP constants, so admin/settings.php can change them
- * without a redeploy. Every value is cast back to its real PHP type
- * on read according to its setting_type column.
+ * settings — per-tenant site-wide configuration as key/value rows
+ * instead of hardcoded PHP constants, so each tenant's own
+ * admin/settings.php can change its own values without a redeploy.
+ * Every value is cast back to its real PHP type on read according to
+ * its setting_type column. Primary key is (tenant_id, setting_key) —
+ * every tenant has its own independent copy of every setting.
  */
 
 if (!defined('MP_BOOTSTRAP')) {
@@ -20,10 +22,10 @@ function mp_settings_cast(string $value, string $type)
     };
 }
 
-/** All settings as an associative array of key => (already cast) value. */
+/** All of this tenant's settings as an associative array of key => (already cast) value. */
 function mp_all_settings(): array
 {
-    $rows = mp_db_fetch_all('SELECT setting_key, setting_value, setting_type FROM settings');
+    $rows = mp_db_fetch_all('SELECT setting_key, setting_value, setting_type FROM settings WHERE tenant_id = ?', [mp_tenant_id()]);
 
     $settings = [];
     foreach ($rows as $row) {
@@ -35,7 +37,10 @@ function mp_all_settings(): array
 
 function mp_get_setting(string $key, $default = null)
 {
-    $row = mp_db_fetch_one('SELECT setting_value, setting_type FROM settings WHERE setting_key = ? LIMIT 1', [$key]);
+    $row = mp_db_fetch_one(
+        'SELECT setting_value, setting_type FROM settings WHERE tenant_id = ? AND setting_key = ? LIMIT 1',
+        [mp_tenant_id(), $key]
+    );
     if (!$row) {
         return $default;
     }
@@ -43,7 +48,7 @@ function mp_get_setting(string $key, $default = null)
     return mp_settings_cast($row['setting_value'] ?? '', $row['setting_type']);
 }
 
-/** Insert-or-update a setting, inferring setting_type from the PHP value's own type. */
+/** Insert-or-update one of this tenant's settings, inferring setting_type from the PHP value's own type. */
 function mp_set_setting(string $key, $value): void
 {
     if (is_bool($value)) {
@@ -61,8 +66,8 @@ function mp_set_setting(string $key, $value): void
     }
 
     mp_db_execute(
-        'INSERT INTO settings (setting_key, setting_value, setting_type) VALUES (?, ?, ?)
+        'INSERT INTO settings (tenant_id, setting_key, setting_value, setting_type) VALUES (?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), setting_type = VALUES(setting_type)',
-        [$key, $stored, $type]
+        [mp_tenant_id(), $key, $stored, $type]
     );
 }

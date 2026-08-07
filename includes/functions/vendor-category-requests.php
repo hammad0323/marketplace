@@ -12,15 +12,15 @@ if (!defined('MP_BOOTSTRAP')) {
 
 function mp_find_category_request(int $id): ?array
 {
-    return mp_db_fetch_one('SELECT * FROM vendor_category_requests WHERE id = ? LIMIT 1', [$id]);
+    return mp_db_fetch_one('SELECT * FROM vendor_category_requests WHERE id = ? AND tenant_id = ? LIMIT 1', [$id, mp_tenant_id()]);
 }
 
 function mp_request_vendor_categories(int $vendorId, array $categoryIds): void
 {
     foreach ($categoryIds as $categoryId) {
         mp_db_execute(
-            'INSERT IGNORE INTO vendor_category_requests (vendor_id, category_id) VALUES (?, ?)',
-            [$vendorId, (int) $categoryId]
+            'INSERT IGNORE INTO vendor_category_requests (tenant_id, vendor_id, category_id) VALUES (?, ?, ?)',
+            [mp_tenant_id(), $vendorId, (int) $categoryId]
         );
     }
 }
@@ -45,8 +45,9 @@ function mp_pending_category_requests(): array
          FROM vendor_category_requests
          JOIN categories ON categories.id = vendor_category_requests.category_id
          JOIN vendors ON vendors.id = vendor_category_requests.vendor_id
-         WHERE vendor_category_requests.status = 'pending'
-         ORDER BY vendor_category_requests.created_at ASC"
+         WHERE vendor_category_requests.tenant_id = ? AND vendor_category_requests.status = 'pending'
+         ORDER BY vendor_category_requests.created_at ASC",
+        [mp_tenant_id()]
     );
 }
 
@@ -58,7 +59,9 @@ function mp_all_category_requests(): array
          FROM vendor_category_requests
          JOIN categories ON categories.id = vendor_category_requests.category_id
          JOIN vendors ON vendors.id = vendor_category_requests.vendor_id
-         ORDER BY vendor_category_requests.created_at DESC"
+         WHERE vendor_category_requests.tenant_id = ?
+         ORDER BY vendor_category_requests.created_at DESC",
+        [mp_tenant_id()]
     );
 }
 

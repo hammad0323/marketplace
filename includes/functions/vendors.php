@@ -9,19 +9,20 @@ if (!defined('MP_BOOTSTRAP')) {
     exit('Direct access not permitted.');
 }
 
+/** Defense-in-depth: reached via a raw id from a session cookie, so scoped even though the id alone already uniquely identifies a row. */
 function mp_find_vendor(int $id): ?array
 {
-    return mp_db_fetch_one('SELECT * FROM vendors WHERE id = ? LIMIT 1', [$id]);
+    return mp_db_fetch_one('SELECT * FROM vendors WHERE id = ? AND tenant_id = ? LIMIT 1', [$id, mp_tenant_id()]);
 }
 
 function mp_find_vendor_by_slug(string $slug): ?array
 {
-    return mp_db_fetch_one('SELECT * FROM vendors WHERE slug = ? LIMIT 1', [$slug]);
+    return mp_db_fetch_one('SELECT * FROM vendors WHERE tenant_id = ? AND slug = ? LIMIT 1', [mp_tenant_id(), $slug]);
 }
 
 function mp_find_vendor_by_email(string $email): ?array
 {
-    return mp_db_fetch_one('SELECT * FROM vendors WHERE email = ? LIMIT 1', [$email]);
+    return mp_db_fetch_one('SELECT * FROM vendors WHERE tenant_id = ? AND email = ? LIMIT 1', [mp_tenant_id(), $email]);
 }
 
 function mp_insert_vendor(array $data): int
@@ -34,10 +35,10 @@ function mp_approved_vendors_by_marketplace(int $marketplaceTypeId, int $limit =
 {
     return mp_db_fetch_all(
         "SELECT * FROM vendors
-         WHERE marketplace_type_id = ? AND status = 'approved'
+         WHERE tenant_id = ? AND marketplace_type_id = ? AND status = 'approved'
          ORDER BY is_featured DESC, created_at DESC
          LIMIT ?",
-        [$marketplaceTypeId, $limit]
+        [mp_tenant_id(), $marketplaceTypeId, $limit]
     );
 }
 
@@ -47,14 +48,15 @@ function mp_pending_vendors(): array
         "SELECT vendors.*, marketplace_types.name AS marketplace_name
          FROM vendors
          JOIN marketplace_types ON marketplace_types.id = vendors.marketplace_type_id
-         WHERE vendors.status = 'pending'
-         ORDER BY vendors.created_at ASC"
+         WHERE vendors.tenant_id = ? AND vendors.status = 'pending'
+         ORDER BY vendors.created_at ASC",
+        [mp_tenant_id()]
     );
 }
 
 function mp_all_vendors(): array
 {
-    return mp_db_fetch_all('SELECT * FROM vendors ORDER BY created_at DESC');
+    return mp_db_fetch_all('SELECT * FROM vendors WHERE tenant_id = ? ORDER BY created_at DESC', [mp_tenant_id()]);
 }
 
 /** Approved vendor count, optionally scoped to one marketplace type — for stat counters. */
@@ -62,11 +64,11 @@ function mp_count_approved_vendors(?int $marketplaceTypeId = null): int
 {
     if ($marketplaceTypeId !== null) {
         return (int) mp_db_fetch_value(
-            "SELECT COUNT(*) FROM vendors WHERE status = 'approved' AND marketplace_type_id = ?",
-            [$marketplaceTypeId]
+            "SELECT COUNT(*) FROM vendors WHERE tenant_id = ? AND status = 'approved' AND marketplace_type_id = ?",
+            [mp_tenant_id(), $marketplaceTypeId]
         );
     }
-    return (int) mp_db_fetch_value("SELECT COUNT(*) FROM vendors WHERE status = 'approved'");
+    return (int) mp_db_fetch_value("SELECT COUNT(*) FROM vendors WHERE tenant_id = ? AND status = 'approved'", [mp_tenant_id()]);
 }
 
 function mp_approve_vendor(int $vendorId, int $adminId): void

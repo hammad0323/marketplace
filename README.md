@@ -1,4 +1,4 @@
-# Marketplace — Core PHP Multi-Marketplace Platform
+# Marketplace — Core PHP Multi-Tenant Marketplace SaaS
 
 Built entirely in **Core PHP 8+, procedural, no framework, no classes**.
 MySQL via MySQLi prepared statements, one centralized database
@@ -6,10 +6,16 @@ connection, a modular folder structure (one folder per feature), and
 centralized configuration. No Laravel/CodeIgniter/Symfony/Yii/etc, and
 no MVC/OOP layer of any kind.
 
-This build lays the **core architecture** for running two distinct
-marketplace experiences — the **Artisan Marketplace** and **Business
-Shops** — plus a single platform-owned **Official Store**, under one
-site and one admin panel.
+This is a **multi-tenant SaaS**: different business owners sign up at
+`signup/start.php` and each gets their own fully isolated marketplace
+instance — own vendors, customers, products, orders, branding — reachable
+at their own subdomain (`{subdomain}.yourdomain.com`), all running on one
+shared codebase and one shared database. Each tenant's own marketplace runs
+the same **Artisan Marketplace** / **Business Shops** / platform-owned
+**Official Store** structure as before, now seeded per-tenant instead of
+once globally. A separate **Platform Control Panel** (`platform/`, its own
+login, at `platform.yourdomain.com`) lets the SaaS operator see every
+tenant and suspend/reactivate one without touching any tenant's own data.
 
 ## Deploy in 3 steps
 
@@ -23,13 +29,44 @@ site and one admin panel.
    define('DB_USER', 'your_database_user');
    define('DB_PASS', 'your_database_password');
    ```
-   That is the only file you need to edit.
+   Also edit `APP_BASE_DOMAIN` in `config/constants.php` to your real
+   domain (e.g. `'marketplace.com'`), and point a **wildcard DNS record**
+   (`*.marketplace.com`) at this same server — no per-tenant vhost or
+   database is needed, the app resolves which tenant a request belongs to
+   from the subdomain itself.
 3. **Import `database.sql`** — cPanel → phpMyAdmin → select your
-   database → Import tab → choose `database.sql` → Go.
+   database → Import tab → choose `database.sql` → Go. This also seeds
+   tenant #1 (`demo.yourdomain.com`) with the same content the single-
+   tenant version of this project used to ship with.
 
-Visit your domain. If something's wrong, `config/database.php` shows a
-plain-English error (bad DB credentials, or the import didn't run)
-instead of a blank page or PHP warning wall.
+Visit your bare domain (`yourdomain.com`) and you'll be redirected to
+`signup/start.php` where a new business can create their own tenant.
+Visit `demo.yourdomain.com` to see the pre-seeded first tenant, or
+`platform.yourdomain.com/login.php` for the platform operator's control
+panel. If something's wrong, `config/database.php` shows a plain-English
+error (bad DB credentials, or the import didn't run) instead of a blank
+page or PHP warning wall.
+
+### Testing multi-tenant locally without wildcard DNS
+
+`php -S 127.0.0.1:8000` plus curl's `-H "Host: ..."` override exercises
+the exact same tenant-resolution code path production uses — no debug
+flags needed:
+
+```bash
+curl -H "Host: demo.marketplace.test" http://127.0.0.1:8000/store/home.php
+curl -H "Host: platform.marketplace.test" http://127.0.0.1:8000/platform/login.php
+```
+
+For manual browser testing, add real `/etc/hosts` entries instead (e.g.
+`127.0.0.1 demo.marketplace.test`).
+
+### Upgrading an existing single-tenant install
+
+Just re-run the updated `database.sql` against your existing database —
+every `ALTER TABLE ... ADD COLUMN tenant_id ... DEFAULT 1` statement adds
+the new multi-tenant columns *and* silently backfills every one of your
+existing rows onto tenant #1 in the same step, so nothing is lost.
 
 ### Want to see it populated instead of empty?
 
@@ -44,8 +81,9 @@ re-run; entirely optional.
 
 ### Demo logins (change before anyone else can reach the site)
 
-- Admin: `admin@marketplace.test` / `admin123` at `/admin/login.php`
-- Official Store vendor: `store@marketplace.test` / `admin123`
+- Tenant #1 admin: `admin@marketplace.test` / `admin123` at `demo.yourdomain.com/admin/login.php`
+- Tenant #1's Official Store vendor: `store@marketplace.test` / `admin123`
+- Platform operator: `platform@marketplace.test` / `admin123` at `platform.yourdomain.com/login.php`
 
 ## Design system
 
@@ -71,9 +109,14 @@ and no front controller, so a missing file only 404s that one page
 instead of taking down the site.
 
 ```
-admin/            admin panel: dashboard, reports, orders, products,
-                  categories, vendor/category approvals, customers,
-                  banners, settings, admin users, activity log
+platform/         SaaS-operator control panel: login, dashboard, list every
+                  tenant, suspend/reactivate a tenant. Separate login
+                  (platform_admins table) from any tenant's own admin panel.
+signup/           public tenant self-signup — pick a subdomain, create the
+                  first admin account, get a 14-day trial marketplace
+admin/            one tenant's own admin panel: dashboard, reports, orders,
+                  products, categories, vendor/category approvals,
+                  customers, banners, settings, admin users, activity log
 vendor/           vendor auth + the vendor's own dashboard/profile/products
 customer/         customer auth
 store/            marketplace-wide pages: homepage, global search, follow action
@@ -101,10 +144,13 @@ includes/
 config/
     config.php    bootstrap — every page requires this ONE file first
     database.php  the ONE MySQLi connection + query helpers (mp_db_*)
-    constants.php site-wide constants (SITE_NAME, etc.)
+    constants.php site-wide constants (SITE_NAME, APP_BASE_DOMAIN, etc.)
     session.php   session_start() + cookie hardening
     routes.php    per-module base-path constants (ROUTE_VENDOR, ROUTE_ADMIN, ...)
-templates/        header.php, footer.php, admin-header.php, admin-footer.php
+    tenant.php    resolves which tenant a request belongs to from its
+                  subdomain — required last in config.php
+templates/        header.php, footer.php, admin-header.php, admin-footer.php,
+                  platform-header.php, platform-footer.php
 logs/             mp_notify() writes notifications.log here
 cache/ storage/ temp/   reserved, not web-accessible
 database.sql      every CREATE TABLE + all seed data, one file
@@ -149,10 +195,29 @@ Only one connection is ever opened (`mp_db()`, a static-cached MySQLi
 handle) — every `includes/functions/*.php` file calls into these
 helpers instead of touching `mysqli_connect()` directly.
 
+**Multi-tenancy is ambient, not a parameter.** `mp_tenant_id()`
+(`includes/middlewares/tenant.php`) is resolved once per request from the
+subdomain and read directly inside query functions — the same way
+`mp_current_admin()` is already an ambient, session-derived accessor
+rather than something threaded through every function call. `mp_db_insert()`
+auto-injects `tenant_id` into every insert unless the table is in
+`MP_TENANT_EXEMPT_TABLES` (`tenants`, `platform_admins`), so almost none of
+the ~150 page files needed to change — the invasive part of this design is
+confined to `database.sql` and `includes/functions/*.php`.
+
 ## What's in the codebase today
 
-- **Marketplace types are data, not code.** `marketplace_types` is a
-  lookup table (`artisan` / `business` / `official`); a new marketplace
+- **Multi-tenant from the ground up.** Every business that signs up
+  (`signup/start.php`) gets its own isolated marketplace instance — own
+  vendors, customers, products, orders, settings, and even its own
+  `marketplace_types` rows — sharing one codebase and one database, kept
+  apart by a `tenant_id` column on every tenant-owned table and resolved
+  per-request from the subdomain. The same email or store slug can be
+  reused freely across different tenants (uniqueness constraints are all
+  composite `(tenant_id, ...)`, not global).
+- **Marketplace types are data, not code — now per-tenant.** Each
+  tenant's own `marketplace_types` rows (`artisan` / `business` /
+  `official`, seeded at signup) drive its nav labels; a new marketplace
   type is a new row, not a new set of `if` branches.
 - **Categories are scoped per marketplace type** and share one
   auto-increment ID space. Anywhere a category ID comes from user

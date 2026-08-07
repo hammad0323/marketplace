@@ -9,6 +9,8 @@ $footerSocial = array_filter([
     'Instagram' => mp_get_setting('social_instagram', ''),
     'Twitter'   => mp_get_setting('social_twitter', ''),
 ]);
+$footerMarketplaceRoutes = ['artisan' => ROUTE_ARTISAN, 'business' => ROUTE_BUSINESS, 'official' => ROUTE_OFFICIAL_STORE];
+$footerMarketplaceTypes = mp_current_tenant() ? mp_all_marketplace_types() : [];
 ?>
 <footer class="site-footer">
     <div class="site-footer-inner">
@@ -33,9 +35,11 @@ $footerSocial = array_filter([
             <?php endif; ?>
         </div>
         <nav class="footer-links">
-            <a href="<?= mp_e(ROUTE_ARTISAN) ?>index.php">Artisan Marketplace</a>
-            <a href="<?= mp_e(ROUTE_BUSINESS) ?>index.php">Business Shops</a>
-            <a href="<?= mp_e(ROUTE_OFFICIAL_STORE) ?>index.php">Official Store</a>
+            <?php foreach ($footerMarketplaceTypes as $footerType): ?>
+                <?php if (isset($footerMarketplaceRoutes[$footerType['slug']])): ?>
+                    <a href="<?= mp_e($footerMarketplaceRoutes[$footerType['slug']]) ?>index.php"><?= mp_e($footerType['name']) ?></a>
+                <?php endif; ?>
+            <?php endforeach; ?>
             <a href="<?= mp_e(ROUTE_VENDOR) ?>register.php">Become a Vendor</a>
             <a href="<?= mp_e(ROUTE_ADMIN) ?>login.php">Admin</a>
         </nav>

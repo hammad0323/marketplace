@@ -19,31 +19,118 @@ SET NAMES utf8mb4;
 -- Schema
 -- ---------------------------------------------------------------
 
--- Lookup table for the marketplaces the platform operates.
--- New marketplace types are added here (row + config.php) rather
--- than by hardcoding a marketplace name anywhere in code.
-CREATE TABLE IF NOT EXISTS marketplace_types (
-    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    slug VARCHAR(30) NOT NULL UNIQUE,      -- artisan | business | official
-    name VARCHAR(100) NOT NULL,
-    badge_label VARCHAR(50) NOT NULL,      -- e.g. "🏺 Handmade"
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- ---------------------------------------------------------------
+-- Multi-tenancy: this is a shared-database, shared-code SaaS design
+-- (not database-per-tenant, which shared/cPanel hosting typically
+-- can't support anyway). Every tenant-owned table below carries a
+-- tenant_id column scoping its rows to one signed-up business's
+-- isolated marketplace instance. A request is resolved to a tenant
+-- by subdomain (config/tenant.php + includes/middlewares/tenant.php);
+-- every query function reads the current tenant via mp_tenant_id()
+-- (see includes/functions/*.php) the same way the rest of this
+-- project already reads "the current admin" via mp_current_admin() —
+-- an ambient, session/request-derived accessor, not a parameter
+-- threaded through every function call.
+-- ---------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS tenants (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    subdomain VARCHAR(63) NOT NULL UNIQUE,   -- {subdomain}.APP_BASE_DOMAIN (see config/constants.php)
+    business_name VARCHAR(150) NOT NULL,
+    plan ENUM('trial', 'basic', 'pro') NOT NULL DEFAULT 'trial',
+    status ENUM('trial', 'active', 'suspended') NOT NULL DEFAULT 'trial',
+    owner_email VARCHAR(150) NOT NULL,
+    trial_ends_at TIMESTAMP NULL,
+    suspended_at TIMESTAMP NULL,
+    suspended_reason VARCHAR(255) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS admin_users (
+-- Tenant #1: today's single existing marketplace (all its vendors,
+-- customers, products, orders, settings) becomes the first tenant so
+-- upgrading an existing pre-multi-tenant install loses no data — every
+-- `ADD COLUMN IF NOT EXISTS tenant_id ... DEFAULT 1` migration below
+-- silently backfills every already-seeded row onto this exact tenant.
+INSERT INTO tenants (id, subdomain, business_name, plan, status, owner_email) VALUES
+    (1, 'demo', 'Marketplace', 'pro', 'active', 'admin@marketplace.test')
+ON DUPLICATE KEY UPDATE business_name = VALUES(business_name);
+
+-- Platform operator staff — deliberately a separate table from
+-- admin_users (which is per-tenant). A platform_admins account manages
+-- tenants themselves (approve/suspend signups, cross-tenant reporting
+-- in platform/) and never belongs to or logs into any one tenant's own
+-- admin panel. See includes/middlewares/platform-auth.php.
+CREATE TABLE IF NOT EXISTS platform_admins (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    role ENUM('super_admin', 'admin') NOT NULL DEFAULT 'admin',
     is_active TINYINT(1) NOT NULL DEFAULT 1,
     last_login_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Default platform operator login: platform@marketplace.test / admin123
+-- CHANGE THIS PASSWORD before deploying to any shared environment.
+INSERT INTO platform_admins (name, email, password_hash) VALUES
+    ('Platform Operator', 'platform@marketplace.test', '$2y$12$Mx0ULFFE4UcnVa5zvui2UOiC1/R26pQYrlnfPUhcE.lWLpNVOFZZW')
+ON DUPLICATE KEY UPDATE name = VALUES(name);
+
+-- Lookup table for the marketplaces a tenant operates. Now tenant-owned
+-- (each signed-up business gets its own artisan/business/official rows,
+-- seeded at signup — see mp_seed_default_marketplace_types() — and
+-- editable from that tenant's own admin panel) rather than one fixed
+-- global lookup shared by every tenant.
+CREATE TABLE IF NOT EXISTS marketplace_types (
+    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
+    slug VARCHAR(30) NOT NULL,             -- artisan | business | official
+    name VARCHAR(100) NOT NULL,
+    badge_label VARCHAR(50) NOT NULL,      -- e.g. "🏺 Handmade"
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_marketplace_types_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE,
+
+    UNIQUE KEY uq_marketplace_types_tenant_slug (tenant_id, slug)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Upgrading an existing pre-multi-tenant install: adds tenant_id
+-- (backfilling every row onto tenant #1) and widens slug uniqueness
+-- from global to per-tenant. The DROP/ADD INDEX pair uses MariaDB's
+-- IF [NOT] EXISTS index syntax (this project's tested target — see
+-- README) so it's safe to re-run; on a fresh install this whole block
+-- is a no-op since the CREATE TABLE above already has the final shape.
+ALTER TABLE marketplace_types ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 AFTER id;
+ALTER TABLE marketplace_types DROP INDEX IF EXISTS slug;
+ALTER TABLE marketplace_types ADD FOREIGN KEY IF NOT EXISTS fk_marketplace_types_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
+ALTER TABLE marketplace_types ADD UNIQUE KEY IF NOT EXISTS uq_marketplace_types_tenant_slug (tenant_id, slug);
+
+CREATE TABLE IF NOT EXISTS admin_users (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role ENUM('super_admin', 'admin') NOT NULL DEFAULT 'admin',
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    last_login_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_admin_users_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE,
+
+    UNIQUE KEY uq_admin_users_tenant_email (tenant_id, email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS role ENUM('super_admin', 'admin') NOT NULL DEFAULT 'admin' AFTER password_hash;
 ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS is_active TINYINT(1) NOT NULL DEFAULT 1 AFTER role;
 ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP NULL AFTER is_active;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 AFTER id;
+ALTER TABLE admin_users DROP INDEX IF EXISTS email;
+ALTER TABLE admin_users ADD FOREIGN KEY IF NOT EXISTS fk_admin_users_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
+ALTER TABLE admin_users ADD UNIQUE KEY IF NOT EXISTS uq_admin_users_tenant_email (tenant_id, email);
 
 -- A vendor is either an Artisan (handmade creator) or a Business Shop.
 -- The platform's own Official Store is represented as a vendor with
@@ -51,10 +138,11 @@ ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP NULL AF
 -- approval workflow (it can sell in any approved category directly).
 CREATE TABLE IF NOT EXISTS vendors (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
     marketplace_type_id TINYINT UNSIGNED NOT NULL,
     store_name VARCHAR(150) NOT NULL,
-    slug VARCHAR(170) NOT NULL UNIQUE,      -- used in artisan-store.php?slug=... or business-store.php?slug=...
-    email VARCHAR(150) NOT NULL UNIQUE,
+    slug VARCHAR(170) NOT NULL,             -- used in artisan-store.php?slug=... or business-store.php?slug=...
+    email VARCHAR(150) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     phone VARCHAR(30) NULL,
 
@@ -93,8 +181,12 @@ CREATE TABLE IF NOT EXISTS vendors (
         REFERENCES marketplace_types (id),
     CONSTRAINT fk_vendors_approved_by FOREIGN KEY (approved_by)
         REFERENCES admin_users (id) ON DELETE SET NULL,
+    CONSTRAINT fk_vendors_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE,
 
-    INDEX idx_vendors_marketplace_status (marketplace_type_id, status)
+    INDEX idx_vendors_marketplace_status (marketplace_type_id, status),
+    UNIQUE KEY uq_vendors_tenant_slug (tenant_id, slug),
+    UNIQUE KEY uq_vendors_tenant_email (tenant_id, email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Re-running against a database created before these columns existed
@@ -107,12 +199,19 @@ ALTER TABLE vendors ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMP NULL AF
 ALTER TABLE vendors ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMP NULL AFTER terms_accepted_at;
 ALTER TABLE vendors ADD COLUMN IF NOT EXISTS verification_token VARCHAR(64) NULL AFTER email_verified_at;
 ALTER TABLE vendors ADD COLUMN IF NOT EXISTS verification_token_expires_at TIMESTAMP NULL AFTER verification_token;
+ALTER TABLE vendors ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 AFTER id;
+ALTER TABLE vendors DROP INDEX IF EXISTS slug;
+ALTER TABLE vendors DROP INDEX IF EXISTS email;
+ALTER TABLE vendors ADD FOREIGN KEY IF NOT EXISTS fk_vendors_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
+ALTER TABLE vendors ADD UNIQUE KEY IF NOT EXISTS uq_vendors_tenant_slug (tenant_id, slug);
+ALTER TABLE vendors ADD UNIQUE KEY IF NOT EXISTS uq_vendors_tenant_email (tenant_id, email);
 
 -- Categories are scoped to a marketplace type so Artisan categories
 -- (Pottery, Resin Art...) never mix with Business categories
 -- (Electronics, Furniture...) in the same dropdown.
 CREATE TABLE IF NOT EXISTS categories (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
     marketplace_type_id TINYINT UNSIGNED NOT NULL,
     parent_id INT UNSIGNED NULL,
     name VARCHAR(120) NOT NULL,
@@ -125,9 +224,27 @@ CREATE TABLE IF NOT EXISTS categories (
         REFERENCES marketplace_types (id),
     CONSTRAINT fk_categories_parent FOREIGN KEY (parent_id)
         REFERENCES categories (id) ON DELETE CASCADE,
+    CONSTRAINT fk_categories_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE,
 
-    UNIQUE KEY uq_categories_marketplace_slug (marketplace_type_id, slug)
+    INDEX idx_categories_marketplace_type (marketplace_type_id),
+    UNIQUE KEY uq_categories_tenant_marketplace_slug (tenant_id, marketplace_type_id, slug)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Upgrading an existing pre-multi-tenant install: the OLD composite
+-- unique key (uq_categories_marketplace_slug, leftmost column
+-- marketplace_type_id) is likely the sole supporting index for
+-- fk_categories_marketplace_type on a pre-existing table, so a plain
+-- index on that column is added first to guarantee the FK keeps a
+-- supporting index once the old unique key is dropped. The new unique
+-- key is deliberately given a NEW name (not reused from the old one)
+-- so this whole block is a true no-op on a fresh install, where the
+-- old name never existed in the first place.
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 AFTER id;
+ALTER TABLE categories ADD INDEX IF NOT EXISTS idx_categories_marketplace_type (marketplace_type_id);
+ALTER TABLE categories ADD FOREIGN KEY IF NOT EXISTS fk_categories_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
+ALTER TABLE categories DROP INDEX IF EXISTS uq_categories_marketplace_slug;
+ALTER TABLE categories ADD UNIQUE KEY IF NOT EXISTS uq_categories_tenant_marketplace_slug (tenant_id, marketplace_type_id, slug);
 
 -- Business Shop vendors must request the categories they want to sell
 -- in; an admin approves/rejects each request independently. Only
@@ -135,6 +252,7 @@ CREATE TABLE IF NOT EXISTS categories (
 -- vendor adds a product.
 CREATE TABLE IF NOT EXISTS vendor_category_requests (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
     vendor_id INT UNSIGNED NOT NULL,
     category_id INT UNSIGNED NOT NULL,
 
@@ -155,15 +273,21 @@ CREATE TABLE IF NOT EXISTS vendor_category_requests (
         REFERENCES categories (id) ON DELETE CASCADE,
     CONSTRAINT fk_vcr_decided_by FOREIGN KEY (decided_by)
         REFERENCES admin_users (id) ON DELETE SET NULL,
+    CONSTRAINT fk_vcr_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE,
 
     UNIQUE KEY uq_vendor_category (vendor_id, category_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE vendor_category_requests ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 AFTER id;
+ALTER TABLE vendor_category_requests ADD FOREIGN KEY IF NOT EXISTS fk_vcr_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
 
 -- Extra profile data unique to Artisan Marketplace vendors: the
 -- "story behind the brand" content that differentiates the premium
 -- artisan experience from a standard retail shop page.
 CREATE TABLE IF NOT EXISTS artisan_profiles (
     vendor_id INT UNSIGNED PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
 
     biography TEXT NULL,
     brand_story TEXT NULL,
@@ -181,13 +305,19 @@ CREATE TABLE IF NOT EXISTS artisan_profiles (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_artisan_profiles_vendor FOREIGN KEY (vendor_id)
-        REFERENCES vendors (id) ON DELETE CASCADE
+        REFERENCES vendors (id) ON DELETE CASCADE,
+    CONSTRAINT fk_artisan_profiles_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE artisan_profiles ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 AFTER vendor_id;
+ALTER TABLE artisan_profiles ADD FOREIGN KEY IF NOT EXISTS fk_artisan_profiles_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
 
 -- Extra profile data unique to Business Shop vendors: the standard
 -- retail-shop information block (hours, policies, delivery, etc.)
 CREATE TABLE IF NOT EXISTS business_profiles (
     vendor_id INT UNSIGNED PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
 
     banner_image VARCHAR(255) NULL,
     logo_image VARCHAR(255) NULL,
@@ -205,17 +335,23 @@ CREATE TABLE IF NOT EXISTS business_profiles (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_business_profiles_vendor FOREIGN KEY (vendor_id)
-        REFERENCES vendors (id) ON DELETE CASCADE
+        REFERENCES vendors (id) ON DELETE CASCADE,
+    CONSTRAINT fk_business_profiles_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE business_profiles ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 AFTER vendor_id;
+ALTER TABLE business_profiles ADD FOREIGN KEY IF NOT EXISTS fk_business_profiles_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
 
 CREATE TABLE IF NOT EXISTS products (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
     vendor_id INT UNSIGNED NOT NULL,
     category_id INT UNSIGNED NOT NULL,
     marketplace_type_id TINYINT UNSIGNED NOT NULL,
 
     title VARCHAR(200) NOT NULL,
-    slug VARCHAR(220) NOT NULL UNIQUE,      -- used in product.php?slug=...
+    slug VARCHAR(220) NOT NULL,             -- used in product.php?slug=...
     description TEXT NULL,
     price DECIMAL(12,2) NOT NULL DEFAULT 0,
     images JSON NULL,                       -- array of image URLs
@@ -236,9 +372,12 @@ CREATE TABLE IF NOT EXISTS products (
         REFERENCES categories (id),
     CONSTRAINT fk_products_marketplace_type FOREIGN KEY (marketplace_type_id)
         REFERENCES marketplace_types (id),
+    CONSTRAINT fk_products_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE,
 
     INDEX idx_products_marketplace_status (marketplace_type_id, status),
-    FULLTEXT KEY ft_products_search (title, description)
+    FULLTEXT KEY ft_products_search (title, description),
+    UNIQUE KEY uq_products_tenant_slug (tenant_id, slug)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Re-running this file against a database created before stock/SKU
@@ -246,11 +385,16 @@ CREATE TABLE IF NOT EXISTS products (
 -- (MySQL 8.0.29+ / MariaDB 10.0.2+ both support ADD COLUMN IF NOT EXISTS).
 ALTER TABLE products ADD COLUMN IF NOT EXISTS sku VARCHAR(64) NULL AFTER images;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS stock_quantity INT UNSIGNED NOT NULL DEFAULT 0 AFTER sku;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 AFTER id;
+ALTER TABLE products DROP INDEX IF EXISTS slug;
+ALTER TABLE products ADD FOREIGN KEY IF NOT EXISTS fk_products_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
+ALTER TABLE products ADD UNIQUE KEY IF NOT EXISTS uq_products_tenant_slug (tenant_id, slug);
 
 CREATE TABLE IF NOT EXISTS customers (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
     name VARCHAR(150) NOT NULL,
-    email VARCHAR(150) NOT NULL UNIQUE,
+    email VARCHAR(150) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     phone VARCHAR(30) NULL,
 
@@ -258,16 +402,26 @@ CREATE TABLE IF NOT EXISTS customers (
     verification_token VARCHAR(64) NULL,
     verification_token_expires_at TIMESTAMP NULL,
 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_customers_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE,
+
+    UNIQUE KEY uq_customers_tenant_email (tenant_id, email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS phone VARCHAR(30) NULL AFTER password_hash;
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMP NULL AFTER phone;
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS verification_token VARCHAR(64) NULL AFTER email_verified_at;
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS verification_token_expires_at TIMESTAMP NULL AFTER verification_token;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 AFTER id;
+ALTER TABLE customers DROP INDEX IF EXISTS email;
+ALTER TABLE customers ADD FOREIGN KEY IF NOT EXISTS fk_customers_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
+ALTER TABLE customers ADD UNIQUE KEY IF NOT EXISTS uq_customers_tenant_email (tenant_id, email);
 
 -- "Follow Artist" feature (also usable for following a business shop).
 CREATE TABLE IF NOT EXISTS vendor_follows (
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
     customer_id INT UNSIGNED NOT NULL,
     vendor_id INT UNSIGNED NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -276,13 +430,19 @@ CREATE TABLE IF NOT EXISTS vendor_follows (
     CONSTRAINT fk_follows_customer FOREIGN KEY (customer_id)
         REFERENCES customers (id) ON DELETE CASCADE,
     CONSTRAINT fk_follows_vendor FOREIGN KEY (vendor_id)
-        REFERENCES vendors (id) ON DELETE CASCADE
+        REFERENCES vendors (id) ON DELETE CASCADE,
+    CONSTRAINT fk_follows_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE vendor_follows ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 FIRST;
+ALTER TABLE vendor_follows ADD FOREIGN KEY IF NOT EXISTS fk_follows_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
 
 -- "Artist Ratings" / "Store Ratings" feature: one rating per customer
 -- per vendor. Average is computed on read.
 CREATE TABLE IF NOT EXISTS vendor_ratings (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
     customer_id INT UNSIGNED NOT NULL,
     vendor_id INT UNSIGNED NOT NULL,
     rating TINYINT UNSIGNED NOT NULL,   -- 1-5
@@ -293,10 +453,15 @@ CREATE TABLE IF NOT EXISTS vendor_ratings (
         REFERENCES customers (id) ON DELETE CASCADE,
     CONSTRAINT fk_ratings_vendor FOREIGN KEY (vendor_id)
         REFERENCES vendors (id) ON DELETE CASCADE,
+    CONSTRAINT fk_ratings_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE,
     CONSTRAINT chk_rating_range CHECK (rating BETWEEN 1 AND 5),
 
     UNIQUE KEY uq_customer_vendor_rating (customer_id, vendor_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE vendor_ratings ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 AFTER id;
+ALTER TABLE vendor_ratings ADD FOREIGN KEY IF NOT EXISTS fk_ratings_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
 
 -- ---------------------------------------------------------------
 -- Commerce: addresses, cart, orders, order items, status history,
@@ -308,6 +473,7 @@ CREATE TABLE IF NOT EXISTS vendor_ratings (
 
 CREATE TABLE IF NOT EXISTS addresses (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
     customer_id INT UNSIGNED NOT NULL,
 
     label VARCHAR(50) NULL,             -- "Home", "Office", ...
@@ -326,14 +492,20 @@ CREATE TABLE IF NOT EXISTS addresses (
 
     CONSTRAINT fk_addresses_customer FOREIGN KEY (customer_id)
         REFERENCES customers (id) ON DELETE CASCADE,
+    CONSTRAINT fk_addresses_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE,
 
     INDEX idx_addresses_customer (customer_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE addresses ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 AFTER id;
+ALTER TABLE addresses ADD FOREIGN KEY IF NOT EXISTS fk_addresses_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
 
 -- Persisted cart so it survives across sessions/devices — one row per
 -- (customer, product), quantity incremented on repeat "Add to Cart".
 CREATE TABLE IF NOT EXISTS cart_items (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
     customer_id INT UNSIGNED NOT NULL,
     product_id INT UNSIGNED NOT NULL,
     quantity INT UNSIGNED NOT NULL DEFAULT 1,
@@ -345,16 +517,22 @@ CREATE TABLE IF NOT EXISTS cart_items (
         REFERENCES customers (id) ON DELETE CASCADE,
     CONSTRAINT fk_cart_items_product FOREIGN KEY (product_id)
         REFERENCES products (id) ON DELETE CASCADE,
+    CONSTRAINT fk_cart_items_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE,
 
     UNIQUE KEY uq_cart_customer_product (customer_id, product_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 AFTER id;
+ALTER TABLE cart_items ADD FOREIGN KEY IF NOT EXISTS fk_cart_items_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
 
 -- One order per checkout. Shipping details are snapshotted onto the
 -- order itself (not just linked via address_id) so editing or deleting
 -- a saved address later never rewrites order history.
 CREATE TABLE IF NOT EXISTS orders (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    order_number VARCHAR(30) NOT NULL UNIQUE,   -- e.g. ORD-20260805-00001
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
+    order_number VARCHAR(30) NOT NULL,          -- e.g. ORD-20260805-00001 (globally unique by construction — see note below)
     customer_id INT UNSIGNED NOT NULL,
     address_id INT UNSIGNED NULL,
 
@@ -387,16 +565,32 @@ CREATE TABLE IF NOT EXISTS orders (
         REFERENCES customers (id),
     CONSTRAINT fk_orders_address FOREIGN KEY (address_id)
         REFERENCES addresses (id) ON DELETE SET NULL,
+    CONSTRAINT fk_orders_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE,
 
     INDEX idx_orders_customer (customer_id, placed_at),
-    INDEX idx_orders_status (status)
+    INDEX idx_orders_status (status),
+    UNIQUE KEY uq_orders_tenant_number (tenant_id, order_number)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- order_number is built from `id` (see mp_generate_order_number() in
+-- includes/functions/orders.php), and `id` stays one single global
+-- auto-increment column in this shared-database design — so the
+-- generated string is already globally unique by construction, not
+-- just per-tenant. The composite UNIQUE below is added purely for
+-- defense-in-depth/convention consistency with every other per-tenant
+-- unique key in this file, not to fix an active collision risk.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 AFTER id;
+ALTER TABLE orders DROP INDEX IF EXISTS order_number;
+ALTER TABLE orders ADD FOREIGN KEY IF NOT EXISTS fk_orders_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
+ALTER TABLE orders ADD UNIQUE KEY IF NOT EXISTS uq_orders_tenant_number (tenant_id, order_number);
 
 -- Line items. product_title/unit_price are snapshotted at purchase
 -- time so a later product edit or deletion never rewrites what a
 -- customer was actually charged.
 CREATE TABLE IF NOT EXISTS order_items (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
     order_id INT UNSIGNED NOT NULL,
     vendor_id INT UNSIGNED NOT NULL,
     product_id INT UNSIGNED NULL,
@@ -419,15 +613,21 @@ CREATE TABLE IF NOT EXISTS order_items (
         REFERENCES vendors (id),
     CONSTRAINT fk_order_items_product FOREIGN KEY (product_id)
         REFERENCES products (id) ON DELETE SET NULL,
+    CONSTRAINT fk_order_items_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE,
 
     INDEX idx_order_items_order (order_id),
     INDEX idx_order_items_vendor_status (vendor_id, status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 AFTER id;
+ALTER TABLE order_items ADD FOREIGN KEY IF NOT EXISTS fk_order_items_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
+
 -- Audit trail of order-level status changes — who changed it and when,
 -- independent of the current row's mutable status column.
 CREATE TABLE IF NOT EXISTS order_status_history (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
     order_id INT UNSIGNED NOT NULL,
     old_status VARCHAR(30) NULL,
     new_status VARCHAR(30) NOT NULL,
@@ -439,9 +639,14 @@ CREATE TABLE IF NOT EXISTS order_status_history (
 
     CONSTRAINT fk_order_status_history_order FOREIGN KEY (order_id)
         REFERENCES orders (id) ON DELETE CASCADE,
+    CONSTRAINT fk_order_status_history_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE,
 
     INDEX idx_order_status_history_order (order_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE order_status_history ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 AFTER id;
+ALTER TABLE order_status_history ADD FOREIGN KEY IF NOT EXISTS fk_order_status_history_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
 
 -- Payment attempts against an order. gateway is deliberately an ENUM
 -- that already includes 'stripe'/'paypal' so wiring up real payment
@@ -450,6 +655,7 @@ CREATE TABLE IF NOT EXISTS order_status_history (
 -- are what this build actually uses today.
 CREATE TABLE IF NOT EXISTS transactions (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
     order_id INT UNSIGNED NOT NULL,
     gateway ENUM('cod', 'manual', 'stripe', 'paypal') NOT NULL DEFAULT 'cod',
     amount DECIMAL(12,2) NOT NULL,
@@ -462,9 +668,14 @@ CREATE TABLE IF NOT EXISTS transactions (
 
     CONSTRAINT fk_transactions_order FOREIGN KEY (order_id)
         REFERENCES orders (id) ON DELETE CASCADE,
+    CONSTRAINT fk_transactions_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE,
 
     INDEX idx_transactions_order (order_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 AFTER id;
+ALTER TABLE transactions ADD FOREIGN KEY IF NOT EXISTS fk_transactions_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
 
 -- ---------------------------------------------------------------
 -- Platform administration: dynamic settings, audit trail, homepage
@@ -477,19 +688,39 @@ CREATE TABLE IF NOT EXISTS transactions (
 -- constants, so admin/settings.php can edit them without touching
 -- code or redeploying. setting_type tells the settings helper how to
 -- cast setting_value back to a PHP value on read.
+-- tenant_id is part of the primary key (not a separate unique index)
+-- so the same setting_key can exist independently per tenant — every
+-- tenant gets its own site_name/currency/commission-rate/etc rows.
 CREATE TABLE IF NOT EXISTS settings (
-    setting_key VARCHAR(100) NOT NULL PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
+    setting_key VARCHAR(100) NOT NULL,
     setting_value TEXT NULL,
     setting_type ENUM('string', 'number', 'boolean', 'json') NOT NULL DEFAULT 'string',
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (tenant_id, setting_key),
+    CONSTRAINT fk_settings_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Generic audit trail — every admin/vendor action that changes
--- platform state writes one row here (see mp_log_activity()),
--- independent of the narrower order_status_history above.
+-- Upgrading an existing pre-multi-tenant install: widens the primary
+-- key from (setting_key) alone to (tenant_id, setting_key). This pair
+-- of statements is naturally idempotent — DROP PRIMARY KEY always
+-- targets "the" primary key regardless of its current shape, so
+-- re-running this is safe even after it has already been applied.
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 FIRST;
+ALTER TABLE settings DROP PRIMARY KEY, ADD PRIMARY KEY (tenant_id, setting_key);
+ALTER TABLE settings ADD FOREIGN KEY IF NOT EXISTS fk_settings_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
+
+-- Generic audit trail — every admin/vendor/platform action that
+-- changes state writes one row here (see mp_log_activity()),
+-- independent of the narrower order_status_history above. tenant_id
+-- is nullable because platform-level events (e.g. a platform admin
+-- suspending a tenant) have no single owning tenant.
 CREATE TABLE IF NOT EXISTS activity_log (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    actor_type ENUM('admin', 'vendor', 'customer', 'system') NOT NULL,
+    tenant_id INT UNSIGNED NULL DEFAULT 1,
+    actor_type ENUM('admin', 'vendor', 'customer', 'platform_admin', 'system') NOT NULL,
     actor_id INT UNSIGNED NULL,
     action VARCHAR(100) NOT NULL,          -- e.g. "vendor.approved", "product.deleted"
     entity_type VARCHAR(50) NULL,          -- e.g. "vendor", "product", "order"
@@ -498,16 +729,26 @@ CREATE TABLE IF NOT EXISTS activity_log (
     ip_address VARCHAR(45) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
+    CONSTRAINT fk_activity_log_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE,
+
     INDEX idx_activity_log_actor (actor_type, actor_id),
     INDEX idx_activity_log_entity (entity_type, entity_id),
-    INDEX idx_activity_log_created (created_at)
+    INDEX idx_activity_log_created (created_at),
+    INDEX idx_activity_log_tenant (tenant_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE activity_log ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NULL DEFAULT 1 AFTER id;
+ALTER TABLE activity_log MODIFY COLUMN actor_type ENUM('admin', 'vendor', 'customer', 'platform_admin', 'system') NOT NULL;
+ALTER TABLE activity_log ADD FOREIGN KEY IF NOT EXISTS fk_activity_log_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
+ALTER TABLE activity_log ADD INDEX IF NOT EXISTS idx_activity_log_tenant (tenant_id);
 
 -- Homepage/marketplace hero content, editable from admin/banners.php.
 -- marketplace_type_id NULL = shown on the main homepage; set it to
 -- show a banner on one marketplace's own landing page instead.
 CREATE TABLE IF NOT EXISTS cms_banners (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL DEFAULT 1,
     marketplace_type_id TINYINT UNSIGNED NULL,
     title VARCHAR(200) NOT NULL,
     subtitle VARCHAR(500) NULL,
@@ -521,9 +762,14 @@ CREATE TABLE IF NOT EXISTS cms_banners (
 
     CONSTRAINT fk_cms_banners_marketplace_type FOREIGN KEY (marketplace_type_id)
         REFERENCES marketplace_types (id) ON DELETE CASCADE,
+    CONSTRAINT fk_cms_banners_tenant FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id) ON DELETE CASCADE,
 
     INDEX idx_cms_banners_marketplace (marketplace_type_id, is_active, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE cms_banners ADD COLUMN IF NOT EXISTS tenant_id INT UNSIGNED NOT NULL DEFAULT 1 AFTER id;
+ALTER TABLE cms_banners ADD FOREIGN KEY IF NOT EXISTS fk_cms_banners_tenant (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE;
 
 -- ---------------------------------------------------------------
 -- Seed data
@@ -635,8 +881,8 @@ ON DUPLICATE KEY UPDATE setting_value = setting_value;
 -- to edit instead of an empty admin/banners.php on first install.
 -- Guarded by WHERE NOT EXISTS (cms_banners.id has no natural unique
 -- key to upsert against) so re-running this file doesn't duplicate it.
-INSERT INTO cms_banners (marketplace_type_id, title, subtitle, cta_label, cta_url, sort_order, is_active)
-SELECT NULL, 'Handmade Treasures & Trusted Retail, All in One Place',
+INSERT INTO cms_banners (tenant_id, marketplace_type_id, title, subtitle, cta_label, cta_url, sort_order, is_active)
+SELECT 1, NULL, 'Handmade Treasures & Trusted Retail, All in One Place',
        'Discover one-of-a-kind creations from independent artisans, or shop everyday essentials from verified business owners — start exploring below.',
        'Explore Artisan Marketplace', '/artisan/index.php', 1, 1
-WHERE NOT EXISTS (SELECT 1 FROM cms_banners WHERE marketplace_type_id IS NULL);
+WHERE NOT EXISTS (SELECT 1 FROM cms_banners WHERE marketplace_type_id IS NULL AND tenant_id = 1);

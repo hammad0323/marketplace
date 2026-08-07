@@ -1,7 +1,7 @@
 <?php
 /**
  * categories — scoped per marketplace type, sharing one auto-increment
- * ID space across all marketplace types.
+ * ID space across all marketplace types within a tenant.
  */
 
 if (!defined('MP_BOOTSTRAP')) {
@@ -10,14 +10,14 @@ if (!defined('MP_BOOTSTRAP')) {
 
 function mp_find_category(int $id): ?array
 {
-    return mp_db_fetch_one('SELECT * FROM categories WHERE id = ? LIMIT 1', [$id]);
+    return mp_db_fetch_one('SELECT * FROM categories WHERE id = ? AND tenant_id = ? LIMIT 1', [$id, mp_tenant_id()]);
 }
 
 function mp_find_category_by_slug_in_marketplace(string $slug, int $marketplaceTypeId): ?array
 {
     return mp_db_fetch_one(
-        'SELECT * FROM categories WHERE slug = ? AND marketplace_type_id = ? LIMIT 1',
-        [$slug, $marketplaceTypeId]
+        'SELECT * FROM categories WHERE tenant_id = ? AND slug = ? AND marketplace_type_id = ? LIMIT 1',
+        [mp_tenant_id(), $slug, $marketplaceTypeId]
     );
 }
 
@@ -25,17 +25,17 @@ function mp_active_categories_by_marketplace(int $marketplaceTypeId): array
 {
     return mp_db_fetch_all(
         'SELECT * FROM categories
-         WHERE marketplace_type_id = ? AND is_active = 1
+         WHERE tenant_id = ? AND marketplace_type_id = ? AND is_active = 1
          ORDER BY sort_order ASC, name ASC',
-        [$marketplaceTypeId]
+        [mp_tenant_id(), $marketplaceTypeId]
     );
 }
 
 function mp_all_categories_by_marketplace(int $marketplaceTypeId): array
 {
     return mp_db_fetch_all(
-        'SELECT * FROM categories WHERE marketplace_type_id = ? ORDER BY sort_order ASC, name ASC',
-        [$marketplaceTypeId]
+        'SELECT * FROM categories WHERE tenant_id = ? AND marketplace_type_id = ? ORDER BY sort_order ASC, name ASC',
+        [mp_tenant_id(), $marketplaceTypeId]
     );
 }
 
@@ -43,12 +43,12 @@ function mp_all_categories_by_marketplace(int $marketplaceTypeId): array
 function mp_count_active_categories(int $marketplaceTypeId): int
 {
     return (int) mp_db_fetch_value(
-        'SELECT COUNT(*) FROM categories WHERE marketplace_type_id = ? AND is_active = 1',
-        [$marketplaceTypeId]
+        'SELECT COUNT(*) FROM categories WHERE tenant_id = ? AND marketplace_type_id = ? AND is_active = 1',
+        [mp_tenant_id(), $marketplaceTypeId]
     );
 }
 
-/** All categories site-wide (both marketplaces), for admin/categories.php. */
+/** All categories in this tenant (every marketplace type), for admin/categories.php. */
 function mp_all_categories_admin(): array
 {
     return mp_db_fetch_all(
@@ -56,7 +56,9 @@ function mp_all_categories_admin(): array
                 (SELECT COUNT(*) FROM products WHERE products.category_id = categories.id) AS product_count
          FROM categories
          JOIN marketplace_types ON marketplace_types.id = categories.marketplace_type_id
-         ORDER BY marketplace_types.slug ASC, categories.sort_order ASC, categories.name ASC'
+         WHERE categories.tenant_id = ?
+         ORDER BY marketplace_types.slug ASC, categories.sort_order ASC, categories.name ASC',
+        [mp_tenant_id()]
     );
 }
 
@@ -82,10 +84,10 @@ function mp_set_category_active(int $id, bool $active): void
 
 /**
  * Filters an arbitrary list of category IDs down to only those that
- * actually belong to the given marketplace type. Used to sanitize
- * user-submitted category_ids[] before creating vendor category
- * requests, since categories share one auto-increment ID space
- * across all marketplace types.
+ * actually belong to the given marketplace type within this tenant.
+ * Used to sanitize user-submitted category_ids[] before creating
+ * vendor category requests, since categories share one auto-increment
+ * ID space across all marketplace types (and, now, across tenants).
  */
 function mp_filter_category_ids_by_marketplace(array $categoryIds, int $marketplaceTypeId): array
 {
@@ -95,7 +97,7 @@ function mp_filter_category_ids_by_marketplace(array $categoryIds, int $marketpl
     }
 
     $placeholders = implode(',', array_fill(0, count($categoryIds), '?'));
-    $sql = "SELECT id FROM categories WHERE marketplace_type_id = ? AND id IN ({$placeholders})";
+    $sql = "SELECT id FROM categories WHERE tenant_id = ? AND marketplace_type_id = ? AND id IN ({$placeholders})";
 
-    return array_map('intval', mp_db_fetch_column($sql, [$marketplaceTypeId, ...$categoryIds]));
+    return array_map('intval', mp_db_fetch_column($sql, [mp_tenant_id(), $marketplaceTypeId, ...$categoryIds]));
 }

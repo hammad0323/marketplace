@@ -131,9 +131,28 @@ function mp_db_insert_id(string $sql, array $params = [], ?string $types = null)
     return $insertId;
 }
 
-/** Generic INSERT built from an associative array of column => value. */
+/**
+ * Tables that are never scoped to a tenant — tenants itself (nothing
+ * to scope it to) and platform_admins (platform-operator staff belong
+ * to no tenant). Every other table gets tenant_id auto-injected below.
+ */
+const MP_TENANT_EXEMPT_TABLES = ['tenants', 'platform_admins'];
+
+/**
+ * Generic INSERT built from an associative array of column => value.
+ * Auto-injects the current tenant_id (see mp_tenant_id(),
+ * includes/middlewares/tenant.php) into every insert unless the
+ * caller already supplied one explicitly or the table is exempt —
+ * this is what lets every mp_insert_*() function across the project
+ * stay unaware of tenancy entirely, the same way they're already
+ * unaware of which MySQLi connection they're using.
+ */
 function mp_db_insert(string $table, array $data): int
 {
+    if (!array_key_exists('tenant_id', $data) && !in_array($table, MP_TENANT_EXEMPT_TABLES, true)) {
+        $data['tenant_id'] = mp_tenant_id();
+    }
+
     $columns = array_keys($data);
     $placeholders = implode(', ', array_fill(0, count($columns), '?'));
     $sql = "INSERT INTO {$table} (" . implode(', ', $columns) . ") VALUES ({$placeholders})";

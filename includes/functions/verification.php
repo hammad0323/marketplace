@@ -24,8 +24,8 @@ function mp_set_vendor_verification_token(int $vendorId): string
 {
     $token = mp_generate_verification_token();
     mp_db_execute(
-        'UPDATE vendors SET verification_token = ?, verification_token_expires_at = DATE_ADD(NOW(), INTERVAL ? HOUR) WHERE id = ?',
-        [$token, MP_VERIFICATION_TOKEN_TTL_HOURS, $vendorId]
+        'UPDATE vendors SET verification_token = ?, verification_token_expires_at = DATE_ADD(NOW(), INTERVAL ? HOUR) WHERE id = ? AND tenant_id = ?',
+        [$token, MP_VERIFICATION_TOKEN_TTL_HOURS, $vendorId, mp_tenant_id()]
     );
     return $token;
 }
@@ -34,18 +34,25 @@ function mp_set_customer_verification_token(int $customerId): string
 {
     $token = mp_generate_verification_token();
     mp_db_execute(
-        'UPDATE customers SET verification_token = ?, verification_token_expires_at = DATE_ADD(NOW(), INTERVAL ? HOUR) WHERE id = ?',
-        [$token, MP_VERIFICATION_TOKEN_TTL_HOURS, $customerId]
+        'UPDATE customers SET verification_token = ?, verification_token_expires_at = DATE_ADD(NOW(), INTERVAL ? HOUR) WHERE id = ? AND tenant_id = ?',
+        [$token, MP_VERIFICATION_TOKEN_TTL_HOURS, $customerId, mp_tenant_id()]
     );
     return $token;
 }
 
-/** Verifies the token, marks the vendor's email verified, and returns the vendor row — or null if the token is missing/expired. */
+/**
+ * Verifies the token, marks the vendor's email verified, and returns
+ * the vendor row — or null if the token is missing/expired. Scoped to
+ * the current tenant: the verify link is always visited on that
+ * tenant's own subdomain (see config/tenant.php), so the tenant is
+ * already ambient by the time this runs — this is one more layer on
+ * top of the token itself already being effectively globally unique.
+ */
 function mp_verify_vendor_token(string $token): ?array
 {
     $vendor = mp_db_fetch_one(
-        'SELECT * FROM vendors WHERE verification_token = ? AND verification_token_expires_at > NOW() LIMIT 1',
-        [$token]
+        'SELECT * FROM vendors WHERE tenant_id = ? AND verification_token = ? AND verification_token_expires_at > NOW() LIMIT 1',
+        [mp_tenant_id(), $token]
     );
     if (!$vendor) {
         return null;
@@ -62,8 +69,8 @@ function mp_verify_vendor_token(string $token): ?array
 function mp_verify_customer_token(string $token): ?array
 {
     $customer = mp_db_fetch_one(
-        'SELECT * FROM customers WHERE verification_token = ? AND verification_token_expires_at > NOW() LIMIT 1',
-        [$token]
+        'SELECT * FROM customers WHERE tenant_id = ? AND verification_token = ? AND verification_token_expires_at > NOW() LIMIT 1',
+        [mp_tenant_id(), $token]
     );
     if (!$customer) {
         return null;

@@ -26,3 +26,5 @@ define('ROUTE_VENDOR', '/vendor/');
 define('ROUTE_CUSTOMER', '/customer/');
 define('ROUTE_ADMIN', '/admin/');
 define('ROUTE_ASSETS', '/assets/');
+define('ROUTE_PLATFORM', '/platform/');
+define('ROUTE_SIGNUP', '/signup/');

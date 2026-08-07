@@ -18,7 +18,10 @@ function mp_create_transaction(array $data): int
 
 function mp_transactions_for_order(int $orderId): array
 {
-    return mp_db_fetch_all('SELECT * FROM transactions WHERE order_id = ? ORDER BY created_at DESC', [$orderId]);
+    return mp_db_fetch_all(
+        'SELECT * FROM transactions WHERE order_id = ? AND tenant_id = ? ORDER BY created_at DESC',
+        [$orderId, mp_tenant_id()]
+    );
 }
 
 function mp_update_transaction_status(int $transactionId, string $status, ?string $gatewayReference = null): void

@@ -28,9 +28,9 @@ function mp_cart_items_for_customer(int $customerId): array
 function mp_cart_add_item(int $customerId, int $productId, int $quantity = 1): void
 {
     mp_db_execute(
-        'INSERT INTO cart_items (customer_id, product_id, quantity) VALUES (?, ?, ?)
+        'INSERT INTO cart_items (tenant_id, customer_id, product_id, quantity) VALUES (?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)',
-        [$customerId, $productId, $quantity]
+        [mp_tenant_id(), $customerId, $productId, $quantity]
     );
 }
 

@@ -10,6 +10,14 @@ $pageTitle = $pageTitle ?? $siteName;
 $navCustomer = mp_current_customer();
 $navCartCount = $navCustomer ? mp_cart_item_count($navCustomer['id']) : 0;
 
+// The marketplace-type nav is driven by this tenant's own
+// marketplace_types rows (seeded at signup, editable per tenant) —
+// not a hardcoded 3-link list. The URL structure itself stays fixed
+// (every tenant's rows use the same 3 slugs mapping onto the same 3
+// folders); only the label text is dynamic per tenant.
+$navMarketplaceRoutes = ['artisan' => ROUTE_ARTISAN, 'business' => ROUTE_BUSINESS, 'official' => ROUTE_OFFICIAL_STORE];
+$navMarketplaceTypes = mp_current_tenant() ? mp_all_marketplace_types() : [];
+
 // Maintenance mode blocks the public site for everyone except a
 // logged-in admin (who needs to be able to reach admin/settings.php
 // to turn it back off) or an already-logged-in vendor checking their
@@ -62,9 +70,11 @@ if (mp_get_setting('maintenance_mode', false) && !mp_current_admin()) {
         <a href="<?= mp_e(ROUTE_HOME) ?>" class="site-brand"><?= mp_e($siteName) ?></a>
 
         <nav class="marketplace-nav">
-            <a href="<?= mp_e(ROUTE_ARTISAN) ?>index.php">Artisan Marketplace</a>
-            <a href="<?= mp_e(ROUTE_BUSINESS) ?>index.php">Business Shops</a>
-            <a href="<?= mp_e(ROUTE_OFFICIAL_STORE) ?>index.php">Official Store</a>
+            <?php foreach ($navMarketplaceTypes as $navType): ?>
+                <?php if (isset($navMarketplaceRoutes[$navType['slug']])): ?>
+                    <a href="<?= mp_e($navMarketplaceRoutes[$navType['slug']]) ?>index.php"><?= mp_e($navType['name']) ?></a>
+                <?php endif; ?>
+            <?php endforeach; ?>
         </nav>
 
         <form method="get" action="<?= mp_e(ROUTE_STORE) ?>search.php" class="site-search">

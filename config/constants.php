@@ -14,3 +14,13 @@ if (!defined('MP_BOOTSTRAP')) {
 define('SITE_NAME', 'Marketplace');
 
 define('ERROR_REPORTING_ENABLED', true);
+
+/**
+ * The base domain this multi-tenant install is deployed under. Every
+ * signed-up tenant is reached at {subdomain}.APP_BASE_DOMAIN (see
+ * config/tenant.php) — a single wildcard DNS record (e.g. "*.marketplace.test")
+ * pointed at this same document root is all that's needed; no per-tenant
+ * virtual host or database is required. Edit this to your real domain
+ * at deploy, exactly like the DB_* constants in config/database.php.
+ */
+define('APP_BASE_DOMAIN', 'marketplace.test');
