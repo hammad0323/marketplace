@@ -71,7 +71,7 @@ require __DIR__ . '/includes/header.php';
     </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1.5fr 1fr;gap:24px;margin-bottom:24px;align-items:flex-start;">
+<div class="split-main-aside-lg">
     <div class="chart-card card" data-reveal>
         <div class="chart-card-head"><h4>Appointments (6 mo)</h4></div>
         <canvas id="apptChart" height="230"></canvas>
@@ -87,7 +87,7 @@ require __DIR__ . '/includes/header.php';
         <h4>Recent Doctor Applications</h4>
         <a href="/admin/doctors" style="font-size:13px;color:var(--color-primary);font-weight:600;">View all</a>
     </div>
-    <table class="data-table">
+    <div class="table-scroll"><table class="data-table">
         <thead><tr><th>Doctor</th><th>Specialization</th><th>Applied</th><th>Status</th></tr></thead>
         <tbody>
         <?php while ($d = mysqli_fetch_assoc($recentDoctors)): ?>
@@ -99,7 +99,7 @@ require __DIR__ . '/includes/header.php';
         </tr>
         <?php endwhile; ?>
         </tbody>
-    </table>
+    </table></div>
 </div>
 
 <?php require __DIR__ . '/includes/footer.php'; ?>

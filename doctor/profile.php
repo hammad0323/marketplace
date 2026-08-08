@@ -32,7 +32,7 @@ $heading = 'My Profile';
 $extraScripts = '<script src="/assets/js/profile.js"></script><script src="/assets/js/doctor-profile-extra.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
-<div style="display:grid;grid-template-columns:280px 1fr;gap:24px;align-items:flex-start;">
+<div class="split-sidebar-left">
     <div class="card" style="padding:28px;text-align:center;" data-reveal>
         <div style="position:relative;width:100px;height:100px;margin:0 auto 16px;">
             <img id="avatar-preview" src="<?= e(avatar_url($user['avatar'], $user['full_name'])) ?>" style="width:100px;height:100px;border-radius:50%;object-fit:cover;">

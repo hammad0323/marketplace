@@ -102,7 +102,7 @@ require __DIR__ . '/includes/header.php';
 </section>
 
 <section class="section" style="padding-top:0;">
-    <div class="container" style="display:grid;grid-template-columns:280px 1fr;gap:32px;align-items:flex-start;">
+    <div class="container split-sidebar-left" style="gap:32px;">
         <aside class="card" style="padding:24px;position:sticky;top:calc(var(--header-height) + 20px);">
             <form method="get" id="filter-form">
                 <div class="form-group">

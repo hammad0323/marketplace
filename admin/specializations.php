@@ -17,7 +17,7 @@ require __DIR__ . '/includes/header.php';
 </div>
 
 <div class="card table-card" data-reveal>
-    <table class="data-table">
+    <div class="table-scroll"><table class="data-table">
         <thead><tr><th>Icon</th><th>Name</th><th>Description</th><th>Doctors</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody id="spec-tbody">
         <?php while ($s = mysqli_fetch_assoc($specs)): ?>
@@ -35,7 +35,7 @@ require __DIR__ . '/includes/header.php';
         </tr>
         <?php endwhile; ?>
         </tbody>
-    </table>
+    </table></div>
 </div>
 
 <div class="modal-overlay" id="spec-modal">

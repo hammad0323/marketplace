@@ -15,7 +15,7 @@ $heading = 'Activity Logs';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="card table-card" data-reveal>
-    <table class="data-table">
+    <div class="table-scroll"><table class="data-table">
         <thead><tr><th>User</th><th>Role</th><th>Action</th><th>Description</th><th>IP</th><th>When</th></tr></thead>
         <tbody>
         <?php while ($l = mysqli_fetch_assoc($logs)): ?>
@@ -29,7 +29,7 @@ require __DIR__ . '/includes/header.php';
         </tr>
         <?php endwhile; ?>
         </tbody>
-    </table>
+    </table></div>
 </div>
 <?= pagination_links($pagination, '/admin/logs') ?>
 <?php require __DIR__ . '/includes/footer.php'; ?>

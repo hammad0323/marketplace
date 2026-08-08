@@ -29,7 +29,7 @@ require __DIR__ . '/includes/header.php';
 <div class="empty-state card"><i class="ri-stethoscope-line"></i><h4>No doctors here</h4><p>Nothing to show in this tab.</p></div>
 <?php else: ?>
 <div class="card table-card" data-reveal>
-    <table class="data-table">
+    <div class="table-scroll"><table class="data-table">
         <thead><tr><th>Doctor</th><th>Specialization</th><th>License #</th><th>Applied</th><th>Status</th><th>Account</th><th>Actions</th></tr></thead>
         <tbody>
         <?php while ($d = mysqli_fetch_assoc($doctors)): ?>
@@ -62,7 +62,7 @@ require __DIR__ . '/includes/header.php';
         </tr>
         <?php endwhile; ?>
         </tbody>
-    </table>
+    </table></div>
 </div>
 <?php endif; ?>
 <?php require __DIR__ . '/includes/footer.php'; ?>

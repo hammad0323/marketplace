@@ -29,6 +29,7 @@ $footerSpecs = mysqli_query(db(), 'SELECT name, slug FROM specializations WHERE 
                 <h5>Company</h5>
                 <ul>
                     <li><a href="/about">About Us</a></li>
+                    <li><a href="/blog">Blog</a></li>
                     <li><a href="/contact">Contact</a></li>
                     <li><a href="/faq">FAQs</a></li>
                     <li><a href="/doctor-register">Join as a Doctor</a></li>

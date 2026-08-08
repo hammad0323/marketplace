@@ -4,9 +4,8 @@
 --
 -- Import this single file to create the database, all tables, and seed
 -- data. Tables are grouped by module. Tables marked "PHASE 2+" define the
--- storage shape for features described in the product spec (chat, medicine
--- store, membership billing, blog/CMS) that are not yet wired to UI in this
--- build — they exist so future work extends the schema instead of
+-- storage shape for features not yet wired to UI in this build (paid doctor
+-- memberships) — they exist so future work extends the schema instead of
 -- redesigning it.
 -- ============================================================================
 
@@ -352,7 +351,7 @@ CREATE TABLE testimonials (
 ) ENGINE=InnoDB;
 
 -- ============================================================================
--- PHASE 2+ — storage shape reserved for modules not yet wired to UI
+-- Doctor memberships (PHASE 2+, not yet wired to UI), messaging, store, blog
 -- ============================================================================
 
 DROP TABLE IF EXISTS membership_plans;
@@ -412,53 +411,61 @@ CREATE TABLE chat_messages (
     CONSTRAINT fk_msg_conv FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
-DROP TABLE IF EXISTS medicine_categories;
-CREATE TABLE medicine_categories (
+-- Doctor products/services store. Creating listings is gated to premium
+-- doctors (doctors.is_premium) at the application layer.
+DROP TABLE IF EXISTS product_categories;
+CREATE TABLE product_categories (
     id   INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     slug VARCHAR(120) NOT NULL,
-    UNIQUE KEY uq_medcat_slug (slug)
+    UNIQUE KEY uq_prodcat_slug (slug)
 ) ENGINE=InnoDB;
 
-DROP TABLE IF EXISTS medicines;
-CREATE TABLE medicines (
-    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    doctor_id   INT UNSIGNED NOT NULL COMMENT 'store owner',
-    category_id INT UNSIGNED DEFAULT NULL,
-    name        VARCHAR(180) NOT NULL,
-    slug        VARCHAR(200) NOT NULL,
-    description TEXT,
-    price       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    stock       INT UNSIGNED NOT NULL DEFAULT 0,
-    image       VARCHAR(255) DEFAULT NULL,
-    is_active   TINYINT(1) NOT NULL DEFAULT 1,
-    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_medicine_slug (slug),
-    CONSTRAINT fk_medicine_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE,
-    CONSTRAINT fk_medicine_cat FOREIGN KEY (category_id) REFERENCES medicine_categories(id) ON DELETE SET NULL
+DROP TABLE IF EXISTS doctor_products;
+CREATE TABLE doctor_products (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    doctor_id       INT UNSIGNED NOT NULL COMMENT 'store owner',
+    category_id     INT UNSIGNED DEFAULT NULL,
+    type            ENUM('product','service') NOT NULL DEFAULT 'product',
+    name            VARCHAR(180) NOT NULL,
+    slug            VARCHAR(200) NOT NULL,
+    description     TEXT,
+    price           DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    stock           INT UNSIGNED DEFAULT NULL COMMENT 'physical products only; NULL for services',
+    duration_label  VARCHAR(60) DEFAULT NULL COMMENT 'services only, e.g. "3 sessions", "45 min"',
+    image           VARCHAR(255) DEFAULT NULL,
+    is_active       TINYINT(1) NOT NULL DEFAULT 1,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_doctor_product_slug (slug),
+    CONSTRAINT fk_doctor_product_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE,
+    CONSTRAINT fk_doctor_product_cat FOREIGN KEY (category_id) REFERENCES product_categories(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 DROP TABLE IF EXISTS orders;
 CREATE TABLE orders (
-    id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    patient_id   INT UNSIGNED NOT NULL,
-    order_number VARCHAR(40) NOT NULL,
-    total_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    status       ENUM('pending','paid','shipped','delivered','cancelled') NOT NULL DEFAULT 'pending',
-    created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    patient_id    INT UNSIGNED NOT NULL,
+    doctor_id     INT UNSIGNED NOT NULL,
+    order_number  VARCHAR(40) NOT NULL,
+    total_amount  DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    contact_phone VARCHAR(30) DEFAULT NULL,
+    notes         TEXT,
+    status        ENUM('pending','confirmed','completed','cancelled') NOT NULL DEFAULT 'pending',
+    created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_order_number (order_number),
-    CONSTRAINT fk_order_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
+    CONSTRAINT fk_order_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
+    CONSTRAINT fk_order_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 DROP TABLE IF EXISTS order_items;
 CREATE TABLE order_items (
-    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    order_id    INT UNSIGNED NOT NULL,
-    medicine_id INT UNSIGNED NOT NULL,
-    quantity    INT UNSIGNED NOT NULL DEFAULT 1,
-    unit_price  DECIMAL(10,2) NOT NULL,
+    id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    order_id   INT UNSIGNED NOT NULL,
+    product_id INT UNSIGNED NOT NULL,
+    quantity   INT UNSIGNED NOT NULL DEFAULT 1,
+    unit_price DECIMAL(10,2) NOT NULL,
     CONSTRAINT fk_item_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    CONSTRAINT fk_item_medicine FOREIGN KEY (medicine_id) REFERENCES medicines(id)
+    CONSTRAINT fk_item_product FOREIGN KEY (product_id) REFERENCES doctor_products(id)
 ) ENGINE=InnoDB;
 
 DROP TABLE IF EXISTS blog_posts;

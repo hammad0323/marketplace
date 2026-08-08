@@ -23,7 +23,7 @@ require __DIR__ . '/includes/header.php';
     <?php if (mysqli_num_rows($patients) === 0): ?>
     <div class="empty-state"><i class="ri-group-line"></i><h4>No patients yet</h4><p>Patients who book with you will show up here.</p></div>
     <?php else: ?>
-    <table class="data-table">
+    <div class="table-scroll"><table class="data-table">
         <thead><tr><th>Patient</th><th>Contact</th><th>Total Visits</th><th>Last Visit</th></tr></thead>
         <tbody>
         <?php while ($p = mysqli_fetch_assoc($patients)): ?>
@@ -35,7 +35,7 @@ require __DIR__ . '/includes/header.php';
         </tr>
         <?php endwhile; ?>
         </tbody>
-    </table>
+    </table></div>
     <?php endif; ?>
 </div>
 <?php require __DIR__ . '/includes/footer.php'; ?>

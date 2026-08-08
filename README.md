@@ -9,18 +9,20 @@ this project.
 
 This is a **complete, working core platform** — guest browsing, patient and
 doctor auth, doctor verification, appointment booking with live availability,
-doctor-patient messaging, transactional email, and admin oversight — built to
-a production security bar (CSRF, prepared statements everywhere, hashed
-passwords, rate-limited login, validated uploads, role-based access control
-on every protected page).
+doctor-patient messaging, a doctor storefront, a blog, transactional email,
+and admin oversight — built to a production security bar (CSRF, prepared
+statements everywhere, hashed passwords, rate-limited login, validated
+uploads, role-based access control on every protected page) and designed
+mobile-first: every page, dashboard, and modal is usable down to a 375px
+phone viewport.
 
 It is **not** the entire feature wishlist a platform like this could
-eventually have (a medicine store, paid memberships, a CMS page builder, a
-blog). Those are real, multi-week efforts in their own right. Rather than
-fake them, the database schema was designed to already support them (see
-`database/schema.sql`, tables marked "PHASE 2+"), so they can be built later
-as pure additions — new pages and endpoints — without touching what's
-already here.
+eventually have (paid doctor memberships/subscription billing, a support
+ticket system). Those are real, multi-week efforts in their own right.
+Rather than fake them, the database schema was designed to already support
+them (see `database/schema.sql`, tables marked "PHASE 2+"), so they can be
+built later as pure additions — new pages and endpoints — without touching
+what's already here.
 
 ### Implemented and fully working
 - **Public site**: homepage, doctor directory with filters/search, doctor
@@ -65,6 +67,19 @@ already here.
   visitor — the OS/browser dark-mode preference is never read. A visitor who
   explicitly toggles dark mode has that remembered (localStorage) for their
   next visit only; nothing is ever pushed into dark mode automatically.
+- **Doctor storefront**: Premium doctors can list physical products and
+  bookable service packages on their public profile; patients request to buy
+  and the doctor confirms/completes/cancels the request from their own
+  dashboard. See "Doctor storefront" below.
+- **Blog**: admin writes posts with a built-in rich text editor (bold/italic/
+  underline, headings, lists, quotes, links, inline images) — no external
+  editor library. Published posts appear on a public, paginated `/blog` with
+  SEO metadata and JSON-LD; drafts stay admin-only. See "Blog" below.
+- **Mobile responsive**: every public page, patient/doctor/admin dashboard,
+  chat screen, and modal collapses correctly down to a 375px viewport — a
+  slide-out sidebar nav, a stacked mobile menu with the auth buttons folded
+  in, tables that scroll horizontally instead of breaking layout, and no
+  page that scrolls sideways. See "Mobile responsiveness" below.
 
 ### Clean URLs
 Every internal link is written and rendered without `.php` (`/doctors`,
@@ -120,10 +135,69 @@ registration and profile editing use a checkbox grid, and every place that
 used to show a single specialization (directory filters, profile pages,
 admin lists) now shows/filters on the full set.
 
+### Doctor storefront
+- Selling products/services is a **Premium** perk, gated on `doctors.is_premium`
+  (the same flag admin already toggles from **Admin → Doctors**). A
+  non-premium doctor visiting **Doctor Dashboard → My Store** sees an upgrade
+  message instead of the management UI, and the save endpoint re-checks the
+  flag server-side regardless of what the client sends.
+- A listing is either a `product` (has stock, decremented on each request) or
+  a `service` (no stock, an optional free-text duration/session label like
+  "3 sessions"). Doctors manage their catalog and incoming orders from two
+  tabs on the same page (`doctor/products.php`).
+- On the doctor's public profile, active listings appear under a "Products &
+  Services" tab (only when the doctor is Premium **and** their `show_store`
+  privacy toggle is on). A logged-in patient clicks "Request This," fills in
+  quantity/phone/notes, and that creates an `orders` row — this is a request/
+  inquiry flow, not a payment checkout (no payment gateway is wired up,
+  consistent with the rest of the app: appointments record a `fee` the same
+  way without processing a real charge).
+- The doctor confirms, completes, or cancels each request from the Orders
+  tab; every transition notifies + emails the patient via the same
+  `notify_user()` pipeline chat and appointments use. Patients see their full
+  order history at `/patient/orders`.
+
+### Blog
+- The rich text editor (`assets/js/rich-editor.js`) is a small, dependency-
+  free `contenteditable` component with its own toolbar (bold/italic/
+  underline, H2/H3/paragraph, bullet/numbered lists, blockquote, link,
+  inline image, clear formatting) — consistent with the project's policy of
+  vendoring or hand-writing everything instead of pulling in a CDN library.
+  Inline images upload immediately via AJAX and get inserted at the cursor.
+- Admin manages posts from **Admin → Blog** (`admin/blog.php`): title,
+  excerpt, featured image, rich content, and a draft/published status. Only
+  published posts are queryable from the public `/blog` (paginated listing)
+  and `/blog-post?slug=…` (detail + "more from the blog"); a draft's detail
+  URL 404s for everyone except through the admin editor.
+- Stored content is trusted HTML, the same pattern already used for the
+  About/Privacy/Terms CMS pages — safe because only the admin role can write
+  it, not because it's sanitized.
+
+### Mobile responsiveness
+- Public nav collapses to a hamburger menu below 860px; the dropdown panel
+  contains the nav links **and** the Log In/Get Started actions (previously
+  those two buttons had nowhere to go on narrow screens and overflowed the
+  header — now confirmed clipped correctly at a 375px viewport).
+- Every two/three-column layout built with an inline `grid-template-columns`
+  (doctor directory sidebar, doctor profile, dashboards, login/register
+  cards, the contact page) was moved to a small set of reusable `.split-*`
+  utility classes in `style.css` so they have an actual responsive collapse
+  rule instead of silently overflowing on phones.
+- All `.data-table` tables are wrapped in a `.table-scroll` container so wide
+  tables (appointments, doctor lists, orders) scroll horizontally inside
+  their own box on narrow screens instead of blowing out the page width.
+- Chart.js canvases are capped at `max-width:100%` inside an
+  `overflow:hidden` card, since Chart.js's own responsive sizing can
+  otherwise briefly render wider than its container on first paint.
+- Verified with real mobile-viewport automation (375×812, device-emulated,
+  including a full page scroll to trigger the same scroll-in animations a
+  real visitor would see) across all public pages, both dashboards' key
+  pages, and the new store/blog/orders pages — zero horizontal overflow
+  anywhere in the app.
+
 ### Schema-ready for phase 2 (not yet wired to UI)
-Medicine store/orders, paid doctor memberships, blog. Tables: `medicines`,
-`medicine_categories`, `orders`, `order_items`, `membership_plans`,
-`doctor_memberships`, `blog_posts`, `support_tickets`.
+Paid doctor memberships/subscription billing and a support ticket system.
+Tables: `membership_plans`, `doctor_memberships`, `support_tickets`.
 
 ## Tech stack
 
@@ -152,13 +226,13 @@ fonts CDN can no longer take the rest of the page down with it.
 ```
 /config           bootstrap (config.php: mysqli connection, sessions)
 /includes          shared PHP helpers: functions.php, auth.php, mailer.php (SMTP client), header/footer
-/ajax               all AJAX endpoints (auth, booking, chat, notifications, dashboards, admin actions)
-/admin, /doctor, /patient   role-specific dashboards, each with includes/ and messages.php (doctor/patient)
-/assets/css        style.css (the entire design system)
-/assets/js         main.js, toast.js, auth-modal.js, booking.js, chat.js, notifications.js, per-panel scripts
+/ajax               all AJAX endpoints (auth, booking, chat, notifications, store/orders, blog, admin actions)
+/admin, /doctor, /patient   role-specific dashboards, each with includes/, messages.php, products.php/orders.php
+/assets/css        style.css (the entire design system, incl. .split-* responsive layout classes)
+/assets/js         main.js, toast.js, auth-modal.js, booking.js, chat.js, notifications.js, rich-editor.js, per-panel scripts
 /assets/js/vendor   self-hosted jQuery + Chart.js
 /assets/fonts/remixicon   self-hosted icon font
-/uploads            avatars/ certificates/ reports/ (never executes PHP — see .htaccess)
+/uploads            avatars/ certificates/ products/ blog/ reports/ (never executes PHP — see .htaccess)
 /database          schema.sql, seed.sql
 /logs              php-error.log (git-ignored)
 ```
@@ -227,8 +301,13 @@ still works with `.php` in the URL if `mod_rewrite` isn't available.
   is ready and a real SMTP transport now exists to deliver it, but the
   request/reset UI itself wasn't built in this pass; the login page has no
   dead "forgot password" link pointing nowhere.
-- **Medicine store, paid memberships, blog** — see "Schema-ready for phase 2"
-  above.
+- **Paid doctor memberships / subscription billing, support tickets** — see
+  "Schema-ready for phase 2" above.
+- **Real payment processing** for the doctor storefront — requesting a
+  product/service creates a pending order the doctor confirms manually,
+  the same way booking an appointment records a fee without charging a
+  card; wiring a real payment gateway is a separate, deployment-specific
+  integration.
 - **True real-time delivery** (WebSockets/SSE) for chat and notifications —
   both use short-interval AJAX polling (~4s for chat, ~20s for the
   notification bell) instead, which needs no persistent server process and

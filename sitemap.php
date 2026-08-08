@@ -2,10 +2,11 @@
 require __DIR__ . '/config/config.php';
 header('Content-Type: application/xml; charset=utf-8');
 
-$staticPages = ['/', '/doctors', '/specializations', '/about', '/contact', '/faq', '/privacy-policy', '/terms', '/doctor-register', '/login', '/register'];
+$staticPages = ['/', '/doctors', '/specializations', '/blog', '/about', '/contact', '/faq', '/privacy-policy', '/terms', '/doctor-register', '/login', '/register'];
 
 $doctors = mysqli_query(db(), "SELECT slug, updated_at FROM doctors WHERE verification_status = 'verified'");
 $specs = mysqli_query(db(), 'SELECT slug FROM specializations WHERE is_active = 1');
+$blogPosts = mysqli_query(db(), "SELECT slug, published_at FROM blog_posts WHERE status = 'published'");
 
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
@@ -18,6 +19,9 @@ while ($d = mysqli_fetch_assoc($doctors)) {
 }
 while ($s = mysqli_fetch_assoc($specs)) {
     echo '<url><loc>' . e(APP_URL . '/doctors?specialization=' . $s['slug']) . '</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>' . "\n";
+}
+while ($b = mysqli_fetch_assoc($blogPosts)) {
+    echo '<url><loc>' . e(APP_URL . '/blog-post?slug=' . $b['slug']) . '</loc><lastmod>' . date('Y-m-d', strtotime($b['published_at'])) . '</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>' . "\n";
 }
 
 echo '</urlset>';

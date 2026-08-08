@@ -120,6 +120,30 @@ INSERT INTO reviews (appointment_id, patient_id, doctor_id, rating, comment) VAL
 (3, 2, 1, 5, 'Dr. Chen was thorough and explained everything clearly. Highly recommend.');
 
 -- ----------------------------------------------------------------------------
+-- Doctor store — products & services (premium doctors only: ids 1, 2, 3, 5)
+-- ----------------------------------------------------------------------------
+INSERT INTO product_categories (name, slug) VALUES
+('Supplements', 'supplements'),
+('Home Health Devices', 'home-health-devices'),
+('Care Packages', 'care-packages');
+
+INSERT INTO doctor_products (doctor_id, category_id, type, name, slug, description, price, stock, duration_label, is_active) VALUES
+(1, 1, 'product', 'Omega-3 Heart Health Capsules (90ct)', 'omega-3-heart-health-capsules', 'Pharmacist-grade fish oil capsules recommended by Dr. Chen for cardiovascular support. 90-day supply.', 24.99, 150, NULL, 1),
+(1, 2, 'product', 'Home Blood Pressure Monitor', 'home-blood-pressure-monitor', 'Clinically validated upper-arm cuff monitor with Bluetooth sync, the same model used in Dr. Chen''s clinic.', 49.00, 40, NULL, 1),
+(1, 3, 'service', 'Cardiac Wellness Program — 3 Sessions', 'cardiac-wellness-program-3-sessions', 'A structured 3-session program covering diet, exercise tolerance, and medication review for heart health.', 180.00, NULL, '3 sessions', 1),
+(2, 2, 'product', 'Migraine Relief Cooling Cap', 'migraine-relief-cooling-cap', 'Gel-based cooling cap recommended for acute migraine episodes, reusable and freezer-safe.', 34.50, 60, NULL, 1),
+(2, 3, 'service', 'Neurology Second Opinion Review', 'neurology-second-opinion-review', 'Dr. Rivera reviews your existing scans/records and provides a written second-opinion summary.', 120.00, NULL, '1 review + 20 min call', 1),
+(3, 1, 'product', 'Pediatric Multivitamin Gummies', 'pediatric-multivitamin-gummies', 'Sugar-free daily multivitamin gummies formulated for children ages 4-12, recommended by Dr. Okafor.', 18.99, 200, NULL, 1),
+(3, 3, 'service', 'Newborn Development Package — 6 Weeks', 'newborn-development-package-6-weeks', 'Weekly check-ins for the first six weeks covering feeding, growth tracking, and developmental milestones.', 210.00, NULL, '6 weekly check-ins', 1),
+(5, 2, 'product', 'Post-Surgical Knee Brace', 'post-surgical-knee-brace', 'Adjustable hinged knee brace recommended for post-operative recovery and ligament support.', 65.00, 25, NULL, 1),
+(5, 3, 'service', 'Sports Injury Rehab Plan — 4 Weeks', 'sports-injury-rehab-plan-4-weeks', 'A 4-week guided rehabilitation plan with weekly progress reviews for common sports injuries.', 260.00, NULL, '4 weeks, weekly review', 1);
+
+INSERT INTO orders (patient_id, doctor_id, order_number, total_amount, contact_phone, notes, status) VALUES
+(1, 1, 'ORD-20260801-0001', 24.99, '+1-555-0200', 'Please ship to my home address on file.', 'pending');
+INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES
+(1, 1, 1, 24.99);
+
+-- ----------------------------------------------------------------------------
 -- Site content
 -- ----------------------------------------------------------------------------
 INSERT INTO site_settings (setting_key, setting_value) VALUES
@@ -155,6 +179,23 @@ INSERT INTO testimonials (name, role, content, rating, sort_order) VALUES
 ('Grace Lin', 'Patient', 'Booking an online consultation took less than two minutes and Dr. Chen called in exactly on time. This is how healthcare should work.', 5, 1),
 ('Marcus Webb', 'Patient', 'I found a verified pediatrician for my daughter within our budget and the whole family loves her now.', 5, 2),
 ('Dr. Elena Petrova', 'Orthopedic Surgeon', 'MediConnect''s scheduling tools cut my no-show rate in half. The platform is genuinely built for how clinicians work.', 5, 3);
+
+-- ----------------------------------------------------------------------------
+-- Blog posts (authored by admin, written via the rich text editor)
+-- ----------------------------------------------------------------------------
+INSERT INTO blog_posts (author_id, title, slug, excerpt, content, status, published_at) VALUES
+(1, '5 Questions to Ask Before Your First Online Consultation', '5-questions-to-ask-before-your-first-online-consultation',
+ 'Telemedicine works best when you walk in prepared. Here is what to sort out before you click "Join Call."',
+ '<p>Online consultations can be just as effective as an in-person visit, but only if you show up prepared. Here are five questions worth answering before your appointment starts.</p><h2>1. What symptoms do I want to describe, in order?</h2><p>Write a short timeline before the call. Doctors can diagnose faster when they hear a clear sequence of events instead of a scattered list.</p><h2>2. Do I have my medication list handy?</h2><p>Have the names, doses, and how long you have been taking each one ready to read out or share.</p><h2>3. Is my internet connection reliable?</h2><p>A wired connection or strong Wi-Fi signal avoids dropped video mid-sentence, which matters most when discussing something sensitive.</p><blockquote>A few minutes of preparation turns a rushed call into a genuinely useful consultation.</blockquote><h2>4. What outcome am I hoping for?</h2><p>A prescription, a referral, reassurance, or a follow-up plan &mdash; naming it helps your doctor address it directly.</p><h2>5. Do I have a follow-up plan?</h2><p>Ask when and how you should check back in, especially if symptoms do not improve.</p>',
+ 'published', DATE_SUB(NOW(), INTERVAL 6 DAY)),
+(1, 'How Doctor Verification Works on MediConnect', 'how-doctor-verification-works-on-mediconnect',
+ 'Every doctor on our platform is manually reviewed before the "Verified" badge appears. Here is what that process actually checks.',
+ '<p>Trust is the foundation of telemedicine. Before any doctor appears in search results on MediConnect, our team completes a manual review of their credentials.</p><h2>What we check</h2><ul><li>Medical registration number against the issuing authority</li><li>Uploaded certificates and qualifications</li><li>Clinic or practice details, when applicable</li></ul><h2>Why it takes a human review</h2><p>Automated checks catch typos, not fraud. A manual reviewer looks for inconsistencies that a script would miss, which is why verification can take a few business days.</p><h2>What "Premium" means separately from "Verified"</h2><p>Verification is a trust signal every doctor earns the same way. Premium is a separate, optional upgrade that unlocks extra tools like a public storefront for products and services &mdash; it is not a shortcut around verification.</p>',
+ 'published', DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(1, 'Building Our New Messaging Feature: What Changed', 'building-our-new-messaging-feature-what-changed',
+ 'A behind-the-scenes look at the doctor-patient chat system we just shipped, and why we designed it the way we did.',
+ '<p>We just rolled out direct messaging between patients and doctors. Here is a quick look at how it works.</p><h2>Doctors control their own availability</h2><p>Each doctor decides whether messaging is on at all, sets an optional daily time window, and chooses whether logged-out visitors can even see the option.</p><h2>The green dot means more than "online"</h2><p>It only lights up when messaging is enabled, the current time is inside the doctor''s set hours, and the doctor has been active on the platform recently &mdash; not just when they are logged in.</p><p>We hope this makes it faster to get a quick answer from your care team without needing to book a full appointment for every small question.</p>',
+ 'draft', NULL);
 
 -- ----------------------------------------------------------------------------
 -- Membership plans (phase 2+, referenced by doctors.membership_plan_id)

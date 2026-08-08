@@ -50,7 +50,7 @@ require __DIR__ . '/includes/header.php';
 <div class="empty-state card"><i class="ri-calendar-line"></i><h4>No appointments found</h4></div>
 <?php else: ?>
 <div class="card table-card" data-reveal>
-    <table class="data-table">
+    <div class="table-scroll"><table class="data-table">
         <thead><tr><th>Patient</th><th>Doctor</th><th>Date &amp; Time</th><th>Type</th><th>Fee</th><th>Status</th></tr></thead>
         <tbody>
         <?php while ($a = mysqli_fetch_assoc($appointments)): ?>
@@ -64,7 +64,7 @@ require __DIR__ . '/includes/header.php';
         </tr>
         <?php endwhile; ?>
         </tbody>
-    </table>
+    </table></div>
 </div>
 <?= pagination_links($pagination, '/admin/appointments' . ($status ? '?status=' . e($status) : '')) ?>
 <?php endif; ?>

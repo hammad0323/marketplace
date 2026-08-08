@@ -14,7 +14,7 @@ require __DIR__ . '/includes/header.php';
             <p>Questions about booking, billing, or partnering with us? Send a message and our team will respond within one business day.</p>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1.3fr;gap:32px;">
+        <div class="split-contact">
             <div class="stagger">
                 <div class="card" style="padding:24px;display:flex;gap:14px;align-items:center;margin-bottom:16px;" data-reveal>
                     <div class="icon-badge" style="width:46px;height:46px;border-radius:12px;background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;"><i class="ri-mail-line"></i></div>

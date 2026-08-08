@@ -12,7 +12,7 @@ require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 40px);min-height:80vh;display:flex;align-items:center;">
     <div class="container" style="max-width:920px;">
-        <div class="card" style="display:grid;grid-template-columns:1fr 1fr;overflow:hidden;padding:0;" data-reveal>
+        <div class="card split-even" data-reveal>
             <div class="modal-visual" style="border-radius:0;">
                 <i class="ri-user-heart-fill" style="font-size:44px;margin-bottom:20px;"></i>
                 <h3>Join MediConnect</h3>

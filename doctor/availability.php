@@ -31,7 +31,7 @@ require __DIR__ . '/includes/header.php';
         <button type="button" class="btn btn-primary btn-sm" id="save-availability-btn">Save Schedule</button>
     </div>
     <div style="overflow-x:auto;">
-    <table class="data-table" id="availability-table">
+    <div class="table-scroll"><table class="data-table" id="availability-table">
         <thead><tr><th>Day</th><th>Enabled</th><th>Start</th><th>End</th><th>Slot Length</th><th>Type</th></tr></thead>
         <tbody>
         <?php for ($d = 0; $d <= 6; $d++): $row = $existing[$d][0] ?? null; ?>
@@ -57,7 +57,7 @@ require __DIR__ . '/includes/header.php';
         </tr>
         <?php endfor; ?>
         </tbody>
-    </table>
+    </table></div>
     </div>
 </div>
 

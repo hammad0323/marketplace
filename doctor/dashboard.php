@@ -73,7 +73,7 @@ require __DIR__ . '/includes/header.php';
     </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:flex-start;">
+<div class="split-main-aside">
     <div class="card table-card" data-reveal>
         <div style="padding:20px 24px;border-bottom:1px solid var(--color-border);display:flex;justify-content:space-between;align-items:center;">
             <h4>Upcoming Appointments</h4>
@@ -82,7 +82,7 @@ require __DIR__ . '/includes/header.php';
         <?php if (mysqli_num_rows($upcoming) === 0): ?>
         <div class="empty-state"><i class="ri-calendar-line"></i><h4>No upcoming appointments</h4><p>New booking requests will appear here.</p></div>
         <?php else: ?>
-        <table class="data-table">
+        <div class="table-scroll"><table class="data-table">
             <thead><tr><th>Patient</th><th>Date &amp; Time</th><th>Type</th><th>Status</th><th></th></tr></thead>
             <tbody>
             <?php while ($a = mysqli_fetch_assoc($upcoming)): ?>
@@ -100,7 +100,7 @@ require __DIR__ . '/includes/header.php';
                 </tr>
             <?php endwhile; ?>
             </tbody>
-        </table>
+        </table></div>
         <?php endif; ?>
     </div>
     <div class="chart-card card" data-reveal="right">

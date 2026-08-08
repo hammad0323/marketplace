@@ -43,6 +43,15 @@ if ($privacy['show_certificates']) {
     mysqli_stmt_close($stmt);
 }
 
+$products = [];
+if ($doctor['is_premium'] && $privacy['show_store']) {
+    $stmt = mysqli_prepare(db(), 'SELECT * FROM doctor_products WHERE doctor_id = ? AND is_active = 1 ORDER BY type, name');
+    mysqli_stmt_bind_param($stmt, 'i', $doctor['id']);
+    mysqli_stmt_execute($stmt);
+    $products = mysqli_stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC);
+    mysqli_stmt_close($stmt);
+}
+
 $reviews = [];
 if ($privacy['show_reviews']) {
     $stmt = mysqli_prepare(db(), "SELECT r.*, u.full_name, u.avatar FROM reviews r
@@ -72,7 +81,7 @@ require __DIR__ . '/includes/header.php';
             <span><?= e($doctor['full_name']) ?></span>
         </nav>
 
-        <div style="display:grid;grid-template-columns:1fr 380px;gap:32px;align-items:flex-start;">
+        <div class="split-sidebar-right" style="gap:32px;">
             <div>
                 <div class="card" style="padding:32px;margin-bottom:24px;" data-reveal>
                     <div style="display:flex;gap:20px;flex-wrap:wrap;">
@@ -104,6 +113,7 @@ require __DIR__ . '/includes/header.php';
                 <div class="tabs-row">
                     <button class="tab-btn active" data-tab-target="overview">Overview</button>
                     <?php if ($certificates): ?><button class="tab-btn" data-tab-target="certificates">Certificates</button><?php endif; ?>
+                    <?php if ($products): ?><button class="tab-btn" data-tab-target="store">Products &amp; Services (<?= count($products) ?>)</button><?php endif; ?>
                     <?php if ($privacy['show_reviews']): ?><button class="tab-btn" data-tab-target="reviews">Reviews (<?= count($reviews) ?>)</button><?php endif; ?>
                 </div>
 
@@ -135,6 +145,37 @@ require __DIR__ . '/includes/header.php';
                         <div class="card" style="padding:20px;display:flex;gap:14px;align-items:center;">
                             <div class="icon-badge" style="width:46px;height:46px;border-radius:12px;background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex-shrink:0;"><i class="ri-award-line"></i></div>
                             <div><strong style="display:block;"><?= e($c['title']) ?></strong><span style="font-size:13px;color:var(--color-text-muted);"><?= e($c['issued_by']) ?> · <?= e($c['issued_year']) ?></span></div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <?php if ($products): ?>
+                <div class="tab-panel" id="tab-store" style="display:none;">
+                    <div class="grid grid-2 stagger">
+                        <?php foreach ($products as $p): ?>
+                        <div class="card" style="padding:20px;" data-reveal>
+                            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+                                <span class="badge badge-<?= $p['type'] === 'service' ? 'pending' : 'verified' ?>"><?= $p['type'] === 'service' ? 'Service' : 'Product' ?></span>
+                                <strong style="color:var(--color-primary);font-size:17px;"><?= format_currency($p['price']) ?></strong>
+                            </div>
+                            <?php if ($p['image']): ?><img src="/uploads/<?= e($p['image']) ?>" alt="" style="width:100%;height:140px;object-fit:cover;border-radius:12px;margin-bottom:10px;"><?php endif; ?>
+                            <strong style="display:block;margin-bottom:4px;"><?= e($p['name']) ?></strong>
+                            <p style="font-size:13.5px;color:var(--color-text-muted);margin-bottom:10px;"><?= e($p['description']) ?></p>
+                            <p style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px;">
+                                <?= $p['type'] === 'service' ? e($p['duration_label'] ?: '') : (((int) $p['stock'] > 0) ? (int) $p['stock'] . ' in stock' : '<span style="color:var(--color-danger);">Out of stock</span>') ?>
+                            </p>
+                            <?php if (!is_logged_in()): ?>
+                            <a href="#" class="btn btn-outline btn-block" data-requires-auth data-action-url="/doctor-profile?slug=<?= e($doctor['slug']) ?>">Log In to Request</a>
+                            <?php elseif (current_role() !== 'patient'): ?>
+                            <button type="button" class="btn btn-outline btn-block" disabled>Patients only</button>
+                            <?php elseif ($p['type'] === 'product' && (int) $p['stock'] <= 0): ?>
+                            <button type="button" class="btn btn-outline btn-block" disabled>Out of Stock</button>
+                            <?php else: ?>
+                            <button type="button" class="btn btn-primary btn-block btn-request-product"
+                                data-id="<?= (int) $p['id'] ?>" data-name="<?= e($p['name']) ?>" data-price="<?= e($p['price']) ?>" data-type="<?= e($p['type']) ?>">Request This</button>
+                            <?php endif; ?>
                         </div>
                         <?php endforeach; ?>
                     </div>
@@ -194,6 +235,36 @@ require __DIR__ . '/includes/header.php';
         </div>
     </div>
 </section>
+
+<?php if ($products): ?>
+<div class="modal-overlay" id="product-request-modal">
+    <div class="modal-box" style="grid-template-columns:1fr;max-width:460px;">
+        <button class="modal-close" data-modal-close aria-label="Close"><i class="ri-close-line"></i></button>
+        <div style="padding:36px;">
+            <h3 style="margin-bottom:6px;" id="product-request-title">Request</h3>
+            <p style="color:var(--color-text-muted);margin-bottom:20px;" id="product-request-price"></p>
+            <form id="product-request-form">
+                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                <input type="hidden" name="product_id" id="product-request-id">
+                <div class="form-group" id="product-request-qty-group">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" class="form-control" name="quantity" value="1" min="1" step="1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Contact Phone (optional)</label>
+                    <input type="tel" class="form-control" name="contact_phone">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes (optional)</label>
+                    <textarea class="form-control" name="notes" rows="3" placeholder="Anything the doctor should know about your request"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Send Request</button>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <script>
 document.querySelectorAll('.tab-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -202,6 +273,39 @@ document.querySelectorAll('.tab-btn').forEach(function (btn) {
         btn.classList.add('active');
         document.getElementById('tab-' + btn.getAttribute('data-tab-target')).style.display = 'block';
     });
+});
+document.addEventListener('DOMContentLoaded', function () {
+(function ($) {
+    var $modal = $('#product-request-modal');
+    $(document).on('click', '.btn-request-product', function () {
+        var d = $(this).data();
+        $('#product-request-id').val(d.id);
+        $('#product-request-title').text('Request: ' + d.name);
+        $('#product-request-price').text('$' + parseFloat(d.price).toFixed(2) + (d.type === 'service' ? ' / service' : ' / unit'));
+        $('#product-request-qty-group').toggle(d.type === 'product');
+        $modal.addClass('open');
+    });
+    $modal.on('click', '[data-modal-close]', function () { $modal.removeClass('open'); });
+    $modal.on('click', function (e) { if (e.target === this) $modal.removeClass('open'); });
+    $('#product-request-form').on('submit', function (e) {
+        e.preventDefault();
+        var $form = $(this);
+        var $btn = $form.find('button[type="submit"]').prop('disabled', true).text('Sending…');
+        $.post('/ajax/product-request.php', $form.serialize(), null, 'json').done(function (res) {
+            $btn.prop('disabled', false).text('Send Request');
+            if (res.success) {
+                showToast('success', 'Request sent', res.message);
+                $modal.removeClass('open');
+                $form[0].reset();
+            } else {
+                showToast('error', 'Could not send request', res.message);
+            }
+        }).fail(function () {
+            $btn.prop('disabled', false).text('Send Request');
+            showToast('error', 'Network error', 'Please try again.');
+        });
+    });
+})(jQuery);
 });
 </script>
 <?php

@@ -37,7 +37,7 @@ require __DIR__ . '/includes/header.php';
 <div class="empty-state card"><i class="ri-group-line"></i><h4>No patients found</h4></div>
 <?php else: ?>
 <div class="card table-card" data-reveal>
-    <table class="data-table">
+    <div class="table-scroll"><table class="data-table">
         <thead><tr><th>Patient</th><th>Contact</th><th>Appointments</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody>
         <?php while ($p = mysqli_fetch_assoc($patients)): ?>
@@ -57,7 +57,7 @@ require __DIR__ . '/includes/header.php';
         </tr>
         <?php endwhile; ?>
         </tbody>
-    </table>
+    </table></div>
 </div>
 <?php endif; ?>
 <?php require __DIR__ . '/includes/footer.php'; ?>

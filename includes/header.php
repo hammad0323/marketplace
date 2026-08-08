@@ -53,8 +53,15 @@ $user = current_user();
             <a href="/" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'index.php' ? 'active' : '' ?>">Home</a>
             <a href="/doctors" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'doctors.php' ? 'active' : '' ?>">Find Doctors</a>
             <a href="/specializations" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'specializations.php' ? 'active' : '' ?>">Specializations</a>
+            <a href="/blog" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'blog.php' ? 'active' : '' ?>">Blog</a>
             <a href="/about" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'about.php' ? 'active' : '' ?>">About</a>
             <a href="/contact" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'contact.php' ? 'active' : '' ?>">Contact</a>
+            <?php if (!$user): ?>
+            <div class="nav-mobile-auth">
+                <button class="btn btn-ghost btn-sm btn-block" onclick="openAuthModal('login')">Log In</button>
+                <button class="btn btn-primary btn-sm btn-block" onclick="openAuthModal('register')">Get Started</button>
+            </div>
+            <?php endif; ?>
         </nav>
         <div class="nav-actions">
             <button class="theme-toggle" data-theme-toggle aria-label="Toggle dark mode"><i class="ri-moon-line"></i></button>
@@ -62,7 +69,7 @@ $user = current_user();
                 <div class="user-menu">
                     <button class="user-avatar-btn" data-dropdown-trigger="user-dropdown">
                         <img src="<?= e(avatar_url($user['avatar'], $user['full_name'])) ?>" alt="">
-                        <span style="font-size:14px;font-weight:600;"><?= e(explode(' ', $user['full_name'])[0]) ?></span>
+                        <span class="user-avatar-name" style="font-size:14px;font-weight:600;"><?= e(explode(' ', $user['full_name'])[0]) ?></span>
                         <i class="ri-arrow-down-s-line"></i>
                     </button>
                     <div class="dropdown-menu" id="user-dropdown">
@@ -80,8 +87,8 @@ $user = current_user();
                     </div>
                 </div>
             <?php else: ?>
-                <button class="btn btn-ghost btn-sm" onclick="openAuthModal('login')">Log In</button>
-                <button class="btn btn-primary btn-sm" onclick="openAuthModal('register')">Get Started</button>
+                <button class="btn btn-ghost btn-sm nav-auth-btn" onclick="openAuthModal('login')">Log In</button>
+                <button class="btn btn-primary btn-sm nav-auth-btn" onclick="openAuthModal('register')">Get Started</button>
             <?php endif; ?>
             <button class="btn-icon nav-toggle" data-nav-toggle aria-label="Menu"><i class="ri-menu-3-line"></i></button>
         </div>
