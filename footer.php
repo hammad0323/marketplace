@@ -7,6 +7,7 @@
             <a href="/artisan.php">Artisan Marketplace</a>
             <a href="/business.php">Business Shops</a>
             <a href="/official-store.php">Official Store</a>
+            <a href="/prayer-times.php">Prayer Times</a>
             <a href="/vendor-register.php">Become a Vendor</a>
             <a href="/admin-login.php">Admin</a>
         </nav>

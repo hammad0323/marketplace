@@ -34,6 +34,7 @@ $pageTitle = $pageTitle ?? SITE_NAME;
             <a href="/artisan.php">Artisan Marketplace</a>
             <a href="/business.php">Business Shops</a>
             <a href="/official-store.php">Official Store</a>
+            <a href="/prayer-times.php">Prayer Times</a>
         </nav>
 
         <form method="get" action="/search.php" class="site-search">
