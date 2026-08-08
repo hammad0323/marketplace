@@ -13,6 +13,6 @@ if (!$success) {
 }
 
 $redirect = get_and_clear_intended_url(
-    $userRow['role'] === 'doctor' ? '/doctor/dashboard.php' : ($userRow['role'] === 'admin' ? '/admin/dashboard.php' : '/patient/dashboard.php')
+    $userRow['role'] === 'doctor' ? '/doctor/dashboard' : ($userRow['role'] === 'admin' ? '/admin/dashboard' : '/patient/dashboard')
 );
 json_response(true, ['redirect' => $redirect], $message);

@@ -12,27 +12,24 @@
         }
     })();
 
-    // ---- Theme toggle --------------------------------------------------------
+    // ---- Theme toggle ----------------------------------------------------------
+    // Light is always the default. Dark mode only ever activates because the
+    // user explicitly clicked the toggle on a previous visit — never from the
+    // OS/browser color-scheme preference.
     var root = document.documentElement;
-    var savedTheme = localStorage.getItem('mc-theme');
-    if (savedTheme) {
-        root.setAttribute('data-theme', savedTheme);
-    }
+    var savedTheme = localStorage.getItem('mc-theme') === 'dark' ? 'dark' : 'light';
+    root.setAttribute('data-theme', savedTheme);
     document.querySelectorAll('[data-theme-toggle]').forEach(function (btn) {
         updateThemeIcon(btn);
         btn.addEventListener('click', function () {
-            var current = root.getAttribute('data-theme') === 'dark' ? 'dark' :
-                (root.getAttribute('data-theme') === 'light' ? 'light' :
-                    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
-            var next = current === 'dark' ? 'light' : 'dark';
+            var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
             root.setAttribute('data-theme', next);
             localStorage.setItem('mc-theme', next);
             document.querySelectorAll('[data-theme-toggle]').forEach(updateThemeIcon);
         });
     });
     function updateThemeIcon(btn) {
-        var isDark = root.getAttribute('data-theme') === 'dark' ||
-            (root.getAttribute('data-theme') !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        var isDark = root.getAttribute('data-theme') === 'dark';
         var icon = btn.querySelector('i');
         if (icon) { icon.className = isDark ? 'ri-sun-line' : 'ri-moon-line'; }
     }

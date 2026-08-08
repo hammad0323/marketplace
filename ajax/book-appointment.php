@@ -78,7 +78,7 @@ mysqli_stmt_execute($stmt);
 $appointmentId = mysqli_insert_id($db);
 mysqli_stmt_close($stmt);
 
-notify_user($doctor['user_id'], 'appointment', 'New appointment request', current_user()['full_name'] . ' requested a ' . $type . ' appointment on ' . format_date($date) . ' at ' . format_time12($startTime) . '.', '/doctor/appointments.php');
+notify_user($doctor['user_id'], 'appointment', 'New appointment request', current_user()['full_name'] . ' requested a ' . $type . ' appointment on ' . format_date($date) . ' at ' . format_time12($startTime) . '.', '/doctor/appointments');
 log_activity($_SESSION['user_id'], 'patient', 'book_appointment', "Booked appointment #$appointmentId with doctor #$doctorId");
 
-json_response(true, ['appointment_id' => $appointmentId, 'redirect' => '/patient/appointments.php'], 'Appointment requested! ' . $doctor['full_name'] . ' will confirm shortly.');
+json_response(true, ['appointment_id' => $appointmentId, 'redirect' => '/patient/appointments'], 'Appointment requested! ' . $doctor['full_name'] . ' will confirm shortly.');

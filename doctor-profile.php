@@ -8,8 +8,8 @@ if ($slug === '') {
     exit;
 }
 
-$stmt = mysqli_prepare(db(), "SELECT d.*, u.full_name, u.avatar, u.email, u.phone, s.name AS spec_name
-    FROM doctors d JOIN users u ON u.id = d.user_id LEFT JOIN specializations s ON s.id = d.specialization_id
+$stmt = mysqli_prepare(db(), "SELECT d.*, u.full_name, u.avatar, u.email, u.phone, u.last_active_at
+    FROM doctors d JOIN users u ON u.id = d.user_id
     WHERE d.slug = ? AND u.status = 'active' LIMIT 1");
 mysqli_stmt_bind_param($stmt, 's', $slug);
 mysqli_stmt_execute($stmt);
@@ -23,6 +23,8 @@ if (!$doctor || $doctor['verification_status'] !== 'verified') {
 }
 
 mysqli_query(db(), 'UPDATE doctors SET profile_views = profile_views + 1 WHERE id = ' . (int) $doctor['id']);
+$doctorSpecializations = get_doctor_specializations($doctor['id']);
+$specNames = specialization_names($doctorSpecializations);
 
 $stmt = mysqli_prepare(db(), 'SELECT * FROM doctor_privacy_settings WHERE doctor_id = ? LIMIT 1');
 mysqli_stmt_bind_param($stmt, 'i', $doctor['id']);
@@ -52,11 +54,11 @@ if ($privacy['show_reviews']) {
     mysqli_stmt_close($stmt);
 }
 
-$pageTitle = $doctor['full_name'] . ' — ' . ($doctor['spec_name'] ?: 'Doctor') . ' | ' . SITE_NAME;
-$metaDescription = excerpt($doctor['bio'] ?: ($doctor['full_name'] . ' is a verified ' . ($doctor['spec_name'] ?: 'doctor') . ' on ' . SITE_NAME . '.'), 155);
+$pageTitle = $doctor['full_name'] . ' — ' . ($specNames ?: 'Doctor') . ' | ' . SITE_NAME;
+$metaDescription = excerpt($doctor['bio'] ?: ($doctor['full_name'] . ' is a verified ' . ($specNames ?: 'doctor') . ' on ' . SITE_NAME . '.'), 155);
 $extraHead = '<script type="application/ld+json">' . json_encode([
     '@context' => 'https://schema.org', '@type' => 'Physician', 'name' => $doctor['full_name'],
-    'medicalSpecialty' => $doctor['spec_name'], 'url' => APP_URL . '/doctor-profile.php?slug=' . $doctor['slug'],
+    'medicalSpecialty' => array_column($doctorSpecializations, 'name'), 'url' => APP_URL . '/doctor-profile?slug=' . $doctor['slug'],
     'aggregateRating' => $doctor['rating_count'] > 0 ? ['@type' => 'AggregateRating', 'ratingValue' => $doctor['rating_avg'], 'reviewCount' => $doctor['rating_count']] : null,
 ]) . '</script>';
 $extraScripts = '<script src="/assets/js/booking.js"></script>';
@@ -65,8 +67,8 @@ require __DIR__ . '/includes/header.php';
 <section class="section" style="padding-top:calc(var(--header-height) + 40px);">
     <div class="container">
         <nav class="breadcrumb">
-            <a href="/index.php">Home</a> <i class="ri-arrow-right-s-line"></i>
-            <a href="/doctors.php">Find Doctors</a> <i class="ri-arrow-right-s-line"></i>
+            <a href="/">Home</a> <i class="ri-arrow-right-s-line"></i>
+            <a href="/doctors">Find Doctors</a> <i class="ri-arrow-right-s-line"></i>
             <span><?= e($doctor['full_name']) ?></span>
         </nav>
 
@@ -77,7 +79,14 @@ require __DIR__ . '/includes/header.php';
                         <img src="<?= e(avatar_url($doctor['avatar'], $doctor['full_name'])) ?>" alt="<?= e($doctor['full_name']) ?>" style="width:110px;height:110px;border-radius:24px;object-fit:cover;">
                         <div style="flex:1;min-width:220px;">
                             <h1 style="font-size:26px;margin-bottom:4px;"><?= e($doctor['full_name']) ?></h1>
-                            <p style="color:var(--color-primary);font-weight:600;margin-bottom:10px;"><?= e($doctor['qualification'] ?: $doctor['spec_name']) ?></p>
+                            <p style="color:var(--color-primary);font-weight:600;margin-bottom:6px;"><?= e($doctor['qualification'] ?: $specNames) ?></p>
+                            <?php if ($doctorSpecializations): ?>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+                                <?php foreach ($doctorSpecializations as $ds): ?>
+                                <span class="badge badge-free"><?= e($ds['name']) ?></span>
+                                <?php endforeach; ?>
+                            </div>
+                            <?php endif; ?>
                             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
                                 <span class="badge badge-verified"><i class="ri-verified-badge-fill"></i> Verified</span>
                                 <?php if ($doctor['is_premium']): ?><span class="badge badge-premium"><i class="ri-vip-crown-fill"></i> Premium</span><?php endif; ?>
@@ -195,4 +204,22 @@ document.querySelectorAll('.tab-btn').forEach(function (btn) {
     });
 });
 </script>
+<?php
+$viewerIsGuest = !is_logged_in();
+$viewerCanMessage = $viewerIsGuest || current_role() === 'patient';
+if ($viewerCanMessage && doctor_chat_visible($doctor, $viewerIsGuest)):
+    $chatOnline = doctor_chat_available($doctor);
+?>
+<div class="doctor-chat-widget" data-reveal="zoom">
+    <a href="/patient/messages?doctor_id=<?= (int)$doctor['id'] ?>" class="doctor-chat-fab" <?= $viewerIsGuest ? 'data-requires-auth' : '' ?>>
+        <img src="<?= e(avatar_url($doctor['avatar'], $doctor['full_name'])) ?>" alt="">
+        <span>
+            Message <?= e($doctor['full_name']) ?>
+            <span style="display:flex;align-items:center;gap:5px;font-weight:500;font-size:11.5px;color:var(--color-text-muted);margin-top:2px;">
+                <span class="status-dot<?= $chatOnline ? ' online' : '' ?>"></span> <?= $chatOnline ? 'Online now' : e(doctor_chat_hours_label($doctor)) ?>
+            </span>
+        </span>
+    </a>
+</div>
+<?php endif; ?>
 <?php require __DIR__ . '/includes/footer.php'; ?>

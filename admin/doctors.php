@@ -7,8 +7,9 @@ $statusMap = ['pending' => "d.verification_status = 'pending'", 'verified' => "d
 $condition = $statusMap[$filter] ?? $statusMap['pending'];
 
 $doctors = mysqli_query(db(), "
-    SELECT d.*, u.full_name, u.avatar, u.email, u.phone, u.status AS user_status, s.name AS spec_name
-    FROM doctors d JOIN users u ON u.id = d.user_id LEFT JOIN specializations s ON s.id = d.specialization_id
+    SELECT d.*, u.full_name, u.avatar, u.email, u.phone, u.status AS user_status,
+        (SELECT GROUP_CONCAT(s.name ORDER BY s.name SEPARATOR ', ') FROM doctor_specializations ds JOIN specializations s ON s.id = ds.specialization_id WHERE ds.doctor_id = d.id) AS spec_names
+    FROM doctors d JOIN users u ON u.id = d.user_id
     WHERE $condition ORDER BY d.created_at DESC
 ");
 
@@ -37,7 +38,7 @@ require __DIR__ . '/includes/header.php';
                 <img src="<?= e(avatar_url($d['avatar'], $d['full_name'])) ?>">
                 <div><?= e($d['full_name']) ?><br><span style="font-size:12px;color:var(--color-text-muted);"><?= e($d['email']) ?></span></div>
             </td>
-            <td><?= e($d['spec_name']) ?></td>
+            <td><?= e($d['spec_names']) ?></td>
             <td><?= e($d['registration_number']) ?></td>
             <td><?= format_date($d['created_at']) ?></td>
             <td><span class="status-pill status-<?= e($d['verification_status']) ?>"><?= ucfirst($d['verification_status']) ?></span>
@@ -56,7 +57,7 @@ require __DIR__ . '/includes/header.php';
                 <button class="btn btn-primary btn-sm btn-doc-action" data-action="activate">Activate</button>
                 <?php endif; ?>
                 <?php endif; ?>
-                <a href="/doctor-profile.php?slug=<?= e($d['slug']) ?>" target="_blank" class="btn btn-ghost btn-sm">View</a>
+                <a href="/doctor-profile?slug=<?= e($d['slug']) ?>" target="_blank" class="btn btn-ghost btn-sm">View</a>
             </td>
         </tr>
         <?php endwhile; ?>

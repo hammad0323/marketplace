@@ -279,6 +279,56 @@ function avatar_url($path, $fallbackSeed = 'U')
 }
 
 // ---------------------------------------------------------------------------
+// Doctor specializations (many-to-many)
+// ---------------------------------------------------------------------------
+
+/** @return array<int,array{id:int,name:string,slug:string}> */
+function get_doctor_specializations($doctorId)
+{
+    $stmt = mysqli_prepare(db(), 'SELECT s.id, s.name, s.slug FROM doctor_specializations ds
+        JOIN specializations s ON s.id = ds.specialization_id WHERE ds.doctor_id = ? ORDER BY s.name');
+    mysqli_stmt_bind_param($stmt, 'i', $doctorId);
+    mysqli_stmt_execute($stmt);
+    $rows = mysqli_stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC);
+    mysqli_stmt_close($stmt);
+    return $rows;
+}
+
+function specialization_names($specializations)
+{
+    return implode(', ', array_column($specializations, 'name'));
+}
+
+/** Replaces a doctor's specialization set with the given ids (validated against the specializations table). */
+function set_doctor_specializations($doctorId, array $specializationIds)
+{
+    $db = db();
+    $specializationIds = array_values(array_unique(array_map('intval', $specializationIds)));
+    mysqli_begin_transaction($db);
+    try {
+        $stmt = mysqli_prepare($db, 'DELETE FROM doctor_specializations WHERE doctor_id = ?');
+        mysqli_stmt_bind_param($stmt, 'i', $doctorId);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+
+        if ($specializationIds) {
+            $stmt = mysqli_prepare($db, 'INSERT INTO doctor_specializations (doctor_id, specialization_id)
+                SELECT ?, id FROM specializations WHERE id = ?');
+            foreach ($specializationIds as $specId) {
+                mysqli_stmt_bind_param($stmt, 'ii', $doctorId, $specId);
+                mysqli_stmt_execute($stmt);
+            }
+            mysqli_stmt_close($stmt);
+        }
+        mysqli_commit($db);
+    } catch (Exception $e) {
+        mysqli_rollback($db);
+        error_log('set_doctor_specializations failed: ' . $e->getMessage());
+        throw $e;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Settings, notifications, activity log, pagination
 // ---------------------------------------------------------------------------
 
@@ -295,12 +345,96 @@ function get_setting($key, $default = '')
     return $cache[$key] ?? $default;
 }
 
+/**
+ * Records an in-app notification for the user and — if email notifications
+ * are enabled (Admin → Site Settings → Email) — emails them the same
+ * message. Every appointment, verification, and message event in the app
+ * routes through this single function, so email delivery for "all
+ * activity" is handled in one place rather than at each call site.
+ */
 function notify_user($userId, $type, $title, $message, $link = null)
 {
     $stmt = mysqli_prepare(db(), 'INSERT INTO notifications (user_id, type, title, message, link) VALUES (?, ?, ?, ?, ?)');
     mysqli_stmt_bind_param($stmt, 'issss', $userId, $type, $title, $message, $link);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
+
+    if (!email_enabled()) {
+        return;
+    }
+    $stmt = mysqli_prepare(db(), 'SELECT full_name, email FROM users WHERE id = ? LIMIT 1');
+    mysqli_stmt_bind_param($stmt, 'i', $userId);
+    mysqli_stmt_execute($stmt);
+    $recipient = mysqli_stmt_get_result($stmt)->fetch_assoc();
+    mysqli_stmt_close($stmt);
+    if (!$recipient) {
+        return;
+    }
+
+    $ctaUrl = $link ? (APP_URL . $link) : null;
+    $body = '<p>Hi ' . e(explode(' ', $recipient['full_name'])[0]) . ',</p><p>' . e($message) . '</p>';
+    send_email($recipient['email'], $recipient['full_name'], $title, email_template($title, $body, $link ? 'View Details' : null, $ctaUrl));
+}
+
+/** Notifies (and emails) every admin account — used for platform-level events like a new doctor application or contact message. */
+function notify_admins($type, $title, $message, $link = null)
+{
+    $res = mysqli_query(db(), "SELECT id FROM users WHERE role = 'admin' AND status = 'active'");
+    while ($row = mysqli_fetch_assoc($res)) {
+        notify_user((int) $row['id'], $type, $title, $message, $link);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Doctor chat presence
+// ---------------------------------------------------------------------------
+
+/** Marks the logged-in user as recently active — call once per page load. Drives doctor online status. */
+function touch_last_active($userId)
+{
+    $stmt = mysqli_prepare(db(), 'UPDATE users SET last_active_at = NOW() WHERE id = ?');
+    mysqli_stmt_bind_param($stmt, 'i', $userId);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+}
+
+/**
+ * Whether a doctor is "online" for chat right now: enabled, within their
+ * configured daily hours (if set), and active within the last 15 minutes.
+ * $doctorRow needs chat_enabled, chat_start_time, chat_end_time, last_active_at.
+ */
+function doctor_chat_available(array $doctorRow)
+{
+    if (empty($doctorRow['chat_enabled'])) {
+        return false;
+    }
+    if (!empty($doctorRow['chat_start_time']) && !empty($doctorRow['chat_end_time'])) {
+        $now = date('H:i:s');
+        if ($now < $doctorRow['chat_start_time'] || $now > $doctorRow['chat_end_time']) {
+            return false;
+        }
+    }
+    if (empty($doctorRow['last_active_at']) || strtotime($doctorRow['last_active_at']) < time() - 900) {
+        return false;
+    }
+    return true;
+}
+
+/** Whether the chat entry point should appear at all for the current viewer (guest vs logged-in patient). */
+function doctor_chat_visible(array $doctorRow, $isGuest)
+{
+    if (empty($doctorRow['chat_enabled'])) {
+        return false;
+    }
+    return !$isGuest || !empty($doctorRow['chat_visible_to_guests']);
+}
+
+function doctor_chat_hours_label(array $doctorRow)
+{
+    if (empty($doctorRow['chat_start_time']) || empty($doctorRow['chat_end_time'])) {
+        return 'Available anytime';
+    }
+    return 'Available ' . date('g:i A', strtotime($doctorRow['chat_start_time'])) . ' – ' . date('g:i A', strtotime($doctorRow['chat_end_time']));
 }
 
 function log_activity($userId, $role, $action, $description = '')

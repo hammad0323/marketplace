@@ -73,7 +73,7 @@ mysqli_stmt_bind_param($stmt, 'sssi', $date, $startTime, $endTime, $appointmentI
 mysqli_stmt_execute($stmt);
 mysqli_stmt_close($stmt);
 
-notify_user($appt['doctor_user_id'], 'appointment', 'Appointment rescheduled', current_user()['full_name'] . ' rescheduled their appointment to ' . format_date($date) . ' at ' . format_time12($startTime) . '. Please re-confirm.', '/doctor/appointments.php');
+notify_user($appt['doctor_user_id'], 'appointment', 'Appointment rescheduled', current_user()['full_name'] . ' rescheduled their appointment to ' . format_date($date) . ' at ' . format_time12($startTime) . '. Please re-confirm.', '/doctor/appointments');
 log_activity($_SESSION['user_id'], 'patient', 'reschedule_appointment', "Rescheduled appointment #$appointmentId");
 
 json_response(true, [], 'Appointment rescheduled. Waiting for the doctor to re-confirm.');

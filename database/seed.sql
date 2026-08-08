@@ -10,6 +10,7 @@
 -- ============================================================================
 
 USE mediconnect;
+SET NAMES utf8mb4;
 
 -- ----------------------------------------------------------------------------
 -- Specializations
@@ -46,15 +47,33 @@ INSERT INTO users (role, full_name, email, phone, password_hash, status, email_v
 ('doctor', 'Dr. Daniel Kim',      'daniel.kim@mediconnect.test',      '+1-555-0107', '$2y$12$IDukN3UR.t5zZXTuvHYLh.t6BMTK8bJFUgai6v65IiDGFr4Ybi2ya', 'active', NOW()),
 ('doctor', 'Dr. Fatima Al-Sayed', 'fatima.alsayed@mediconnect.test',  '+1-555-0108', '$2y$12$IDukN3UR.t5zZXTuvHYLh.t6BMTK8bJFUgai6v65IiDGFr4Ybi2ya', 'pending', NULL);
 
-INSERT INTO doctors (user_id, specialization_id, slug, qualification, registration_number, experience_years, bio, consultation_fee_online, consultation_fee_physical, free_consultation, clinic_name, clinic_address, clinic_city, clinic_state, clinic_country, verification_status, is_premium, rating_avg, rating_count) VALUES
-(2, 1, 'dr-sarah-chen',      'MD, FACC — Cardiology',            'MED-CA-10234', 14, 'Dr. Sarah Chen is a board-certified cardiologist specializing in preventive cardiology and heart failure management. She combines evidence-based medicine with a warm, patient-first approach.', 60.00, 80.00, 0, 'Heartwell Cardiology Clinic', '221 Sunrise Ave, Suite 4', 'San Francisco', 'CA', 'USA', 'verified', 1, 4.80, 132),
-(3, 4, 'dr-michael-rivera',  'MD, Neurology',                    'MED-NE-10891', 9,  'Dr. Michael Rivera focuses on migraine management, epilepsy, and general neurological disorders, offering both in-person and telehealth consultations.', 55.00, 75.00, 0, 'Rivera Neuro Center', '88 Baker Street', 'Austin', 'TX', 'USA', 'verified', 1, 4.60, 87),
-(4, 3, 'dr-amara-okafor',    'MBBS, DCH — Pediatrics',           'MED-PE-11023', 11, 'Dr. Amara Okafor has spent over a decade caring for infants, children, and adolescents, with a focus on early developmental screening.', 40.00, 50.00, 1, 'Little Sparks Pediatric Clinic', '14 Maple Grove Rd', 'Chicago', 'IL', 'USA', 'verified', 1, 4.90, 210),
-(5, 6, 'dr-priya-nair',      'MD, DGO — Gynecology',             'MED-GY-11390', 13, 'Dr. Priya Nair provides comprehensive women\'s health services including prenatal care, family planning, and menopause management.', 50.00, 65.00, 0, 'Nair Women\'s Health Clinic', '56 Lotus Lane', 'Seattle', 'WA', 'USA', 'verified', 0, 4.70, 96),
-(6, 2, 'dr-james-whitfield', 'MD, Dermatology',                  'MED-DE-11577', 7,  'Dr. James Whitfield treats acne, eczema, psoriasis, and offers cosmetic dermatology consultations.', 45.00, 60.00, 0, 'Whitfield Skin Institute', '9 Cedar Court', 'Denver', 'CO', 'USA', 'verified', 0, 4.50, 54),
-(7, 5, 'dr-elena-petrova',   'MD, Orthopedic Surgery',           'MED-OR-11842', 16, 'Dr. Elena Petrova specializes in sports injuries, joint replacement, and non-surgical pain management.', 55.00, 90.00, 0, 'Petrova Bone & Joint Center', '302 Riverside Dr', 'Miami', 'FL', 'USA', 'verified', 1, 4.75, 143),
-(8, 8, 'dr-daniel-kim',      'MBBS — General Physician',         'MED-GP-12005', 5,  'Dr. Daniel Kim offers same-day consultations for common illnesses, chronic disease management, and preventive checkups.', 25.00, 35.00, 1, 'Kim Family Practice', '77 Willow St', 'Portland', 'OR', 'USA', 'verified', 0, 4.40, 61),
-(9, 9, 'dr-fatima-alsayed',  'MD, Psychiatry',                   'MED-PS-12271', 8,  'Dr. Fatima Al-Sayed provides confidential mental health consultations for anxiety, depression, and stress management. (Pending verification)', 50.00, 65.00, 0, 'Mindful Wellness Practice', '18 Harbor View', 'Boston', 'MA', 'USA', 'pending', 0, 0.00, 0);
+INSERT INTO doctors (user_id, slug, qualification, registration_number, experience_years, bio, consultation_fee_online, consultation_fee_physical, free_consultation, clinic_name, clinic_address, clinic_city, clinic_state, clinic_country, verification_status, is_premium, rating_avg, rating_count) VALUES
+(2, 'dr-sarah-chen',      'MD, FACC — Cardiology',            'MED-CA-10234', 14, 'Dr. Sarah Chen is a board-certified cardiologist specializing in preventive cardiology and heart failure management. She combines evidence-based medicine with a warm, patient-first approach.', 60.00, 80.00, 0, 'Heartwell Cardiology Clinic', '221 Sunrise Ave, Suite 4', 'San Francisco', 'CA', 'USA', 'verified', 1, 4.80, 132),
+(3, 'dr-michael-rivera',  'MD, Neurology',                    'MED-NE-10891', 9,  'Dr. Michael Rivera focuses on migraine management, epilepsy, and general neurological disorders, offering both in-person and telehealth consultations.', 55.00, 75.00, 0, 'Rivera Neuro Center', '88 Baker Street', 'Austin', 'TX', 'USA', 'verified', 1, 4.60, 87),
+(4, 'dr-amara-okafor',    'MBBS, DCH — Pediatrics',           'MED-PE-11023', 11, 'Dr. Amara Okafor has spent over a decade caring for infants, children, and adolescents, with a focus on early developmental screening.', 40.00, 50.00, 1, 'Little Sparks Pediatric Clinic', '14 Maple Grove Rd', 'Chicago', 'IL', 'USA', 'verified', 1, 4.90, 210),
+(5, 'dr-priya-nair',      'MD, DGO — Gynecology',             'MED-GY-11390', 13, 'Dr. Priya Nair provides comprehensive women\'s health services including prenatal care, family planning, and menopause management.', 50.00, 65.00, 0, 'Nair Women\'s Health Clinic', '56 Lotus Lane', 'Seattle', 'WA', 'USA', 'verified', 0, 4.70, 96),
+(6, 'dr-james-whitfield', 'MD, Dermatology',                  'MED-DE-11577', 7,  'Dr. James Whitfield treats acne, eczema, psoriasis, and offers cosmetic dermatology consultations.', 45.00, 60.00, 0, 'Whitfield Skin Institute', '9 Cedar Court', 'Denver', 'CO', 'USA', 'verified', 0, 4.50, 54),
+(7, 'dr-elena-petrova',   'MD, Orthopedic Surgery',           'MED-OR-11842', 16, 'Dr. Elena Petrova specializes in sports injuries, joint replacement, and non-surgical pain management.', 55.00, 90.00, 0, 'Petrova Bone & Joint Center', '302 Riverside Dr', 'Miami', 'FL', 'USA', 'verified', 1, 4.75, 143),
+(8, 'dr-daniel-kim',      'MBBS — General Physician',         'MED-GP-12005', 5,  'Dr. Daniel Kim offers same-day consultations for common illnesses, chronic disease management, and preventive checkups.', 25.00, 35.00, 1, 'Kim Family Practice', '77 Willow St', 'Portland', 'OR', 'USA', 'verified', 0, 4.40, 61),
+(9, 'dr-fatima-alsayed',  'MD, Psychiatry',                   'MED-PS-12271', 8,  'Dr. Fatima Al-Sayed provides confidential mental health consultations for anxiety, depression, and stress management. (Pending verification)', 50.00, 65.00, 0, 'Mindful Wellness Practice', '18 Harbor View', 'Boston', 'MA', 'USA', 'pending', 0, 0.00, 0);
+
+-- Doctors can practice under more than one specialization; a few are given
+-- a second one here to demonstrate it (specialization ids per the INSERT above).
+INSERT INTO doctor_specializations (doctor_id, specialization_id) VALUES
+(1, 1), (1, 8),   -- Dr. Sarah Chen: Cardiology + General Physician
+(2, 4), (2, 9),   -- Dr. Michael Rivera: Neurology + Psychiatry
+(3, 3), (3, 8),   -- Dr. Amara Okafor: Pediatrics + General Physician
+(4, 6),           -- Dr. Priya Nair: Gynecology
+(5, 2),           -- Dr. James Whitfield: Dermatology
+(6, 5),           -- Dr. Elena Petrova: Orthopedics
+(7, 8), (7, 10),  -- Dr. Daniel Kim: General Physician + ENT
+(8, 9);           -- Dr. Fatima Al-Sayed: Psychiatry
+
+-- Chat demo: Dr. Sarah Chen accepts messages 9am-6pm from logged-in patients
+-- only; Dr. Amara Okafor also allows guests to see her chat/online status.
+UPDATE doctors SET chat_enabled = 1, chat_start_time = '09:00:00', chat_end_time = '18:00:00' WHERE id = 1;
+UPDATE doctors SET chat_enabled = 1, chat_visible_to_guests = 1, chat_start_time = '08:00:00', chat_end_time = '20:00:00' WHERE id = 3;
+UPDATE users SET last_active_at = NOW() WHERE id IN (2, 4);
 
 INSERT INTO doctor_privacy_settings (doctor_id, show_certificates, show_fees, show_availability, show_clinic_address, show_phone, show_email, show_free_consultation, show_store, show_reviews) VALUES
 (1, 1, 1, 1, 1, 0, 0, 1, 1, 1),
@@ -110,7 +129,15 @@ INSERT INTO site_settings (setting_key, setting_value) VALUES
 ('contact_phone', '+1-555-0111'),
 ('contact_address', '500 Market Street, San Francisco, CA'),
 ('currency_symbol', '$'),
-('maintenance_mode', '0');
+('maintenance_mode', '0'),
+('email_notifications_enabled', '1'),
+('smtp_host', ''),
+('smtp_port', '587'),
+('smtp_username', ''),
+('smtp_password', ''),
+('smtp_encryption', 'tls'),
+('smtp_from_email', ''),
+('smtp_from_name', 'MediConnect');
 
 INSERT INTO cms_pages (slug, title, content, meta_title, meta_description) VALUES
 ('about', 'About MediConnect', '<p>MediConnect connects patients with verified, board-certified doctors for online and in-person consultations. Our mission is to make quality healthcare accessible, transparent, and fast — whether you need a five-minute follow-up or a same-day specialist referral.</p><p>Every doctor on our platform is manually verified by our medical credentialing team before they can accept patients.</p>', 'About Us | MediConnect', 'Learn about MediConnect''s mission to make verified healthcare accessible to everyone.'),

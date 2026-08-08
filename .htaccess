@@ -1,5 +1,7 @@
-# Every page is a real .php file — no URL rewriting required for the site
-# to function. This file only adds defense-in-depth hardening.
+# Clean URLs: every page is still a real .php file on disk, but visitors
+# never see the .php extension. See the two rewrite blocks below for how.
+# This file also adds defense-in-depth hardening (blocked files/dirs,
+# security headers).
 
 Options -Indexes
 ServerSignature Off
@@ -16,14 +18,36 @@ ServerSignature Off
     Require all denied
 </FilesMatch>
 
+RewriteEngine On
+
 # Block direct access to include/config directories even though every file
 # inside also guards itself.
-RewriteEngine On
 RewriteRule ^(config|includes)/ - [F,L]
 
-# Uploaded files must never execute as PHP — enforced by uploads/.htaccess
-# (a separate, directory-scoped file) rather than here, since disabling the
-# PHP engine site-wide by mistake is exactly the failure mode to avoid.
+# ---------------------------------------------------------------------------
+# Clean URLs
+# ajax/, assets/, uploads/, database/ keep their real paths — only the
+# user-facing pages get the extension hidden.
+# ---------------------------------------------------------------------------
+
+# 1) Canonicalize: a browser landing on /page.php (bookmark, old link, search
+#    result) is redirected once to the clean /page URL. GET/HEAD only —
+#    redirecting a POST would silently drop the request body.
+RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+RewriteCond %{THE_REQUEST} ^[A-Z]+\ /index\.php[?\s]
+RewriteRule ^ /? [R=301,L]
+
+RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+RewriteCond %{REQUEST_URI} !^/ajax/
+RewriteCond %{THE_REQUEST} ^[A-Z]+\ /([^?\s]+)\.php[?\s]
+RewriteRule ^ /%1 [R=301,L]
+
+# 2) Serve the matching .php file for a clean-URL request, transparently
+#    (no redirect, no visible change to the address bar).
+RewriteCond %{REQUEST_URI} !^/(ajax|assets|uploads|database)/
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.+)$ $1.php [L]
 
 # Security headers
 <IfModule mod_headers.c>
@@ -32,4 +56,4 @@ RewriteRule ^(config|includes)/ - [F,L]
     Header set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
-ErrorDocument 404 /404.php
+ErrorDocument 404 /404

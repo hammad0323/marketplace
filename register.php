@@ -3,7 +3,7 @@ require __DIR__ . '/config/config.php';
 
 if (is_logged_in()) {
     $role = current_role();
-    redirect($role === 'doctor' ? '/doctor/dashboard.php' : ($role === 'admin' ? '/admin/dashboard.php' : '/patient/dashboard.php'));
+    redirect($role === 'doctor' ? '/doctor/dashboard' : ($role === 'admin' ? '/admin/dashboard' : '/patient/dashboard'));
 }
 
 $pageTitle = 'Create Account — ' . SITE_NAME;
@@ -48,14 +48,14 @@ require __DIR__ . '/includes/header.php';
                         <div class="form-error"></div>
                     </div>
                     <label class="checkbox-row" style="margin-bottom:20px;">
-                        <input type="checkbox" required> I agree to the <a href="/terms.php" target="_blank" style="color:var(--color-primary);">Terms</a> &amp; <a href="/privacy-policy.php" target="_blank" style="color:var(--color-primary);">Privacy Policy</a>
+                        <input type="checkbox" required> I agree to the <a href="/terms" target="_blank" style="color:var(--color-primary);">Terms</a> &amp; <a href="/privacy-policy" target="_blank" style="color:var(--color-primary);">Privacy Policy</a>
                     </label>
                     <button type="submit" class="btn btn-primary btn-block">Create Account</button>
                     <p style="text-align:center;font-size:13.5px;margin-top:18px;color:var(--color-text-muted);">
-                        Already have an account? <a href="/login.php" style="color:var(--color-primary);font-weight:600;">Log in</a>
+                        Already have an account? <a href="/login" style="color:var(--color-primary);font-weight:600;">Log in</a>
                     </p>
                     <p style="text-align:center;font-size:12.5px;margin-top:8px;color:var(--color-text-muted);">
-                        Are you a doctor? <a href="/doctor-register.php" style="color:var(--color-primary);font-weight:600;">Apply here</a>
+                        Are you a doctor? <a href="/doctor-register" style="color:var(--color-primary);font-weight:600;">Apply here</a>
                     </p>
                 </form>
             </div>

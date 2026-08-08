@@ -17,5 +17,5 @@ if ($userRow['role'] !== 'admin') {
     json_response(false, [], 'This login is for administrators only.');
 }
 
-$redirect = get_and_clear_intended_url('/admin/dashboard.php');
+$redirect = get_and_clear_intended_url('/admin/dashboard');
 json_response(true, ['redirect' => $redirect], $message);

@@ -3,7 +3,7 @@ require __DIR__ . '/../config/config.php';
 require_admin_page();
 
 $specs = mysqli_query(db(), "
-    SELECT s.*, (SELECT COUNT(*) FROM doctors d WHERE d.specialization_id = s.id) AS doctor_count
+    SELECT s.*, (SELECT COUNT(*) FROM doctor_specializations ds WHERE ds.specialization_id = s.id) AS doctor_count
     FROM specializations s ORDER BY s.sort_order, s.name
 ");
 

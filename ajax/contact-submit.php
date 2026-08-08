@@ -27,4 +27,6 @@ mysqli_stmt_bind_param($stmt, 'sssss', $name, $email, $phone, $subject, $message
 mysqli_stmt_execute($stmt);
 mysqli_stmt_close($stmt);
 
+notify_admins('contact', 'New contact message: ' . $subject, $name . ' (' . $email . ') wrote: ' . excerpt($message, 200), '/admin/messages');
+
 json_response(true, [], 'Thanks for reaching out! We\'ll get back to you within one business day.');

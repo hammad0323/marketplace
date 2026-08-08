@@ -7,14 +7,17 @@ $metaDescription = get_setting('site_tagline') . '. Search verified specialists,
 $specs = mysqli_query(db(), 'SELECT id, name, slug, icon, description FROM specializations WHERE is_active = 1 ORDER BY sort_order LIMIT 10');
 
 $featuredDoctors = mysqli_query(db(), "
-    SELECT d.*, u.full_name, u.avatar, s.name AS spec_name
+    SELECT d.*, u.full_name, u.avatar
     FROM doctors d
     JOIN users u ON u.id = d.user_id
-    LEFT JOIN specializations s ON s.id = d.specialization_id
     WHERE d.verification_status = 'verified' AND u.status = 'active'
     ORDER BY d.is_premium DESC, d.rating_avg DESC
     LIMIT 6
-");
+")->fetch_all(MYSQLI_ASSOC);
+foreach ($featuredDoctors as &$fd) {
+    $fd['specializations'] = get_doctor_specializations($fd['id']);
+}
+unset($fd);
 
 $testimonials = mysqli_query(db(), 'SELECT * FROM testimonials WHERE is_active = 1 ORDER BY sort_order LIMIT 3');
 
@@ -38,7 +41,7 @@ require __DIR__ . '/includes/header.php';
             <h1>Healthcare that fits <span class="text-gradient">your schedule</span>, not a waiting room.</h1>
             <p class="lead">Search verified specialists, compare fees and reviews, and book an online or in-clinic consultation in under two minutes.</p>
 
-            <form class="search-box" action="/doctors.php" method="get" style="margin-bottom:32px;">
+            <form class="search-box" action="/doctors" method="get" style="margin-bottom:32px;">
                 <i class="ri-search-line" style="color:var(--color-text-muted);"></i>
                 <input type="text" name="q" placeholder="Search doctor, condition, or specialization…">
                 <span class="divider"></span>
@@ -85,7 +88,7 @@ require __DIR__ . '/includes/header.php';
         </div>
         <div class="grid grid-4 stagger">
             <?php mysqli_data_seek($specs, 0); while ($s = mysqli_fetch_assoc($specs)): ?>
-            <a href="/doctors.php?specialization=<?= e($s['slug']) ?>" class="card card-hover spec-card" data-reveal data-tilt>
+            <a href="/doctors?specialization=<?= e($s['slug']) ?>" class="card card-hover spec-card" data-reveal data-tilt>
                 <div class="icon"><i class="<?= e($s['icon']) ?>"></i></div>
                 <h4><?= e($s['name']) ?></h4>
                 <p><?= e($s['description']) ?></p>
@@ -103,13 +106,13 @@ require __DIR__ . '/includes/header.php';
             <p>Highly rated, premium-verified specialists accepting new patients this week.</p>
         </div>
         <div class="grid grid-3 stagger">
-            <?php while ($d = mysqli_fetch_assoc($featuredDoctors)): ?>
+            <?php foreach ($featuredDoctors as $d): ?>
             <div class="card card-hover doctor-card" data-reveal data-tilt>
                 <div class="doctor-card-top">
                     <img src="<?= e(avatar_url($d['avatar'], $d['full_name'])) ?>" alt="<?= e($d['full_name']) ?>">
                     <div>
                         <h3><?= e($d['full_name']) ?></h3>
-                        <div class="spec"><?= e($d['spec_name'] ?? 'General') ?></div>
+                        <div class="spec"><?= e(specialization_names($d['specializations']) ?: 'General') ?></div>
                         <div class="rating"><i class="ri-star-fill"></i> <?= number_format($d['rating_avg'], 1) ?> (<?= (int)$d['rating_count'] ?>)</div>
                     </div>
                 </div>
@@ -124,13 +127,13 @@ require __DIR__ . '/includes/header.php';
                 </div>
                 <div class="doctor-card-footer">
                     <div class="fee"><?= format_currency($d['consultation_fee_online']) ?> <small>/ online</small></div>
-                    <a href="/doctor-profile.php?slug=<?= e($d['slug']) ?>" class="btn btn-outline btn-sm">View Profile</a>
+                    <a href="/doctor-profile?slug=<?= e($d['slug']) ?>" class="btn btn-outline btn-sm">View Profile</a>
                 </div>
             </div>
-            <?php endwhile; ?>
+            <?php endforeach; ?>
         </div>
         <div style="text-align:center;margin-top:44px;" data-reveal>
-            <a href="/doctors.php" class="btn btn-primary">Browse All Doctors <i class="ri-arrow-right-line"></i></a>
+            <a href="/doctors" class="btn btn-primary">Browse All Doctors <i class="ri-arrow-right-line"></i></a>
         </div>
     </div>
 </section>
@@ -190,7 +193,7 @@ require __DIR__ . '/includes/header.php';
             <div class="card-inner" style="padding:56px 40px;text-align:center;">
                 <h2 style="margin-bottom:12px;">Are you a doctor?</h2>
                 <p style="color:var(--color-text-muted);margin-bottom:28px;max-width:480px;margin-left:auto;margin-right:auto;">Join MediConnect to manage your appointments, grow your patient base, and get discovered by patients searching for your specialty.</p>
-                <a href="/doctor-register.php" class="btn btn-primary">Apply as a Doctor <i class="ri-arrow-right-line"></i></a>
+                <a href="/doctor-register" class="btn btn-primary">Apply as a Doctor <i class="ri-arrow-right-line"></i></a>
             </div>
         </div>
     </div>

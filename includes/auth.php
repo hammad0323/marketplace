@@ -64,7 +64,7 @@ function set_intended_url($url = null)
     $_SESSION['intended_url'] = $url ?? current_url();
 }
 
-function get_and_clear_intended_url($fallback = '/index.php')
+function get_and_clear_intended_url($fallback = '/')
 {
     $url = $_SESSION['intended_url'] ?? $fallback;
     unset($_SESSION['intended_url']);
@@ -171,6 +171,12 @@ function register_patient($fullName, $email, $phone, $password)
     $userRow = ['id' => $userId, 'role' => 'patient', 'full_name' => $fullName];
     login_user_row($userRow);
     log_activity($userId, 'patient', 'register', 'Patient account created');
+
+    send_email($email, $fullName, 'Welcome to ' . get_setting('site_name', SITE_NAME) . '!',
+        email_template('Welcome, ' . $fullName . '!',
+            '<p>Your account is ready. Search verified doctors, compare fees and reviews, and book your first appointment in minutes.</p>',
+            'Find a Doctor', APP_URL . '/doctors'));
+
     return [true, 'Welcome to MediConnect, ' . $fullName . '!'];
 }
 
@@ -182,14 +188,14 @@ function register_doctor_application(array $data)
     $email = strtolower(clean($data['email'] ?? ''));
     $phone = clean($data['phone'] ?? '');
     $password = (string) ($data['password'] ?? '');
-    $specializationId = (int) ($data['specialization_id'] ?? 0);
+    $specializationIds = array_filter(array_map('intval', (array) ($data['specialization_ids'] ?? [])));
     $qualification = clean($data['qualification'] ?? '');
     $registrationNumber = clean($data['registration_number'] ?? '');
     $experienceYears = (int) ($data['experience_years'] ?? 0);
     $bio = clean($data['bio'] ?? '');
 
-    if ($fullName === '' || $email === '' || strlen($password) < 8 || $specializationId <= 0 || $registrationNumber === '') {
-        return [false, 'Please fill in all required fields (name, email, password, specialization, license number).'];
+    if ($fullName === '' || $email === '' || strlen($password) < 8 || !$specializationIds || $registrationNumber === '') {
+        return [false, 'Please fill in all required fields (name, email, password, at least one specialization, license number).'];
     }
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         return [false, 'Please enter a valid email address.'];
@@ -214,11 +220,18 @@ function register_doctor_application(array $data)
         mysqli_stmt_close($stmt);
 
         $slug = unique_slug($db, 'doctors', 'dr-' . $fullName);
-        $stmt = mysqli_prepare($db, 'INSERT INTO doctors (user_id, specialization_id, slug, qualification, registration_number, experience_years, bio, verification_status) VALUES (?, ?, ?, ?, ?, ?, ?, \'pending\')');
-        mysqli_stmt_bind_param($stmt, 'iisssis', $userId, $specializationId, $slug, $qualification, $registrationNumber, $experienceYears, $bio);
+        $stmt = mysqli_prepare($db, 'INSERT INTO doctors (user_id, slug, qualification, registration_number, experience_years, bio, verification_status) VALUES (?, ?, ?, ?, ?, ?, \'pending\')');
+        mysqli_stmt_bind_param($stmt, 'isssis', $userId, $slug, $qualification, $registrationNumber, $experienceYears, $bio);
         mysqli_stmt_execute($stmt);
         $doctorId = mysqli_insert_id($db);
         mysqli_stmt_close($stmt);
+
+        $specStmt = mysqli_prepare($db, 'INSERT INTO doctor_specializations (doctor_id, specialization_id) SELECT ?, id FROM specializations WHERE id = ?');
+        foreach ($specializationIds as $specId) {
+            mysqli_stmt_bind_param($specStmt, 'ii', $doctorId, $specId);
+            mysqli_stmt_execute($specStmt);
+        }
+        mysqli_stmt_close($specStmt);
 
         $stmt = mysqli_prepare($db, 'INSERT INTO doctor_privacy_settings (doctor_id) VALUES (?)');
         mysqli_stmt_bind_param($stmt, 'i', $doctorId);
@@ -233,6 +246,13 @@ function register_doctor_application(array $data)
     }
 
     log_activity($userId, 'doctor', 'apply', 'Doctor application submitted, pending verification');
+    notify_admins('doctor_application', 'New doctor application', $fullName . ' applied to join as a doctor and is awaiting verification.', '/admin/doctors?status=pending');
+
+    send_email($email, $fullName, 'Application received — ' . get_setting('site_name', SITE_NAME),
+        email_template('Thanks for applying, ' . $fullName . '!',
+            '<p>We\'ve received your doctor application and our credentialing team is reviewing your license and details now. '
+            . 'You\'ll get an email as soon as your profile is verified and live.</p>'));
+
     return [true, 'Application submitted! Our team will verify your credentials and email you once approved.'];
 }
 
@@ -257,7 +277,7 @@ function require_login_page()
 {
     if (!is_logged_in()) {
         set_intended_url();
-        redirect('/login.php');
+        redirect('/login');
     }
 }
 
@@ -298,6 +318,6 @@ function require_admin_page()
 {
     if (!is_logged_in() || current_role() !== 'admin') {
         set_intended_url();
-        redirect('/admin/login.php');
+        redirect('/admin/login');
     }
 }

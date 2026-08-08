@@ -3,6 +3,7 @@
 $user = current_user();
 $currentPage = basename($_SERVER['SCRIPT_NAME']);
 $pendingDoctorCount = mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM doctors WHERE verification_status='pending'"))['c'];
+$unreadCount = mysqli_fetch_assoc(mysqli_query(db(), 'SELECT COUNT(*) c FROM notifications WHERE user_id = ' . (int) $user['id'] . ' AND is_read = 0'))['c'];
 $pageTitle = ($pageTitle ?? 'Dashboard') . ' — Admin — ' . SITE_NAME;
 ?><!DOCTYPE html>
 <html lang="en">
@@ -21,24 +22,24 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — Admin — ' . SITE_NAME;
 <body data-logged-in="1">
 <div class="dash-shell">
     <aside class="dash-sidebar" id="dash-sidebar">
-        <a href="/admin/dashboard.php" class="brand"><span class="brand-mark"><i class="ri-shield-star-fill"></i></span> <?= e(SITE_NAME) ?></a>
+        <a href="/admin/dashboard" class="brand"><span class="brand-mark"><i class="ri-shield-star-fill"></i></span> <?= e(SITE_NAME) ?></a>
         <nav class="dash-nav">
-            <a href="/admin/dashboard.php" class="<?= $currentPage === 'dashboard.php' ? 'active' : '' ?>"><i class="ri-dashboard-3-line"></i> Dashboard</a>
+            <a href="/admin/dashboard" class="<?= $currentPage === 'dashboard.php' ? 'active' : '' ?>"><i class="ri-dashboard-3-line"></i> Dashboard</a>
             <div class="nav-section-title">People</div>
-            <a href="/admin/doctors.php" class="<?= in_array($currentPage, ['doctors.php', 'doctor-view.php']) ? 'active' : '' ?>">
+            <a href="/admin/doctors" class="<?= in_array($currentPage, ['doctors.php', 'doctor-view.php']) ? 'active' : '' ?>">
                 <i class="ri-stethoscope-line"></i> Doctors
                 <?php if ($pendingDoctorCount > 0): ?><span class="badge badge-pending" style="margin-left:auto;"><?= $pendingDoctorCount ?></span><?php endif; ?>
             </a>
-            <a href="/admin/patients.php" class="<?= $currentPage === 'patients.php' ? 'active' : '' ?>"><i class="ri-group-line"></i> Patients</a>
+            <a href="/admin/patients" class="<?= $currentPage === 'patients.php' ? 'active' : '' ?>"><i class="ri-group-line"></i> Patients</a>
             <div class="nav-section-title">Operations</div>
-            <a href="/admin/appointments.php" class="<?= $currentPage === 'appointments.php' ? 'active' : '' ?>"><i class="ri-calendar-check-line"></i> Appointments</a>
-            <a href="/admin/specializations.php" class="<?= $currentPage === 'specializations.php' ? 'active' : '' ?>"><i class="ri-price-tag-3-line"></i> Specializations</a>
-            <a href="/admin/messages.php" class="<?= $currentPage === 'messages.php' ? 'active' : '' ?>"><i class="ri-mail-line"></i> Messages</a>
+            <a href="/admin/appointments" class="<?= $currentPage === 'appointments.php' ? 'active' : '' ?>"><i class="ri-calendar-check-line"></i> Appointments</a>
+            <a href="/admin/specializations" class="<?= $currentPage === 'specializations.php' ? 'active' : '' ?>"><i class="ri-price-tag-3-line"></i> Specializations</a>
+            <a href="/admin/messages" class="<?= $currentPage === 'messages.php' ? 'active' : '' ?>"><i class="ri-mail-line"></i> Messages</a>
             <div class="nav-section-title">System</div>
-            <a href="/admin/settings.php" class="<?= $currentPage === 'settings.php' ? 'active' : '' ?>"><i class="ri-settings-3-line"></i> Site Settings</a>
-            <a href="/admin/logs.php" class="<?= $currentPage === 'logs.php' ? 'active' : '' ?>"><i class="ri-file-list-3-line"></i> Activity Logs</a>
+            <a href="/admin/settings" class="<?= $currentPage === 'settings.php' ? 'active' : '' ?>"><i class="ri-settings-3-line"></i> Site Settings</a>
+            <a href="/admin/logs" class="<?= $currentPage === 'logs.php' ? 'active' : '' ?>"><i class="ri-file-list-3-line"></i> Activity Logs</a>
             <div class="nav-section-title">Account</div>
-            <a href="/logout.php"><i class="ri-logout-box-line"></i> Logout</a>
+            <a href="/logout"><i class="ri-logout-box-line"></i> Logout</a>
         </nav>
     </aside>
     <main class="dash-main">
@@ -48,15 +49,36 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — Admin — ' . SITE_NAME;
             <div style="display:flex;align-items:center;gap:14px;">
                 <button class="theme-toggle" data-theme-toggle><i class="ri-moon-line"></i></button>
                 <div class="user-menu">
+                    <button class="btn-icon" id="notif-bell-btn" data-dropdown-trigger="admin-notif-dropdown" style="position:relative;">
+                        <i class="ri-notification-3-line"></i>
+                        <span id="notif-badge-dot" style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--color-danger);<?= $unreadCount > 0 ? '' : 'display:none;' ?>"></span>
+                    </button>
+                    <div class="dropdown-menu" id="admin-notif-dropdown" style="min-width:280px;">
+                        <div style="padding:8px 12px;font-weight:700;font-size:13px;">Notifications</div>
+                        <div id="notif-list">
+                        <?php
+                        $notifs = mysqli_query(db(), 'SELECT * FROM notifications WHERE user_id = ' . (int) $user['id'] . ' ORDER BY created_at DESC LIMIT 6');
+                        if (mysqli_num_rows($notifs) === 0): ?>
+                        <div style="padding:12px;font-size:13px;color:var(--color-text-muted);">No notifications yet.</div>
+                        <?php else: while ($n = mysqli_fetch_assoc($notifs)): ?>
+                        <a href="<?= e($n['link'] ?: '#') ?>" style="display:block;padding:10px 12px;white-space:normal;">
+                            <strong style="display:block;font-size:13px;"><?= e($n['title']) ?></strong>
+                            <span style="font-size:12px;color:var(--color-text-muted);"><?= e($n['message']) ?></span>
+                        </a>
+                        <?php endwhile; endif; ?>
+                        </div>
+                    </div>
+                </div>
+                <div class="user-menu">
                     <button class="user-avatar-btn" data-dropdown-trigger="admin-user-dropdown">
                         <img src="<?= e(avatar_url($user['avatar'], $user['full_name'])) ?>" alt="">
                         <span style="font-size:14px;font-weight:600;"><?= e($user['full_name']) ?></span>
                         <i class="ri-arrow-down-s-line"></i>
                     </button>
                     <div class="dropdown-menu" id="admin-user-dropdown">
-                        <a href="/index.php" target="_blank"><i class="ri-external-link-line"></i> View Site</a>
+                        <a href="/" target="_blank"><i class="ri-external-link-line"></i> View Site</a>
                         <div class="dropdown-divider"></div>
-                        <a href="/logout.php"><i class="ri-logout-box-line"></i> Logout</a>
+                        <a href="/logout"><i class="ri-logout-box-line"></i> Logout</a>
                     </div>
                 </div>
             </div>

@@ -32,6 +32,7 @@ CREATE TABLE users (
     status            ENUM('active','pending','suspended','banned') NOT NULL DEFAULT 'active',
     email_verified_at DATETIME DEFAULT NULL,
     last_login_at     DATETIME DEFAULT NULL,
+    last_active_at    DATETIME DEFAULT NULL COMMENT 'refreshed on page loads while logged in; drives doctor online status',
     created_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_users_email (email),
@@ -84,7 +85,6 @@ DROP TABLE IF EXISTS doctors;
 CREATE TABLE doctors (
     id                        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id                   INT UNSIGNED NOT NULL,
-    specialization_id         INT UNSIGNED DEFAULT NULL,
     slug                      VARCHAR(180) NOT NULL,
     qualification             VARCHAR(255) DEFAULT NULL,
     registration_number       VARCHAR(100) DEFAULT NULL,
@@ -105,15 +105,28 @@ CREATE TABLE doctors (
     rating_avg                DECIMAL(3,2) NOT NULL DEFAULT 0.00,
     rating_count              INT UNSIGNED NOT NULL DEFAULT 0,
     profile_views             INT UNSIGNED NOT NULL DEFAULT 0,
+    chat_enabled              TINYINT(1) NOT NULL DEFAULT 0,
+    chat_visible_to_guests    TINYINT(1) NOT NULL DEFAULT 0,
+    chat_start_time           TIME DEFAULT NULL COMMENT 'daily window start; NULL + chat_enabled = available anytime',
+    chat_end_time              TIME DEFAULT NULL,
     created_at                DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at                DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_doctors_user (user_id),
     UNIQUE KEY uq_doctors_slug (slug),
-    KEY idx_doctors_spec (specialization_id),
     KEY idx_doctors_verification (verification_status),
     KEY idx_doctors_premium (is_premium),
-    CONSTRAINT fk_doctors_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT fk_doctors_spec FOREIGN KEY (specialization_id) REFERENCES specializations(id) ON DELETE SET NULL
+    CONSTRAINT fk_doctors_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- A doctor can practice under more than one specialization.
+DROP TABLE IF EXISTS doctor_specializations;
+CREATE TABLE doctor_specializations (
+    doctor_id          INT UNSIGNED NOT NULL,
+    specialization_id  INT UNSIGNED NOT NULL,
+    PRIMARY KEY (doctor_id, specialization_id),
+    KEY idx_docspec_spec (specialization_id),
+    CONSTRAINT fk_docspec_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE,
+    CONSTRAINT fk_docspec_spec FOREIGN KEY (specialization_id) REFERENCES specializations(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 DROP TABLE IF EXISTS doctor_privacy_settings;

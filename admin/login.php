@@ -2,7 +2,7 @@
 require __DIR__ . '/../config/config.php';
 
 if (is_logged_in() && current_role() === 'admin') {
-    redirect('/admin/dashboard.php');
+    redirect('/admin/dashboard');
 }
 
 $pageTitle = 'Admin Login';
@@ -47,7 +47,7 @@ $pageTitle = 'Admin Login';
             </div>
             <button type="submit" class="btn btn-primary btn-block">Log In</button>
         </form>
-        <p style="text-align:center;font-size:13px;margin-top:20px;"><a href="/index.php" style="color:var(--color-text-muted);"><i class="ri-arrow-left-line"></i> Back to site</a></p>
+        <p style="text-align:center;font-size:13px;margin-top:20px;"><a href="/" style="color:var(--color-text-muted);"><i class="ri-arrow-left-line"></i> Back to site</a></p>
     </div>
 </div>
 <script>window.APP = { csrfToken: <?= json_encode(csrf_token()) ?> };</script>
@@ -67,7 +67,7 @@ document.getElementById('admin-login-form').addEventListener('submit', function 
             btn.disabled = false; btn.innerHTML = original;
             if (data.success) {
                 showToast('success', 'Welcome', data.message);
-                setTimeout(function () { window.location.href = data.redirect || '/admin/dashboard.php'; }, 500);
+                setTimeout(function () { window.location.href = data.redirect || '/admin/dashboard'; }, 500);
             } else {
                 showToast('error', 'Login failed', data.message);
             }

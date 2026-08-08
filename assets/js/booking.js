@@ -96,7 +96,7 @@
         }, null, 'json').done(function (res) {
             if (res.success) {
                 showToast('success', 'Booked!', res.message);
-                setTimeout(function () { window.location.href = res.redirect || '/patient/appointments.php'; }, 900);
+                setTimeout(function () { window.location.href = res.redirect || '/patient/appointments'; }, 900);
             } else {
                 showToast('error', 'Could not book', res.message);
                 $btn.prop('disabled', false).text('Confirm Booking');

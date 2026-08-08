@@ -24,7 +24,7 @@ $totalAppointments = mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FR
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);">
     <div class="container">
-        <nav class="breadcrumb"><a href="/index.php">Home</a> <i class="ri-arrow-right-s-line"></i> <span><?= e($page['title']) ?></span></nav>
+        <nav class="breadcrumb"><a href="/">Home</a> <i class="ri-arrow-right-s-line"></i> <span><?= e($page['title']) ?></span></nav>
         <div style="max-width:760px;" data-reveal>
             <span class="eyebrow">About Us</span>
             <h1 style="font-size:36px;margin-bottom:20px;"><?= e($page['title']) ?></h1>

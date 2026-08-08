@@ -12,7 +12,7 @@ $op = $_POST['op'] ?? 'add';
 
 if ($op === 'delete') {
     $id = (int) ($_POST['id'] ?? 0);
-    $inUse = mysqli_fetch_assoc(mysqli_query($db, "SELECT COUNT(*) c FROM doctors WHERE specialization_id = $id"))['c'];
+    $inUse = mysqli_fetch_assoc(mysqli_query($db, "SELECT COUNT(*) c FROM doctor_specializations WHERE specialization_id = $id"))['c'];
     if ($inUse > 0) {
         json_response(false, [], "Cannot delete — $inUse doctor(s) use this specialization. Deactivate it instead.");
     }

@@ -23,6 +23,7 @@ require __DIR__ . '/includes/header.php';
 ?>
 <div class="tabs-row">
     <button class="tab-btn active" data-tab="general">General</button>
+    <button class="tab-btn" data-tab="email">Email (SMTP)</button>
     <button class="tab-btn" data-tab="cms">Pages (About / Privacy / Terms)</button>
     <button class="tab-btn" data-tab="faqs">FAQs</button>
 </div>
@@ -39,6 +40,43 @@ require __DIR__ . '/includes/header.php';
             <div class="form-group"><label class="form-label">Currency Symbol</label><input type="text" class="form-control" name="currency_symbol" value="<?= e($settings['currency_symbol'] ?? '$') ?>" style="max-width:100px;"></div>
             <label class="checkbox-row" style="margin-bottom:20px;"><input type="checkbox" name="maintenance_mode" value="1" <?= ($settings['maintenance_mode'] ?? '0') === '1' ? 'checked' : '' ?>> Maintenance mode</label>
             <button type="submit" class="btn btn-primary">Save Settings</button>
+        </form>
+    </div>
+</div>
+
+<div class="settings-panel" id="panel-email" style="display:none;">
+    <div class="card" style="padding:28px;max-width:640px;" data-reveal>
+        <p style="color:var(--color-text-muted);margin-bottom:20px;">
+            Configure an SMTP server to send appointment, verification, and message emails to patients, doctors, and admins.
+            Leave the host blank to fall back to the server's built-in <code>mail()</code> function (not recommended for production).
+        </p>
+        <form id="email-settings-form">
+            <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+            <label class="checkbox-row" style="margin-bottom:20px;"><input type="checkbox" name="email_notifications_enabled" value="1" <?= ($settings['email_notifications_enabled'] ?? '1') === '1' ? 'checked' : '' ?>> Send activity emails (appointments, verification, messages, contact form)</label>
+            <div class="grid grid-2">
+                <div class="form-group"><label class="form-label">SMTP Host</label><input type="text" class="form-control" name="smtp_host" placeholder="smtp.yourprovider.com" value="<?= e($settings['smtp_host'] ?? '') ?>"></div>
+                <div class="form-group"><label class="form-label">SMTP Port</label><input type="number" class="form-control" name="smtp_port" placeholder="587" value="<?= e($settings['smtp_port'] ?? '587') ?>"></div>
+            </div>
+            <div class="grid grid-2">
+                <div class="form-group"><label class="form-label">Username</label><input type="text" class="form-control" name="smtp_username" autocomplete="off" value="<?= e($settings['smtp_username'] ?? '') ?>"></div>
+                <div class="form-group"><label class="form-label">Password</label><input type="password" class="form-control" name="smtp_password" autocomplete="new-password" value="<?= e($settings['smtp_password'] ?? '') ?>"></div>
+            </div>
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">Encryption</label>
+                    <select class="form-control" name="smtp_encryption">
+                        <?php foreach (['tls' => 'STARTTLS (port 587, recommended)', 'ssl' => 'SSL/TLS (port 465)', 'none' => 'None'] as $val => $label): ?>
+                        <option value="<?= $val ?>" <?= ($settings['smtp_encryption'] ?? 'tls') === $val ? 'selected' : '' ?>><?= $label ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group"><label class="form-label">From Email</label><input type="email" class="form-control" name="smtp_from_email" placeholder="no-reply@yourdomain.com" value="<?= e($settings['smtp_from_email'] ?? '') ?>"></div>
+            </div>
+            <div class="form-group"><label class="form-label">From Name</label><input type="text" class="form-control" name="smtp_from_name" value="<?= e($settings['smtp_from_name'] ?? $settings['site_name'] ?? '') ?>"></div>
+            <div style="display:flex;gap:10px;">
+                <button type="submit" class="btn btn-primary">Save Email Settings</button>
+                <button type="button" class="btn btn-outline" id="send-test-email-btn">Send Test Email</button>
+            </div>
         </form>
     </div>
 </div>

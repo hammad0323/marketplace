@@ -9,4 +9,4 @@ Disallow: /config/
 Disallow: /database/
 Disallow: /uploads/certificates/
 
-Sitemap: /sitemap.php
+Sitemap: /sitemap

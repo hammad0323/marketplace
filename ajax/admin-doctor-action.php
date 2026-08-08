@@ -29,7 +29,7 @@ switch ($action) {
         mysqli_stmt_bind_param($stmt, 'i', $doctor['user_id']);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
-        notify_user($doctor['user_id'], 'account', 'Application approved', 'Congratulations! Your doctor profile has been verified and is now live.', '/doctor/dashboard.php');
+        notify_user($doctor['user_id'], 'account', 'Application approved', 'Congratulations! Your doctor profile has been verified and is now live.', '/doctor/dashboard');
         $message = 'Doctor verified.';
         break;
 

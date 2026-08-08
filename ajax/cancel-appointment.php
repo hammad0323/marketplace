@@ -42,7 +42,7 @@ mysqli_stmt_execute($stmt);
 mysqli_stmt_close($stmt);
 
 $notifyUserId = $role === 'patient' ? $appt['doctor_user_id'] : $appt['patient_user_id'];
-notify_user($notifyUserId, 'appointment', 'Appointment cancelled', 'The appointment on ' . format_date($appt['appointment_date']) . ' at ' . format_time12($appt['start_time']) . ' was cancelled.', $role === 'patient' ? '/doctor/appointments.php' : '/patient/appointments.php');
+notify_user($notifyUserId, 'appointment', 'Appointment cancelled', 'The appointment on ' . format_date($appt['appointment_date']) . ' at ' . format_time12($appt['start_time']) . ' was cancelled.', $role === 'patient' ? '/doctor/appointments' : '/patient/appointments');
 log_activity($_SESSION['user_id'], $role, 'cancel_appointment', "Cancelled appointment #$appointmentId");
 
 json_response(true, [], 'Appointment cancelled.');

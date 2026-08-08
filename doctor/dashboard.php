@@ -50,7 +50,7 @@ require __DIR__ . '/includes/header.php';
             <h2 style="margin-bottom:6px;">Welcome back, Dr. <?= e(explode(' ', str_replace('Dr. ', '', $user['full_name']))[0]) ?> 👋</h2>
             <p style="color:var(--color-text-muted);">You have <?= (int)($stats['pending'] ?? 0) ?> pending request<?= ($stats['pending'] ?? 0) == 1 ? '' : 's' ?> waiting for review.</p>
         </div>
-        <a href="/doctor/appointments.php?status=pending" class="btn btn-primary">Review Requests <i class="ri-arrow-right-line"></i></a>
+        <a href="/doctor/appointments?status=pending" class="btn btn-primary">Review Requests <i class="ri-arrow-right-line"></i></a>
     </div>
 </div>
 
@@ -77,7 +77,7 @@ require __DIR__ . '/includes/header.php';
     <div class="card table-card" data-reveal>
         <div style="padding:20px 24px;border-bottom:1px solid var(--color-border);display:flex;justify-content:space-between;align-items:center;">
             <h4>Upcoming Appointments</h4>
-            <a href="/doctor/appointments.php" style="font-size:13px;color:var(--color-primary);font-weight:600;">View all</a>
+            <a href="/doctor/appointments" style="font-size:13px;color:var(--color-primary);font-weight:600;">View all</a>
         </div>
         <?php if (mysqli_num_rows($upcoming) === 0): ?>
         <div class="empty-state"><i class="ri-calendar-line"></i><h4>No upcoming appointments</h4><p>New booking requests will appear here.</p></div>

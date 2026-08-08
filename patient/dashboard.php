@@ -15,9 +15,9 @@ $stats = mysqli_fetch_assoc(mysqli_query(db(), "
 "));
 
 $upcoming = mysqli_query(db(), "
-    SELECT a.*, u.full_name AS doctor_name, u.avatar, s.name AS spec_name
+    SELECT a.*, u.full_name AS doctor_name, u.avatar,
+        (SELECT GROUP_CONCAT(s.name ORDER BY s.name SEPARATOR ', ') FROM doctor_specializations ds JOIN specializations s ON s.id = ds.specialization_id WHERE ds.doctor_id = d.id) AS spec_name
     FROM appointments a JOIN doctors d ON d.id = a.doctor_id JOIN users u ON u.id = d.user_id
-    LEFT JOIN specializations s ON s.id = d.specialization_id
     WHERE a.patient_id = $patientId AND a.status IN ('pending','approved')
     ORDER BY a.appointment_date ASC, a.start_time ASC LIMIT 5
 ");
@@ -53,7 +53,7 @@ require __DIR__ . '/includes/header.php';
             <h2 style="margin-bottom:6px;">Welcome back, <?= e(explode(' ', $user['full_name'])[0]) ?> 👋</h2>
             <p style="color:var(--color-text-muted);">Here's what's happening with your care.</p>
         </div>
-        <a href="/doctors.php" class="btn btn-primary">Book New Appointment <i class="ri-add-line"></i></a>
+        <a href="/doctors" class="btn btn-primary">Book New Appointment <i class="ri-add-line"></i></a>
     </div>
 </div>
 
@@ -80,7 +80,7 @@ require __DIR__ . '/includes/header.php';
     <div class="card table-card" data-reveal>
         <div style="padding:20px 24px;border-bottom:1px solid var(--color-border);display:flex;justify-content:space-between;align-items:center;">
             <h4>Upcoming Appointments</h4>
-            <a href="/patient/appointments.php" style="font-size:13px;color:var(--color-primary);font-weight:600;">View all</a>
+            <a href="/patient/appointments" style="font-size:13px;color:var(--color-primary);font-weight:600;">View all</a>
         </div>
         <?php if (mysqli_num_rows($upcoming) === 0): ?>
         <div class="empty-state"><i class="ri-calendar-line"></i><h4>No upcoming appointments</h4><p>Book a consultation with a verified doctor today.</p></div>

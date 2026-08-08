@@ -9,45 +9,121 @@ this project.
 
 This is a **complete, working core platform** — guest browsing, patient and
 doctor auth, doctor verification, appointment booking with live availability,
-and admin oversight — built to a production security bar (CSRF, prepared
-statements everywhere, hashed passwords, rate-limited login, validated
-uploads, role-based access control on every protected page).
+doctor-patient messaging, transactional email, and admin oversight — built to
+a production security bar (CSRF, prepared statements everywhere, hashed
+passwords, rate-limited login, validated uploads, role-based access control
+on every protected page).
 
 It is **not** the entire feature wishlist a platform like this could
-eventually have (chat, a medicine store, paid memberships, a CMS page
-builder, a blog). Those are real, multi-week efforts in their own right.
-Rather than fake them, the database schema was designed to already support
-them (see `database/schema.sql`, tables marked "PHASE 2+"), so they can be
-built later as pure additions — new pages and endpoints — without touching
-what's already here.
+eventually have (a medicine store, paid memberships, a CMS page builder, a
+blog). Those are real, multi-week efforts in their own right. Rather than
+fake them, the database schema was designed to already support them (see
+`database/schema.sql`, tables marked "PHASE 2+"), so they can be built later
+as pure additions — new pages and endpoints — without touching what's
+already here.
 
 ### Implemented and fully working
 - **Public site**: homepage, doctor directory with filters/search, doctor
   profiles (respecting doctor-controlled privacy settings), specializations,
   about/contact/FAQ/privacy/terms, SEO meta tags + Open Graph + JSON-LD +
-  sitemap.xml + robots.txt.
+  sitemap.xml + robots.txt. All URLs are extension-free (`/doctors`, not
+  `/doctors.php`) — see "Clean URLs" below.
 - **Auth**: patient self-registration, doctor application (pending admin
-  review), admin login, a "smart" login/register modal that reopens guests'
-  intended action after they sign in, session-based role guards on every
-  protected page.
+  review, multi-specialization), admin login, a "smart" login/register modal
+  that reopens guests' intended action after they sign in, session-based role
+  guards on every protected page.
 - **Booking**: live per-doctor weekly availability + blocked dates, real-time
   slot generation, online/physical consultation types, booking, cancel,
   reschedule.
+- **Doctor-patient messaging**: each doctor opts messaging on/off from their
+  own dashboard, optionally restricts it to a daily time window, and
+  optionally allows logged-out visitors to see the option; a pulsing green
+  "online now" indicator shows on the public profile whenever the doctor is
+  enabled, within their hours, and has been active recently. Patients and
+  doctors can both start a conversation; messages arrive via short-interval
+  polling (no page refresh) and generate a notification + email to whoever
+  didn't send the message. See "Messaging" below.
+- **Notifications**: an in-header bell (patient/doctor/admin) polls for new
+  activity, plays a short generated chime and does a wobble animation the
+  moment unread count increases, and shows a live dropdown of recent items.
+- **Email**: every significant activity (registration, doctor application,
+  appointment booked/approved/rejected, new chat message, contact form) sends
+  an email to the relevant party — the patient, the doctor, and/or every
+  admin, depending on the event — through a built-in SMTP client configured
+  from the admin panel. See "Email" below.
 - **Patient dashboard**: appointments (upcoming/completed/cancelled),
-  profile + medical details, password change, avatar upload.
+  messaging, profile + medical details, password change, avatar upload.
 - **Doctor dashboard**: appointment approve/reject/complete, weekly
-  availability editor, blocked-date manager, patient list, profile +
-  privacy-settings + certificate uploads, analytics charts.
+  availability editor, blocked-date manager, patient list, messaging settings,
+  profile with multi-specialization selection + privacy settings + multiple
+  certificate uploads (single click, many files), analytics charts.
 - **Admin dashboard**: doctor verification queue, patient management,
-  all-appointments view, specialization CRUD, site settings, CMS content
-  editor (About/Privacy/Terms), FAQ manager, contact-message inbox, activity
-  log.
+  all-appointments view, specialization CRUD, SMTP/email settings with a
+  send-test-email button, site settings, CMS content editor (About/Privacy/
+  Terms), FAQ manager, contact-message inbox, activity log.
+- **Theme**: light mode is the fixed, unconditional default for every new
+  visitor — the OS/browser dark-mode preference is never read. A visitor who
+  explicitly toggles dark mode has that remembered (localStorage) for their
+  next visit only; nothing is ever pushed into dark mode automatically.
+
+### Clean URLs
+Every internal link is written and rendered without `.php` (`/doctors`,
+`/doctor/dashboard`, `/admin/settings`). Apache's `mod_rewrite` (see
+`.htaccess`) transparently serves the matching `.php` file for these paths,
+and 301-redirects any request that still hits a `.php` URL directly (so old
+bookmarks/search-engine links land on the clean URL instead of getting a
+duplicate-content page). `/ajax/*.php` endpoints are deliberately excluded
+from both rules and keep their `.php` extension, since they're only ever
+called from JavaScript, never linked or bookmarked.
+
+This requires `mod_rewrite` and `AllowOverride All` (or equivalent) on the
+web server — see "Setup" below. PHP's built-in `php -S` dev server does
+**not** process `.htaccess`, so during local testing without Apache, visit
+pages by their real `.php` path (e.g. `/doctor/dashboard.php`); this is a
+dev-server limitation only, not an application bug.
+
+### Messaging
+- A doctor turns messaging on from **Doctor Dashboard → Profile → Messaging**,
+  optionally sets a daily availability window (e.g. 09:00–18:00) and whether
+  logged-out visitors can see the "Message" button on their public profile.
+- The green "online now" dot on a doctor's profile/chat means: messaging is
+  enabled, the current time is inside their window (if one is set), and
+  they've been active on the site within the last 15 minutes — not merely
+  that messaging is turned on.
+- Either side can start a new conversation; both `patient/messages.php` and
+  `doctor/messages.php` use the same polling driver (`assets/js/chat.js`,
+  ~4s interval) so new messages appear without a manual refresh.
+- Every new message calls `notify_user()`, which both creates an in-app
+  notification and, if email is configured and enabled, emails the recipient.
+
+### Email
+- Configured entirely from **Admin → Site Settings → Email (SMTP)**: host,
+  port, username, password, encryption (`none`/`tls`/`ssl`), from
+  address/name, and a master on/off switch. A "Send Test Email" button
+  verifies the configuration without leaving the page.
+- The SMTP client (`includes/mailer.php`) is hand-written over raw sockets
+  (`stream_socket_client`/`fsockopen`) — STARTTLS, implicit SSL, and AUTH
+  LOGIN are all supported, no Composer/PHPMailer dependency.
+- Sending never blocks or fails the triggering request: socket timeouts are
+  short (8s) and every failure is caught, so a misconfigured or unreachable
+  SMTP server degrades to "no email sent," not a broken booking/registration/
+  chat action. If email is left disabled (the default), the app behaves
+  exactly as it did before this feature existed — in-app notifications only.
+- `notify_user()` is the single choke point used everywhere an activity
+  email should fire (appointments, chat, registration, doctor applications);
+  `notify_admins()` fans the same event out to every active admin.
+
+### Doctor specializations
+A doctor is no longer limited to one specialization. `doctors.specialization_id`
+was replaced by a `doctor_specializations` pivot table (many-to-many); doctor
+registration and profile editing use a checkbox grid, and every place that
+used to show a single specialization (directory filters, profile pages,
+admin lists) now shows/filters on the full set.
 
 ### Schema-ready for phase 2 (not yet wired to UI)
-Chat, medicine store/orders, paid doctor memberships, blog. Tables:
-`chat_conversations`, `chat_messages`, `medicines`, `medicine_categories`,
-`orders`, `order_items`, `membership_plans`, `doctor_memberships`,
-`blog_posts`, `support_tickets`.
+Medicine store/orders, paid doctor memberships, blog. Tables: `medicines`,
+`medicine_categories`, `orders`, `order_items`, `membership_plans`,
+`doctor_memberships`, `blog_posts`, `support_tickets`.
 
 ## Tech stack
 
@@ -75,11 +151,11 @@ fonts CDN can no longer take the rest of the page down with it.
 
 ```
 /config           bootstrap (config.php: mysqli connection, sessions)
-/includes          shared PHP helpers: functions.php, auth.php, header/footer
-/ajax               all AJAX endpoints (auth, booking, dashboards, admin actions)
-/admin, /doctor, /patient   role-specific dashboards, each with includes/
+/includes          shared PHP helpers: functions.php, auth.php, mailer.php (SMTP client), header/footer
+/ajax               all AJAX endpoints (auth, booking, chat, notifications, dashboards, admin actions)
+/admin, /doctor, /patient   role-specific dashboards, each with includes/ and messages.php (doctor/patient)
 /assets/css        style.css (the entire design system)
-/assets/js         main.js, toast.js, auth-modal.js, booking.js, per-panel scripts
+/assets/js         main.js, toast.js, auth-modal.js, booking.js, chat.js, notifications.js, per-panel scripts
 /assets/js/vendor   self-hosted jQuery + Chart.js
 /assets/fonts/remixicon   self-hosted icon font
 /uploads            avatars/ certificates/ reports/ (never executes PHP — see .htaccess)
@@ -87,13 +163,15 @@ fonts CDN can no longer take the rest of the page down with it.
 /logs              php-error.log (git-ignored)
 ```
 
-Every page is a real, directly-requestable `.php` file — no URL rewriting is
-required for the site to function, which keeps it deployable on ordinary
-shared hosting.
+Every page is a real, directly-requestable `.php` file underneath — the
+clean URLs described above are an Apache rewrite layer on top, so the site
+still works with `.php` in the URL if `mod_rewrite` isn't available.
 
 ## Setup
 
-1. Create a database and import the schema, then the seed data:
+1. Create a database and import the schema, then the seed data (both files
+   set their own connection charset, so run each with the plain `mysql`
+   client — no special flags needed):
    ```
    mysql -u youruser -p < database/schema.sql
    mysql -u youruser -p < database/seed.sql
@@ -101,9 +179,17 @@ shared hosting.
 2. Set your DB credentials, either as environment variables (`DB_HOST`,
    `DB_NAME`, `DB_USER`, `DB_PASS`, `DB_PORT`) or by editing the defaults at
    the top of `config/config.php`.
-3. Point your web server's document root at the project root. For local
-   testing: `php -S localhost:8000` from the project root.
-4. Visit `/index.php`.
+3. Point your web server's document root at the project root, with
+   `mod_rewrite` enabled and `AllowOverride All` (or equivalent) so
+   `.htaccess` can apply the clean-URL rules. For local testing without
+   Apache: `php -S localhost:8000` from the project root — clean URLs won't
+   resolve under this dev server (see "Clean URLs" above), so browse using
+   the real `.php` paths instead.
+4. Visit the homepage (`/` or `/index.php`).
+5. Optional: configure outbound email at **Admin → Site Settings → Email
+   (SMTP)** if you want registration/booking/chat activity to send real
+   emails. Everything works with email left off — it only adds emails on top
+   of the existing in-app notifications.
 
 ### Seeded logins (change or remove before any real deployment)
 
@@ -137,11 +223,14 @@ shared hosting.
 
 ## What was deliberately left out of this pass
 
-- **Password reset / forgot-password flow** — needs a real outbound email
-  system to be meaningful; the schema (`password_resets`) is ready, the UI
-  link was removed rather than shipped as a dead end.
-- **Real-time chat, medicine store, paid memberships, blog** — see "Schema-
-  ready for phase 2" above.
-- **Transactional emails** (booking confirmations, verification, etc.) —
-  same reasoning as password reset; needs a real mail transport configured
-  per deployment.
+- **Password reset / forgot-password flow** — the schema (`password_resets`)
+  is ready and a real SMTP transport now exists to deliver it, but the
+  request/reset UI itself wasn't built in this pass; the login page has no
+  dead "forgot password" link pointing nowhere.
+- **Medicine store, paid memberships, blog** — see "Schema-ready for phase 2"
+  above.
+- **True real-time delivery** (WebSockets/SSE) for chat and notifications —
+  both use short-interval AJAX polling (~4s for chat, ~20s for the
+  notification bell) instead, which needs no persistent server process and
+  works unmodified on ordinary shared hosting, at the cost of a few seconds
+  of latency versus a socket-based push.

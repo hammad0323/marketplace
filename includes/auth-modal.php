@@ -74,14 +74,14 @@
                         <div class="form-error"></div>
                     </div>
                     <label class="checkbox-row" style="margin-bottom:20px;">
-                        <input type="checkbox" required> I agree to the <a href="/terms.php" target="_blank" style="color:var(--color-primary);">Terms</a> &amp; <a href="/privacy-policy.php" target="_blank" style="color:var(--color-primary);">Privacy Policy</a>
+                        <input type="checkbox" required> I agree to the <a href="/terms" target="_blank" style="color:var(--color-primary);">Terms</a> &amp; <a href="/privacy-policy" target="_blank" style="color:var(--color-primary);">Privacy Policy</a>
                     </label>
                     <button type="submit" class="btn btn-primary btn-block">Create Account</button>
                     <p style="text-align:center;font-size:13.5px;margin-top:18px;color:var(--color-text-muted);">
                         Already have an account? <a href="#" style="color:var(--color-primary);font-weight:600;" onclick="event.preventDefault();openAuthModal('login')">Log in</a>
                     </p>
                     <p style="text-align:center;font-size:12.5px;margin-top:10px;color:var(--color-text-muted);">
-                        Are you a doctor? <a href="/doctor-register.php" style="color:var(--color-primary);font-weight:600;">Apply here</a>
+                        Are you a doctor? <a href="/doctor-register" style="color:var(--color-primary);font-weight:600;">Apply here</a>
                     </p>
                 </form>
             </div>

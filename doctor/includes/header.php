@@ -22,15 +22,16 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — ' . SITE_NAME;
 <body data-logged-in="1">
 <div class="dash-shell">
     <aside class="dash-sidebar" id="dash-sidebar">
-        <a href="/index.php" class="brand"><span class="brand-mark"><i class="ri-heart-pulse-fill"></i></span> <?= e(SITE_NAME) ?></a>
+        <a href="/" class="brand"><span class="brand-mark"><i class="ri-heart-pulse-fill"></i></span> <?= e(SITE_NAME) ?></a>
         <nav class="dash-nav">
-            <a href="/doctor/dashboard.php" class="<?= $currentPage === 'dashboard.php' ? 'active' : '' ?>"><i class="ri-dashboard-3-line"></i> Dashboard</a>
-            <a href="/doctor/appointments.php" class="<?= $currentPage === 'appointments.php' ? 'active' : '' ?>"><i class="ri-calendar-check-line"></i> Appointments</a>
-            <a href="/doctor/availability.php" class="<?= $currentPage === 'availability.php' ? 'active' : '' ?>"><i class="ri-calendar-2-line"></i> Availability</a>
-            <a href="/doctor/patients.php" class="<?= $currentPage === 'patients.php' ? 'active' : '' ?>"><i class="ri-group-line"></i> My Patients</a>
-            <a href="/doctor/profile.php" class="<?= $currentPage === 'profile.php' ? 'active' : '' ?>"><i class="ri-user-line"></i> Profile</a>
+            <a href="/doctor/dashboard" class="<?= $currentPage === 'dashboard.php' ? 'active' : '' ?>"><i class="ri-dashboard-3-line"></i> Dashboard</a>
+            <a href="/doctor/appointments" class="<?= $currentPage === 'appointments.php' ? 'active' : '' ?>"><i class="ri-calendar-check-line"></i> Appointments</a>
+            <a href="/doctor/availability" class="<?= $currentPage === 'availability.php' ? 'active' : '' ?>"><i class="ri-calendar-2-line"></i> Availability</a>
+            <a href="/doctor/messages" class="<?= $currentPage === 'messages.php' ? 'active' : '' ?>"><i class="ri-chat-3-line"></i> Messages</a>
+            <a href="/doctor/patients" class="<?= $currentPage === 'patients.php' ? 'active' : '' ?>"><i class="ri-group-line"></i> My Patients</a>
+            <a href="/doctor/profile" class="<?= $currentPage === 'profile.php' ? 'active' : '' ?>"><i class="ri-user-line"></i> Profile</a>
             <div class="nav-section-title">Account</div>
-            <a href="/logout.php"><i class="ri-logout-box-line"></i> Logout</a>
+            <a href="/logout"><i class="ri-logout-box-line"></i> Logout</a>
         </nav>
     </aside>
     <main class="dash-main">
@@ -40,12 +41,13 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — ' . SITE_NAME;
             <div style="display:flex;align-items:center;gap:14px;">
                 <button class="theme-toggle" data-theme-toggle><i class="ri-moon-line"></i></button>
                 <div class="user-menu">
-                    <button class="btn-icon" data-dropdown-trigger="doctor-dropdown" style="position:relative;">
+                    <button class="btn-icon" id="notif-bell-btn" data-dropdown-trigger="doctor-dropdown" style="position:relative;">
                         <i class="ri-notification-3-line"></i>
-                        <?php if ($unreadCount > 0): ?><span style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--color-danger);"></span><?php endif; ?>
+                        <span id="notif-badge-dot" style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--color-danger);<?= $unreadCount > 0 ? '' : 'display:none;' ?>"></span>
                     </button>
                     <div class="dropdown-menu" id="doctor-dropdown" style="min-width:280px;">
                         <div style="padding:8px 12px;font-weight:700;font-size:13px;">Notifications</div>
+                        <div id="notif-list">
                         <?php
                         $notifs = mysqli_query(db(), 'SELECT * FROM notifications WHERE user_id = ' . (int) $user['id'] . ' ORDER BY created_at DESC LIMIT 6');
                         if (mysqli_num_rows($notifs) === 0): ?>
@@ -56,6 +58,7 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — ' . SITE_NAME;
                             <span style="font-size:12px;color:var(--color-text-muted);"><?= e($n['message']) ?></span>
                         </a>
                         <?php endwhile; endif; ?>
+                        </div>
                     </div>
                 </div>
                 <div class="user-menu">
@@ -65,10 +68,10 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — ' . SITE_NAME;
                         <i class="ri-arrow-down-s-line"></i>
                     </button>
                     <div class="dropdown-menu" id="doctor-user-dropdown">
-                        <a href="/doctor-profile.php?slug=<?= e($doctorSlug) ?>" target="_blank"><i class="ri-external-link-line"></i> View Public Profile</a>
-                        <a href="/doctor/profile.php"><i class="ri-user-line"></i> Edit Profile</a>
+                        <a href="/doctor-profile?slug=<?= e($doctorSlug) ?>" target="_blank"><i class="ri-external-link-line"></i> View Public Profile</a>
+                        <a href="/doctor/profile"><i class="ri-user-line"></i> Edit Profile</a>
                         <div class="dropdown-divider"></div>
-                        <a href="/logout.php"><i class="ri-logout-box-line"></i> Logout</a>
+                        <a href="/logout"><i class="ri-logout-box-line"></i> Logout</a>
                     </div>
                 </div>
             </div>

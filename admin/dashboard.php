@@ -31,8 +31,9 @@ while ($s = mysqli_fetch_assoc($statusBreakdown)) {
 }
 
 $recentDoctors = mysqli_query($db, "
-    SELECT d.id, d.slug, d.verification_status, d.created_at, u.full_name, u.avatar, s.name spec_name
-    FROM doctors d JOIN users u ON u.id = d.user_id LEFT JOIN specializations s ON s.id = d.specialization_id
+    SELECT d.id, d.slug, d.verification_status, d.created_at, u.full_name, u.avatar,
+        (SELECT GROUP_CONCAT(s.name ORDER BY s.name SEPARATOR ', ') FROM doctor_specializations ds JOIN specializations s ON s.id = ds.specialization_id WHERE ds.doctor_id = d.id) AS spec_names
+    FROM doctors d JOIN users u ON u.id = d.user_id
     ORDER BY d.created_at DESC LIMIT 5
 ");
 
@@ -84,7 +85,7 @@ require __DIR__ . '/includes/header.php';
 <div class="card table-card" data-reveal>
     <div style="padding:20px 24px;border-bottom:1px solid var(--color-border);display:flex;justify-content:space-between;align-items:center;">
         <h4>Recent Doctor Applications</h4>
-        <a href="/admin/doctors.php" style="font-size:13px;color:var(--color-primary);font-weight:600;">View all</a>
+        <a href="/admin/doctors" style="font-size:13px;color:var(--color-primary);font-weight:600;">View all</a>
     </div>
     <table class="data-table">
         <thead><tr><th>Doctor</th><th>Specialization</th><th>Applied</th><th>Status</th></tr></thead>
@@ -92,7 +93,7 @@ require __DIR__ . '/includes/header.php';
         <?php while ($d = mysqli_fetch_assoc($recentDoctors)): ?>
         <tr>
             <td class="table-user"><img src="<?= e(avatar_url($d['avatar'], $d['full_name'])) ?>"><?= e($d['full_name']) ?></td>
-            <td><?= e($d['spec_name']) ?></td>
+            <td><?= e($d['spec_names']) ?></td>
             <td><?= time_ago($d['created_at']) ?></td>
             <td><span class="status-pill status-<?= e($d['verification_status']) ?>"><?= ucfirst($d['verification_status']) ?></span></td>
         </tr>

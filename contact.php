@@ -7,7 +7,7 @@ require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);">
     <div class="container">
-        <nav class="breadcrumb"><a href="/index.php">Home</a> <i class="ri-arrow-right-s-line"></i> <span>Contact</span></nav>
+        <nav class="breadcrumb"><a href="/">Home</a> <i class="ri-arrow-right-s-line"></i> <span>Contact</span></nav>
         <div class="section-head" style="text-align:left;margin-left:0;max-width:600px;" data-reveal>
             <span class="eyebrow">Get in Touch</span>
             <h2>We'd love to hear from you</h2>

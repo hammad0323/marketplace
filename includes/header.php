@@ -45,16 +45,16 @@ $user = current_user();
 
 <header class="navbar">
     <div class="navbar-inner glass">
-        <a href="/index.php" class="brand">
+        <a href="/" class="brand">
             <span class="brand-mark"><i class="ri-heart-pulse-fill"></i></span>
             <?= e(SITE_NAME) ?>
         </a>
         <nav class="nav-links">
-            <a href="/index.php" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'index.php' ? 'active' : '' ?>">Home</a>
-            <a href="/doctors.php" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'doctors.php' ? 'active' : '' ?>">Find Doctors</a>
-            <a href="/specializations.php" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'specializations.php' ? 'active' : '' ?>">Specializations</a>
-            <a href="/about.php" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'about.php' ? 'active' : '' ?>">About</a>
-            <a href="/contact.php" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'contact.php' ? 'active' : '' ?>">Contact</a>
+            <a href="/" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'index.php' ? 'active' : '' ?>">Home</a>
+            <a href="/doctors" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'doctors.php' ? 'active' : '' ?>">Find Doctors</a>
+            <a href="/specializations" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'specializations.php' ? 'active' : '' ?>">Specializations</a>
+            <a href="/about" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'about.php' ? 'active' : '' ?>">About</a>
+            <a href="/contact" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'contact.php' ? 'active' : '' ?>">Contact</a>
         </nav>
         <div class="nav-actions">
             <button class="theme-toggle" data-theme-toggle aria-label="Toggle dark mode"><i class="ri-moon-line"></i></button>
@@ -66,17 +66,17 @@ $user = current_user();
                         <i class="ri-arrow-down-s-line"></i>
                     </button>
                     <div class="dropdown-menu" id="user-dropdown">
-                        <?php $home = $user['role'] === 'doctor' ? '/doctor/dashboard.php' : ($user['role'] === 'admin' ? '/admin/dashboard.php' : '/patient/dashboard.php'); ?>
+                        <?php $home = $user['role'] === 'doctor' ? '/doctor/dashboard' : ($user['role'] === 'admin' ? '/admin/dashboard' : '/patient/dashboard'); ?>
                         <a href="<?= e($home) ?>"><i class="ri-dashboard-3-line"></i> Dashboard</a>
                         <?php if ($user['role'] === 'patient'): ?>
-                        <a href="/patient/appointments.php"><i class="ri-calendar-check-line"></i> My Appointments</a>
-                        <a href="/patient/profile.php"><i class="ri-user-line"></i> Profile</a>
+                        <a href="/patient/appointments"><i class="ri-calendar-check-line"></i> My Appointments</a>
+                        <a href="/patient/profile"><i class="ri-user-line"></i> Profile</a>
                         <?php elseif ($user['role'] === 'doctor'): ?>
-                        <a href="/doctor/appointments.php"><i class="ri-calendar-check-line"></i> Appointments</a>
-                        <a href="/doctor/profile.php"><i class="ri-user-line"></i> Profile</a>
+                        <a href="/doctor/appointments"><i class="ri-calendar-check-line"></i> Appointments</a>
+                        <a href="/doctor/profile"><i class="ri-user-line"></i> Profile</a>
                         <?php endif; ?>
                         <div class="dropdown-divider"></div>
-                        <a href="/logout.php"><i class="ri-logout-box-line"></i> Logout</a>
+                        <a href="/logout"><i class="ri-logout-box-line"></i> Logout</a>
                     </div>
                 </div>
             <?php else: ?>

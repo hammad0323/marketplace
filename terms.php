@@ -20,7 +20,7 @@ require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);">
     <div class="container">
-        <nav class="breadcrumb"><a href="/index.php">Home</a> <i class="ri-arrow-right-s-line"></i> <span><?= e($page['title']) ?></span></nav>
+        <nav class="breadcrumb"><a href="/">Home</a> <i class="ri-arrow-right-s-line"></i> <span><?= e($page['title']) ?></span></nav>
         <div style="max-width:760px;" data-reveal>
             <h1 style="font-size:34px;margin-bottom:8px;"><?= e($page['title']) ?></h1>
             <p style="color:var(--color-text-muted);margin-bottom:28px;">Last updated <?= format_date($page['updated_at']) ?></p>

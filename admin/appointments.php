@@ -66,6 +66,6 @@ require __DIR__ . '/includes/header.php';
         </tbody>
     </table>
 </div>
-<?= pagination_links($pagination, '/admin/appointments.php' . ($status ? '?status=' . e($status) : '')) ?>
+<?= pagination_links($pagination, '/admin/appointments' . ($status ? '?status=' . e($status) : '')) ?>
 <?php endif; ?>
 <?php require __DIR__ . '/includes/footer.php'; ?>

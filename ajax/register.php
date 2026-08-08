@@ -17,5 +17,5 @@ if (!$success) {
     json_response(false, [], $message);
 }
 
-$redirect = get_and_clear_intended_url('/patient/dashboard.php');
+$redirect = get_and_clear_intended_url('/patient/dashboard');
 json_response(true, ['redirect' => $redirect], $message);

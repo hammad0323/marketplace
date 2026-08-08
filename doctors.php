@@ -21,7 +21,7 @@ if ($q !== '') {
     $types .= 'sss';
 }
 if ($specSlug !== '') {
-    $where[] = 's.slug = ?';
+    $where[] = 'd.id IN (SELECT ds.doctor_id FROM doctor_specializations ds JOIN specializations s ON s.id = ds.specialization_id WHERE s.slug = ?)';
     $params[] = $specSlug;
     $types .= 's';
 }
@@ -55,7 +55,7 @@ $orderSql = match ($sort) {
     default => 'd.is_premium DESC, d.rating_avg DESC',
 };
 
-$countSql = "SELECT COUNT(*) c FROM doctors d JOIN users u ON u.id = d.user_id LEFT JOIN specializations s ON s.id = d.specialization_id WHERE $whereSql";
+$countSql = "SELECT COUNT(*) c FROM doctors d JOIN users u ON u.id = d.user_id WHERE $whereSql";
 $stmt = mysqli_prepare(db(), $countSql);
 if ($types !== '') mysqli_stmt_bind_param($stmt, $types, ...$params);
 mysqli_stmt_execute($stmt);
@@ -64,15 +64,19 @@ mysqli_stmt_close($stmt);
 
 $pagination = paginate($total, 9);
 
-$listSql = "SELECT d.*, u.full_name, u.avatar, s.name AS spec_name
-    FROM doctors d JOIN users u ON u.id = d.user_id LEFT JOIN specializations s ON s.id = d.specialization_id
+$listSql = "SELECT d.*, u.full_name, u.avatar
+    FROM doctors d JOIN users u ON u.id = d.user_id
     WHERE $whereSql ORDER BY $orderSql LIMIT ? OFFSET ?";
 $stmt = mysqli_prepare(db(), $listSql);
 $allTypes = $types . 'ii';
 $allParams = array_merge($params, [$pagination['per_page'], $pagination['offset']]);
 mysqli_stmt_bind_param($stmt, $allTypes, ...$allParams);
 mysqli_stmt_execute($stmt);
-$doctors = mysqli_stmt_get_result($stmt);
+$doctors = mysqli_stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC);
+foreach ($doctors as &$d) {
+    $d['specializations'] = get_doctor_specializations($d['id']);
+}
+unset($d);
 
 $specs = mysqli_query(db(), 'SELECT id, name, slug FROM specializations WHERE is_active = 1 ORDER BY name');
 
@@ -91,7 +95,7 @@ require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);padding-bottom:0;">
     <div class="container">
-        <nav class="breadcrumb"><a href="/index.php">Home</a> <i class="ri-arrow-right-s-line"></i> <span>Find Doctors</span></nav>
+        <nav class="breadcrumb"><a href="/">Home</a> <i class="ri-arrow-right-s-line"></i> <span>Find Doctors</span></nav>
         <h1 style="font-size:32px;margin-bottom:8px;">Find Doctors</h1>
         <p style="color:var(--color-text-muted);margin-bottom:32px;"><?= $total ?> verified doctor<?= $total === 1 ? '' : 's' ?> found<?= $specName ? ' in ' . e($specName) : '' ?></p>
     </div>
@@ -141,7 +145,7 @@ require __DIR__ . '/includes/header.php';
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">Apply Filters</button>
-                <a href="/doctors.php" class="btn btn-ghost btn-block" style="margin-top:8px;">Clear All</a>
+                <a href="/doctors" class="btn btn-ghost btn-block" style="margin-top:8px;">Clear All</a>
             </form>
         </aside>
 
@@ -154,13 +158,13 @@ require __DIR__ . '/includes/header.php';
             </div>
             <?php else: ?>
             <div class="grid grid-3 stagger">
-                <?php while ($d = mysqli_fetch_assoc($doctors)): ?>
+                <?php foreach ($doctors as $d): ?>
                 <div class="card card-hover doctor-card" data-reveal data-tilt>
                     <div class="doctor-card-top">
                         <img src="<?= e(avatar_url($d['avatar'], $d['full_name'])) ?>" alt="<?= e($d['full_name']) ?>">
                         <div>
                             <h3><?= e($d['full_name']) ?></h3>
-                            <div class="spec"><?= e($d['spec_name'] ?? 'General') ?></div>
+                            <div class="spec"><?= e(specialization_names($d['specializations']) ?: 'General') ?></div>
                             <div class="rating"><i class="ri-star-fill"></i> <?= number_format($d['rating_avg'], 1) ?> (<?= (int)$d['rating_count'] ?>)</div>
                         </div>
                     </div>
@@ -175,14 +179,14 @@ require __DIR__ . '/includes/header.php';
                     </div>
                     <div class="doctor-card-footer">
                         <div class="fee"><?= format_currency($d['consultation_fee_online']) ?> <small>/ online</small></div>
-                        <a href="/doctor-profile.php?slug=<?= e($d['slug']) ?>" class="btn btn-outline btn-sm">View Profile</a>
+                        <a href="/doctor-profile?slug=<?= e($d['slug']) ?>" class="btn btn-outline btn-sm">View Profile</a>
                     </div>
                 </div>
-                <?php endwhile; ?>
+                <?php endforeach; ?>
             </div>
             <?php
             $qs = $_GET; unset($qs['page']);
-            echo pagination_links($pagination, '/doctors.php?' . http_build_query($qs));
+            echo pagination_links($pagination, '/doctors?' . http_build_query($qs));
             ?>
             <?php endif; ?>
         </div>

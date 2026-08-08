@@ -12,10 +12,10 @@ $statusMap = [
 $condition = $statusMap[$filter] ?? $statusMap['upcoming'];
 
 $appointments = mysqli_query(db(), "
-    SELECT a.*, u.full_name AS doctor_name, u.avatar, d.slug AS doctor_slug, s.name AS spec_name,
+    SELECT a.*, u.full_name AS doctor_name, u.avatar, d.slug AS doctor_slug,
+        (SELECT GROUP_CONCAT(s.name ORDER BY s.name SEPARATOR ', ') FROM doctor_specializations ds JOIN specializations s ON s.id = ds.specialization_id WHERE ds.doctor_id = d.id) AS spec_name,
         (SELECT COUNT(*) FROM reviews r WHERE r.appointment_id = a.id) AS has_review
     FROM appointments a JOIN doctors d ON d.id = a.doctor_id JOIN users u ON u.id = d.user_id
-    LEFT JOIN specializations s ON s.id = d.specialization_id
     WHERE a.patient_id = $patientId AND $condition
     ORDER BY a.appointment_date DESC, a.start_time DESC
 ");
@@ -54,7 +54,7 @@ require __DIR__ . '/includes/header.php';
         <button class="btn btn-outline btn-sm btn-reschedule" data-doctor-id="<?= (int)$a['doctor_id'] ?>" data-type="<?= e($a['consultation_type']) ?>">Reschedule</button>
         <button class="btn btn-danger btn-sm btn-cancel">Cancel</button>
         <?php elseif ($a['status'] === 'completed' && !$a['has_review']): ?>
-        <a href="/doctor-profile.php?slug=<?= e($a['doctor_slug']) ?>#tab-reviews" class="btn btn-outline btn-sm">Leave Review</a>
+        <a href="/doctor-profile?slug=<?= e($a['doctor_slug']) ?>#tab-reviews" class="btn btn-outline btn-sm">Leave Review</a>
         <?php endif; ?>
     </div>
 </div>

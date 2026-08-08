@@ -31,5 +31,5 @@ require __DIR__ . '/includes/header.php';
         </tbody>
     </table>
 </div>
-<?= pagination_links($pagination, '/admin/logs.php') ?>
+<?= pagination_links($pagination, '/admin/logs') ?>
 <?php require __DIR__ . '/includes/footer.php'; ?>

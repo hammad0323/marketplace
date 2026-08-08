@@ -5,11 +5,15 @@ require_doctor_page();
 $user = current_user();
 $doctorId = current_profile_id();
 
-$stmt = mysqli_prepare(db(), 'SELECT d.*, s.name AS spec_name FROM doctors d LEFT JOIN specializations s ON s.id = d.specialization_id WHERE d.id = ? LIMIT 1');
+$stmt = mysqli_prepare(db(), 'SELECT * FROM doctors WHERE id = ? LIMIT 1');
 mysqli_stmt_bind_param($stmt, 'i', $doctorId);
 mysqli_stmt_execute($stmt);
 $doctor = mysqli_stmt_get_result($stmt)->fetch_assoc();
 mysqli_stmt_close($stmt);
+
+$doctorSpecializations = get_doctor_specializations($doctorId);
+$doctorSpecIds = array_map('intval', array_column($doctorSpecializations, 'id'));
+$allSpecializations = mysqli_query(db(), 'SELECT id, name FROM specializations WHERE is_active = 1 ORDER BY name');
 
 $stmt = mysqli_prepare(db(), 'SELECT * FROM doctor_privacy_settings WHERE doctor_id = ? LIMIT 1');
 mysqli_stmt_bind_param($stmt, 'i', $doctorId);
@@ -38,7 +42,7 @@ require __DIR__ . '/includes/header.php';
             <input type="file" id="avatar-input" accept="image/png,image/jpeg,image/webp" style="display:none;">
         </div>
         <h4><?= e($user['full_name']) ?></h4>
-        <p style="color:var(--color-text-muted);font-size:13.5px;"><?= e($doctor['spec_name']) ?></p>
+        <p style="color:var(--color-text-muted);font-size:13.5px;"><?= e(specialization_names($doctorSpecializations)) ?></p>
         <div style="display:flex;gap:6px;justify-content:center;margin-top:10px;flex-wrap:wrap;">
             <span class="badge badge-<?= $doctor['verification_status'] === 'verified' ? 'verified' : 'pending' ?>"><?= ucfirst($doctor['verification_status']) ?></span>
             <?php if ($doctor['is_premium']): ?><span class="badge badge-premium">Premium</span><?php endif; ?>
@@ -49,6 +53,7 @@ require __DIR__ . '/includes/header.php';
         <div class="tabs-row">
             <button class="tab-btn active" data-tab="info">Profile Info</button>
             <button class="tab-btn" data-tab="privacy">Privacy</button>
+            <button class="tab-btn" data-tab="messaging">Messaging</button>
             <button class="tab-btn" data-tab="certs">Certificates</button>
             <button class="tab-btn" data-tab="password">Password</button>
         </div>
@@ -64,6 +69,16 @@ require __DIR__ . '/includes/header.php';
                     <div class="grid grid-2">
                         <div class="form-group"><label class="form-label">Qualification</label><input type="text" class="form-control" name="qualification" value="<?= e($doctor['qualification']) ?>"></div>
                         <div class="form-group"><label class="form-label">Years of Experience</label><input type="number" min="0" class="form-control" name="experience_years" value="<?= (int)$doctor['experience_years'] ?>"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Specializations <span style="font-weight:400;color:var(--color-text-muted);">(select one or more)</span></label>
+                        <div class="grid grid-3" style="gap:8px;">
+                            <?php while ($s = mysqli_fetch_assoc($allSpecializations)): ?>
+                            <label class="checkbox-row" style="border:1.5px solid var(--color-border);border-radius:var(--radius-sm);padding:10px 12px;">
+                                <input type="checkbox" name="specialization_ids[]" value="<?= (int)$s['id'] ?>" <?= in_array((int)$s['id'], $doctorSpecIds, true) ? 'checked' : '' ?>> <?= e($s['name']) ?>
+                            </label>
+                            <?php endwhile; ?>
+                        </div>
                     </div>
                     <div class="form-group"><label class="form-label">Bio</label><textarea class="form-control" name="bio" rows="4"><?= e($doctor['bio']) ?></textarea></div>
                     <div class="grid grid-2">
@@ -105,20 +120,48 @@ require __DIR__ . '/includes/header.php';
             </div>
         </div>
 
+        <div class="doc-tab-panel" id="panel-messaging" style="display:none;">
+            <div class="card" style="padding:28px;" data-reveal>
+                <p style="color:var(--color-text-muted);margin-bottom:20px;">Let patients message you directly from your profile. You choose the hours it's available and whether visitors have to sign in first to see it.</p>
+                <form id="chat-settings-form">
+                    <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                    <label class="checkbox-row" style="padding:10px 0;border-bottom:1px solid var(--color-border);margin-bottom:16px;">
+                        <input type="checkbox" name="chat_enabled" value="1" <?= $doctor['chat_enabled'] ? 'checked' : '' ?>> Enable patient messaging
+                    </label>
+                    <div class="grid grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Available From</label>
+                            <input type="time" class="form-control" name="chat_start_time" value="<?= e($doctor['chat_start_time'] ? substr($doctor['chat_start_time'], 0, 5) : '09:00') ?>">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Available Until</label>
+                            <input type="time" class="form-control" name="chat_end_time" value="<?= e($doctor['chat_end_time'] ? substr($doctor['chat_end_time'], 0, 5) : '18:00') ?>">
+                        </div>
+                    </div>
+                    <p class="form-hint" style="margin-bottom:16px;">Outside these hours the message button won't appear on your profile. Leave both blank to allow messaging anytime.</p>
+                    <label class="checkbox-row" style="margin-bottom:20px;">
+                        <input type="checkbox" name="chat_visible_to_guests" value="1" <?= $doctor['chat_visible_to_guests'] ? 'checked' : '' ?>> Show the message button to visitors who aren't logged in (they'll be asked to sign in before sending)
+                    </label>
+                    <button type="submit" class="btn btn-primary">Save Messaging Settings</button>
+                </form>
+            </div>
+        </div>
+
         <div class="doc-tab-panel" id="panel-certs" style="display:none;">
             <div class="card" style="padding:28px;margin-bottom:20px;" data-reveal>
                 <h4 style="margin-bottom:16px;">Upload Certificate</h4>
                 <form id="cert-form" style="display:grid;grid-template-columns:1fr 1fr 100px auto;gap:10px;align-items:end;">
                     <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-                    <div class="form-group" style="margin-bottom:0;"><label class="form-label">Title</label><input type="text" class="form-control" name="title" required></div>
+                    <div class="form-group" style="margin-bottom:0;"><label class="form-label">Title</label><input type="text" class="form-control" name="title" placeholder="Leave blank to use file name"></div>
                     <div class="form-group" style="margin-bottom:0;"><label class="form-label">Issued By</label><input type="text" class="form-control" name="issued_by"></div>
                     <div class="form-group" style="margin-bottom:0;"><label class="form-label">Year</label><input type="number" class="form-control" name="issued_year" min="1950" max="<?= date('Y') ?>"></div>
                     <div class="form-group" style="margin-bottom:0;">
-                        <input type="file" name="file" id="cert-file" accept=".jpg,.jpeg,.png,.pdf" required style="display:none;">
-                        <label for="cert-file" class="btn btn-outline btn-sm" style="width:100%;text-align:center;">Choose File</label>
+                        <input type="file" name="file" id="cert-file" accept=".jpg,.jpeg,.png,.pdf" multiple required style="display:none;">
+                        <label for="cert-file" class="btn btn-outline btn-sm" style="width:100%;text-align:center;">Choose File(s)</label>
                     </div>
                     <button type="submit" class="btn btn-primary btn-sm" style="grid-column:1/-1;">Upload</button>
                 </form>
+                <p style="font-size:12.5px;color:var(--color-text-muted);margin-top:8px;">You can select multiple files at once. Title/Issued By/Year (if filled) apply to every file in the batch; leave Title blank to use each file's name.</p>
             </div>
             <div class="grid grid-2" id="cert-list">
                 <?php foreach ($certificates as $c): ?>

@@ -3,7 +3,7 @@ require __DIR__ . '/config/config.php';
 
 if (is_logged_in()) {
     $role = current_role();
-    redirect($role === 'doctor' ? '/doctor/dashboard.php' : ($role === 'admin' ? '/admin/dashboard.php' : '/patient/dashboard.php'));
+    redirect($role === 'doctor' ? '/doctor/dashboard' : ($role === 'admin' ? '/admin/dashboard' : '/patient/dashboard'));
 }
 
 $pageTitle = 'Log In — ' . SITE_NAME;
@@ -44,10 +44,10 @@ require __DIR__ . '/includes/header.php';
                     </div>
                     <button type="submit" class="btn btn-primary btn-block">Log In</button>
                     <p style="text-align:center;font-size:13.5px;margin-top:18px;color:var(--color-text-muted);">
-                        New here? <a href="/register.php" style="color:var(--color-primary);font-weight:600;">Create an account</a>
+                        New here? <a href="/register" style="color:var(--color-primary);font-weight:600;">Create an account</a>
                     </p>
                     <p style="text-align:center;font-size:12.5px;margin-top:8px;color:var(--color-text-muted);">
-                        <a href="/admin/login.php" style="color:var(--color-text-muted);">Admin Login</a>
+                        <a href="/admin/login" style="color:var(--color-text-muted);">Admin Login</a>
                     </p>
                 </form>
             </div>

@@ -57,7 +57,7 @@ $messages = [
     'complete' => 'Your appointment on ' . format_date($appt['appointment_date']) . ' was marked as completed.',
     'no_show' => 'You were marked as a no-show for your appointment on ' . format_date($appt['appointment_date']) . '.',
 ];
-notify_user($appt['patient_user_id'], 'appointment', 'Appointment update', $messages[$action], '/patient/appointments.php');
+notify_user($appt['patient_user_id'], 'appointment', 'Appointment update', $messages[$action], '/patient/appointments');
 log_activity($_SESSION['user_id'], 'doctor', 'appointment_' . $action, "Appointment #$appointmentId -> $newStatus");
 
 json_response(true, ['status' => $newStatus], 'Appointment updated.');

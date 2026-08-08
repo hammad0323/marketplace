@@ -79,4 +79,10 @@ if (!$GLOBALS['db']) {
 mysqli_set_charset($GLOBALS['db'], 'utf8mb4');
 
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/mailer.php';
 require_once __DIR__ . '/../includes/auth.php';
+
+// Drives doctor chat "online" status — cheap indexed UPDATE, safe to run every request.
+if (!empty($_SESSION['user_id'])) {
+    touch_last_active((int) $_SESSION['user_id']);
+}

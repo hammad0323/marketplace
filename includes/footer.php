@@ -21,24 +21,24 @@ $footerSpecs = mysqli_query(db(), 'SELECT name, slug FROM specializations WHERE 
                 <h5>Specializations</h5>
                 <ul>
                     <?php while ($s = mysqli_fetch_assoc($footerSpecs)): ?>
-                    <li><a href="/doctors.php?specialization=<?= e($s['slug']) ?>"><?= e($s['name']) ?></a></li>
+                    <li><a href="/doctors?specialization=<?= e($s['slug']) ?>"><?= e($s['name']) ?></a></li>
                     <?php endwhile; ?>
                 </ul>
             </div>
             <div>
                 <h5>Company</h5>
                 <ul>
-                    <li><a href="/about.php">About Us</a></li>
-                    <li><a href="/contact.php">Contact</a></li>
-                    <li><a href="/faq.php">FAQs</a></li>
-                    <li><a href="/doctor-register.php">Join as a Doctor</a></li>
+                    <li><a href="/about">About Us</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                    <li><a href="/faq">FAQs</a></li>
+                    <li><a href="/doctor-register">Join as a Doctor</a></li>
                 </ul>
             </div>
             <div>
                 <h5>Legal</h5>
                 <ul>
-                    <li><a href="/privacy-policy.php">Privacy Policy</a></li>
-                    <li><a href="/terms.php">Terms &amp; Conditions</a></li>
+                    <li><a href="/privacy-policy">Privacy Policy</a></li>
+                    <li><a href="/terms">Terms &amp; Conditions</a></li>
                 </ul>
             </div>
         </div>

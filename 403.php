@@ -11,7 +11,7 @@ require __DIR__ . '/includes/header.php';
         <i class="ri-shield-cross-line" style="font-size:80px;color:var(--color-danger);"></i>
         <h1 style="margin:20px 0 12px;">Access denied</h1>
         <p style="color:var(--color-text-muted);margin-bottom:32px;">You don't have permission to view this page with your current account.</p>
-        <a href="/index.php" class="btn btn-primary">Back to Home</a>
+        <a href="/" class="btn btn-primary">Back to Home</a>
     </div>
 </section>
 <?php require __DIR__ . '/includes/footer.php'; ?>
