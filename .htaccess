@@ -21,16 +21,9 @@ ServerSignature Off
 RewriteEngine On
 RewriteRule ^(config|includes)/ - [F,L]
 
-# Uploaded files must never execute as PHP, even if something slips past
-# the upload whitelist.
-<IfModule mod_php.c>
-    php_flag engine off
-</IfModule>
-<FilesMatch "\.(php|phtml|php\d)$">
-    <If "%{REQUEST_URI} =~ m#^/uploads/#">
-        Require all denied
-    </If>
-</FilesMatch>
+# Uploaded files must never execute as PHP — enforced by uploads/.htaccess
+# (a separate, directory-scoped file) rather than here, since disabling the
+# PHP engine site-wide by mistake is exactly the failure mode to avoid.
 
 # Security headers
 <IfModule mod_headers.c>

@@ -1,10 +1,10 @@
-# Uploaded files are user-supplied — never execute anything in this folder
-# as a script, regardless of extension or PHP handler (mod_php or php-fpm).
-<IfModule mod_php.c>
-    php_flag engine off
-</IfModule>
+# Uploaded files are user-supplied — never let this folder execute a
+# script, regardless of extension. `Require all denied` on the extensions
+# below is honored by every mod_authz_core-based Apache (2.4+); it does not
+# touch the PHP engine itself, unlike `php_flag engine off`, which several
+# hosts (LiteSpeed/cPanel in particular) reject outright as a suspicious
+# directive and respond to with a blanket "Forbidden" for the whole site.
 <FilesMatch "\.(php|phtml|php\d|pl|py|cgi|asp|aspx|sh)$">
     Require all denied
 </FilesMatch>
 Options -Indexes -ExecCGI
-AddHandler cgi-script .php .phtml .pl .py .cgi .asp .aspx .sh
