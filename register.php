@@ -19,7 +19,7 @@ require __DIR__ . '/includes/header.php';
                 <p>Create your free patient account to book appointments with verified doctors in seconds.</p>
             </div>
             <div style="padding:44px 40px;">
-                <h2 style="margin-bottom:24px;">Create Account</h2>
+                <h1 style="margin-bottom:24px;">Create Account</h1>
                 <form id="register-form" novalidate>
                     <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
                     <div class="form-group" data-field="full_name">

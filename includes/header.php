@@ -1,12 +1,18 @@
 <?php
 /**
  * Public site header. Pages set $pageTitle / $metaDescription / $metaKeywords
- * / $ogImage before requiring this file; all have sensible defaults.
+ * / $ogImage / $canonical before requiring this file; all have sensible
+ * defaults. The default canonical strips ALL query params — correct for
+ * listing/filter pages (avoids duplicate-content across filter combos), but
+ * WRONG for detail pages keyed by a query param (e.g. ?slug=...): those
+ * pages must set $canonical themselves (including their identifying param)
+ * before requiring this file, or every record of that type would
+ * canonicalize to the same generic URL.
  */
 $pageTitle = $pageTitle ?? SITE_NAME . ' — Trusted Doctors, Online & In-Person';
 $metaDescription = $metaDescription ?? get_setting('site_tagline', 'Book verified doctors for online and in-person consultations.');
 $metaKeywords = $metaKeywords ?? 'telemedicine, doctors, online consultation, book appointment, healthcare';
-$canonical = APP_URL . strtok($_SERVER['REQUEST_URI'], '?');
+$canonical = $canonical ?? (APP_URL . strtok($_SERVER['REQUEST_URI'], '?'));
 $ogImage = $ogImage ?? APP_URL . '/assets/img/og-default.svg';
 $user = current_user();
 ?><!DOCTYPE html>
@@ -53,6 +59,7 @@ $user = current_user();
             <a href="/" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'index.php' ? 'active' : '' ?>">Home</a>
             <a href="/doctors" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'doctors.php' ? 'active' : '' ?>">Find Doctors</a>
             <a href="/specializations" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'specializations.php' ? 'active' : '' ?>">Specializations</a>
+            <a href="/products" class="<?= in_array(basename($_SERVER['SCRIPT_NAME']), ['products.php', 'product-detail.php'], true) ? 'active' : '' ?>">Products</a>
             <a href="/blog" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'blog.php' ? 'active' : '' ?>">Blog</a>
             <a href="/about" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'about.php' ? 'active' : '' ?>">About</a>
             <a href="/contact" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'contact.php' ? 'active' : '' ?>">Contact</a>

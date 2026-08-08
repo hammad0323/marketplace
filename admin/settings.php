@@ -16,6 +16,11 @@ while ($row = mysqli_fetch_assoc($cmsRes)) {
 
 $faqs = mysqli_query(db(), 'SELECT * FROM faqs ORDER BY sort_order');
 
+$sitemapPath = dirname(__DIR__) . '/sitemap.xml';
+$sitemapExists = is_file($sitemapPath);
+$sitemapGeneratedAt = $sitemapExists ? date('M j, Y g:i A', filemtime($sitemapPath)) : null;
+$sitemapUrlCount = $sitemapExists ? substr_count(file_get_contents($sitemapPath), '<url>') : 0;
+
 $pageTitle = 'Site Settings';
 $heading = 'Site Settings';
 $extraScripts = '<script src="/assets/js/admin-settings.js"></script>';
@@ -26,6 +31,7 @@ require __DIR__ . '/includes/header.php';
     <button class="tab-btn" data-tab="email">Email (SMTP)</button>
     <button class="tab-btn" data-tab="cms">Pages (About / Privacy / Terms)</button>
     <button class="tab-btn" data-tab="faqs">FAQs</button>
+    <button class="tab-btn" data-tab="seo">SEO &amp; Sitemap</button>
 </div>
 
 <div class="settings-panel" id="panel-general">
@@ -117,6 +123,36 @@ require __DIR__ . '/includes/header.php';
             <button type="button" class="btn-icon btn-delete-faq" style="width:32px;height:32px;flex-shrink:0;"><i class="ri-delete-bin-line"></i></button>
         </div>
         <?php endwhile; ?>
+    </div>
+</div>
+
+<div class="settings-panel" id="panel-seo" style="display:none;">
+    <div class="card" style="padding:28px;max-width:640px;" data-reveal>
+        <h4 style="margin-bottom:8px;">On-page SEO</h4>
+        <p style="color:var(--color-text-muted);font-size:13.5px;margin-bottom:20px;">
+            Canonical URLs, Open Graph tags, and JSON-LD structured data are generated automatically on every public
+            page — doctor profiles, blog posts, and store listings each get their own unique canonical URL. Meta title
+            and meta description can be set per-item on the <a href="/admin/blog" style="color:var(--color-primary);font-weight:600;">Blog</a>
+            editor, each doctor's <strong>My Store</strong> listings, and the CMS pages above; anything left blank is
+            auto-generated from the title/excerpt/description of that item.
+        </p>
+        <div class="divider-fade" style="margin:20px 0;"></div>
+        <h4 style="margin-bottom:8px;">Sitemap</h4>
+        <p style="color:var(--color-text-muted);font-size:13.5px;margin-bottom:16px;">
+            <code>/sitemap.xml</code> is always available as a live, dynamically-generated page. Use the button below to
+            also write it out as a real static file at the project root — useful for search-console verification or to
+            serve it with zero PHP overhead.
+        </p>
+        <div id="sitemap-status" style="font-size:13px;color:var(--color-text-muted);margin-bottom:16px;">
+            <?php if ($sitemapExists): ?>
+                Static file last generated <strong><?= e($sitemapGeneratedAt) ?></strong> — <?= (int) $sitemapUrlCount ?> URLs.
+                <a href="/sitemap.xml" target="_blank" style="color:var(--color-primary);font-weight:600;">View sitemap.xml</a>
+            <?php else: ?>
+                No static sitemap.xml has been generated yet. The dynamic <a href="/sitemap.php" target="_blank" style="color:var(--color-primary);font-weight:600;">/sitemap.php</a> is always live regardless.
+            <?php endif; ?>
+        </div>
+        <input type="hidden" id="sitemap-csrf" value="<?= e(csrf_token()) ?>">
+        <button type="button" class="btn btn-primary" id="generate-sitemap-btn">Generate Sitemap</button>
     </div>
 </div>
 

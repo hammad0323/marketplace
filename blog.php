@@ -21,7 +21,7 @@ require __DIR__ . '/includes/header.php';
         <nav class="breadcrumb"><a href="/">Home</a> <i class="ri-arrow-right-s-line"></i> <span>Blog</span></nav>
         <div class="section-head" style="text-align:left;margin-left:0;max-width:600px;" data-reveal>
             <span class="eyebrow">MediConnect Blog</span>
-            <h2>Health tips &amp; platform news</h2>
+            <h1>Health tips &amp; platform news</h1>
         </div>
 
         <?php if (!$posts): ?>

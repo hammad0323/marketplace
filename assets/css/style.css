@@ -546,7 +546,7 @@ textarea.form-control { resize: vertical; min-height: 110px; }
     .split-sidebar-right > aside, .split-sidebar-right > :last-child { order: -1; }
 }
 .nav-mobile-auth { display: none; }
-@media (max-width: 860px) {
+@media (max-width: 1000px) {
     .nav-links {
         display: none; flex-direction: column; align-items: stretch; gap: 2px;
         position: absolute; top: calc(100% + 10px); left: 16px; right: 16px;
@@ -559,6 +559,8 @@ textarea.form-control { resize: vertical; min-height: 110px; }
     .nav-auth-btn { display: none; }
     .user-avatar-name { display: none; }
     .nav-toggle { display: flex; }
+}
+@media (max-width: 860px) {
     .dash-sidebar { position: fixed; left: -280px; top: 0; z-index: 900; box-shadow: var(--shadow-lg); }
     .dash-sidebar.open { left: 0; }
     .sidebar-toggle { display: flex; }

@@ -15,7 +15,7 @@ require __DIR__ . '/includes/header.php';
         <nav class="breadcrumb"><a href="/">Home</a> <i class="ri-arrow-right-s-line"></i> <span>Specializations</span></nav>
         <div class="section-head" style="margin-left:0;text-align:left;max-width:600px;" data-reveal>
             <span class="eyebrow">Browse by Specialty</span>
-            <h2>All Specializations</h2>
+            <h1>All Specializations</h1>
             <p>Choose a specialty to see verified, board-certified doctors accepting new patients.</p>
         </div>
         <div class="grid grid-4 stagger">

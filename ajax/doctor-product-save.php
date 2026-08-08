@@ -29,6 +29,8 @@ $price = (float) ($_POST['price'] ?? 0);
 $stock = $type === 'product' ? (int) ($_POST['stock'] ?? 0) : null;
 $durationLabel = $type === 'service' ? clean($_POST['duration_label'] ?? '') : null;
 $isActive = !empty($_POST['is_active']) ? 1 : 0;
+$metaTitle = clean($_POST['meta_title'] ?? '') ?: null;
+$metaDescription = clean($_POST['meta_description'] ?? '') ?: null;
 
 $errors = [];
 if ($name === '' || mb_strlen($name) < 3) {
@@ -63,16 +65,16 @@ if ($id > 0) {
     if ($imagePath === null) {
         $imagePath = $existing['image'];
     }
-    $stmt = mysqli_prepare($db, 'UPDATE doctor_products SET category_id=?, type=?, name=?, description=?, price=?, stock=?, duration_label=?, image=?, is_active=? WHERE id=? AND doctor_id=?');
-    mysqli_stmt_bind_param($stmt, 'isssdissiii', $categoryId, $type, $name, $description, $price, $stock, $durationLabel, $imagePath, $isActive, $id, $doctorId);
+    $stmt = mysqli_prepare($db, 'UPDATE doctor_products SET category_id=?, type=?, name=?, description=?, price=?, stock=?, duration_label=?, image=?, is_active=?, meta_title=?, meta_description=? WHERE id=? AND doctor_id=?');
+    mysqli_stmt_bind_param($stmt, 'isssdississii', $categoryId, $type, $name, $description, $price, $stock, $durationLabel, $imagePath, $isActive, $metaTitle, $metaDescription, $id, $doctorId);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
     json_response(true, ['id' => $id], 'Listing updated.');
 }
 
 $slug = unique_slug($db, 'doctor_products', $name);
-$stmt = mysqli_prepare($db, 'INSERT INTO doctor_products (doctor_id, category_id, type, name, slug, description, price, stock, duration_label, image, is_active) VALUES (?,?,?,?,?,?,?,?,?,?,?)');
-mysqli_stmt_bind_param($stmt, 'iissssdissi', $doctorId, $categoryId, $type, $name, $slug, $description, $price, $stock, $durationLabel, $imagePath, $isActive);
+$stmt = mysqli_prepare($db, 'INSERT INTO doctor_products (doctor_id, category_id, type, name, slug, description, price, stock, duration_label, image, is_active, meta_title, meta_description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)');
+mysqli_stmt_bind_param($stmt, 'iissssdississ', $doctorId, $categoryId, $type, $name, $slug, $description, $price, $stock, $durationLabel, $imagePath, $isActive, $metaTitle, $metaDescription);
 mysqli_stmt_execute($stmt);
 $newId = mysqli_insert_id($db);
 mysqli_stmt_close($stmt);

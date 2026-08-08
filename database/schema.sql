@@ -435,8 +435,11 @@ CREATE TABLE doctor_products (
     duration_label  VARCHAR(60) DEFAULT NULL COMMENT 'services only, e.g. "3 sessions", "45 min"',
     image           VARCHAR(255) DEFAULT NULL,
     is_active       TINYINT(1) NOT NULL DEFAULT 1,
+    meta_title      VARCHAR(200) DEFAULT NULL COMMENT 'blank = auto-generated from name',
+    meta_description VARCHAR(300) DEFAULT NULL COMMENT 'blank = auto-generated from description',
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_doctor_product_slug (slug),
+    FULLTEXT KEY ft_doctor_product_search (name, description),
     CONSTRAINT fk_doctor_product_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE,
     CONSTRAINT fk_doctor_product_cat FOREIGN KEY (category_id) REFERENCES product_categories(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
@@ -449,6 +452,7 @@ CREATE TABLE orders (
     order_number  VARCHAR(40) NOT NULL,
     total_amount  DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     contact_phone VARCHAR(30) DEFAULT NULL,
+    shipping_address VARCHAR(255) DEFAULT NULL COMMENT 'physical products only',
     notes         TEXT,
     status        ENUM('pending','confirmed','completed','cancelled') NOT NULL DEFAULT 'pending',
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -478,6 +482,8 @@ CREATE TABLE blog_posts (
     content        LONGTEXT,
     featured_image VARCHAR(255) DEFAULT NULL,
     status         ENUM('draft','published') NOT NULL DEFAULT 'draft',
+    meta_title     VARCHAR(200) DEFAULT NULL COMMENT 'blank = auto-generated from title',
+    meta_description VARCHAR(300) DEFAULT NULL COMMENT 'blank = auto-generated from excerpt/content',
     published_at   DATETIME DEFAULT NULL,
     created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_blog_slug (slug),

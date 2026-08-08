@@ -12,6 +12,7 @@ $patientId = current_profile_id();
 $productId = (int) ($_POST['product_id'] ?? 0);
 $quantity = max(1, (int) ($_POST['quantity'] ?? 1));
 $contactPhone = clean($_POST['contact_phone'] ?? '');
+$shippingAddress = clean($_POST['shipping_address'] ?? '');
 $notes = clean($_POST['notes'] ?? '');
 
 $stmt = mysqli_prepare($db, "
@@ -40,8 +41,8 @@ $orderNumber = 'ORD-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)))
 
 mysqli_begin_transaction($db);
 try {
-    $stmt = mysqli_prepare($db, 'INSERT INTO orders (patient_id, doctor_id, order_number, total_amount, contact_phone, notes, status) VALUES (?,?,?,?,?,?,\'pending\')');
-    mysqli_stmt_bind_param($stmt, 'iisdss', $patientId, $product['doctor_id'], $orderNumber, $totalAmount, $contactPhone, $notes);
+    $stmt = mysqli_prepare($db, 'INSERT INTO orders (patient_id, doctor_id, order_number, total_amount, contact_phone, shipping_address, notes, status) VALUES (?,?,?,?,?,?,?,\'pending\')');
+    mysqli_stmt_bind_param($stmt, 'iisdsss', $patientId, $product['doctor_id'], $orderNumber, $totalAmount, $contactPhone, $shippingAddress, $notes);
     mysqli_stmt_execute($stmt);
     $orderId = mysqli_insert_id($db);
     mysqli_stmt_close($stmt);

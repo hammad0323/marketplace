@@ -65,6 +65,7 @@ if ($privacy['show_reviews']) {
 
 $pageTitle = $doctor['full_name'] . ' — ' . ($specNames ?: 'Doctor') . ' | ' . SITE_NAME;
 $metaDescription = excerpt($doctor['bio'] ?: ($doctor['full_name'] . ' is a verified ' . ($specNames ?: 'doctor') . ' on ' . SITE_NAME . '.'), 155);
+$canonical = APP_URL . '/doctor-profile?slug=' . $doctor['slug'];
 $extraHead = '<script type="application/ld+json">' . json_encode([
     '@context' => 'https://schema.org', '@type' => 'Physician', 'name' => $doctor['full_name'],
     'medicalSpecialty' => array_column($doctorSpecializations, 'name'), 'url' => APP_URL . '/doctor-profile?slug=' . $doctor['slug'],
@@ -166,16 +167,7 @@ require __DIR__ . '/includes/header.php';
                             <p style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px;">
                                 <?= $p['type'] === 'service' ? e($p['duration_label'] ?: '') : (((int) $p['stock'] > 0) ? (int) $p['stock'] . ' in stock' : '<span style="color:var(--color-danger);">Out of stock</span>') ?>
                             </p>
-                            <?php if (!is_logged_in()): ?>
-                            <a href="#" class="btn btn-outline btn-block" data-requires-auth data-action-url="/doctor-profile?slug=<?= e($doctor['slug']) ?>">Log In to Request</a>
-                            <?php elseif (current_role() !== 'patient'): ?>
-                            <button type="button" class="btn btn-outline btn-block" disabled>Patients only</button>
-                            <?php elseif ($p['type'] === 'product' && (int) $p['stock'] <= 0): ?>
-                            <button type="button" class="btn btn-outline btn-block" disabled>Out of Stock</button>
-                            <?php else: ?>
-                            <button type="button" class="btn btn-primary btn-block btn-request-product"
-                                data-id="<?= (int) $p['id'] ?>" data-name="<?= e($p['name']) ?>" data-price="<?= e($p['price']) ?>" data-type="<?= e($p['type']) ?>">Request This</button>
-                            <?php endif; ?>
+                            <a href="/product-detail?slug=<?= e($p['slug']) ?>" class="btn btn-primary btn-block">View Details &amp; Order</a>
                         </div>
                         <?php endforeach; ?>
                     </div>
@@ -236,35 +228,6 @@ require __DIR__ . '/includes/header.php';
     </div>
 </section>
 
-<?php if ($products): ?>
-<div class="modal-overlay" id="product-request-modal">
-    <div class="modal-box" style="grid-template-columns:1fr;max-width:460px;">
-        <button class="modal-close" data-modal-close aria-label="Close"><i class="ri-close-line"></i></button>
-        <div style="padding:36px;">
-            <h3 style="margin-bottom:6px;" id="product-request-title">Request</h3>
-            <p style="color:var(--color-text-muted);margin-bottom:20px;" id="product-request-price"></p>
-            <form id="product-request-form">
-                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-                <input type="hidden" name="product_id" id="product-request-id">
-                <div class="form-group" id="product-request-qty-group">
-                    <label class="form-label">Quantity</label>
-                    <input type="number" class="form-control" name="quantity" value="1" min="1" step="1">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Contact Phone (optional)</label>
-                    <input type="tel" class="form-control" name="contact_phone">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Notes (optional)</label>
-                    <textarea class="form-control" name="notes" rows="3" placeholder="Anything the doctor should know about your request"></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary btn-block">Send Request</button>
-            </form>
-        </div>
-    </div>
-</div>
-<?php endif; ?>
-
 <script>
 document.querySelectorAll('.tab-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -273,39 +236,6 @@ document.querySelectorAll('.tab-btn').forEach(function (btn) {
         btn.classList.add('active');
         document.getElementById('tab-' + btn.getAttribute('data-tab-target')).style.display = 'block';
     });
-});
-document.addEventListener('DOMContentLoaded', function () {
-(function ($) {
-    var $modal = $('#product-request-modal');
-    $(document).on('click', '.btn-request-product', function () {
-        var d = $(this).data();
-        $('#product-request-id').val(d.id);
-        $('#product-request-title').text('Request: ' + d.name);
-        $('#product-request-price').text('$' + parseFloat(d.price).toFixed(2) + (d.type === 'service' ? ' / service' : ' / unit'));
-        $('#product-request-qty-group').toggle(d.type === 'product');
-        $modal.addClass('open');
-    });
-    $modal.on('click', '[data-modal-close]', function () { $modal.removeClass('open'); });
-    $modal.on('click', function (e) { if (e.target === this) $modal.removeClass('open'); });
-    $('#product-request-form').on('submit', function (e) {
-        e.preventDefault();
-        var $form = $(this);
-        var $btn = $form.find('button[type="submit"]').prop('disabled', true).text('Sending…');
-        $.post('/ajax/product-request.php', $form.serialize(), null, 'json').done(function (res) {
-            $btn.prop('disabled', false).text('Send Request');
-            if (res.success) {
-                showToast('success', 'Request sent', res.message);
-                $modal.removeClass('open');
-                $form[0].reset();
-            } else {
-                showToast('error', 'Could not send request', res.message);
-            }
-        }).fail(function () {
-            $btn.prop('disabled', false).text('Send Request');
-            showToast('error', 'Network error', 'Please try again.');
-        });
-    });
-})(jQuery);
 });
 </script>
 <?php

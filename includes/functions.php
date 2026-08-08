@@ -475,3 +475,46 @@ function pagination_links($pagination, $baseUrl)
     $html .= '</nav>';
     return $html;
 }
+
+// ---------------------------------------------------------------------------
+// SEO
+// ---------------------------------------------------------------------------
+
+/** Builds the full sitemap XML. Used by both the always-fresh sitemap.php
+ * (dynamic, generated per-request) and the admin "Generate Sitemap" action
+ * (writes the same output to a static sitemap.xml file at the project root). */
+function build_sitemap_xml()
+{
+    $db = db();
+    $staticPages = ['/', '/doctors', '/specializations', '/products', '/blog', '/about', '/contact', '/faq', '/privacy-policy', '/terms', '/doctor-register', '/login', '/register'];
+
+    $doctors = mysqli_query($db, "SELECT slug, updated_at FROM doctors WHERE verification_status = 'verified'");
+    $specs = mysqli_query($db, 'SELECT slug FROM specializations WHERE is_active = 1');
+    $blogPosts = mysqli_query($db, "SELECT slug, published_at FROM blog_posts WHERE status = 'published'");
+    $storeProducts = mysqli_query($db, "
+        SELECT dp.slug, dp.created_at FROM doctor_products dp JOIN doctors d ON d.id = dp.doctor_id
+        WHERE dp.is_active = 1 AND d.is_premium = 1 AND d.verification_status = 'verified'
+    ");
+
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+    $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+
+    foreach ($staticPages as $path) {
+        $xml .= '<url><loc>' . e(APP_URL . $path) . '</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>' . "\n";
+    }
+    while ($d = mysqli_fetch_assoc($doctors)) {
+        $xml .= '<url><loc>' . e(APP_URL . '/doctor-profile?slug=' . $d['slug']) . '</loc><lastmod>' . date('Y-m-d', strtotime($d['updated_at'])) . '</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>' . "\n";
+    }
+    while ($s = mysqli_fetch_assoc($specs)) {
+        $xml .= '<url><loc>' . e(APP_URL . '/doctors?specialization=' . $s['slug']) . '</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>' . "\n";
+    }
+    while ($b = mysqli_fetch_assoc($blogPosts)) {
+        $xml .= '<url><loc>' . e(APP_URL . '/blog-post?slug=' . $b['slug']) . '</loc><lastmod>' . date('Y-m-d', strtotime($b['published_at'])) . '</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>' . "\n";
+    }
+    while ($p = mysqli_fetch_assoc($storeProducts)) {
+        $xml .= '<url><loc>' . e(APP_URL . '/product-detail?slug=' . $p['slug']) . '</loc><lastmod>' . date('Y-m-d', strtotime($p['created_at'])) . '</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>' . "\n";
+    }
+
+    $xml .= '</urlset>';
+    return $xml;
+}

@@ -43,6 +43,8 @@
         $form.find('[name="stock"]').val(d.stock !== 'null' ? d.stock : '');
         $form.find('[name="duration_label"]').val(d.duration);
         $form.find('[name="is_active"]').prop('checked', String(d.active) === '1');
+        $('#product-meta-title').val(d.metaTitle);
+        $('#product-meta-description').val(d.metaDescription);
         toggleTypeFields();
         openModal('Edit Product / Service');
     });

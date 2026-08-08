@@ -68,9 +68,16 @@ what's already here.
   explicitly toggles dark mode has that remembered (localStorage) for their
   next visit only; nothing is ever pushed into dark mode automatically.
 - **Doctor storefront**: Premium doctors can list physical products and
-  bookable service packages on their public profile; patients request to buy
-  and the doctor confirms/completes/cancels the request from their own
-  dashboard. See "Doctor storefront" below.
+  bookable service packages; each listing gets its own public detail page
+  with an inline checkout for registered patients. A site-wide `/products`
+  page searches and filters the full catalog across every doctor. See
+  "Doctor storefront" and "Product search" below.
+- **SEO**: every doctor profile, blog post, and product listing gets its own
+  correct canonical URL (a pre-existing bug made all of them canonicalize to
+  one generic URL — now fixed), auto-generated meta title/description with
+  manual override fields in the admin/doctor editors, a single `<h1>` on
+  every public page, and a one-click static sitemap.xml generator in
+  **Admin → Site Settings → SEO & Sitemap**. See "SEO" below.
 - **Blog**: admin writes posts with a built-in rich text editor (bold/italic/
   underline, headings, lists, quotes, links, inline images) — no external
   editor library. Published posts appear on a public, paginated `/blog` with
@@ -105,9 +112,20 @@ dev-server limitation only, not an application bug.
   enabled, the current time is inside their window (if one is set), and
   they've been active on the site within the last 15 minutes — not merely
   that messaging is turned on.
-- Either side can start a new conversation; both `patient/messages.php` and
-  `doctor/messages.php` use the same polling driver (`assets/js/chat.js`,
-  ~4s interval) so new messages appear without a manual refresh.
+- Either side can genuinely start a new conversation. A doctor gets a
+  **Message** button next to every patient on **Doctor Dashboard → My
+  Patients**, which opens `/doctor/messages?patient_id=…` and creates the
+  conversation lazily on the first message sent — mirroring exactly how a
+  patient starts a conversation with `?doctor_id=…` from a doctor's profile.
+  (An earlier version of this feature only let doctors *reply* to patients
+  who had already messaged first, with no way to initiate — that asymmetry
+  is what "messaging isn't working" was pointing at; `ajax/chat-send.php`
+  and `ajax/chat-messages.php` are now symmetric between the two roles.)
+  A doctor can only message a patient who has an appointment with them —
+  enforced server-side, not just hidden in the UI.
+- Both `patient/messages.php` and `doctor/messages.php` use the same polling
+  driver (`assets/js/chat.js`, ~4s interval) so new messages appear without
+  a manual refresh.
 - Every new message calls `notify_user()`, which both creates an in-app
   notification and, if email is configured and enabled, emails the recipient.
 
@@ -141,21 +159,66 @@ admin lists) now shows/filters on the full set.
   non-premium doctor visiting **Doctor Dashboard → My Store** sees an upgrade
   message instead of the management UI, and the save endpoint re-checks the
   flag server-side regardless of what the client sends.
-- A listing is either a `product` (has stock, decremented on each request) or
+- A listing is either a `product` (has stock, decremented on each order) or
   a `service` (no stock, an optional free-text duration/session label like
   "3 sessions"). Doctors manage their catalog and incoming orders from two
   tabs on the same page (`doctor/products.php`).
-- On the doctor's public profile, active listings appear under a "Products &
-  Services" tab (only when the doctor is Premium **and** their `show_store`
-  privacy toggle is on). A logged-in patient clicks "Request This," fills in
-  quantity/phone/notes, and that creates an `orders` row — this is a request/
-  inquiry flow, not a payment checkout (no payment gateway is wired up,
-  consistent with the rest of the app: appointments record a `fee` the same
-  way without processing a real charge).
+- Every listing gets its own public page at `/product-detail?slug=…` — full
+  description, doctor mini-card, related listings from the same doctor, and
+  an inline **checkout** box. Guests see a "Log In to Purchase" prompt;
+  logged-in patients get a real checkout form (quantity for physical
+  products, shipping address pre-filled from their profile, contact phone,
+  notes, a live-updating total) that submits to `ajax/product-request.php`.
+  This is a request/confirm flow, not a live payment checkout — see "What
+  was deliberately left out" below for why that's a deliberate boundary, not
+  an oversight.
 - The doctor confirms, completes, or cancels each request from the Orders
   tab; every transition notifies + emails the patient via the same
   `notify_user()` pipeline chat and appointments use. Patients see their full
-  order history at `/patient/orders`.
+  order history (including shipping address) at `/patient/orders`.
+
+### Product search
+`/products.php` is a marketplace-style listing of every active listing across
+every Premium doctor, independent of any single doctor's profile. Search
+runs against a MySQL `FULLTEXT` index on `doctor_products(name, description)`
+in boolean mode with each search word turned into a required prefix match
+(`blood pressure` → `+blood* +pressure*`) — this scales as a real index
+lookup instead of a `LIKE '%…%'` table scan, and still matches partial words
+the way users actually type. Combine search with type (product/service),
+category, and price-range filters, sorted by relevance/newest/price.
+
+### SEO
+- **Canonical URLs**: the shared default (`includes/header.php`) strips query
+  strings, which is correct for filterable listing pages (`/doctors?…`) but
+  was — before this pass — being applied unconditionally, so *every* doctor
+  profile, blog post, and product page canonicalized to the same generic
+  URL (`/doctor-profile`, `/blog-post`, `/product-detail`), telling search
+  engines each type of page was one giant duplicate of itself. Each of the
+  three detail pages now sets its own `$canonical` (including its `?slug=`)
+  before including the header, so every individual doctor/post/product is
+  indexable on its own URL.
+- **Meta title / description**: blog posts and store listings both have
+  optional `meta_title`/`meta_description` columns, editable from their
+  respective admin/doctor forms; when left blank, the public page
+  auto-generates them from the title/excerpt/description instead (CMS pages
+  already had explicit meta fields from the original build).
+- **Heading hierarchy**: every public page now has exactly one `<h1>` — a
+  sweep found seven pages (specializations, blog, contact, FAQ, login,
+  register, doctor-register) rendering their main heading as `<h2>` with no
+  `<h1>` anywhere on the page at all; fixed by promoting each page's title
+  to `<h1>` (visually identical, since `h1`/`h2` share the same base style
+  in this design system — this was a pure semantics fix).
+- **Structured data**: JSON-LD on doctor profiles (`Physician`), blog posts
+  (`BlogPosting`), and products (`Product`/`Service` with `Offer` pricing/
+  availability), plus Open Graph tags site-wide.
+- **Sitemap**: `/sitemap.xml` is always live and dynamically generated
+  (`build_sitemap_xml()` in `includes/functions.php`, covering static pages,
+  every verified doctor, active specialization, published blog post, and
+  active store listing). **Admin → Site Settings → SEO & Sitemap** also has
+  a "Generate Sitemap" button that writes the same XML to a real static
+  `sitemap.xml` file at the project root — useful for search-console
+  verification or serving it with zero PHP overhead. The file is
+  git-ignored (it bakes in `APP_URL`, which is deployment-specific).
 
 ### Blog
 - The rich text editor (`assets/js/rich-editor.js`) is a small, dependency-
@@ -226,10 +289,11 @@ fonts CDN can no longer take the rest of the page down with it.
 ```
 /config           bootstrap (config.php: mysqli connection, sessions)
 /includes          shared PHP helpers: functions.php, auth.php, mailer.php (SMTP client), header/footer
-/ajax               all AJAX endpoints (auth, booking, chat, notifications, store/orders, blog, admin actions)
+/ajax               all AJAX endpoints (auth, booking, chat, notifications, store/orders, blog, sitemap, admin actions)
 /admin, /doctor, /patient   role-specific dashboards, each with includes/, messages.php, products.php/orders.php
+/products.php, /product-detail.php   site-wide storefront search + per-listing checkout
 /assets/css        style.css (the entire design system, incl. .split-* responsive layout classes)
-/assets/js         main.js, toast.js, auth-modal.js, booking.js, chat.js, notifications.js, rich-editor.js, per-panel scripts
+/assets/js         main.js, toast.js, auth-modal.js, booking.js, chat.js, notifications.js, rich-editor.js, product-checkout.js, per-panel scripts
 /assets/js/vendor   self-hosted jQuery + Chart.js
 /assets/fonts/remixicon   self-hosted icon font
 /uploads            avatars/ certificates/ products/ blog/ reports/ (never executes PHP — see .htaccess)
@@ -303,10 +367,12 @@ still works with `.php` in the URL if `mod_rewrite` isn't available.
   dead "forgot password" link pointing nowhere.
 - **Paid doctor memberships / subscription billing, support tickets** — see
   "Schema-ready for phase 2" above.
-- **Real payment processing** for the doctor storefront — requesting a
-  product/service creates a pending order the doctor confirms manually,
-  the same way booking an appointment records a fee without charging a
-  card; wiring a real payment gateway is a separate, deployment-specific
+- **Real payment processing** for the doctor storefront — the checkout on
+  `/product-detail` collects everything a real order needs (quantity,
+  shipping address, contact, notes) and creates a pending order the doctor
+  confirms manually, the same way booking an appointment records a `fee`
+  without charging a card; wiring a real payment gateway (Stripe, etc.) at
+  the point where the order is created is a separate, deployment-specific
   integration.
 - **True real-time delivery** (WebSockets/SSE) for chat and notifications —
   both use short-interval AJAX polling (~4s for chat, ~20s for the

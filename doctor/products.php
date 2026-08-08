@@ -79,7 +79,8 @@ require __DIR__ . '/includes/header.php';
                     data-id="<?= (int) $p['id'] ?>" data-type="<?= e($p['type']) ?>" data-name="<?= e($p['name']) ?>"
                     data-category="<?= (int) ($p['category_id'] ?? 0) ?>" data-description="<?= e($p['description'] ?? '') ?>"
                     data-price="<?= e($p['price']) ?>" data-stock="<?= e((string) $p['stock']) ?>" data-duration="<?= e($p['duration_label'] ?? '') ?>"
-                    data-active="<?= (int) $p['is_active'] ?>">Edit</button>
+                    data-active="<?= (int) $p['is_active'] ?>"
+                    data-meta-title="<?= e($p['meta_title'] ?? '') ?>" data-meta-description="<?= e($p['meta_description'] ?? '') ?>">Edit</button>
                 <button type="button" class="btn-icon btn-delete-product" data-id="<?= (int) $p['id'] ?>" style="width:36px;height:36px;flex-shrink:0;"><i class="ri-delete-bin-line"></i></button>
             </div>
         </div>
@@ -101,7 +102,11 @@ require __DIR__ . '/includes/header.php';
                 <td class="table-user"><img src="<?= e(avatar_url($o['patient_avatar'], $o['patient_name'])) ?>"><?= e($o['patient_name']) ?></td>
                 <td><?= e($o['items_label']) ?></td>
                 <td><?= format_currency($o['total_amount']) ?></td>
-                <td style="max-width:220px;font-size:12.5px;color:var(--color-text-muted);"><?= e(excerpt($o['notes'] ?? '', 60)) ?><?php if ($o['contact_phone']): ?><br><?= e($o['contact_phone']) ?><?php endif; ?></td>
+                <td style="max-width:220px;font-size:12.5px;color:var(--color-text-muted);">
+                    <?= e(excerpt($o['notes'] ?? '', 60)) ?>
+                    <?php if ($o['contact_phone']): ?><br><i class="ri-phone-line"></i> <?= e($o['contact_phone']) ?><?php endif; ?>
+                    <?php if (!empty($o['shipping_address'])): ?><br><i class="ri-map-pin-line"></i> <?= e($o['shipping_address']) ?><?php endif; ?>
+                </td>
                 <td><span class="status-pill status-<?= e($o['status']) ?> order-status-label"><?= ucfirst($o['status']) ?></span></td>
                 <td>
                     <?php if ($o['status'] === 'pending'): ?>
@@ -173,6 +178,17 @@ require __DIR__ . '/includes/header.php';
                     <label class="form-label">Image (optional)</label>
                     <input type="file" class="form-control" name="image" accept=".jpg,.jpeg,.png,.webp">
                 </div>
+                <details style="margin-bottom:20px;">
+                    <summary style="cursor:pointer;font-size:13.5px;font-weight:600;color:var(--color-text-muted);margin-bottom:12px;">SEO (optional — auto-filled from name/description if left blank)</summary>
+                    <div class="form-group" style="margin-top:12px;">
+                        <label class="form-label">Meta Title</label>
+                        <input type="text" class="form-control" name="meta_title" id="product-meta-title" maxlength="200">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Meta Description</label>
+                        <textarea class="form-control" name="meta_description" id="product-meta-description" rows="2" maxlength="300"></textarea>
+                    </div>
+                </details>
                 <label class="checkbox-row" style="margin-bottom:20px;"><input type="checkbox" name="is_active" value="1" checked> Active (visible on my public profile)</label>
                 <button type="submit" class="btn btn-primary btn-block">Save Listing</button>
             </form>

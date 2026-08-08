@@ -17,7 +17,7 @@ require __DIR__ . '/includes/header.php';
         <nav class="breadcrumb"><a href="/">Home</a> <i class="ri-arrow-right-s-line"></i> <span>Apply as a Doctor</span></nav>
         <div class="section-head" style="text-align:left;margin-left:0;" data-reveal>
             <span class="eyebrow">Join Our Network</span>
-            <h2>Apply as a Doctor</h2>
+            <h1>Apply as a Doctor</h1>
             <p>Submit your credentials below. Our medical credentialing team reviews every application before you can accept patients.</p>
         </div>
 

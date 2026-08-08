@@ -38,6 +38,8 @@
         $('#post-title').val($row.data('title'));
         $('#post-excerpt').val($row.data('excerpt'));
         $('#post-status').val($row.data('status'));
+        $('#post-meta-title').val($row.data('meta-title'));
+        $('#post-meta-description').val($row.data('meta-description'));
         setEditorContent((window.BLOG_POST_CONTENT || {})[id]);
         openModal('Edit Post');
     });

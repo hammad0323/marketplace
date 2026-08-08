@@ -43,11 +43,13 @@
         $.getJSON('/ajax/chat-conversations.php', function (res) {
             if (!res.success) return;
             renderList(res.conversations);
-            if (selectKey != null) {
+            if (selectKey != null && !active) {
                 var match = res.conversations.find(function (c) {
                     return (role === 'patient' ? c.doctor_id : c.patient_id) == selectKey;
                 });
-                if (match) openConversation(match.conversation_id, selectKey);
+                // No conversation yet (e.g. a doctor starting a fresh chat from "My Patients") —
+                // open it anyway; fetchMessages/chat-send look up or create it on demand.
+                openConversation(match ? match.conversation_id : null, selectKey);
             }
         });
     }
@@ -80,7 +82,7 @@
     /** Always builds params from the CURRENT active conversation + lastMessageId — never a stale snapshot, so polling only ever fetches what's new. */
     function fetchMessages(isInitial) {
         if (!active) return;
-        var params = role === 'patient' ? { doctor_id: active.key } : { conversation_id: active.conversationId || active.key };
+        var params = role === 'patient' ? { doctor_id: active.key } : { patient_id: active.key };
         if (!isInitial && lastMessageId) params.after_id = lastMessageId;
 
         $.getJSON('/ajax/chat-messages.php', params, function (res) {
@@ -130,7 +132,7 @@
         formData.append('csrf_token', window.APP.csrfToken);
         formData.append('message', text);
         if (role === 'patient') formData.append('doctor_id', active.key);
-        else formData.append('conversation_id', active.conversationId || active.key);
+        else formData.append('patient_id', active.key);
         if (file) formData.append('attachment', file);
 
         $('#chat-input').val('').css('height', 'auto');
@@ -153,7 +155,7 @@
     });
 
     var urlParams = new URLSearchParams(window.location.search);
-    var preselect = role === 'patient' ? urlParams.get('doctor_id') : urlParams.get('conversation_id');
+    var preselect = role === 'patient' ? urlParams.get('doctor_id') : urlParams.get('patient_id');
     loadConversations(preselect);
     listTimer = setInterval(function () { loadConversations(); }, 12000);
 })(jQuery);

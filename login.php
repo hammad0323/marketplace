@@ -19,7 +19,7 @@ require __DIR__ . '/includes/header.php';
                 <p>Log in to manage your appointments, chat with your doctor, and access your medical records.</p>
             </div>
             <div style="padding:44px 40px;">
-                <h2 style="margin-bottom:24px;">Log In</h2>
+                <h1 style="margin-bottom:24px;">Log In</h1>
                 <form id="login-form" novalidate>
                     <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
                     <div class="form-group" data-field="email">

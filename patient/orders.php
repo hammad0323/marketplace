@@ -34,6 +34,7 @@ require __DIR__ . '/includes/header.php';
         </div>
         <p style="margin-bottom:8px;"><?= e($o['items_label']) ?></p>
         <?php if ($o['notes']): ?><p style="font-size:12.5px;color:var(--color-text-muted);margin-bottom:8px;"><?= e($o['notes']) ?></p><?php endif; ?>
+        <?php if (!empty($o['shipping_address'])): ?><p style="font-size:12.5px;color:var(--color-text-muted);margin-bottom:8px;"><i class="ri-map-pin-line"></i> <?= e($o['shipping_address']) ?></p><?php endif; ?>
         <div style="display:flex;justify-content:space-between;align-items:center;">
             <strong style="color:var(--color-primary);"><?= format_currency($o['total_amount']) ?></strong>
             <span style="font-size:12px;color:var(--color-text-muted);"><?= time_ago($o['created_at']) ?></span>

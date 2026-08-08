@@ -26,7 +26,8 @@ require __DIR__ . '/includes/header.php';
         <?php foreach ($posts as $p): ?>
         <tr data-post-id="<?= (int) $p['id'] ?>"
             data-title="<?= e($p['title']) ?>" data-excerpt="<?= e($p['excerpt'] ?? '') ?>"
-            data-status="<?= e($p['status']) ?>">
+            data-status="<?= e($p['status']) ?>"
+            data-meta-title="<?= e($p['meta_title'] ?? '') ?>" data-meta-description="<?= e($p['meta_description'] ?? '') ?>">
             <td style="max-width:320px;"><?= e($p['title']) ?></td>
             <td><?= e($p['author_name']) ?></td>
             <td><span class="status-pill status-<?= $p['status'] === 'published' ? 'active' : 'pending' ?>"><?= ucfirst($p['status']) ?></span></td>
@@ -75,6 +76,17 @@ window.BLOG_POST_CONTENT = <?= json_encode(array_column($posts, 'content', 'id')
                     <div data-rich-editor data-target="#post-content"></div>
                     <textarea id="post-content" name="content"></textarea>
                     <div class="form-error"></div>
+                </div>
+                <div class="divider-fade"></div>
+                <h4 style="font-size:14.5px;margin-bottom:4px;">SEO <span style="font-weight:400;color:var(--color-text-muted);">(optional)</span></h4>
+                <p style="font-size:12.5px;color:var(--color-text-muted);margin-bottom:14px;">Leave blank to auto-generate from the title/excerpt above.</p>
+                <div class="form-group">
+                    <label class="form-label">Meta Title</label>
+                    <input type="text" class="form-control" name="meta_title" id="post-meta-title" maxlength="200" placeholder="Defaults to: Title — MediConnect">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Meta Description</label>
+                    <textarea class="form-control" name="meta_description" id="post-meta-description" rows="2" maxlength="300" placeholder="Defaults to the excerpt/first 155 characters of content"></textarea>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Status</label>

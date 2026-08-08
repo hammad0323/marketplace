@@ -30,9 +30,10 @@ $related = mysqli_query(db(), "
     ORDER BY published_at DESC LIMIT 3
 ")->fetch_all(MYSQLI_ASSOC);
 
-$pageTitle = $post['title'] . ' — ' . SITE_NAME;
-$metaDescription = excerpt($post['excerpt'] ?: strip_tags($post['content']), 155);
+$pageTitle = $post['meta_title'] ?: ($post['title'] . ' — ' . SITE_NAME);
+$metaDescription = $post['meta_description'] ?: excerpt($post['excerpt'] ?: strip_tags($post['content']), 155);
 $ogImage = $post['featured_image'] ? APP_URL . '/uploads/' . $post['featured_image'] : null;
+$canonical = APP_URL . '/blog-post?slug=' . $post['slug'];
 $extraHead = '<script type="application/ld+json">' . json_encode([
     '@context' => 'https://schema.org', '@type' => 'BlogPosting', 'headline' => $post['title'],
     'datePublished' => $post['published_at'], 'author' => ['@type' => 'Person', 'name' => $post['author_name']],

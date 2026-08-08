@@ -16,7 +16,7 @@ require __DIR__ . '/includes/header.php';
         <nav class="breadcrumb"><a href="/">Home</a> <i class="ri-arrow-right-s-line"></i> <span>FAQs</span></nav>
         <div class="section-head" style="text-align:left;margin-left:0;max-width:600px;" data-reveal>
             <span class="eyebrow">Help Center</span>
-            <h2>Frequently Asked Questions</h2>
+            <h1>Frequently Asked Questions</h1>
         </div>
         <div style="max-width:760px;" class="stagger">
             <?php $i = 0; while ($f = mysqli_fetch_assoc($faqs)): $i++; ?>

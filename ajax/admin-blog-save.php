@@ -13,6 +13,8 @@ $title = clean($_POST['title'] ?? '');
 $excerpt = clean($_POST['excerpt'] ?? '');
 $content = $_POST['content'] ?? '';
 $status = ($_POST['status'] ?? 'draft') === 'published' ? 'published' : 'draft';
+$metaTitle = clean($_POST['meta_title'] ?? '') ?: null;
+$metaDescription = clean($_POST['meta_description'] ?? '') ?: null;
 
 $errors = [];
 if ($title === '' || mb_strlen($title) < 5) {
@@ -54,11 +56,11 @@ if ($id > 0) {
     }
 
     if ($publishedAt) {
-        $stmt = mysqli_prepare($db, 'UPDATE blog_posts SET title=?, excerpt=?, content=?, featured_image=?, status=?, published_at=? WHERE id=?');
-        mysqli_stmt_bind_param($stmt, 'ssssssi', $title, $excerpt, $content, $featuredImage, $status, $publishedAt, $id);
+        $stmt = mysqli_prepare($db, 'UPDATE blog_posts SET title=?, excerpt=?, content=?, featured_image=?, status=?, meta_title=?, meta_description=?, published_at=? WHERE id=?');
+        mysqli_stmt_bind_param($stmt, 'ssssssssi', $title, $excerpt, $content, $featuredImage, $status, $metaTitle, $metaDescription, $publishedAt, $id);
     } else {
-        $stmt = mysqli_prepare($db, 'UPDATE blog_posts SET title=?, excerpt=?, content=?, featured_image=?, status=? WHERE id=?');
-        mysqli_stmt_bind_param($stmt, 'sssssi', $title, $excerpt, $content, $featuredImage, $status, $id);
+        $stmt = mysqli_prepare($db, 'UPDATE blog_posts SET title=?, excerpt=?, content=?, featured_image=?, status=?, meta_title=?, meta_description=? WHERE id=?');
+        mysqli_stmt_bind_param($stmt, 'sssssssi', $title, $excerpt, $content, $featuredImage, $status, $metaTitle, $metaDescription, $id);
     }
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
@@ -68,8 +70,8 @@ if ($id > 0) {
 
 $slug = unique_slug($db, 'blog_posts', $title);
 $publishedAt = $status === 'published' ? date('Y-m-d H:i:s') : null;
-$stmt = mysqli_prepare($db, 'INSERT INTO blog_posts (author_id, title, slug, excerpt, content, featured_image, status, published_at) VALUES (?,?,?,?,?,?,?,?)');
-mysqli_stmt_bind_param($stmt, 'isssssss', $authorId, $title, $slug, $excerpt, $content, $featuredImage, $status, $publishedAt);
+$stmt = mysqli_prepare($db, 'INSERT INTO blog_posts (author_id, title, slug, excerpt, content, featured_image, status, meta_title, meta_description, published_at) VALUES (?,?,?,?,?,?,?,?,?,?)');
+mysqli_stmt_bind_param($stmt, 'isssssssss', $authorId, $title, $slug, $excerpt, $content, $featuredImage, $status, $metaTitle, $metaDescription, $publishedAt);
 mysqli_stmt_execute($stmt);
 $newId = mysqli_insert_id($db);
 mysqli_stmt_close($stmt);
