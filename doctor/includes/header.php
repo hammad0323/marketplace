@@ -30,6 +30,7 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — ' . SITE_NAME;
             <a href="/doctor/messages" class="<?= $currentPage === 'messages.php' ? 'active' : '' ?>"><i class="ri-chat-3-line"></i> Messages</a>
             <a href="/doctor/patients" class="<?= $currentPage === 'patients.php' ? 'active' : '' ?>"><i class="ri-group-line"></i> My Patients</a>
             <a href="/doctor/products" class="<?= $currentPage === 'products.php' ? 'active' : '' ?>"><i class="ri-store-2-line"></i> My Store</a>
+            <a href="/doctor/medicines" class="<?= $currentPage === 'medicines.php' ? 'active' : '' ?>"><i class="ri-capsule-line"></i> Medicine Info</a>
             <a href="/doctor/profile" class="<?= $currentPage === 'profile.php' ? 'active' : '' ?>"><i class="ri-user-line"></i> Profile</a>
             <div class="nav-section-title">Account</div>
             <a href="/logout"><i class="ri-logout-box-line"></i> Logout</a>

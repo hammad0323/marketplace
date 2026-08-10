@@ -218,7 +218,7 @@ function handle_upload($fileKey, $subdir, array $allowedExt, $maxBytes = 5242880
 
 function format_currency($amount)
 {
-    return '$' . number_format((float) $amount, 2);
+    return get_setting('currency_symbol', '$') . number_format((float) $amount, 2);
 }
 
 function format_date($date, $format = 'M j, Y')
@@ -486,7 +486,7 @@ function pagination_links($pagination, $baseUrl)
 function build_sitemap_xml()
 {
     $db = db();
-    $staticPages = ['/', '/doctors', '/specializations', '/products', '/blog', '/about', '/contact', '/faq', '/privacy-policy', '/terms', '/doctor-register', '/login', '/register'];
+    $staticPages = ['/', '/doctors', '/specializations', '/products', '/medicines', '/blog', '/about', '/contact', '/faq', '/privacy-policy', '/terms', '/doctor-register', '/login', '/register'];
 
     $doctors = mysqli_query($db, "SELECT slug, updated_at FROM doctors WHERE verification_status = 'verified'");
     $specs = mysqli_query($db, 'SELECT slug FROM specializations WHERE is_active = 1');
@@ -495,6 +495,7 @@ function build_sitemap_xml()
         SELECT dp.slug, dp.created_at FROM doctor_products dp JOIN doctors d ON d.id = dp.doctor_id
         WHERE dp.is_active = 1 AND d.is_premium = 1 AND d.verification_status = 'verified'
     ");
+    $medicines = mysqli_query($db, "SELECT slug, updated_at FROM medicine_info WHERE status = 'published'");
 
     $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
     $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
@@ -514,7 +515,41 @@ function build_sitemap_xml()
     while ($p = mysqli_fetch_assoc($storeProducts)) {
         $xml .= '<url><loc>' . e(APP_URL . '/product-detail?slug=' . $p['slug']) . '</loc><lastmod>' . date('Y-m-d', strtotime($p['created_at'])) . '</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>' . "\n";
     }
+    while ($m = mysqli_fetch_assoc($medicines)) {
+        $xml .= '<url><loc>' . e(APP_URL . '/medicine-detail?slug=' . $m['slug']) . '</loc><lastmod>' . date('Y-m-d', strtotime($m['updated_at'])) . '</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>' . "\n";
+    }
 
     $xml .= '</urlset>';
     return $xml;
+}
+
+/**
+ * Yoast-style on-page SEO completeness score (0-100) for a medicine info
+ * entry. Mirrored in assets/js/seo-score.js for the live progress bar in the
+ * admin/doctor editor — keep the two weightings in sync if either changes.
+ */
+function seo_score_for_medicine(array $data)
+{
+    $name = trim($data['name'] ?? '');
+    $keyword = trim($data['focus_keyword'] ?? '');
+    $metaTitle = trim($data['meta_title'] ?? '');
+    $metaDescription = trim($data['meta_description'] ?? '');
+    $content = trim(strip_tags(($data['content'] ?? '') . ' ' . ($data['uses'] ?? '')));
+    $wordCount = $content === '' ? 0 : str_word_count($content);
+    $kwLower = mb_strtolower($keyword);
+
+    $score = 0;
+    if ($keyword !== '') $score += 5;
+    if ($metaTitle !== '') $score += 10;
+    if ($metaTitle !== '' && $keyword !== '' && mb_stripos($metaTitle, $keyword) !== false) $score += 10;
+    if (mb_strlen($metaTitle) >= 30 && mb_strlen($metaTitle) <= 60) $score += 5;
+    if ($metaDescription !== '') $score += 10;
+    if ($metaDescription !== '' && $keyword !== '' && mb_stripos($metaDescription, $keyword) !== false) $score += 10;
+    if (mb_strlen($metaDescription) >= 120 && mb_strlen($metaDescription) <= 160) $score += 5;
+    if ($wordCount >= 300) $score += 20;
+    elseif ($wordCount >= 150) $score += 10;
+    if ($content !== '' && $keyword !== '' && mb_stripos($content, $keyword) !== false) $score += 15;
+    if ($name !== '' && $keyword !== '' && mb_stripos($name, $keyword) !== false) $score += 10;
+
+    return min(100, $score);
 }

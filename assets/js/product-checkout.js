@@ -7,7 +7,7 @@
         var unitPrice = parseFloat($total.data('unit-price')) || 0;
         $qty.on('input change', function () {
             var qty = Math.max(1, parseInt($qty.val(), 10) || 1);
-            $total.text('$' + (unitPrice * qty).toFixed(2));
+            $total.text((window.APP.currencySymbol || '$') + (unitPrice * qty).toFixed(2));
         });
     }
 

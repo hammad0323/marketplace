@@ -60,6 +60,7 @@ $user = current_user();
             <a href="/doctors" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'doctors.php' ? 'active' : '' ?>">Find Doctors</a>
             <a href="/specializations" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'specializations.php' ? 'active' : '' ?>">Specializations</a>
             <a href="/products" class="<?= in_array(basename($_SERVER['SCRIPT_NAME']), ['products.php', 'product-detail.php'], true) ? 'active' : '' ?>">Products</a>
+            <a href="/medicines" class="<?= in_array(basename($_SERVER['SCRIPT_NAME']), ['medicines.php', 'medicine-detail.php'], true) ? 'active' : '' ?>">Medicines</a>
             <a href="/blog" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'blog.php' ? 'active' : '' ?>">Blog</a>
             <a href="/about" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'about.php' ? 'active' : '' ?>">About</a>
             <a href="/contact" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'contact.php' ? 'active' : '' ?>">Contact</a>

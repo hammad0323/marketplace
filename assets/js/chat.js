@@ -100,6 +100,8 @@
                     $('#chat-partner-status').html('<span class="status-dot' + (res.partner.online ? ' online' : '') + '"></span> ' + (res.partner.online ? 'Online now' : res.partner.hours));
                 } else {
                     $('#chat-partner-status').text('');
+                    active.isBlocked = !!res.partner.is_blocked;
+                    updateBlockUi();
                 }
                 $('#chat-thread').empty();
             }
@@ -114,6 +116,31 @@
             }
         });
     }
+
+    // A block only stops the PATIENT from sending further messages; the doctor can still
+    // send (e.g. a closing note), so the doctor's own #chat-form always stays enabled.
+    function updateBlockUi() {
+        var blocked = !!(active && active.isBlocked);
+        $('#chat-block-btn').text(blocked ? 'Unblock' : 'Block').toggleClass('btn-outline', !blocked).toggleClass('btn-danger', blocked);
+        $('#chat-blocked-notice').toggle(blocked);
+    }
+
+    function setBlocked(blocked) {
+        if (!active) return;
+        $.post('/ajax/doctor-chat-block.php', { csrf_token: window.APP.csrfToken, patient_id: active.key, blocked: blocked ? 1 : 0 }, null, 'json')
+            .done(function (res) {
+                if (res.success) {
+                    active.isBlocked = blocked;
+                    updateBlockUi();
+                    showToast('success', blocked ? 'Blocked' : 'Unblocked', res.message);
+                } else {
+                    showToast('error', 'Could not update', res.message);
+                }
+            }).fail(function () { showToast('error', 'Network error', 'Please try again.'); });
+    }
+
+    $('#chat-block-btn').on('click', function () { setBlocked(!(active && active.isBlocked)); });
+    $('#chat-unblock-inline-btn').on('click', function () { setBlocked(false); });
 
     $(document).on('click', '.chat-list-item', function () {
         openConversation($(this).data('conversation-id'), $(this).data('key'));

@@ -34,6 +34,7 @@
         var targetSel = host.getAttribute('data-target');
         var target = document.querySelector(targetSel);
         if (!target) return;
+        var uploadUrl = host.getAttribute('data-upload-url') || '/ajax/admin-blog-image-upload.php';
 
         var toolbar = document.createElement('div');
         toolbar.className = 'rich-editor-toolbar';
@@ -109,7 +110,7 @@
             placeholder.textContent = 'Uploading image…';
             placeholder.className = 'rich-editor-uploading';
             area.appendChild(placeholder);
-            fetch('/ajax/admin-blog-image-upload.php', { method: 'POST', body: formData })
+            fetch(uploadUrl, { method: 'POST', body: formData })
                 .then(function (r) { return r.json(); })
                 .then(function (res) {
                     placeholder.remove();

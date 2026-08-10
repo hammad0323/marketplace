@@ -87,6 +87,16 @@ what's already here.
   slide-out sidebar nav, a stacked mobile menu with the auth buttons folded
   in, tables that scroll horizontally instead of breaking layout, and no
   page that scrolls sideways. See "Mobile responsiveness" below.
+- **Site-wide currency symbol**: one setting in **Admin → Site Settings**
+  controls the currency symbol used everywhere a price is shown — product
+  listings, product detail/checkout, and orders. See "Currency" below.
+- **Doctor patient-blocking**: a doctor can block a specific patient from
+  sending further chat messages, from the chat window itself, without
+  turning off messaging for everyone else. See "Messaging" below.
+- **Medicine Info**: a new, separate content type (not a storefront product)
+  that doctors and admin write purely so the site has real, indexable
+  information about specific medicines for search/SEO — with its own SEO
+  form and a live scoring progress bar. See "Medicine Info" below.
 
 ### Clean URLs
 Every internal link is written and rendered without `.php` (`/doctors`,
@@ -122,12 +132,24 @@ dev-server limitation only, not an application bug.
   is what "messaging isn't working" was pointing at; `ajax/chat-send.php`
   and `ajax/chat-messages.php` are now symmetric between the two roles.)
   A doctor can only message a patient who has an appointment with them —
-  enforced server-side, not just hidden in the UI.
+  enforced server-side, not just hidden in the UI. This check only applies
+  to **starting a brand-new conversation**: once a conversation already
+  exists (started by either side), both a doctor and a patient can keep
+  replying in it regardless of appointment status, so a doctor can still
+  reply to a patient who never booked, if they choose to engage.
 - Both `patient/messages.php` and `doctor/messages.php` use the same polling
   driver (`assets/js/chat.js`, ~4s interval) so new messages appear without
   a manual refresh.
 - Every new message calls `notify_user()`, which both creates an in-app
   notification and, if email is configured and enabled, emails the recipient.
+- **Blocking**: if a doctor would rather not engage with a particular
+  patient (e.g. one who keeps messaging without ever booking), they can hit
+  **Block** in that patient's chat window (`doctor/messages.php`). This sets
+  `chat_conversations.is_blocked` for that one conversation — the patient
+  can no longer send new messages (`ajax/chat-send.php` rejects them with a
+  clear notice) but can still see the existing history, and the doctor can
+  still send messages and unblock at any time. Blocking is scoped to a
+  single conversation, not a sitewide ban.
 
 ### Email
 - Configured entirely from **Admin → Site Settings → Email (SMTP)**: host,
@@ -145,6 +167,43 @@ dev-server limitation only, not an application bug.
 - `notify_user()` is the single choke point used everywhere an activity
   email should fire (appointments, chat, registration, doctor applications);
   `notify_admins()` fans the same event out to every active admin.
+
+### Currency
+The symbol used everywhere a price is displayed (product listings, product
+detail/checkout total, order history) is read from a single `site_settings`
+row (`currency_symbol`, defaults to `$`), editable at **Admin → Site
+Settings**. `includes/functions.php`'s `format_currency()` is the one place
+that formats a price server-side, and the client-side checkout total
+(`assets/js/product-checkout.js`) reads the same value off `window.APP.currencySymbol`
+(set in every panel's footer) instead of hardcoding `$` — so changing it in
+one place changes it across the whole site, admin panel included.
+
+### Medicine Info
+This is deliberately **not** part of the doctor storefront (`doctor_products`)
+— nothing here is for sale. It exists purely so the site has real, useful,
+indexable content about specific medicines (uses, dosage, side effects,
+precautions) for a patient who searches a medicine name and lands on the
+site through search results.
+- Both **Doctor Dashboard → Medicine Info** (`doctor/medicines.php`) and
+  **Admin → Medicine Info** (`admin/medicines.php`) manage entries; a doctor
+  only sees/edits their own, admin sees and can edit everyone's.
+- Each entry has structured fields (generic name, composition, category,
+  uses, dosage, side effects, precautions) plus a rich-text body, and its
+  own SEO form: focus keyword, meta title, meta description.
+- A **live SEO score progress bar** (0–100) updates as you type, scored on
+  the same criteria as the auto-SEO elsewhere in the app — focus keyword
+  present in the title/content/meta description, meta title/description
+  length within recommended ranges, minimum content length, etc. The exact
+  same scoring logic exists twice on purpose: `seo_score_for_medicine()` in
+  `includes/functions.php` computes and persists the authoritative score on
+  save, and `assets/js/seo-score.js` mirrors it in the browser so the bar
+  you watch while typing matches what actually gets saved.
+- Only `status = 'published'` entries are public. The public listing
+  (`/medicines`) searches a MySQL `FULLTEXT` index (same boolean-mode,
+  prefix-matching approach as product search) across name, generic name,
+  uses, and content, plus a category filter. Each entry's detail page
+  (`/medicine-detail?slug=…`) sets its own canonical URL, JSON-LD (`Drug`
+  schema.org type), and is included in the sitemap.
 
 ### Doctor specializations
 A doctor is no longer limited to one specialization. `doctors.specialization_id`
@@ -307,12 +366,22 @@ still works with `.php` in the URL if `mod_rewrite` isn't available.
 
 ## Setup
 
-1. Create a database and import the schema, then the seed data (both files
-   set their own connection charset, so run each with the plain `mysql`
-   client — no special flags needed):
+1. **Fresh install** (no existing data): create a database and import the
+   schema, then the seed data (both files set their own connection charset,
+   so run each with the plain `mysql` client — no special flags needed):
    ```
    mysql -u youruser -p < database/schema.sql
    mysql -u youruser -p < database/seed.sql
+   ```
+   **Already have a live database from an earlier build of this project?**
+   Do **not** re-run `schema.sql`/`seed.sql` against it — both files `DROP`
+   and recreate every table, which would erase your real data. Instead run
+   `database/migration_v3.sql` once against your existing database — it only
+   adds the new `chat_conversations.is_blocked` column and the new
+   `medicine_info` table, touches nothing else, and is safe even if run
+   twice:
+   ```
+   mysql -u youruser -p your_database_name < database/migration_v3.sql
    ```
 2. Set your DB credentials, either as environment variables (`DB_HOST`,
    `DB_NAME`, `DB_USER`, `DB_PASS`, `DB_PORT`) or by editing the defaults at

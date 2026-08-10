@@ -16,12 +16,16 @@ require __DIR__ . '/includes/header.php';
         <div class="chat-head">
             <button class="btn-icon" id="chat-back-btn" style="display:none;"><i class="ri-arrow-left-line"></i></button>
             <img id="chat-partner-avatar" src="" alt="">
-            <div>
+            <div style="flex:1;min-width:0;">
                 <strong id="chat-partner-name" style="display:block;font-size:14.5px;"></strong>
                 <span id="chat-partner-status" style="font-size:12px;color:var(--color-text-muted);"></span>
             </div>
+            <button type="button" class="btn btn-outline btn-sm" id="chat-block-btn" style="flex-shrink:0;">Block</button>
         </div>
         <div class="chat-thread" id="chat-thread"></div>
+        <div id="chat-blocked-notice" style="display:none;padding:14px 20px;text-align:center;font-size:13px;color:var(--color-text-muted);border-top:1px solid var(--color-border);">
+            You've blocked this patient — they can't send you new messages. <button type="button" id="chat-unblock-inline-btn" style="background:none;border:none;color:var(--color-primary);font-weight:600;text-decoration:underline;cursor:pointer;padding:0;">Unblock</button>
+        </div>
         <form class="chat-input-row" id="chat-form">
             <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
             <label class="chat-attach-btn" for="chat-attach-input"><i class="ri-attachment-2"></i></label>

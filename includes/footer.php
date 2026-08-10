@@ -30,6 +30,7 @@ $footerSpecs = mysqli_query(db(), 'SELECT name, slug FROM specializations WHERE 
                 <ul>
                     <li><a href="/about">About Us</a></li>
                     <li><a href="/blog">Blog</a></li>
+                    <li><a href="/medicines">Medicine Info</a></li>
                     <li><a href="/contact">Contact</a></li>
                     <li><a href="/faq">FAQs</a></li>
                     <li><a href="/doctor-register">Join as a Doctor</a></li>
@@ -53,7 +54,7 @@ $footerSpecs = mysqli_query(db(), 'SELECT name, slug FROM specializations WHERE 
 <?php require __DIR__ . '/auth-modal.php'; ?>
 
 <script>
-window.APP = { loggedIn: <?= is_logged_in() ? 'true' : 'false' ?>, role: <?= json_encode(current_role()) ?>, csrfToken: <?= json_encode(csrf_token()) ?> };
+window.APP = { loggedIn: <?= is_logged_in() ? 'true' : 'false' ?>, role: <?= json_encode(current_role()) ?>, csrfToken: <?= json_encode(csrf_token()) ?>, currencySymbol: <?= json_encode(get_setting('currency_symbol', '$')) ?> };
 </script>
 <script src="/assets/js/vendor/jquery.min.js"></script>
 <script src="/assets/js/toast.js"></script>

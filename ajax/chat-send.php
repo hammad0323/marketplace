@@ -31,13 +31,16 @@ if ($role === 'patient') {
         json_response(false, [], 'Doctor not found.');
     }
 
-    $stmt = mysqli_prepare($db, 'SELECT id FROM chat_conversations WHERE patient_id = ? AND doctor_id = ? LIMIT 1');
+    $stmt = mysqli_prepare($db, 'SELECT id, is_blocked FROM chat_conversations WHERE patient_id = ? AND doctor_id = ? LIMIT 1');
     mysqli_stmt_bind_param($stmt, 'ii', $profileId, $doctorId);
     mysqli_stmt_execute($stmt);
     $conv = mysqli_stmt_get_result($stmt)->fetch_assoc();
     mysqli_stmt_close($stmt);
 
     if ($conv) {
+        if ((int) $conv['is_blocked'] === 1) {
+            json_response(false, [], 'This doctor is not available to message right now.');
+        }
         $conversationId = (int) $conv['id'];
     } else {
         if (!$doctor['chat_enabled']) {
@@ -53,22 +56,38 @@ if ($role === 'patient') {
     $recipientLink = '/doctor/messages?patient_id=' . $profileId;
 } else {
     $patientId = (int) ($_POST['patient_id'] ?? 0);
+    $conversationIdParam = (int) ($_POST['conversation_id'] ?? 0);
+    $conv = null;
 
-    if (!$patientId) {
-        // Backwards-compatible path for direct conversation_id sends.
-        $conversationId = (int) ($_POST['conversation_id'] ?? 0);
-        $stmt = mysqli_prepare($db, 'SELECT c.id, c.patient_id, p.user_id AS patient_user_id FROM chat_conversations c JOIN patients p ON p.id = c.patient_id WHERE c.id = ? AND c.doctor_id = ? LIMIT 1');
-        mysqli_stmt_bind_param($stmt, 'ii', $conversationId, $profileId);
+    if ($patientId) {
+        $stmt = mysqli_prepare($db, 'SELECT c.id, c.patient_id, p.user_id AS patient_user_id FROM chat_conversations c JOIN patients p ON p.id = c.patient_id WHERE c.patient_id = ? AND c.doctor_id = ? LIMIT 1');
+        mysqli_stmt_bind_param($stmt, 'ii', $patientId, $profileId);
         mysqli_stmt_execute($stmt);
         $conv = mysqli_stmt_get_result($stmt)->fetch_assoc();
         mysqli_stmt_close($stmt);
-        if (!$conv) {
-            json_response(false, [], 'Conversation not found.');
+    } elseif ($conversationIdParam) {
+        // Backwards-compatible path for direct conversation_id sends (e.g. old notification links).
+        $stmt = mysqli_prepare($db, 'SELECT c.id, c.patient_id, p.user_id AS patient_user_id FROM chat_conversations c JOIN patients p ON p.id = c.patient_id WHERE c.id = ? AND c.doctor_id = ? LIMIT 1');
+        mysqli_stmt_bind_param($stmt, 'ii', $conversationIdParam, $profileId);
+        mysqli_stmt_execute($stmt);
+        $conv = mysqli_stmt_get_result($stmt)->fetch_assoc();
+        mysqli_stmt_close($stmt);
+        if ($conv) {
+            $patientId = (int) $conv['patient_id'];
         }
-        $patientId = (int) $conv['patient_id'];
+    }
+
+    if (!$patientId) {
+        json_response(false, [], 'Conversation not found.');
+    }
+
+    if ($conv) {
+        // The conversation already exists — reply freely, no appointment check needed.
+        $conversationId = (int) $conv['id'];
         $recipientUserId = (int) $conv['patient_user_id'];
     } else {
-        // A doctor may only message a patient who has (or has had) an appointment with them.
+        // No conversation yet: a doctor may only START one with a patient who has (or has had)
+        // an appointment with them. Replying to an existing conversation never hits this branch.
         $stmt = mysqli_prepare($db, 'SELECT p.id, u.id AS user_id FROM patients p JOIN users u ON u.id = p.user_id
             WHERE p.id = ? AND EXISTS (SELECT 1 FROM appointments a WHERE a.patient_id = p.id AND a.doctor_id = ?) LIMIT 1');
         mysqli_stmt_bind_param($stmt, 'ii', $patientId, $profileId);
@@ -76,25 +95,15 @@ if ($role === 'patient') {
         $patientRow = mysqli_stmt_get_result($stmt)->fetch_assoc();
         mysqli_stmt_close($stmt);
         if (!$patientRow) {
-            json_response(false, [], 'You can only message patients who have booked an appointment with you.');
+            json_response(false, [], 'You can only start a new conversation with a patient who has booked an appointment with you.');
         }
         $recipientUserId = (int) $patientRow['user_id'];
 
-        $stmt = mysqli_prepare($db, 'SELECT id FROM chat_conversations WHERE patient_id = ? AND doctor_id = ? LIMIT 1');
+        $stmt = mysqli_prepare($db, 'INSERT INTO chat_conversations (patient_id, doctor_id) VALUES (?, ?)');
         mysqli_stmt_bind_param($stmt, 'ii', $patientId, $profileId);
         mysqli_stmt_execute($stmt);
-        $conv = mysqli_stmt_get_result($stmt)->fetch_assoc();
+        $conversationId = mysqli_insert_id($db);
         mysqli_stmt_close($stmt);
-
-        if ($conv) {
-            $conversationId = (int) $conv['id'];
-        } else {
-            $stmt = mysqli_prepare($db, 'INSERT INTO chat_conversations (patient_id, doctor_id) VALUES (?, ?)');
-            mysqli_stmt_bind_param($stmt, 'ii', $patientId, $profileId);
-            mysqli_stmt_execute($stmt);
-            $conversationId = mysqli_insert_id($db);
-            mysqli_stmt_close($stmt);
-        }
     }
     $recipientLink = '/patient/messages?doctor_id=' . $profileId;
 }

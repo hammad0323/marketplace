@@ -390,6 +390,7 @@ CREATE TABLE chat_conversations (
     id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     patient_id     INT UNSIGNED NOT NULL,
     doctor_id      INT UNSIGNED NOT NULL,
+    is_blocked     TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'doctor blocked this patient from sending further messages',
     last_message_at DATETIME DEFAULT NULL,
     created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_conv (patient_id, doctor_id),
@@ -488,6 +489,36 @@ CREATE TABLE blog_posts (
     created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_blog_slug (slug),
     CONSTRAINT fk_blog_author FOREIGN KEY (author_id) REFERENCES users(id)
+) ENGINE=InnoDB;
+
+-- Informational medicine reference content (not for sale — see doctor_products
+-- for the storefront). Authored by a doctor or admin, purely to give the
+-- site something worth ranking for when someone searches a medicine name.
+DROP TABLE IF EXISTS medicine_info;
+CREATE TABLE medicine_info (
+    id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    author_id        INT UNSIGNED NOT NULL COMMENT 'users.id — doctor or admin',
+    name             VARCHAR(180) NOT NULL,
+    slug             VARCHAR(200) NOT NULL,
+    generic_name     VARCHAR(180) DEFAULT NULL,
+    composition      VARCHAR(255) DEFAULT NULL,
+    category         VARCHAR(120) DEFAULT NULL,
+    uses             TEXT,
+    dosage           TEXT,
+    side_effects     TEXT,
+    precautions      TEXT,
+    content          LONGTEXT COMMENT 'full rich-text description',
+    featured_image   VARCHAR(255) DEFAULT NULL,
+    focus_keyword    VARCHAR(150) DEFAULT NULL COMMENT 'the search term this entry targets, e.g. the medicine name',
+    meta_title       VARCHAR(200) DEFAULT NULL COMMENT 'blank = auto-generated from name',
+    meta_description VARCHAR(300) DEFAULT NULL COMMENT 'blank = auto-generated from uses/content',
+    seo_score        TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '0-100, computed by seo_score_for_medicine()',
+    status           ENUM('draft','published') NOT NULL DEFAULT 'draft',
+    created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_medicine_info_slug (slug),
+    FULLTEXT KEY ft_medicine_info_search (name, generic_name, uses, content),
+    CONSTRAINT fk_medicine_info_author FOREIGN KEY (author_id) REFERENCES users(id)
 ) ENGINE=InnoDB;
 
 DROP TABLE IF EXISTS support_tickets;

@@ -35,6 +35,7 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — Admin — ' . SITE_NAME;
             <a href="/admin/appointments" class="<?= $currentPage === 'appointments.php' ? 'active' : '' ?>"><i class="ri-calendar-check-line"></i> Appointments</a>
             <a href="/admin/specializations" class="<?= $currentPage === 'specializations.php' ? 'active' : '' ?>"><i class="ri-price-tag-3-line"></i> Specializations</a>
             <a href="/admin/blog" class="<?= $currentPage === 'blog.php' ? 'active' : '' ?>"><i class="ri-quill-pen-line"></i> Blog</a>
+            <a href="/admin/medicines" class="<?= $currentPage === 'medicines.php' ? 'active' : '' ?>"><i class="ri-capsule-line"></i> Medicine Info</a>
             <a href="/admin/messages" class="<?= $currentPage === 'messages.php' ? 'active' : '' ?>"><i class="ri-mail-line"></i> Messages</a>
             <div class="nav-section-title">System</div>
             <a href="/admin/settings" class="<?= $currentPage === 'settings.php' ? 'active' : '' ?>"><i class="ri-settings-3-line"></i> Site Settings</a>

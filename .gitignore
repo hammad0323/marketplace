@@ -11,9 +11,11 @@ uploads/certificates/*
 uploads/reports/*
 uploads/products/*
 uploads/blog/*
+uploads/medicines/*
 !uploads/avatars/.gitkeep
 !uploads/certificates/.gitkeep
 !uploads/reports/.gitkeep
 !uploads/products/.gitkeep
 !uploads/blog/.gitkeep
+!uploads/medicines/.gitkeep
 !uploads/.htaccess
