@@ -32,5 +32,12 @@ mysqli_stmt_bind_param($stmt, 'si', $newStatus, $userId);
 mysqli_stmt_execute($stmt);
 mysqli_stmt_close($stmt);
 
+$notifyMessages = [
+    'suspend' => 'Your account has been suspended by the admin team.',
+    'activate' => 'Your account has been reactivated. You can log in normally now.',
+    'ban' => 'Your account has been banned by the admin team.',
+];
+notify_user($userId, 'account', 'Account status updated', $notifyMessages[$action], '/patient/dashboard');
+
 log_activity($_SESSION['user_id'], 'admin', 'user_' . $action, "User #$userId -> $newStatus");
 json_response(true, [], 'Account updated.');

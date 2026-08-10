@@ -42,11 +42,18 @@ switch ($action) {
         mysqli_stmt_bind_param($stmt, 'i', $doctor['user_id']);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
+        notify_user($doctor['user_id'], 'account', 'Application not approved', 'Your doctor application was reviewed and could not be approved at this time.' . ($note !== '' ? ' Note from admin: ' . $note : ''), '/doctor/dashboard');
         $message = 'Doctor application rejected.';
         break;
 
     case 'toggle_premium':
-        mysqli_query($db, 'UPDATE doctors SET is_premium = 1 - is_premium WHERE id = ' . $doctorId);
+        $newPremium = $doctor['is_premium'] ? 0 : 1;
+        mysqli_query($db, 'UPDATE doctors SET is_premium = ' . $newPremium . ' WHERE id = ' . $doctorId);
+        if ($newPremium) {
+            notify_user($doctor['user_id'], 'account', 'You are now a Premium doctor', 'Your account has been upgraded to Premium — you can now list products and services on your profile.', '/doctor/dashboard');
+        } else {
+            notify_user($doctor['user_id'], 'account', 'Premium status removed', 'Your account is no longer Premium.', '/doctor/dashboard');
+        }
         $message = 'Premium status updated.';
         break;
 
@@ -55,6 +62,7 @@ switch ($action) {
         mysqli_stmt_bind_param($stmt, 'i', $doctor['user_id']);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
+        notify_user($doctor['user_id'], 'account', 'Account suspended', 'Your doctor account has been suspended by the admin team.' . ($note !== '' ? ' Note: ' . $note : ''), '/doctor/dashboard');
         $message = 'Doctor account suspended.';
         break;
 
@@ -63,6 +71,7 @@ switch ($action) {
         mysqli_stmt_bind_param($stmt, 'i', $doctor['user_id']);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
+        notify_user($doctor['user_id'], 'account', 'Account reactivated', 'Your doctor account has been reactivated. You can log in normally now.', '/doctor/dashboard');
         $message = 'Doctor account reactivated.';
         break;
 
