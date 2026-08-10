@@ -41,8 +41,11 @@ function nav_active($path, $current)
               <a href="/admin/index.php"><i class="bi bi-speedometer2"></i> Admin Dashboard</a>
             <?php elseif ($loggedInUser['role_slug'] === 'provider'): ?>
               <a href="/provider/index.php"><i class="bi bi-speedometer2"></i> Provider Dashboard</a>
+              <a href="/provider/profile.php"><i class="bi bi-person"></i> Business Profile</a>
             <?php else: ?>
               <a href="/customer/index.php"><i class="bi bi-speedometer2"></i> My Dashboard</a>
+              <a href="/customer/favorites.php"><i class="bi bi-heart"></i> Favorites</a>
+              <a href="/customer/profile.php"><i class="bi bi-person"></i> Profile</a>
             <?php endif; ?>
             <a href="/<?php echo e($loggedInUser['role_slug']); ?>/logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a>
           </div>

@@ -47,6 +47,7 @@ if ($service) {
 }
 
 $pageTitle = 'Availability Calendar';
+$providerActiveTab = 'availability';
 require ROOT_PATH . '/includes/header.php';
 ?>
 <div class="section-tight">
@@ -67,6 +68,8 @@ require ROOT_PATH . '/includes/header.php';
         </form>
       <?php endif; ?>
     </div>
+
+    <?php require ROOT_PATH . '/includes/provider-tabs.php'; ?>
 
     <?php if (!$services): ?>
       <div class="empty-state"><div class="icon-wrap"><i class="bi bi-list-ul"></i></div><h4>Add a service first</h4><p>Availability is managed per service.</p><a href="/provider/service-form.php" class="btn-w btn-primary">Add a service</a></div>

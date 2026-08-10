@@ -40,6 +40,7 @@ $bookings = db_select(
 );
 
 $pageTitle = 'My Bookings';
+$customerActiveTab = 'bookings';
 require ROOT_PATH . '/includes/header.php';
 ?>
 <div class="section-tight">
@@ -48,6 +49,8 @@ require ROOT_PATH . '/includes/header.php';
       <span class="eyebrow"><i class="bi bi-calendar-check"></i> Customer</span>
       <h1 class="section-heading">My bookings</h1>
     </div>
+
+    <?php require ROOT_PATH . '/includes/customer-tabs.php'; ?>
 
     <?php if ($bookings): ?>
       <div style="display:flex;flex-direction:column;gap:14px;">

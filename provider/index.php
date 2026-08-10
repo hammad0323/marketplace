@@ -9,6 +9,7 @@ $serviceCount = $provider ? db_count($conn, 'SELECT COUNT(*) FROM services WHERE
 $bookingCount = $provider ? db_count($conn, 'SELECT COUNT(*) FROM bookings WHERE provider_id = ?', [(int) $provider['id']]) : 0;
 
 $pageTitle = 'Provider Dashboard';
+$providerActiveTab = 'dashboard';
 require ROOT_PATH . '/includes/header.php';
 ?>
 <div class="section-tight">
@@ -24,6 +25,8 @@ require ROOT_PATH . '/includes/header.php';
         </p>
       <?php endif; ?>
     </div>
+
+    <?php if ($provider && $provider['status'] === 'approved'): ?><?php require ROOT_PATH . '/includes/provider-tabs.php'; ?><?php endif; ?>
 
     <?php if (!$provider): ?>
       <div class="empty-state">
@@ -48,9 +51,6 @@ require ROOT_PATH . '/includes/header.php';
 
       <?php if ($provider['status'] === 'approved'): ?>
         <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;">
-          <a href="/provider/services.php" class="btn-w btn-primary"><i class="bi bi-list-ul"></i> Manage services</a>
-          <a href="/provider/bookings.php" class="btn-w btn-outline"><i class="bi bi-calendar-check"></i> Bookings</a>
-          <a href="/provider/availability.php" class="btn-w btn-outline"><i class="bi bi-calendar-week"></i> Availability</a>
           <a href="/pages/provider.php?slug=<?php echo e($provider['slug']); ?>" class="btn-w btn-outline" target="_blank"><i class="bi bi-box-arrow-up-right"></i> View public profile</a>
         </div>
       <?php endif; ?>

@@ -64,6 +64,7 @@ $bookings = db_select(
 );
 
 $pageTitle = 'Bookings';
+$providerActiveTab = 'bookings';
 require ROOT_PATH . '/includes/header.php';
 ?>
 <div class="section-tight">
@@ -80,6 +81,8 @@ require ROOT_PATH . '/includes/header.php';
         <?php endforeach; ?>
       </select>
     </div>
+
+    <?php require ROOT_PATH . '/includes/provider-tabs.php'; ?>
 
     <?php if ($bookings): ?>
       <div class="panel">

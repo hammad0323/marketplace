@@ -8,6 +8,7 @@ $bookingCount = db_count($conn, 'SELECT COUNT(*) FROM bookings WHERE customer_id
 $favoriteCount = db_count($conn, 'SELECT COUNT(*) FROM favorites WHERE user_id = ?', [(int) $user['id']]);
 
 $pageTitle = 'My Dashboard';
+$customerActiveTab = 'dashboard';
 require ROOT_PATH . '/includes/header.php';
 ?>
 <div class="section-tight">
@@ -17,6 +18,8 @@ require ROOT_PATH . '/includes/header.php';
       <h1 class="section-heading">Welcome back, <?php echo e(explode(' ', $user['name'])[0]); ?></h1>
       <p class="section-sub">This is your travel command center.</p>
     </div>
+
+    <?php require ROOT_PATH . '/includes/customer-tabs.php'; ?>
 
     <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
       <div class="stat-card"><div class="icon-wrap"><i class="bi bi-map"></i></div><div class="value"><?php echo (int) $tripCount; ?></div><div class="label">Saved trips</div></div>
