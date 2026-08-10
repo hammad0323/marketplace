@@ -1,17 +1,28 @@
-# Optional hardening — the site works without this file (every page is
-# a real .php file, no URL rewriting is needed). This just adds a
-# couple of extra safety nets.
+# Hardening for the Apache/shared-hosting deployment. The app works
+# without this file — every page is a real .php file, no rewriting
+# is required for routing — this just closes off a few things.
 
 Options -Indexes
 
-# config.php already refuses direct access on its own (see the guard
-# at the top of the file), this is just a second layer.
-<FilesMatch "^(config|functions)\.php$">
-    Require all denied
-</FilesMatch>
+ErrorDocument 404 /404.php
+ErrorDocument 500 /500.php
 
-# database.sql contains your schema and demo data (including a
-# password hash) — no reason for it to be downloadable once imported.
+# config/ and includes/ are pulled in via require, never requested
+# directly, but deny them outright as a second layer of defense.
+RewriteEngine On
+RewriteCond %{REQUEST_URI} ^/(config|includes|database)/
+RewriteRule ^ - [F,L]
+
 <FilesMatch "\.sql$">
     Require all denied
 </FilesMatch>
+
+<FilesMatch "^_layout_(top|bottom)\.php$">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

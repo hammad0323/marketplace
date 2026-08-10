@@ -1,238 +1,120 @@
-# Marketplace — Multi Marketplace Architecture
+# Wanderly — Trip Planning & Multi-Service Travel Marketplace
 
-Vanilla PHP (no framework, no classes). **Every page is its own real
-`.php` file sitting directly in the project root** — there are no
-subfolders to upload correctly, no router, no build step. Upload the
-whole folder, edit four lines in `config.php`, import `database.sql`,
-done.
+Vanilla, procedural **PHP 8 + mysqli + MySQL**. No framework, no Composer,
+no build step, no classes. Every request is a real `.php` file.
 
-This build lays the **core architecture** for running two distinct
-marketplace experiences — the **Artisan Marketplace** and **Business
-Shops** — plus a single platform-owned **Official Store**, under one
-site and one admin panel.
+This is being built **phase by phase** (the project is genuinely large —
+see [Roadmap](#roadmap) below). This README describes what exists today.
 
-Out of scope (tracked as future work): the enterprise SEO module, the
-centralized email notification engine, and the full admin CRUD panel
-over every entity. See "What's deferred" below.
+## Phase 1 — what's included
 
-## Deploy in 3 steps
+- Full MySQL schema (`database/schema.sql`) — 60+ tables covering users,
+  roles, providers, categories (with dynamic per-category custom fields),
+  cities, services, bookings, payments, commissions, reviews, favorites,
+  messaging, notifications, the trip planner, blog/CMS, SEO, and audit
+  logs. Seeded with roles, an admin account, demo cities/categories, and
+  site settings.
+- `config/` — mysqli connection + app bootstrap (sessions, constants).
+- `includes/functions.php` — prepared-statement DB helpers (`db_select`,
+  `db_insert_get_id`, `db_execute`, …), CSRF protection, output escaping,
+  slugs, file uploads, flash messages, settings lookup.
+- `includes/auth.php` — login/register/logout for customers, providers
+  and admins; role guards; rate-limited login attempts; password reset.
+- Shared front-end shell (`includes/header.php` / `navbar.php` /
+  `footer.php`) and a custom purple SaaS design system
+  (`assets/css/style.css`, `assets/css/admin.css`) with scroll-reveal,
+  parallax hero blobs, animated counters, and skeleton/toast utilities
+  (`assets/js/main.js`) — Bootstrap is used only for its grid, everything
+  visible is custom CSS.
+- Homepage pulling live data from the database (cities, categories,
+  featured providers, stats).
+- Auth pages for all three roles, an admin dashboard shell with real
+  stats and a pending-provider queue, and a provider dashboard shell.
+- 404/500 pages, `.htaccess` hardening.
 
-1. **Upload everything** — the whole project as one folder, to your
-   site's document root (e.g. `public_html/`, or an addon domain's
-   folder). There is nothing to extract into a subfolder and nothing
-   to point a document root at — `index.php` is right there.
-2. **Edit `config.php`** — open it and change these four lines to your
-   real database details (get them from cPanel → MySQL Databases):
-   ```php
-   define('DB_HOST', 'localhost');
-   define('DB_NAME', 'your_database_name');
-   define('DB_USER', 'your_database_user');
-   define('DB_PASS', 'your_database_password');
+Everything above was tested end-to-end against a live MySQL instance
+(registration, login, CSRF, rate limiting, password reset, admin login,
+provider approval queue) before being committed.
+
+### What's *not* here yet
+
+Category/city pages currently show an honest empty state instead of
+listings — there's nothing to list yet, because **admin CRUD for
+providers/categories/cities/services, search & filters, availability
+calendars, reservations, dashboards, messaging, reviews, the trip
+planner, payments, and the CMS/blog are separate phases** (see
+Roadmap). Nav/footer links only point at pages that exist today.
+
+## Setup
+
+1. **Create a database** and import the schema:
+   ```bash
+   mysql -u root -p -e "CREATE DATABASE wanderly CHARACTER SET utf8mb4"
+   mysql -u root -p wanderly < database/schema.sql
    ```
-   That is the only file you need to edit.
-3. **Import `database.sql`** — cPanel → phpMyAdmin → select your
-   database → Import tab → choose `database.sql` → Go. One file, every
-   table and all seed data, done in one import.
+2. **Configure the connection** — `config/database.php` reads from
+   environment variables (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`),
+   falling back to `localhost` / `wanderly` / `root` / *(empty)*. Either
+   export those env vars for PHP/Apache, or edit the fallbacks directly
+   in `config/database.php`.
+3. **Point your web server's document root at the project root** (where
+   `index.php` lives) and make sure PHP 8+ with the `mysqli` extension
+   is enabled. With Apache, `.htaccess` is already set up. To try it
+   locally with PHP's built-in server:
+   ```bash
+   php -S localhost:8000
+   ```
+4. Visit `/index.php`.
 
-Visit your domain. If something's wrong, `config.php` shows a plain-
-English error (bad DB credentials, or the import didn't run) instead
-of a blank page or PHP warning wall.
+### Demo login
 
-### Demo logins (change before anyone else can reach the site)
+- Admin: `admin@wanderly.test` / `Admin@12345` at `/admin/login.php`
+  **— change this password before deploying anywhere reachable.**
 
-- Admin: `admin@marketplace.test` / `admin123` at `/admin-login.php`
-- Official Store vendor: `store@marketplace.test` / `admin123`
-
-There's no "change password" screen yet — generate a new hash with
-`php -r "echo password_hash('yournewpassword', PASSWORD_DEFAULT);"`
-and update the `password_hash` column for that row via phpMyAdmin.
-
-## Why it's flat
-
-Earlier versions of this project split code across `pages/`, `admin/`,
-`includes/`, `data/`, etc., with a router matching clean URLs like
-`/artisan/wooden-crafts` to files in those folders. That broke on
-upload — if even one subfolder didn't transfer completely (which is
-easy to have happen with a File Manager zip-extract or a partial FTP
-upload), the router would throw a fatal error trying to `require` a
-file that wasn't there, taking down pages that had nothing to do with
-the missing file.
-
-This version trades pretty URLs for reliability: every page is
-reachable at its own literal filename
-(`/artisan.php`, `/product.php?slug=...`, `/vendor-dashboard.php`,
-...), so there's no routing layer that depends on the whole folder
-tree being intact. If a file is ever missing, only that one page 404s
-— nothing else breaks.
-
-## What's in the project
+## Folder structure
 
 ```
-index.php            → requires home.php (the front page)
-config.php            THE file you edit — DB credentials + bootstrap
-                       (starts the session, connects to the DB, loads
-                       functions.php). Refuses direct access on its own.
-functions.php          every function used site-wide, in one file:
-                       generic helpers, session/auth, the notification
-                       log seam, and all database queries (grouped by
-                       table with a comment divider) — all prefixed
-                       mp_ to avoid name collisions
-header.php, footer.php public-site chrome (nav, flash messages,
-                       footer), theme-aware (main / artisan / business)
-admin-header.php, admin-footer.php   admin panel chrome
-product-card.php       small reusable product tile, used by every
-                       listing page
-404.php                 fully self-contained — no dependency on
-                       config.php or anything else, so it can never
-                       itself be the thing that's broken
-
-home.php, artisan.php, artisan-category.php, artisan-store.php,
-business.php, business-category.php, business-store.php,
-official-store.php, product.php, category.php, search.php
-                        public pages
-
-vendor-login.php, vendor-register.php, vendor-logout.php,
-vendor-dashboard.php, vendor-profile.php, vendor-categories.php,
-vendor-products.php, vendor-product-form.php
-                        vendor auth + the vendor's own dashboard
-
-customer-login.php, customer-register.php, customer-logout.php,
-follow.php              customer auth + following a vendor
-
-admin-login.php, admin-logout.php, admin-dashboard.php,
-admin-vendors.php, admin-vendor-approve.php, admin-vendor-reject.php,
-admin-category-requests.php, admin-category-decide.php,
-admin-category-toggle.php
-                        the admin panel
-
-database.sql            every CREATE TABLE + all seed data, one file
-assets/                 css/, js/, img/ — the only other web-facing folder
-uploads/                reserved for future file-upload features
-logs/                   mp_notify() writes notifications.log here
+config/       database.php, config.php — bootstrap, never requested directly
+includes/     functions.php, auth.php, header/footer/navbar.php
+admin/        admin auth + dashboard (_layout_top/_bottom.php are shared chrome)
+provider/     provider auth + dashboard
+customer/     customer auth + dashboard
+pages/        public content pages (city, category, search, static CMS pages)
+ajax/         AJAX endpoints (newsletter today; search/booking/etc. land later)
+assets/       css/, js/, img/
+uploads/      user-uploaded files (git-ignored contents)
+database/     schema.sql
 ```
 
-A page looks like a classic PHP script — no template layer, no
-separate "view", logic and HTML together in one file:
+## Roadmap
 
-```php
-<?php
-require __DIR__ . '/config.php';
+- **Phase 1 — done.** Architecture, database, config, auth, roles,
+  sessions, initial frontend + admin shell.
+- **Phase 2.** Full admin CRUD: providers, customers, categories, cities.
+- **Phase 3.** Services, dynamic category fields, provider profiles, maps.
+- **Phase 4.** AJAX search, filters, geolocation, discovery.
+- **Phase 5.** Availability, calendars, reservations/booking workflow.
+- **Phase 6.** Customer & provider dashboards (full).
+- **Phase 7.** Messaging, notifications, email (SMTP + templates).
+- **Phase 8.** Reviews, favorites, ratings.
+- **Phase 9.** Memberships, verified/premium providers, payments, commission.
+- **Phase 10.** Trip Planner, budget calculator, itinerary builder.
+- **Phase 11.** Blog, travel guides, SEO tooling.
+- **Phase 12.** Security/performance hardening pass, polish.
 
-$vendor = mp_require_vendor();
-$products = mp_products_by_vendor($vendor['id']);
+## Security notes
 
-$pageTitle = 'My Products';
-$theme = 'main';
-require __DIR__ . '/header.php';
-?>
-<h1>My Products</h1>
-<?php foreach ($products as $product): mp_render_product_card($product); endforeach; ?>
-<?php require __DIR__ . '/footer.php'; ?>
-```
-
-## What's actually web-facing
-
-Since every page is a real file, there's no "internal" folder that
-routing keeps hidden. Two things are worth knowing:
-
-- `config.php` refuses to run if it's requested directly (checked in
-  PHP itself, at the top of the file — this works even if `.htaccess`
-  isn't respected by your host, unlike relying on server config alone).
-- `.htaccess` adds an optional second layer blocking direct access to
-  `config.php`, `functions.php`, and any `.sql` file (so `database.sql`
-  isn't downloadable once imported) — but the site works correctly
-  even if `.htaccess`/`mod_rewrite` isn't honored at all, since nothing
-  here depends on URL rewriting.
-
-Verified end-to-end against a real MariaDB 10.11 instance and PHP's
-built-in server: `database.sql` imports cleanly with a single
-`mysql < database.sql` (equivalent to phpMyAdmin's Import), and the
-full flow — vendor registration → admin approval → category approval
-→ product creation (including per-category limit enforcement) → store
-pages → global search → follow → CSRF protection — all pass. Also
-caught and fixed a real encoding bug this way: emoji in the marketplace
-badges (🏺 🏪 ⭐) got corrupted on import by clients that don't default
-to `utf8mb4` (including the plain `mysql` CLI) — fixed by adding
-`SET NAMES utf8mb4;` as the first line of `database.sql`.
-
-## Design system
-
-Every page uses a shared, modern design system defined with CSS custom
-properties in `assets/css/global.css` (colors, spacing, shadows, border
-radius, easing), plus a theme file per marketplace
-(`artisan-theme.css` — warm terracotta/gold with Playfair Display serif
-headings; `business-theme.css` — blue/cyan; `admin.css` — calm, no
-animation on purpose).
-
-- **Parallax hero sections**: each landing/hero (`home.php`,
-  `artisan.php`, `business.php`, `official-store.php`) has a
-  `.parallax-hero` / `.parallax-hero-bg` layer that moves at a fraction
-  of scroll speed for a depth effect. Implemented with
-  `transform: translate3d()` driven by `requestAnimationFrame` in
-  `assets/js/main.js` — not `background-attachment: fixed`, so it's
-  smooth on mobile too.
-- **Scroll-reveal animations**: sections and cards fade/slide into
-  view via `IntersectionObserver` (`.reveal` → `.reveal-visible`).
-  This degrades safely on purpose — see below.
-- **Progressive enhancement, not a dependency**: `.reveal` is only
-  hidden by CSS once `assets/js/main.js` has confirmed it's actually
-  running (an inline script sets `class="js"` on `<html>` before first
-  paint). If JavaScript is blocked, errors, or hasn't loaded yet,
-  every `.reveal` element is simply visible with no animation — content
-  can never end up permanently hidden because of a script failure.
-  Motion also fully respects `prefers-reduced-motion`.
-- **External dependency added by this design**: Google Fonts (Inter,
-  Plus Jakarta Sans, Playfair Display), loaded via `<link>` in
-  `header.php`. Nothing else in the project calls out to an external
-  service — if you need a fully offline/self-hosted build, swap that
-  `<link>` for local font files.
-
-## Architecture decisions worth knowing
-
-- **Marketplace types are data, not code.** `marketplace_types` is a
-  lookup table (`artisan` / `business` / `official`); a new marketplace
-  type is a new row, not a new set of `if` branches.
-- **Categories are scoped per marketplace type** and share one
-  auto-increment ID space. Anywhere a category ID comes from user
-  input (vendor registration, category requests), it's filtered
-  through `mp_filter_category_ids_by_marketplace()` before being
-  trusted — otherwise a business vendor could end up with a request
-  against an artisan category.
-- **Vendor approval workflow** is enforced in the pages themselves,
-  not just the UI: `vendor-product-form.php` blocks product creation
-  server-side unless `vendor.status = approved`, and the store pages
-  show a 404 for a vendor that isn't approved — so there's no way to
-  make a pending store "go live" by hitting a URL directly.
-- **Category approval workflow**: a Business Shop vendor's submitted
-  product `category_id` is checked against
-  `mp_approved_category_ids_for_vendor()` (status = approved **and**
-  `is_enabled = 1`) and, if the admin set a `usage_limit`, against the
-  vendor's current product count in that category — enforced at
-  product-creation time, verified in testing (limit of 1 correctly
-  blocked a 2nd product).
-- **Notifier seam, not an email system**: every point the vendor
-  onboarding flow should "send an email" calls `mp_notify()`, which
-  writes to `logs/notifications.log`. It's a drop-in seam for a future
-  centralized email engine — no page will need to change when that's
-  built.
-- **Customers/follow/ratings**: a minimal `customers` table plus
-  `vendor_follows` and `vendor_ratings` back the "Follow Artist" and
-  "Artist/Store Ratings" features. Full customer commerce (orders,
-  checkout, rewards) is not part of this build.
-
-## What's deferred to future work
-
-- **Enterprise SEO module** — meta management, sitemaps, structured
-  data, vendor SEO score.
-- **Centralized email notification engine** — templates, actual
-  sending (currently stubbed via `mp_notify()`).
-- **Full admin CRUD panel** — this build ships only the two admin
-  screens the architecture depends on (vendor approval, category
-  approval). Products/orders/CMS/banners/reports admin management is
-  separate work.
-- **Vendor logo/banner file uploads** — profile forms currently take
-  text fields and (for products) pasted image URLs; a real upload
-  pipeline is future work (`uploads/` is reserved for it).
-- **Clean URLs** — traded away for deployment reliability, see "Why
-  it's flat" above. Can be reintroduced later via `.htaccess` rewrites
-  once the site is confirmed working, without changing any PHP logic.
+- All queries go through mysqli prepared statements via the `db_*()`
+  helpers in `includes/functions.php` — no string-concatenated SQL.
+- CSRF tokens on every state-changing form (`csrf_field()` /
+  `verify_csrf()`).
+- Passwords hashed with `password_hash()` / verified with
+  `password_verify()`.
+- Login attempts are rate-limited per email+IP (5 attempts / 15 minutes).
+- Sessions: `httponly`, `SameSite=Lax`, `secure` when served over HTTPS,
+  strict mode, regenerated on login.
+- Uploads (`upload_file()`) validate extension, MIME type (via
+  `finfo`), and size, and are written under `uploads/` with randomized
+  filenames.
+- `config/`, `includes/`, `database/`, `*.sql`, and the admin layout
+  partials are denied at the web server level via `.htaccess`.

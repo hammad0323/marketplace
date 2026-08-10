@@ -1,10 +1,10 @@
-<?php http_response_code(404); ?>
+<?php http_response_code(500); ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Page not found — Wanderly</title>
+<title>Something went wrong — Wanderly</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <style>
@@ -18,9 +18,9 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="code">404</div>
-    <h1>This trip doesn't exist</h1>
-    <p>The page you're looking for may have moved or never existed.</p>
+    <div class="code">500</div>
+    <h1>Something went wrong on our end</h1>
+    <p>Our team has been notified. Please try again in a moment.</p>
     <a href="/index.php"><i class="bi bi-arrow-left"></i> Back to home</a>
   </div>
 </body>

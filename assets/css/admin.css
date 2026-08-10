@@ -1,39 +1,88 @@
-/* Admin theme — clean and utilitarian, matching the main design tokens
-   without the marketing flourishes (no parallax, no hero — a dashboard
-   should feel calm and fast, not decorative). */
-.theme-admin { background: var(--surface-alt); font-family: var(--font-body); }
-.admin-header {
-    background: var(--ink-900);
-    color: #fff;
-    padding: 1rem 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: sticky;
-    top: 0;
-    z-index: 50;
+/* Admin panel chrome — layers on top of style.css design tokens. */
+
+.admin-shell { display: flex; min-height: 100vh; background: var(--bg); }
+
+.admin-sidebar {
+  width: 264px;
+  flex-shrink: 0;
+  background: #14101F;
+  color: rgba(255,255,255,0.75);
+  padding: 22px 16px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
-.admin-brand { font-family: var(--font-heading); font-weight: 800; }
-.admin-nav { display: flex; gap: 1.5rem; align-items: center; font-size: .9rem; font-weight: 600; }
-.admin-nav a, .admin-nav .link-button { color: var(--ink-300); transition: color .2s; }
-.admin-nav a:hover, .admin-nav .link-button:hover { color: #fff; }
-.admin-main { max-width: 1140px; }
-.admin-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 1.75rem;
-    margin-bottom: 1.75rem;
-    box-shadow: var(--shadow-sm);
+.admin-sidebar .brand { color: #fff; padding: 8px 10px 22px; }
+.admin-nav-group { margin-top: 18px; }
+.admin-nav-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.35); padding: 0 12px; margin-bottom: 8px;
 }
-.admin-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; }
-.admin-stat {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 1.5rem;
-    text-align: center;
-    transition: transform .25s var(--ease), box-shadow .25s var(--ease);
+.admin-nav a {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px; font-size: 14px; font-weight: 500;
+  color: rgba(255,255,255,0.72); margin-bottom: 2px;
+  transition: background 0.15s ease, color 0.15s ease;
 }
-.admin-stat:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
-.admin-stat strong { display: block; font-size: 2.2rem; font-family: var(--font-heading); color: var(--brand); }
+.admin-nav a i { width: 18px; text-align: center; }
+.admin-nav a:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.admin-nav a.active { background: var(--gradient-purple); color: #fff; }
+.admin-nav a.disabled { opacity: 0.4; cursor: not-allowed; }
+.admin-nav a .soon-tag {
+  margin-left: auto; font-size: 10px; background: rgba(255,255,255,0.1);
+  padding: 2px 7px; border-radius: 999px;
+}
+
+.admin-main { flex: 1; min-width: 0; }
+.admin-topbar {
+  height: 72px; background: var(--white); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; padding: 0 28px;
+  position: sticky; top: 0; z-index: 20;
+}
+.admin-topbar h1 { font-size: 19px; font-weight: 800; margin: 0; }
+.admin-content { padding: 28px; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
+.stat-card {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: 22px; transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.stat-card .icon-wrap {
+  width: 42px; height: 42px; border-radius: 12px; background: var(--purple-50); color: var(--purple-600);
+  display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 14px;
+}
+.stat-card .value { font-size: 27px; font-weight: 800; letter-spacing: -0.01em; }
+.stat-card .label { font-size: 13px; color: var(--ink-mute); margin-top: 2px; }
+.stat-card .delta { font-size: 12px; font-weight: 700; margin-top: 10px; display: inline-flex; align-items: center; gap: 4px; }
+.stat-card .delta.up { color: var(--success); }
+.stat-card .delta.down { color: var(--danger); }
+
+.panel { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; }
+.panel + .panel { margin-top: 20px; }
+.panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.panel-head h3 { font-size: 16px; font-weight: 700; margin: 0; }
+
+.table-w { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table-w th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-mute); padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.table-w td { padding: 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.table-w tr:last-child td { border-bottom: none; }
+.table-w tr:hover td { background: var(--purple-50); }
+
+.status-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+.status-chip.pending { background: #FEF3C7; color: #92400E; }
+.status-chip.approved, .status-chip.active { background: #D1FAE5; color: #065F46; }
+.status-chip.rejected, .status-chip.blocked, .status-chip.suspended { background: #FEE2E2; color: #991B1B; }
+
+.roadmap-card {
+  border: 1px dashed var(--border); border-radius: var(--radius-md); padding: 20px;
+  display: flex; align-items: center; gap: 14px; background: var(--purple-50);
+}
+.roadmap-card .icon-wrap { width: 40px; height: 40px; border-radius: 10px; background: var(--white); display:flex; align-items:center; justify-content:center; color: var(--purple-600); }
+
+@media (max-width: 1000px) {
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .admin-sidebar { position: fixed; left: -280px; z-index: 50; transition: left 0.2s ease; }
+  .admin-sidebar.open { left: 0; }
+}

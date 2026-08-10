@@ -1,86 +1,139 @@
-/**
- * Small vanilla-JS enhancement layer — no dependencies, no build step.
- * Two things: parallax hero backgrounds, and scroll-reveal animations.
- * Both degrade gracefully (plain static page) if JS is disabled.
- */
-(function () {
-    'use strict';
+/* Wanderly — shared front-end interactions. jQuery + vanilla JS, no build step. */
 
-    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+(function ($) {
+  'use strict';
 
-    // ---- Parallax hero backgrounds -------------------------------------
-    // Each .parallax-hero has a .parallax-hero-bg layer that moves at a
-    // slower rate than the page scroll, giving a depth effect. Uses
-    // transform (not background-position) so it stays GPU-accelerated
-    // and works identically on mobile, unlike background-attachment:fixed.
-    var parallaxLayers = document.querySelectorAll('.parallax-hero-bg');
+  // ---- Navbar scroll shadow -------------------------------------------
+  var $navbar = $('.navbar-w');
+  function onScroll() {
+    if (!$navbar.length) return;
+    $navbar.toggleClass('is-scrolled', window.scrollY > 8);
+  }
+  $(window).on('scroll', onScroll);
+  onScroll();
 
-    function updateParallax() {
-        if (prefersReducedMotion) {
-            return;
-        }
-        for (var i = 0; i < parallaxLayers.length; i++) {
-            var layer = parallaxLayers[i];
-            var hero = layer.closest('.parallax-hero');
-            var rect = hero.getBoundingClientRect();
-            // Only compute while the hero is anywhere near the viewport.
-            if (rect.bottom < -200 || rect.top > window.innerHeight + 200) {
-                continue;
-            }
-            var offset = rect.top * 0.35;
-            layer.style.transform = 'translate3d(0, ' + offset + 'px, 0) scale(1.15)';
-        }
-    }
+  // ---- Mobile nav toggle -------------------------------------------
+  $('.mobile-toggle').on('click', function () {
+    $('.nav-links').toggleClass('mobile-open');
+  });
 
-    var ticking = false;
-    function onScroll() {
-        if (!ticking) {
-            window.requestAnimationFrame(function () {
-                updateParallax();
-                ticking = false;
-            });
-            ticking = true;
-        }
-    }
+  // ---- User dropdown ----------------------------------------------
+  $('.user-chip').on('click', function (e) {
+    e.stopPropagation();
+    $('.user-menu').toggleClass('open');
+  });
+  $(document).on('click', function () {
+    $('.user-menu').removeClass('open');
+  });
 
-    if (parallaxLayers.length) {
-        updateParallax();
-        window.addEventListener('scroll', onScroll, { passive: true });
-        window.addEventListener('resize', onScroll);
-    }
+  // ---- Admin sidebar toggle (mobile) --------------------------------
+  $('.admin-menu-toggle').on('click', function () {
+    $('.admin-sidebar').toggleClass('open');
+  });
 
-    // ---- Scroll-reveal ---------------------------------------------------
-    // Any element with class "reveal" fades/slides into place the first
-    // time it enters the viewport. Falls back to fully visible if
-    // IntersectionObserver isn't available.
-    var revealEls = document.querySelectorAll('.reveal');
-
-    if ('IntersectionObserver' in window && !prefersReducedMotion && revealEls.length) {
-        var observer = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('reveal-visible');
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-
-        revealEls.forEach(function (el) {
-            observer.observe(el);
+  // ---- Scroll reveal via IntersectionObserver -----------------------
+  var revealTargets = document.querySelectorAll('.reveal, .reveal-scale, .stagger');
+  if ('IntersectionObserver' in window && revealTargets.length) {
+    var observer = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+            observer.unobserve(entry.target);
+          }
         });
-    } else {
-        revealEls.forEach(function (el) {
-            el.classList.add('reveal-visible');
-        });
-    }
+      },
+      { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
+    );
+    revealTargets.forEach(function (el) { observer.observe(el); });
+  } else {
+    revealTargets.forEach(function (el) { el.classList.add('in-view'); });
+  }
 
-    // ---- Sticky nav shadow on scroll -------------------------------------
-    var nav = document.querySelector('.site-nav');
-    if (nav) {
-        var applyNavShadow = function () {
-            nav.classList.toggle('site-nav-scrolled', window.scrollY > 8);
-        };
-        applyNavShadow();
-        window.addEventListener('scroll', applyNavShadow, { passive: true });
+  // ---- Animated counters --------------------------------------------
+  function animateCounter(el) {
+    var target = parseFloat(el.getAttribute('data-count') || '0');
+    var duration = 1400;
+    var start = null;
+    var suffix = el.getAttribute('data-suffix') || '';
+
+    function step(ts) {
+      if (!start) start = ts;
+      var progress = Math.min((ts - start) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      var value = Math.floor(eased * target);
+      el.textContent = value.toLocaleString() + suffix;
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        el.textContent = target.toLocaleString() + suffix;
+      }
     }
-})();
+    requestAnimationFrame(step);
+  }
+
+  var counters = document.querySelectorAll('[data-count]');
+  if ('IntersectionObserver' in window && counters.length) {
+    var counterObserver = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            animateCounter(entry.target);
+            counterObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.4 }
+    );
+    counters.forEach(function (el) { counterObserver.observe(el); });
+  }
+
+  // ---- Hero parallax blobs on mouse move -----------------------------
+  var $hero = $('.hero');
+  if ($hero.length) {
+    $hero.on('mousemove', function (e) {
+      var rect = this.getBoundingClientRect();
+      var x = (e.clientX - rect.left) / rect.width - 0.5;
+      var y = (e.clientY - rect.top) / rect.height - 0.5;
+      $('.hero-blob-1').css('transform', 'translate(' + (x * 26) + 'px,' + (y * 26) + 'px)');
+      $('.hero-blob-2').css('transform', 'translate(' + (x * -20) + 'px,' + (y * -20) + 'px)');
+      $('.hero-blob-3').css('transform', 'translate(' + (x * 34) + 'px,' + (y * 34) + 'px)');
+    });
+  }
+
+  // ---- Toasts ---------------------------------------------------------
+  window.showToast = function (message, type) {
+    type = type || 'default';
+    var $stack = $('.toast-stack');
+    if (!$stack.length) {
+      $stack = $('<div class="toast-stack"></div>').appendTo('body');
+    }
+    var $toast = $('<div class="toast-w ' + type + '">' + message + '</div>');
+    $stack.append($toast);
+    setTimeout(function () {
+      $toast.fadeOut(250, function () { $(this).remove(); });
+    }, 3200);
+  };
+
+  // ---- Geolocation-aware "near me" prompt (graceful, non-blocking) ----
+  var $geoTrigger = $('[data-geo-trigger]');
+  if ($geoTrigger.length && navigator.geolocation) {
+    $geoTrigger.on('click', function () {
+      var $btn = $(this);
+      $btn.prop('disabled', true).text('Detecting your location…');
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          var params = new URLSearchParams(window.location.search);
+          params.set('lat', pos.coords.latitude.toFixed(6));
+          params.set('lng', pos.coords.longitude.toFixed(6));
+          window.location.search = params.toString();
+        },
+        function () {
+          $btn.prop('disabled', false).text('Use my location');
+          showToast('Location permission denied — pick a city manually instead.', 'danger');
+        },
+        { timeout: 8000 }
+      );
+    });
+  }
+})(jQuery);
