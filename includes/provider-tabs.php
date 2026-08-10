@@ -10,6 +10,7 @@ $tabs = [
     'availability' => ['label' => 'Availability', 'href' => '/provider/availability.php', 'icon' => 'bi-calendar-week'],
     'analytics' => ['label' => 'Analytics', 'href' => '/provider/analytics.php', 'icon' => 'bi-graph-up'],
     'reviews' => ['label' => 'Reviews', 'href' => '/provider/reviews.php', 'icon' => 'bi-star'],
+    'membership' => ['label' => 'Membership', 'href' => '/provider/membership.php', 'icon' => 'bi-award'],
     'profile' => ['label' => 'Profile', 'href' => '/provider/profile.php', 'icon' => 'bi-person'],
 ];
 ?>

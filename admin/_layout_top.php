@@ -21,8 +21,9 @@ $adminNav = [
     ]],
     ['group' => 'Bookings & Finance', 'items' => [
         ['key' => 'bookings', 'label' => 'Bookings', 'icon' => 'bi-calendar-check', 'href' => '/admin/bookings.php', 'ready' => true],
-        ['key' => 'payments', 'label' => 'Payments', 'icon' => 'bi-credit-card', 'href' => '#', 'ready' => false],
-        ['key' => 'memberships', 'label' => 'Memberships', 'icon' => 'bi-award', 'href' => '#', 'ready' => false],
+        ['key' => 'payments', 'label' => 'Payments', 'icon' => 'bi-credit-card', 'href' => '/admin/payments.php', 'ready' => true],
+        ['key' => 'memberships', 'label' => 'Memberships', 'icon' => 'bi-award', 'href' => '/admin/membership-plans.php', 'ready' => true],
+        ['key' => 'commissions', 'label' => 'Commissions', 'icon' => 'bi-percent', 'href' => '/admin/commissions.php', 'ready' => true],
     ]],
     ['group' => 'Content', 'items' => [
         ['key' => 'trips', 'label' => 'Trip Planner', 'icon' => 'bi-map', 'href' => '#', 'ready' => false],

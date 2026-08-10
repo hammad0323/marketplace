@@ -426,6 +426,7 @@ CREATE TABLE IF NOT EXISTS payments (
   user_id INT UNSIGNED NOT NULL,
   booking_id INT UNSIGNED DEFAULT NULL,
   membership_id INT UNSIGNED DEFAULT NULL,
+  plan_id INT UNSIGNED DEFAULT NULL,
   gateway_id INT UNSIGNED DEFAULT NULL,
   amount DECIMAL(10,2) NOT NULL,
   currency VARCHAR(5) NOT NULL DEFAULT 'USD',
@@ -436,6 +437,7 @@ CREATE TABLE IF NOT EXISTS payments (
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (booking_id) REFERENCES bookings(id),
   FOREIGN KEY (membership_id) REFERENCES provider_memberships(id),
+  FOREIGN KEY (plan_id) REFERENCES membership_plans(id),
   FOREIGN KEY (gateway_id) REFERENCES payment_gateways(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

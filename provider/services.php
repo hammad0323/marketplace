@@ -76,7 +76,10 @@ require ROOT_PATH . '/includes/header.php';
       <?php if ($provider['status'] !== 'approved'): ?>
         <div class="alert-w alert-info" style="margin:0;"><i class="bi bi-info-circle-fill"></i> Your business must be approved before services go live.</div>
       <?php elseif ($atLimit): ?>
-        <div class="alert-w alert-info" style="margin:0;"><i class="bi bi-info-circle-fill"></i> You've reached your plan's service limit. Membership upgrades arrive in Phase 9.</div>
+        <div class="alert-w alert-info" style="margin:0;display:flex;align-items:center;gap:10px;">
+          <i class="bi bi-info-circle-fill"></i> You've reached your plan's service limit.
+          <a href="/provider/membership.php" class="btn-w btn-primary btn-sm" style="margin-left:8px;">Upgrade</a>
+        </div>
       <?php else: ?>
         <a href="/provider/service-form.php" class="btn-w btn-primary"><i class="bi bi-plus-lg"></i> Add service</a>
       <?php endif; ?>

@@ -40,3 +40,4 @@ require_once ROOT_PATH . '/includes/booking-functions.php';
 require_once ROOT_PATH . '/includes/mailer.php';
 require_once ROOT_PATH . '/includes/messaging-functions.php';
 require_once ROOT_PATH . '/includes/review-functions.php';
+require_once ROOT_PATH . '/includes/membership-functions.php';
