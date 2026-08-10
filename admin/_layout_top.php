@@ -13,10 +13,10 @@ $adminNav = [
         ['key' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'bi-speedometer2', 'href' => '/admin/index.php', 'ready' => true],
     ]],
     ['group' => 'Marketplace', 'items' => [
-        ['key' => 'providers', 'label' => 'Providers', 'icon' => 'bi-shop', 'href' => '#', 'ready' => false],
-        ['key' => 'customers', 'label' => 'Customers', 'icon' => 'bi-people', 'href' => '#', 'ready' => false],
-        ['key' => 'categories', 'label' => 'Categories', 'icon' => 'bi-grid', 'href' => '#', 'ready' => false],
-        ['key' => 'cities', 'label' => 'Cities', 'icon' => 'bi-geo-alt', 'href' => '#', 'ready' => false],
+        ['key' => 'providers', 'label' => 'Providers', 'icon' => 'bi-shop', 'href' => '/admin/providers.php', 'ready' => true],
+        ['key' => 'customers', 'label' => 'Customers', 'icon' => 'bi-people', 'href' => '/admin/customers.php', 'ready' => true],
+        ['key' => 'categories', 'label' => 'Categories', 'icon' => 'bi-grid', 'href' => '/admin/categories.php', 'ready' => true],
+        ['key' => 'cities', 'label' => 'Cities', 'icon' => 'bi-geo-alt', 'href' => '/admin/cities.php', 'ready' => true],
         ['key' => 'services', 'label' => 'Services', 'icon' => 'bi-list-ul', 'href' => '#', 'ready' => false],
     ]],
     ['group' => 'Bookings & Finance', 'items' => [

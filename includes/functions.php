@@ -223,6 +223,38 @@ function time_ago($datetime)
 }
 
 // ---------------------------------------------------------------------
+// Small shared UI helpers (used across admin/provider/customer views)
+// ---------------------------------------------------------------------
+
+function status_badge($status)
+{
+    return '<span class="status-chip ' . e($status) . '">' . e(ucfirst($status)) . '</span>';
+}
+
+function require_field($value, $label, array &$errors)
+{
+    if (clean_input($value) === '') {
+        $errors[] = $label . ' is required.';
+        return false;
+    }
+    return true;
+}
+
+function paginate($conn, $countSql, $countParams, $page, $perPage = 20)
+{
+    $total = db_count($conn, $countSql, $countParams);
+    $totalPages = max(1, (int) ceil($total / $perPage));
+    $page = max(1, min($page, $totalPages));
+    return [
+        'total' => $total,
+        'total_pages' => $totalPages,
+        'page' => $page,
+        'offset' => ($page - 1) * $perPage,
+        'per_page' => $perPage,
+    ];
+}
+
+// ---------------------------------------------------------------------
 // File uploads
 // ---------------------------------------------------------------------
 
