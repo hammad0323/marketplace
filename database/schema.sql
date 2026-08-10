@@ -744,6 +744,18 @@ CREATE TABLE IF NOT EXISTS email_templates (
   is_active TINYINT(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS email_log (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  template_key VARCHAR(100) DEFAULT NULL,
+  to_email VARCHAR(150) NOT NULL,
+  subject VARCHAR(255) NOT NULL,
+  body_html LONGTEXT,
+  status ENUM('sent','failed','logged_only') NOT NULL DEFAULT 'logged_only',
+  error TEXT DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_email_log_to (to_email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS seo_settings (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   page_type VARCHAR(50) NOT NULL,
@@ -914,6 +926,15 @@ INSERT INTO settings (setting_key, setting_value, setting_group) VALUES
   ('smtp_encryption', 'tls', 'email'),
   ('smtp_from_name', 'Wanderly', 'email'),
   ('smtp_from_email', 'no-reply@wanderly.test', 'email');
+
+INSERT INTO email_templates (template_key, subject, body_html, is_active) VALUES
+  ('welcome_customer', 'Welcome to {site_name}, {name}!', '<p>Hi {name},</p><p>Welcome to {site_name} — start exploring destinations, save favorites, and plan your next trip.</p>', 1),
+  ('welcome_provider', 'Your {site_name} provider application was received', '<p>Hi {name},</p><p>Thanks for registering {business_name} on {site_name}. Our team will review your application shortly.</p>', 1),
+  ('provider_approved', 'You''re approved on {site_name}!', '<p>Hi {name},</p><p>Great news — {business_name} is now approved and live on {site_name}. You can start adding services right away.</p>', 1),
+  ('booking_created_customer', 'Booking request sent — {booking_ref}', '<p>Hi {name},</p><p>Your booking request for {service_title} ({booking_ref}) has been sent to the provider. We will notify you once it is confirmed.</p>', 1),
+  ('booking_created_provider', 'New booking request — {booking_ref}', '<p>Hi {name},</p><p>You have a new booking request for {service_title} ({booking_ref}). Log in to accept or decline it.</p>', 1),
+  ('booking_status_changed', 'Your booking is now {status} — {booking_ref}', '<p>Hi {name},</p><p>Your booking {booking_ref} for {service_title} is now <strong>{status}</strong>.</p>', 1),
+  ('new_message', 'New message on {site_name}', '<p>Hi {name},</p><p>You have a new message from {sender_name}. Log in to reply.</p>', 1);
 
 INSERT INTO pages (title, slug, content, is_active) VALUES
   ('About Us', 'about', '<p>Wanderly connects travelers with trusted hotels, transport, restaurants and experiences worldwide, and helps you plan the whole trip in one place.</p>', 1),

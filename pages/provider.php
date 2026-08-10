@@ -17,6 +17,18 @@ if (!$provider) {
     exit;
 }
 
+if (isset($_GET['message']) && $_GET['message'] === '1') {
+    if (!is_logged_in()) {
+        redirect('/customer/login.php?redirect=' . urlencode('/pages/provider.php?slug=' . $slug . '&message=1'));
+    }
+    if (current_user_role() !== 'customer') {
+        flash_set('danger', 'Only customer accounts can message providers.');
+        redirect('/pages/provider.php?slug=' . $slug);
+    }
+    $convId = find_or_create_conversation($conn, (int) current_user_id(), (int) $provider['id']);
+    redirect('/customer/messages.php?conversation_id=' . $convId);
+}
+
 db_execute($conn, 'UPDATE providers SET profile_views = profile_views + 1 WHERE id = ?', [(int) $provider['id']]);
 
 $badges = db_select($conn, 'SELECT pb.* FROM provider_badge_map pbm JOIN provider_badges pb ON pb.id = pbm.badge_id WHERE pbm.provider_id = ? AND pb.is_active = 1 ORDER BY pb.priority DESC', [(int) $provider['id']]);
@@ -64,9 +76,12 @@ require ROOT_PATH . '/includes/header.php';
           <i class="bi bi-star-fill" style="color:#F59E0B;"></i> <?php echo number_format((float) $provider['avg_rating'], 1); ?> (<?php echo (int) $provider['review_count']; ?> reviews)
         </div>
       </div>
-      <?php if ($provider['show_phone'] && $provider['phone']): ?>
-        <a href="tel:<?php echo e($provider['phone']); ?>" class="btn-w btn-primary"><i class="bi bi-telephone"></i> Contact</a>
-      <?php endif; ?>
+      <div style="display:flex;gap:10px;">
+        <a href="?slug=<?php echo e($slug); ?>&message=1" class="btn-w btn-outline"><i class="bi bi-chat-dots"></i> Message</a>
+        <?php if ($provider['show_phone'] && $provider['phone']): ?>
+          <a href="tel:<?php echo e($provider['phone']); ?>" class="btn-w btn-primary"><i class="bi bi-telephone"></i> Contact</a>
+        <?php endif; ?>
+      </div>
     </div>
 
     <div style="display:grid;grid-template-columns:2fr 1fr;gap:40px;align-items:start;">

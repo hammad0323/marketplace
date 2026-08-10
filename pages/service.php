@@ -73,18 +73,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form'] ?? '') === 'booking
         );
         mark_service_dates($conn, $service['id'], $dateFrom, $rangeEnd, 'reserved');
 
-        $providerUser = db_select_one($conn, 'SELECT user_id FROM providers WHERE id = ?', [(int) $service['provider_id']]);
+        $providerUser = db_select_one($conn, 'SELECT user_id, name, email FROM users u JOIN providers p ON p.user_id = u.id WHERE p.id = ?', [(int) $service['provider_id']]);
         if ($providerUser) {
             db_execute(
                 $conn,
                 'INSERT INTO notifications (user_id, type, title, message, link) VALUES (?, "booking_request", "New booking request", ?, "/provider/bookings.php")',
                 [(int) $providerUser['user_id'], $service['title'] . ' — ' . format_date($dateFrom)]
             );
+            send_email($conn, $providerUser['email'], $providerUser['name'], 'booking_created_provider', ['name' => $providerUser['name'], 'service_title' => $service['title'], 'booking_ref' => $bookingRef]);
         }
+        $bookingCustomer = current_user($conn);
+        send_email($conn, $bookingCustomer['email'], $bookingCustomer['name'], 'booking_created_customer', ['name' => $bookingCustomer['name'], 'service_title' => $service['title'], 'booking_ref' => $bookingRef]);
 
         flash_set('success', 'Booking request sent! Reference ' . $bookingRef . '. The provider will confirm shortly — track it from My Bookings.');
         redirect('/customer/bookings.php');
     }
+}
+
+if (isset($_GET['message']) && $_GET['message'] === '1') {
+    if (!is_logged_in()) {
+        redirect('/customer/login.php?redirect=' . urlencode('/pages/service.php?slug=' . $slug . '&message=1'));
+    }
+    if (current_user_role() !== 'customer') {
+        flash_set('danger', 'Only customer accounts can message providers.');
+        redirect('/pages/service.php?slug=' . $slug);
+    }
+    $convId = find_or_create_conversation($conn, (int) current_user_id(), (int) $service['provider_id'], (int) $service['id']);
+    redirect('/customer/messages.php?conversation_id=' . $convId);
 }
 
 db_execute($conn, 'UPDATE services SET view_count = view_count + 1 WHERE id = ?', [(int) $service['id']]);
@@ -249,6 +264,7 @@ require ROOT_PATH . '/includes/header.php';
             <button type="submit" class="btn-w btn-primary btn-block" style="margin-top:16px;"><i class="bi bi-calendar-check"></i> Request to book</button>
           </form>
           <p class="form-hint" style="text-align:center;margin-top:10px;">You won't be charged yet — the provider confirms first.</p>
+          <a href="?slug=<?php echo e($slug); ?>&message=1" class="btn-w btn-outline btn-block" style="margin-top:10px;"><i class="bi bi-chat-dots"></i> Message provider</a>
           <?php if ($service['show_phone'] && $service['provider_phone']): ?>
             <a href="tel:<?php echo e($service['provider_phone']); ?>" class="btn-w btn-outline btn-block" style="margin-top:10px;"><i class="bi bi-telephone"></i> Call provider</a>
           <?php endif; ?>

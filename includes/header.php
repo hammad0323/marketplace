@@ -15,6 +15,7 @@ $metaDescription = $metaDescription ?? get_setting($conn, 'site_tagline', 'Trip 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?php echo e($pageTitle); ?></title>
 <meta name="description" content="<?php echo e($metaDescription); ?>">
+<?php if (is_logged_in()): ?><meta name="csrf-token" content="<?php echo e(csrf_token()); ?>"><?php endif; ?>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2224%22 fill=%22%238B5CF6%22/><text x=%2250%25%22 y=%2262%25%22 font-size=%2255%22 fill=%22white%22 text-anchor=%22middle%22 font-family=%22Arial%22>W</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">

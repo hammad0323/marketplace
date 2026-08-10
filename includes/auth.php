@@ -150,6 +150,7 @@ function register_customer($conn, $name, $email, $phone, $password)
         return ['ok' => false, 'error' => 'Could not create your account. Please try again.'];
     }
     log_activity($conn, $userId, 'register', 'Customer account created');
+    send_email($conn, $email, clean_input($name), 'welcome_customer', ['name' => clean_input($name)]);
     return ['ok' => true, 'user_id' => $userId];
 }
 
@@ -200,6 +201,7 @@ function register_provider($conn, $data)
 
         mysqli_commit($conn);
         log_activity($conn, $userId, 'register', 'Provider account created, pending approval');
+        send_email($conn, $email, clean_input($data['name']), 'welcome_provider', ['name' => clean_input($data['name']), 'business_name' => clean_input($data['business_name'])]);
         return ['ok' => true, 'user_id' => $userId, 'provider_id' => $providerId];
     } catch (Exception $e) {
         mysqli_rollback($conn);

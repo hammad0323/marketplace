@@ -40,6 +40,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'INSERT INTO notifications (user_id, type, title, message, link) VALUES (?, "booking_status", ?, ?, "/customer/bookings.php")',
             [(int) $booking['customer_id'], $notifTitles[$newStatus][0], $notifTitles[$newStatus][1] . ' (' . $booking['booking_ref'] . ')']
         );
+        $customer = db_select_one($conn, 'SELECT name, email FROM users WHERE id = ?', [(int) $booking['customer_id']]);
+        $serviceTitle = db_select_one($conn, 'SELECT title FROM services WHERE id = ?', [(int) $booking['service_id']])['title'] ?? '';
+        if ($customer) {
+            send_email($conn, $customer['email'], $customer['name'], 'booking_status_changed', ['name' => $customer['name'], 'service_title' => $serviceTitle, 'booking_ref' => $booking['booking_ref'], 'status' => $newStatus]);
+        }
     }
 
     log_activity($conn, (int) $user['id'], 'booking_' . $newStatus, $booking['booking_ref']);

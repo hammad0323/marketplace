@@ -30,6 +30,16 @@ function nav_active($path, $current)
 
     <div class="navbar-actions">
       <?php if ($loggedInUser): ?>
+        <?php if ($loggedInUser['role_slug'] !== 'admin'): ?>
+          <a href="/<?php echo e($loggedInUser['role_slug']); ?>/messages.php" class="btn-w btn-ghost btn-sm" style="padding:9px;" title="Messages"><i class="bi bi-chat-dots" style="font-size:16px;"></i></a>
+        <?php endif; ?>
+        <div style="position:relative;">
+          <button class="btn-w btn-ghost btn-sm" id="notif-bell" style="padding:9px;position:relative;" title="Notifications">
+            <i class="bi bi-bell" style="font-size:16px;"></i>
+            <span id="notif-count" style="display:none;position:absolute;top:2px;right:2px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;border-radius:999px;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;"></span>
+          </button>
+          <div class="user-menu" id="notif-panel" style="width:320px;right:0;"></div>
+        </div>
         <div style="position:relative;">
           <div class="user-chip">
             <span class="avatar-dot"><?php echo e(strtoupper(substr($loggedInUser['name'], 0, 1))); ?></span>

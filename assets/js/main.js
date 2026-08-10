@@ -133,6 +133,57 @@
       });
   });
 
+  // ---- Notification bell -----------------------------------------------
+  var $bell = $('#notif-bell');
+  var $notifPanel = $('#notif-panel');
+  var notifCsrf = null;
+
+  function renderNotifications(data) {
+    var $count = $('#notif-count');
+    if (data.unread > 0) {
+      $count.text(data.unread > 9 ? '9+' : data.unread).show();
+    } else {
+      $count.hide();
+    }
+    if (!data.items || !data.items.length) {
+      $notifPanel.html('<div style="padding:24px;text-align:center;color:var(--ink-mute);font-size:13.5px;">No notifications yet</div>');
+      return;
+    }
+    var html = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);"><strong style="font-size:13px;">Notifications</strong><button id="notif-mark-all" style="border:none;background:none;color:var(--purple-600);font-size:12px;font-weight:600;cursor:pointer;">Mark all read</button></div>';
+    data.items.forEach(function (n) {
+      html += '<a href="' + (n.link || '#') + '" data-id="' + n.id + '" class="notif-item" style="display:block;padding:10px 12px;border-bottom:1px solid var(--border);' + (n.is_read == 0 ? 'background:var(--purple-50);' : '') + '">'
+        + '<div style="font-weight:700;font-size:13px;">' + n.title + '</div>'
+        + '<div style="font-size:12.5px;color:var(--ink-mute);margin-top:2px;">' + (n.message || '') + '</div>'
+        + '<div style="font-size:11px;color:var(--ink-mute);margin-top:4px;">' + n.time_ago + '</div></a>';
+    });
+    $notifPanel.html(html);
+  }
+
+  function loadNotifications() {
+    if (!$bell.length) return;
+    $.get('/ajax/notifications.php').done(function (data) {
+      if (data && data.ok) renderNotifications(data);
+    });
+  }
+
+  if ($bell.length) {
+    loadNotifications();
+    setInterval(loadNotifications, 30000);
+    $bell.on('click', function (e) {
+      e.stopPropagation();
+      $notifPanel.toggleClass('open');
+    });
+    $(document).on('click', '#notif-mark-all', function (e) {
+      e.preventDefault();
+      $.post('/ajax/notifications.php', { action: 'mark_all_read', csrf_token: $('meta[name=csrf-token]').attr('content') });
+      $('.notif-item').css('background', 'none');
+      $('#notif-count').hide();
+    });
+    $(document).on('click', '.notif-item', function () {
+      $.post('/ajax/notifications.php', { action: 'mark_read', id: $(this).data('id'), csrf_token: $('meta[name=csrf-token]').attr('content') });
+    });
+  }
+
   // ---- Toasts ---------------------------------------------------------
   window.showToast = function (message, type) {
     type = type || 'default';

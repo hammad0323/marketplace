@@ -31,9 +31,9 @@ $adminNav = [
         ['key' => 'cms', 'label' => 'Homepage CMS', 'icon' => 'bi-layout-text-window', 'href' => '#', 'ready' => false],
     ]],
     ['group' => 'System', 'items' => [
-        ['key' => 'settings', 'label' => 'Settings', 'icon' => 'bi-gear', 'href' => '#', 'ready' => false],
+        ['key' => 'settings', 'label' => 'Settings', 'icon' => 'bi-gear', 'href' => '/admin/settings.php', 'ready' => true],
         ['key' => 'seo', 'label' => 'SEO', 'icon' => 'bi-search', 'href' => '#', 'ready' => false],
-        ['key' => 'emails', 'label' => 'Email Templates', 'icon' => 'bi-envelope', 'href' => '#', 'ready' => false],
+        ['key' => 'emails', 'label' => 'Email Templates', 'icon' => 'bi-envelope', 'href' => '/admin/emails.php', 'ready' => true],
         ['key' => 'logs', 'label' => 'Activity Logs', 'icon' => 'bi-clock-history', 'href' => '#', 'ready' => false],
     ]],
 ];
