@@ -36,7 +36,7 @@ require ROOT_PATH . '/includes/header.php';
     <form class="search-card reveal in-view" action="/pages/search.php" method="get">
       <div class="search-field">
         <label>Where to</label>
-        <input type="text" name="destination" placeholder="City, region or landmark" autocomplete="off">
+        <input type="text" name="destination" placeholder="City, region or landmark" autocomplete="off" data-autocomplete>
       </div>
       <div class="search-field">
         <label>Category</label>
@@ -200,4 +200,5 @@ require ROOT_PATH . '/includes/header.php';
   </div>
 </section>
 
+<?php $extraJs = '<script src="' . ASSETS_URL . '/js/search.js"></script>'; ?>
 <?php require ROOT_PATH . '/includes/footer.php'; ?>

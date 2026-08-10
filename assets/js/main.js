@@ -155,10 +155,16 @@
       $btn.prop('disabled', true).text('Detecting your location…');
       navigator.geolocation.getCurrentPosition(
         function (pos) {
-          var params = new URLSearchParams(window.location.search);
+          var onSearchPage = window.location.pathname.indexOf('/pages/search.php') !== -1;
+          var params = new URLSearchParams(onSearchPage ? window.location.search : '');
           params.set('lat', pos.coords.latitude.toFixed(6));
           params.set('lng', pos.coords.longitude.toFixed(6));
-          window.location.search = params.toString();
+          params.set('sort', 'distance');
+          if (onSearchPage) {
+            window.location.search = params.toString();
+          } else {
+            window.location.href = '/pages/search.php?' + params.toString();
+          }
         },
         function () {
           $btn.prop('disabled', false).text('Use my location');
