@@ -101,6 +101,38 @@
     });
   }
 
+  // ---- AJAX favorites ---------------------------------------------------
+  $(document).on('click', '.fav-btn', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var $btn = $(this);
+    var type = $btn.data('fav-type');
+    var id = $btn.data('fav-id');
+    var token = $btn.data('csrf');
+    if (!type || !id) return;
+
+    if (!token) {
+      window.location.href = '/customer/login.php?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+      return;
+    }
+
+    $.post('/ajax/favorite.php', { type: type, id: id, csrf_token: token })
+      .done(function (res) {
+        if (res && res.ok) {
+          $btn.toggleClass('is-fav', res.favorited);
+          $btn.find('i').toggleClass('bi-heart', !res.favorited).toggleClass('bi-heart-fill', res.favorited);
+          showToast(res.favorited ? 'Saved to favorites' : 'Removed from favorites', 'success');
+        }
+      })
+      .fail(function (xhr) {
+        if (xhr.status === 401) {
+          window.location.href = '/customer/login.php?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+        } else {
+          showToast('Something went wrong. Please try again.', 'danger');
+        }
+      });
+  });
+
   // ---- Toasts ---------------------------------------------------------
   window.showToast = function (message, type) {
     type = type || 'default';

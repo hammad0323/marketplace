@@ -46,10 +46,17 @@ require ROOT_PATH . '/includes/header.php';
         <div class="stat-card"><div class="icon-wrap"><i class="bi bi-star"></i></div><div class="value"><?php echo number_format((float) $provider['avg_rating'], 1); ?></div><div class="label">Average rating</div></div>
       </div>
 
+      <?php if ($provider['status'] === 'approved'): ?>
+        <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;">
+          <a href="/provider/services.php" class="btn-w btn-primary"><i class="bi bi-list-ul"></i> Manage services</a>
+          <a href="/pages/provider.php?slug=<?php echo e($provider['slug']); ?>" class="btn-w btn-outline" target="_blank"><i class="bi bi-box-arrow-up-right"></i> View public profile</a>
+        </div>
+      <?php endif; ?>
+
       <div class="roadmap-card" style="margin-top:24px;">
         <div class="icon-wrap"><i class="bi bi-cone-striped"></i></div>
         <div>
-          <strong>Service management, calendar and reservations arrive in Phases 3, 5 and 6.</strong>
+          <strong>Calendar and reservation workflow arrive in Phase 5.</strong>
           <div style="font-size:13.5px;color:var(--ink-mute);">Your profile (<?php echo e($provider['category_name'] ?? '—'); ?> · <?php echo e($provider['city_name'] ?? '—'); ?>) is live in the database and ready for those modules.</div>
         </div>
       </div>

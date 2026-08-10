@@ -12,6 +12,14 @@ if (!$city) {
 
 $serviceCount = db_count($conn, 'SELECT COUNT(*) FROM services WHERE city_id = ? AND status = "approved"', [(int) $city['id']]);
 $providerCount = db_count($conn, 'SELECT COUNT(*) FROM providers WHERE city_id = ? AND status = "approved"', [(int) $city['id']]);
+$services = db_select(
+    $conn,
+    'SELECT s.*, cat.name AS category_name, cat.icon AS category_icon,
+        (SELECT image_path FROM service_images si WHERE si.service_id = s.id ORDER BY is_cover DESC LIMIT 1) AS cover
+     FROM services s LEFT JOIN categories cat ON cat.id = s.category_id
+     WHERE s.city_id = ? AND s.status = "approved" ORDER BY s.is_featured DESC, s.avg_rating DESC LIMIT 24',
+    [(int) $city['id']]
+);
 
 $pageTitle = $city['name'];
 $metaDescription = $city['seo_description'] ?: $city['description'];
@@ -40,11 +48,31 @@ require ROOT_PATH . '/includes/header.php';
       </div>
     </div>
 
-    <?php if ($serviceCount === 0): ?>
+    <?php if ($services): ?>
+      <div class="provider-grid stagger reveal in-view" style="margin-top:32px;">
+        <?php foreach ($services as $svc): ?>
+          <div class="service-card">
+            <div class="thumb">
+              <?php if ($svc['is_featured']): ?><span class="badge-pill"><i class="bi bi-star-fill"></i> Featured</span><?php endif; ?>
+              <?php echo render_fav_button($conn, 'service', $svc['id']); ?>
+              <a href="/pages/service.php?slug=<?php echo e($svc['slug']); ?>"><?php if ($svc['cover']): ?><img src="<?php echo e($svc['cover']); ?>" alt="<?php echo e($svc['title']); ?>"><?php endif; ?></a>
+            </div>
+            <a href="/pages/service.php?slug=<?php echo e($svc['slug']); ?>" class="card-body" style="display:block;">
+              <div class="card-meta"><i class="bi <?php echo e($svc['category_icon'] ?: 'bi-tag'); ?>"></i> <?php echo e($svc['category_name']); ?></div>
+              <div class="card-title"><?php echo e($svc['title']); ?></div>
+              <div class="card-footer-row">
+                <div class="price-tag"><?php echo format_price($svc['price']); ?> <span>/ <?php echo e($svc['price_unit']); ?></span></div>
+                <div class="card-rating"><i class="bi bi-star-fill"></i> <?php echo number_format((float) $svc['avg_rating'], 1); ?></div>
+              </div>
+            </a>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php else: ?>
       <div class="empty-state">
         <div class="icon-wrap"><i class="bi bi-signpost-2"></i></div>
         <h4>No services listed in <?php echo e($city['name']); ?> yet</h4>
-        <p>Category browsing, search and filters for this city land in Phase 3–4 of the build. Providers can already register — approved listings will appear here automatically.</p>
+        <p>Providers can already register — approved listings will appear here automatically.</p>
         <a href="/provider/register.php" class="btn-w btn-primary">List a service in <?php echo e($city['name']); ?></a>
       </div>
     <?php endif; ?>

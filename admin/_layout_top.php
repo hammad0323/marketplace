@@ -17,7 +17,7 @@ $adminNav = [
         ['key' => 'customers', 'label' => 'Customers', 'icon' => 'bi-people', 'href' => '/admin/customers.php', 'ready' => true],
         ['key' => 'categories', 'label' => 'Categories', 'icon' => 'bi-grid', 'href' => '/admin/categories.php', 'ready' => true],
         ['key' => 'cities', 'label' => 'Cities', 'icon' => 'bi-geo-alt', 'href' => '/admin/cities.php', 'ready' => true],
-        ['key' => 'services', 'label' => 'Services', 'icon' => 'bi-list-ul', 'href' => '#', 'ready' => false],
+        ['key' => 'services', 'label' => 'Services', 'icon' => 'bi-list-ul', 'href' => '/admin/services.php', 'ready' => true],
     ]],
     ['group' => 'Bookings & Finance', 'items' => [
         ['key' => 'bookings', 'label' => 'Bookings', 'icon' => 'bi-calendar-check', 'href' => '#', 'ready' => false],

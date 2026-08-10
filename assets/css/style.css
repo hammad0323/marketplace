@@ -488,6 +488,7 @@ button { font-family: inherit; }
   transition: transform 0.15s ease, color 0.15s ease;
 }
 .fav-btn:hover { transform: scale(1.12); color: #EF4444; }
+.fav-btn.is-fav { color: #EF4444; }
 .badge-pill {
   position: absolute; top: 12px; left: 12px; z-index: 3;
   background: var(--gradient-purple); color: #fff;

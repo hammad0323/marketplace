@@ -131,7 +131,7 @@ require ROOT_PATH . '/includes/header.php';
     <?php if ($featuredProviders): ?>
       <div class="provider-grid stagger reveal">
         <?php foreach ($featuredProviders as $p): ?>
-          <div class="provider-card">
+          <a class="provider-card" href="/pages/provider.php?slug=<?php echo e($p['slug']); ?>">
             <div class="thumb">
               <?php if ($p['is_verified']): ?><span class="badge-pill"><i class="bi bi-patch-check-fill"></i> Verified</span><?php endif; ?>
               <?php if (!empty($p['cover_image'])): ?><img src="<?php echo e($p['cover_image']); ?>" alt="<?php echo e($p['business_name']); ?>"><?php endif; ?>
@@ -143,7 +143,7 @@ require ROOT_PATH . '/includes/header.php';
                 <div class="card-rating"><i class="bi bi-star-fill"></i> <?php echo number_format((float) $p['avg_rating'], 1); ?> <span style="color:var(--ink-mute);font-weight:500;">(<?php echo (int) $p['review_count']; ?>)</span></div>
               </div>
             </div>
-          </div>
+          </a>
         <?php endforeach; ?>
       </div>
     <?php else: ?>

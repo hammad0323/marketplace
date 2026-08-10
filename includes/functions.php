@@ -240,6 +240,45 @@ function require_field($value, $label, array &$errors)
     return true;
 }
 
+/**
+ * Renders a Leaflet/OpenStreetMap embed. Requires leaflet.css/js to already
+ * be loaded on the page (set $extraCss/$extraJs before including header.php).
+ * No API key needed — this is the default "maps_provider" setting.
+ */
+function render_leaflet_map($lat, $lng, $popup = '', $height = '320px')
+{
+    if ($lat === null || $lng === null || $lat === '' || $lng === '') {
+        return '<div class="empty-state" style="padding:32px;"><div class="icon-wrap"><i class="bi bi-map"></i></div><h4>No map location set</h4></div>';
+    }
+    $mapId = 'map_' . bin2hex(random_bytes(4));
+    $lat = (float) $lat;
+    $lng = (float) $lng;
+    $popupJson = json_encode($popup, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT);
+    return <<<HTML
+<div id="{$mapId}" style="height:{$height};border-radius:var(--radius-md);overflow:hidden;border:1px solid var(--border);"></div>
+<script>
+(function() {
+  var map = L.map('{$mapId}', { scrollWheelZoom: false }).setView([{$lat}, {$lng}], 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+  L.marker([{$lat}, {$lng}]).addTo(map).bindPopup({$popupJson});
+})();
+</script>
+HTML;
+}
+
+function render_fav_button($conn, $type, $id)
+{
+    $isFav = false;
+    if (is_logged_in()) {
+        $isFav = (bool) db_select_one($conn, 'SELECT id FROM favorites WHERE user_id = ? AND favoritable_type = ? AND favoritable_id = ?', [(int) current_user_id(), $type, (int) $id]);
+    }
+    $csrf = is_logged_in() ? csrf_token() : '';
+    return '<button class="fav-btn' . ($isFav ? ' is-fav' : '') . '" type="button" data-fav-type="' . e($type) . '" data-fav-id="' . (int) $id . '" data-csrf="' . e($csrf) . '">'
+        . '<i class="bi bi-heart' . ($isFav ? '-fill' : '') . '"></i></button>';
+}
+
 function paginate($conn, $countSql, $countParams, $page, $perPage = 20)
 {
     $total = db_count($conn, $countSql, $countParams);

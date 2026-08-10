@@ -22,7 +22,8 @@ if ($guests > 0) {
     $params[] = $guests;
 }
 
-$sql = 'SELECT s.*, c.name AS city_name, cat.name AS category_name, cat.icon AS category_icon
+$sql = 'SELECT s.*, c.name AS city_name, cat.name AS category_name, cat.icon AS category_icon,
+        (SELECT image_path FROM service_images si WHERE si.service_id = s.id ORDER BY is_cover DESC LIMIT 1) AS cover
         FROM services s
         LEFT JOIN cities c ON c.id = s.city_id
         LEFT JOIN categories cat ON cat.id = s.category_id
@@ -50,9 +51,10 @@ require ROOT_PATH . '/includes/header.php';
           <div class="service-card">
             <div class="thumb">
               <?php if ($svc['is_featured']): ?><span class="badge-pill"><i class="bi bi-star-fill"></i> Featured</span><?php endif; ?>
-              <button class="fav-btn" type="button"><i class="bi bi-heart"></i></button>
+              <?php echo render_fav_button($conn, 'service', $svc['id']); ?>
+              <a href="/pages/service.php?slug=<?php echo e($svc['slug']); ?>"><?php if ($svc['cover']): ?><img src="<?php echo e($svc['cover']); ?>" alt="<?php echo e($svc['title']); ?>"><?php endif; ?></a>
             </div>
-            <div class="card-body">
+            <a href="/pages/service.php?slug=<?php echo e($svc['slug']); ?>" class="card-body" style="display:block;">
               <div class="card-meta"><i class="bi <?php echo e($svc['category_icon'] ?: 'bi-tag'); ?>"></i> <?php echo e($svc['category_name']); ?></div>
               <div class="card-title"><?php echo e($svc['title']); ?></div>
               <div class="card-meta"><i class="bi bi-geo-alt"></i> <?php echo e($svc['city_name'] ?? ''); ?></div>
@@ -60,7 +62,7 @@ require ROOT_PATH . '/includes/header.php';
                 <div class="price-tag"><?php echo format_price($svc['price']); ?> <span>/ <?php echo e($svc['price_unit']); ?></span></div>
                 <div class="card-rating"><i class="bi bi-star-fill"></i> <?php echo number_format((float) $svc['avg_rating'], 1); ?></div>
               </div>
-            </div>
+            </a>
           </div>
         <?php endforeach; ?>
       </div>
