@@ -20,7 +20,7 @@ $adminNav = [
         ['key' => 'services', 'label' => 'Services', 'icon' => 'bi-list-ul', 'href' => '/admin/services.php', 'ready' => true],
     ]],
     ['group' => 'Bookings & Finance', 'items' => [
-        ['key' => 'bookings', 'label' => 'Bookings', 'icon' => 'bi-calendar-check', 'href' => '#', 'ready' => false],
+        ['key' => 'bookings', 'label' => 'Bookings', 'icon' => 'bi-calendar-check', 'href' => '/admin/bookings.php', 'ready' => true],
         ['key' => 'payments', 'label' => 'Payments', 'icon' => 'bi-credit-card', 'href' => '#', 'ready' => false],
         ['key' => 'memberships', 'label' => 'Memberships', 'icon' => 'bi-award', 'href' => '#', 'ready' => false],
     ]],

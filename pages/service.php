@@ -20,12 +20,71 @@ if (!$service) {
     exit;
 }
 
-if (isset($_GET['intent']) && $_GET['intent'] === 'book') {
+$bookingErrors = [];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form'] ?? '') === 'booking') {
     if (!is_logged_in()) {
-        redirect('/customer/login.php?redirect=' . urlencode('/pages/service.php?slug=' . $slug . '&intent=book'));
+        redirect('/customer/login.php?redirect=' . urlencode('/pages/service.php?slug=' . $slug));
     }
-    flash_set('info', 'Instant booking launches in Phase 5 of the build — the provider\'s availability and your reservation will appear right here once it ships.');
-    redirect('/pages/service.php?slug=' . $slug);
+    verify_csrf();
+
+    if (current_user_role() !== 'customer') {
+        $bookingErrors[] = 'Only customer accounts can make reservations.';
+    }
+
+    $units = booking_units_from_request($service, $_POST);
+    if ($units === null) {
+        $bookingErrors[] = 'Please fill in the required date/time fields.';
+    }
+
+    $unit = $service['price_unit'];
+    $dateFrom = clean_input($_POST['date_from'] ?? '');
+    $dateTo = in_array($unit, ['night', 'day'], true) ? clean_input($_POST['date_to'] ?? '') : $dateFrom;
+    $startTime = $unit === 'hour' ? clean_input($_POST['start_time'] ?? '') : null;
+    $endTime = $unit === 'hour' ? clean_input($_POST['end_time'] ?? '') : null;
+    $guests = max(1, (int) ($_POST['guests'] ?? 1));
+    if ($service['max_guests'] && $guests > (int) $service['max_guests']) {
+        $bookingErrors[] = 'This listing accepts a maximum of ' . (int) $service['max_guests'] . ' guests.';
+    }
+
+    if (!$bookingErrors && $dateFrom < date('Y-m-d')) {
+        $bookingErrors[] = 'The selected date is in the past.';
+    }
+
+    if (!$bookingErrors) {
+        $rangeEnd = in_array($unit, ['night', 'day'], true) ? $dateTo : date('Y-m-d', strtotime($dateFrom . ' +1 day'));
+        if (!service_is_available_range($conn, $service['id'], $dateFrom, $rangeEnd)) {
+            $bookingErrors[] = 'Sorry, this listing is not available for the dates you selected. Please choose different dates.';
+        }
+    }
+
+    if (!$bookingErrors) {
+        $breakdown = calculate_booking_price($conn, $service, $units);
+        $bookingRef = generate_booking_ref();
+        $bookingId = db_insert_get_id(
+            $conn,
+            'INSERT INTO bookings (booking_ref, service_id, customer_id, provider_id, date_from, date_to, start_time, end_time, guests, quantity, base_price, tax_amount, service_fee, commission_amount, total_amount, status)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, "pending")',
+            [
+                $bookingRef, (int) $service['id'], (int) current_user_id(), (int) $service['provider_id'],
+                $dateFrom, $dateTo ?: null, $startTime, $endTime, $guests, (int) $breakdown['units'],
+                $breakdown['base'], $breakdown['tax'], $breakdown['fee'], $breakdown['commission'], $breakdown['total'],
+            ]
+        );
+        mark_service_dates($conn, $service['id'], $dateFrom, $rangeEnd, 'reserved');
+
+        $providerUser = db_select_one($conn, 'SELECT user_id FROM providers WHERE id = ?', [(int) $service['provider_id']]);
+        if ($providerUser) {
+            db_execute(
+                $conn,
+                'INSERT INTO notifications (user_id, type, title, message, link) VALUES (?, "booking_request", "New booking request", ?, "/provider/bookings.php")',
+                [(int) $providerUser['user_id'], $service['title'] . ' — ' . format_date($dateFrom)]
+            );
+        }
+
+        flash_set('success', 'Booking request sent! Reference ' . $bookingRef . '. The provider will confirm shortly — track it from My Bookings.');
+        redirect('/customer/bookings.php');
+    }
 }
 
 db_execute($conn, 'UPDATE services SET view_count = view_count + 1 WHERE id = ?', [(int) $service['id']]);
@@ -39,7 +98,7 @@ $similar = db_select($conn, 'SELECT * FROM services WHERE category_id = ? AND id
 $pageTitle = $service['title'];
 $metaDescription = $service['short_description'] ?: mb_substr(strip_tags((string) $service['description']), 0, 160);
 $extraCss = '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">';
-$extraJs = '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>';
+$extraJs = '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="' . ASSETS_URL . '/js/booking.js"></script>';
 require ROOT_PATH . '/includes/header.php';
 ?>
 <div class="section-tight">
@@ -143,10 +202,53 @@ require ROOT_PATH . '/includes/header.php';
       </div>
 
       <div style="position:sticky;top:96px;">
-        <div class="panel">
+        <div class="panel" id="booking-widget" data-service-id="<?php echo (int) $service['id']; ?>" data-unit="<?php echo e($service['price_unit']); ?>">
           <div class="price-tag" style="font-size:24px;"><?php echo format_price($service['price']); ?> <span style="font-size:14px;">/ <?php echo e($service['price_unit']); ?></span></div>
-          <a href="?slug=<?php echo e($slug); ?>&intent=book" class="btn-w btn-primary btn-block" style="margin-top:16px;"><i class="bi bi-calendar-check"></i> Check availability</a>
-          <p class="form-hint" style="text-align:center;margin-top:10px;">You won't be charged yet.</p>
+
+          <?php foreach ($bookingErrors as $err): ?>
+            <div class="alert-w alert-danger" style="margin-top:14px;"><i class="bi bi-exclamation-triangle-fill"></i> <?php echo e($err); ?></div>
+          <?php endforeach; ?>
+
+          <form method="post" id="booking-form" style="margin-top:16px;">
+            <?php echo csrf_field(); ?>
+            <input type="hidden" name="form" value="booking">
+
+            <?php if (in_array($service['price_unit'], ['night', 'day'], true)): ?>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div><label style="font-size:12px;font-weight:700;">Check-in</label><input type="date" name="date_from" id="bk-date-from" min="<?php echo date('Y-m-d'); ?>" required style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--border);"></div>
+                <div><label style="font-size:12px;font-weight:700;">Check-out</label><input type="date" name="date_to" id="bk-date-to" min="<?php echo date('Y-m-d', strtotime('+1 day')); ?>" required style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--border);"></div>
+              </div>
+            <?php elseif ($service['price_unit'] === 'hour'): ?>
+              <label style="font-size:12px;font-weight:700;">Date</label>
+              <input type="date" name="date_from" min="<?php echo date('Y-m-d'); ?>" required style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--border);">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+                <div><label style="font-size:12px;font-weight:700;">Start</label><input type="time" name="start_time" required style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--border);"></div>
+                <div><label style="font-size:12px;font-weight:700;">End</label><input type="time" name="end_time" required style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--border);"></div>
+              </div>
+            <?php else: ?>
+              <label style="font-size:12px;font-weight:700;">Date</label>
+              <input type="date" name="date_from" min="<?php echo date('Y-m-d'); ?>" required style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--border);">
+              <?php if ($service['price_unit'] === 'fixed'): ?>
+                <label style="font-size:12px;font-weight:700;margin-top:10px;">Quantity</label>
+                <input type="number" name="quantity" min="1" value="1" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--border);">
+              <?php endif; ?>
+            <?php endif; ?>
+
+            <?php if ($service['max_guests'] || $service['price_unit'] === 'person'): ?>
+              <label style="font-size:12px;font-weight:700;margin-top:10px;">Guests</label>
+              <input type="number" name="guests" min="1" <?php echo $service['max_guests'] ? 'max="' . (int) $service['max_guests'] . '"' : ''; ?> value="1" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--border);">
+            <?php endif; ?>
+
+            <div id="price-preview" style="margin-top:16px;font-size:13.5px;color:var(--ink-mute);display:none;">
+              <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Subtotal</span><strong id="pv-base" style="color:var(--ink);">-</strong></div>
+              <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Service fee</span><strong id="pv-fee" style="color:var(--ink);">-</strong></div>
+              <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Tax</span><strong id="pv-tax" style="color:var(--ink);">-</strong></div>
+              <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--border);margin-top:4px;font-size:15px;"><span style="color:var(--ink);font-weight:700;">Total</span><strong id="pv-total" style="color:var(--purple-600);">-</strong></div>
+            </div>
+
+            <button type="submit" class="btn-w btn-primary btn-block" style="margin-top:16px;"><i class="bi bi-calendar-check"></i> Request to book</button>
+          </form>
+          <p class="form-hint" style="text-align:center;margin-top:10px;">You won't be charged yet — the provider confirms first.</p>
           <?php if ($service['show_phone'] && $service['provider_phone']): ?>
             <a href="tel:<?php echo e($service['provider_phone']); ?>" class="btn-w btn-outline btn-block" style="margin-top:10px;"><i class="bi bi-telephone"></i> Call provider</a>
           <?php endif; ?>

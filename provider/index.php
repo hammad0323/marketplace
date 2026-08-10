@@ -49,6 +49,8 @@ require ROOT_PATH . '/includes/header.php';
       <?php if ($provider['status'] === 'approved'): ?>
         <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;">
           <a href="/provider/services.php" class="btn-w btn-primary"><i class="bi bi-list-ul"></i> Manage services</a>
+          <a href="/provider/bookings.php" class="btn-w btn-outline"><i class="bi bi-calendar-check"></i> Bookings</a>
+          <a href="/provider/availability.php" class="btn-w btn-outline"><i class="bi bi-calendar-week"></i> Availability</a>
           <a href="/pages/provider.php?slug=<?php echo e($provider['slug']); ?>" class="btn-w btn-outline" target="_blank"><i class="bi bi-box-arrow-up-right"></i> View public profile</a>
         </div>
       <?php endif; ?>
@@ -56,7 +58,7 @@ require ROOT_PATH . '/includes/header.php';
       <div class="roadmap-card" style="margin-top:24px;">
         <div class="icon-wrap"><i class="bi bi-cone-striped"></i></div>
         <div>
-          <strong>Calendar and reservation workflow arrive in Phase 5.</strong>
+          <strong>Messaging, reviews and analytics arrive in later phases.</strong>
           <div style="font-size:13.5px;color:var(--ink-mute);">Your profile (<?php echo e($provider['category_name'] ?? '—'); ?> · <?php echo e($provider['city_name'] ?? '—'); ?>) is live in the database and ready for those modules.</div>
         </div>
       </div>

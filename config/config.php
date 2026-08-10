@@ -36,3 +36,4 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 require_once __DIR__ . '/database.php';
 require_once ROOT_PATH . '/includes/functions.php';
 require_once ROOT_PATH . '/includes/auth.php';
+require_once ROOT_PATH . '/includes/booking-functions.php';
