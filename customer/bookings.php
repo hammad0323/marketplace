@@ -33,7 +33,8 @@ if ($statusFilter !== '') {
 
 $bookings = db_select(
     $conn,
-    'SELECT b.*, s.title AS service_title, s.slug AS service_slug, p.business_name
+    'SELECT b.*, s.title AS service_title, s.slug AS service_slug, p.business_name,
+        (SELECT id FROM reviews r WHERE r.booking_id = b.id) AS review_id
      FROM bookings b JOIN services s ON s.id = b.service_id JOIN providers p ON p.id = b.provider_id
      WHERE ' . implode(' AND ', $where) . ' ORDER BY b.created_at DESC',
     $params
@@ -70,6 +71,9 @@ require ROOT_PATH . '/includes/header.php';
                   <input type="hidden" name="booking_id" value="<?php echo (int) $b['id']; ?>">
                   <button type="submit" class="btn-w btn-outline btn-sm">Cancel</button>
                 </form>
+              <?php endif; ?>
+              <?php if ($b['status'] === 'completed' && !$b['review_id']): ?>
+                <a href="/customer/review-form.php?booking_id=<?php echo (int) $b['id']; ?>" class="btn-w btn-primary btn-sm"><i class="bi bi-star"></i> Review</a>
               <?php endif; ?>
             </div>
           </div>

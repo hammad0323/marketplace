@@ -9,6 +9,7 @@ $tabs = [
     'bookings' => ['label' => 'Bookings', 'href' => '/provider/bookings.php', 'icon' => 'bi-calendar-check'],
     'availability' => ['label' => 'Availability', 'href' => '/provider/availability.php', 'icon' => 'bi-calendar-week'],
     'analytics' => ['label' => 'Analytics', 'href' => '/provider/analytics.php', 'icon' => 'bi-graph-up'],
+    'reviews' => ['label' => 'Reviews', 'href' => '/provider/reviews.php', 'icon' => 'bi-star'],
     'profile' => ['label' => 'Profile', 'href' => '/provider/profile.php', 'icon' => 'bi-person'],
 ];
 ?>

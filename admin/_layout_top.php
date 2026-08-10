@@ -26,7 +26,7 @@ $adminNav = [
     ]],
     ['group' => 'Content', 'items' => [
         ['key' => 'trips', 'label' => 'Trip Planner', 'icon' => 'bi-map', 'href' => '#', 'ready' => false],
-        ['key' => 'reviews', 'label' => 'Reviews', 'icon' => 'bi-star', 'href' => '#', 'ready' => false],
+        ['key' => 'reviews', 'label' => 'Reviews', 'icon' => 'bi-star', 'href' => '/admin/reviews.php', 'ready' => true],
         ['key' => 'blog', 'label' => 'Blog & Guides', 'icon' => 'bi-journal-text', 'href' => '#', 'ready' => false],
         ['key' => 'cms', 'label' => 'Homepage CMS', 'icon' => 'bi-layout-text-window', 'href' => '#', 'ready' => false],
     ]],

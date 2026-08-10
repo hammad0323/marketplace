@@ -121,6 +121,12 @@ require ROOT_PATH . '/includes/header.php';
               <div style="border-bottom:1px solid var(--border);padding:14px 0;">
                 <div style="display:flex;justify-content:space-between;"><strong style="font-size:14px;"><?php echo e($r['customer_name']); ?></strong><span class="card-rating"><i class="bi bi-star-fill"></i> <?php echo (int) $r['rating']; ?></span></div>
                 <p style="color:var(--ink-mute);font-size:13.5px;margin-top:4px;"><?php echo e($r['review_text']); ?></p>
+                <?php if ($r['provider_response']): ?>
+                  <div style="background:var(--purple-50);border-radius:10px;padding:10px 14px;margin-top:8px;">
+                    <strong style="font-size:11.5px;color:var(--purple-600);">Response from <?php echo e($provider['business_name']); ?></strong>
+                    <p style="font-size:13px;margin-top:3px;"><?php echo e($r['provider_response']); ?></p>
+                  </div>
+                <?php endif; ?>
               </div>
             <?php endforeach; ?>
           <?php else: ?>

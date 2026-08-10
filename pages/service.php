@@ -208,10 +208,16 @@ require ROOT_PATH . '/includes/header.php';
                 </div>
                 <?php if ($r['title']): ?><div style="font-weight:600;font-size:14px;margin-top:4px;"><?php echo e($r['title']); ?></div><?php endif; ?>
                 <p style="color:var(--ink-mute);font-size:13.5px;margin-top:4px;"><?php echo e($r['review_text']); ?></p>
+                <?php if ($r['provider_response']): ?>
+                  <div style="background:var(--purple-50);border-radius:10px;padding:10px 14px;margin-top:8px;">
+                    <strong style="font-size:11.5px;color:var(--purple-600);">Response from <?php echo e($service['business_name']); ?></strong>
+                    <p style="font-size:13px;margin-top:3px;"><?php echo e($r['provider_response']); ?></p>
+                  </div>
+                <?php endif; ?>
               </div>
             <?php endforeach; ?>
           <?php else: ?>
-            <div class="empty-state" style="padding:24px;"><div class="icon-wrap"><i class="bi bi-star"></i></div><h4>No reviews yet</h4><p>Reviews open up once the booking &amp; review modules ship.</p></div>
+            <div class="empty-state" style="padding:24px;"><div class="icon-wrap"><i class="bi bi-star"></i></div><h4>No reviews yet</h4><p>Be the first to book and share your experience.</p></div>
           <?php endif; ?>
         </div>
       </div>
