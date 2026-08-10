@@ -35,6 +35,7 @@ $footerCategories = db_select($conn, 'SELECT name, slug FROM categories WHERE is
       <div class="footer-col">
         <h6>Company</h6>
         <a href="/pages/page.php?slug=about">About Us</a>
+        <a href="/pages/blog.php">Blog</a>
         <a href="/pages/page.php?slug=terms">Terms of Service</a>
         <a href="/pages/page.php?slug=privacy">Privacy Policy</a>
         <a href="/pages/page.php?slug=faq">FAQ</a>

@@ -13,6 +13,8 @@ RewriteEngine On
 RewriteCond %{REQUEST_URI} ^/(config|includes|database)/
 RewriteRule ^ - [F,L]
 
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
+
 <FilesMatch "\.sql$">
     Require all denied
 </FilesMatch>

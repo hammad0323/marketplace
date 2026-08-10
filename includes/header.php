@@ -7,6 +7,8 @@ if (!defined('APP_LOADED')) {
 $siteName = get_setting($conn, 'site_name', APP_NAME);
 $pageTitle = isset($pageTitle) && $pageTitle !== '' ? $pageTitle . ' — ' . $siteName : $siteName . ' — Plan, book, and explore';
 $metaDescription = $metaDescription ?? get_setting($conn, 'site_tagline', 'Trip planning and multi-service travel marketplace.');
+$canonicalUrl = $canonicalUrl ?? (APP_URL . ($_SERVER['REQUEST_URI'] ?? '/'));
+$ogImage = !empty($ogImage) ? (strpos($ogImage, 'http') === 0 ? $ogImage : APP_URL . $ogImage) : (get_setting($conn, 'site_logo', '') ?: null);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -15,6 +17,16 @@ $metaDescription = $metaDescription ?? get_setting($conn, 'site_tagline', 'Trip 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?php echo e($pageTitle); ?></title>
 <meta name="description" content="<?php echo e($metaDescription); ?>">
+<link rel="canonical" href="<?php echo e($canonicalUrl); ?>">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="<?php echo e($siteName); ?>">
+<meta property="og:title" content="<?php echo e($pageTitle); ?>">
+<meta property="og:description" content="<?php echo e($metaDescription); ?>">
+<meta property="og:url" content="<?php echo e($canonicalUrl); ?>">
+<?php if ($ogImage): ?><meta property="og:image" content="<?php echo e($ogImage); ?>"><?php endif; ?>
+<meta name="twitter:card" content="<?php echo $ogImage ? 'summary_large_image' : 'summary'; ?>">
+<meta name="twitter:title" content="<?php echo e($pageTitle); ?>">
+<meta name="twitter:description" content="<?php echo e($metaDescription); ?>">
 <?php if (is_logged_in()): ?><meta name="csrf-token" content="<?php echo e(csrf_token()); ?>"><?php endif; ?>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2224%22 fill=%22%238B5CF6%22/><text x=%2250%25%22 y=%2262%25%22 font-size=%2255%22 fill=%22white%22 text-anchor=%22middle%22 font-family=%22Arial%22>W</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
