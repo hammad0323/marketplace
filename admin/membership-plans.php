@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = clean_input($_POST['name'] ?? '');
     $price = (float) ($_POST['price'] ?? 0);
     $cycle = in_array($_POST['billing_cycle'] ?? '', ['monthly', 'yearly', 'lifetime'], true) ? $_POST['billing_cycle'] : 'monthly';
-    $maxServices = $_POST['max_services'] !== '' ? (int) $_POST['max_services'] : null;
+    $maxServices = isset($_POST['max_services']) && $_POST['max_services'] !== '' ? (int) $_POST['max_services'] : null;
     $maxImages = (int) ($_POST['max_gallery_images'] ?? 0);
     $priority = (int) ($_POST['priority_ranking'] ?? 0);
     $isActive = !empty($_POST['is_active']) ? 1 : 0;

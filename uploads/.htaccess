@@ -1,0 +1,18 @@
+# Defense-in-depth: upload_file() in includes/functions.php already
+# validates extension + real MIME type before anything lands here, but
+# this ensures nothing under uploads/ can ever be executed as a script
+# even if a malicious file somehow got past that check.
+
+<FilesMatch "\.(php|php\d|phtml|pl|py|cgi|asp|aspx|sh|exe)$">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+Options -Indexes -ExecCGI
+AddHandler cgi-script .php .php3 .php4 .php5 .php7 .phtml .pl .py .cgi .asp .aspx .sh .exe

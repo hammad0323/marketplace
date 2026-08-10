@@ -3,47 +3,51 @@
 Vanilla, procedural **PHP 8 + mysqli + MySQL**. No framework, no Composer,
 no build step, no classes. Every request is a real `.php` file.
 
-This is being built **phase by phase** (the project is genuinely large —
-see [Roadmap](#roadmap) below). This README describes what exists today.
+All 12 build phases are complete. This is a full trip-planning and
+multi-service travel marketplace: public discovery (cities, categories,
+search with filters/geolocation), provider-managed listings with dynamic
+per-category fields, an availability calendar and full reservation
+workflow, customer/provider dashboards, messaging, notifications, a
+template-driven email system, reviews, favorites, provider memberships
+with payments and commission, a day-by-day trip planner with a live
+budget calculator, a blog/CMS, and SEO (sitemap, canonical/OG tags).
 
-## Phase 1 — what's included
+## What's included, by area
 
-- Full MySQL schema (`database/schema.sql`) — 60+ tables covering users,
-  roles, providers, categories (with dynamic per-category custom fields),
-  cities, services, bookings, payments, commissions, reviews, favorites,
-  messaging, notifications, the trip planner, blog/CMS, SEO, and audit
-  logs. Seeded with roles, an admin account, demo cities/categories, and
-  site settings.
-- `config/` — mysqli connection + app bootstrap (sessions, constants).
-- `includes/functions.php` — prepared-statement DB helpers (`db_select`,
-  `db_insert_get_id`, `db_execute`, …), CSRF protection, output escaping,
-  slugs, file uploads, flash messages, settings lookup.
-- `includes/auth.php` — login/register/logout for customers, providers
-  and admins; role guards; rate-limited login attempts; password reset.
-- Shared front-end shell (`includes/header.php` / `navbar.php` /
-  `footer.php`) and a custom purple SaaS design system
-  (`assets/css/style.css`, `assets/css/admin.css`) with scroll-reveal,
-  parallax hero blobs, animated counters, and skeleton/toast utilities
-  (`assets/js/main.js`) — Bootstrap is used only for its grid, everything
-  visible is custom CSS.
-- Homepage pulling live data from the database (cities, categories,
-  featured providers, stats).
-- Auth pages for all three roles, an admin dashboard shell with real
-  stats and a pending-provider queue, and a provider dashboard shell.
-- 404/500 pages, `.htaccess` hardening.
+- **Database** (`database/schema.sql`) — 60+ tables: users/roles,
+  providers (with privacy toggles and badges), dynamic categories
+  (parent/child + per-category custom fields), cities, services
+  (images/amenities/dynamic fields/availability), bookings, payments/
+  commissions, reviews, favorites, conversations/messages,
+  notifications, memberships, the full trip-planner schema, blog/CMS,
+  SEO, and audit/activity logs. Seeded with roles, an admin account,
+  demo cities/categories, membership plans, badges, and default email
+  templates.
+- **Core** (`config/`, `includes/`) — mysqli connection, prepared-
+  statement DB helpers, CSRF protection, output escaping, file uploads,
+  flash messages, auth (login/register/logout, rate-limited, password
+  reset), booking pricing engine, messaging/review/membership/trip
+  helpers, and a raw-SMTP mailer (no external library) that always logs
+  to `email_log` even when SMTP isn't configured yet.
+- **Public site** — homepage, city/category pages, AJAX-filtered search
+  with geolocation ("near me"), destination autocomplete, service and
+  provider profile pages (maps via Leaflet/OpenStreetMap, no API key
+  needed), blog, static CMS pages, trip planner + public trip sharing.
+- **Customer dashboard** — bookings, favorites, saved trips, profile,
+  messaging, review submission on completed bookings.
+- **Provider dashboard** — services (two-step category-aware form),
+  availability calendar (click-to-toggle + date-range block), bookings
+  (accept/reject/confirm/complete), analytics (views, revenue, a
+  canvas-drawn bookings chart), reviews (public responses), membership
+  plans + payment requests, business profile with privacy controls.
+- **Admin panel** — providers/customers/categories/cities/services/
+  bookings/reviews/payments/membership-plans/commissions/blog/email-
+  templates/settings, all with real actions (approve/reject/verify/
+  feature/suspend/etc.), backed by a generic settings key-value store.
 
-Everything above was tested end-to-end against a live MySQL instance
-(registration, login, CSRF, rate limiting, password reset, admin login,
-provider approval queue) before being committed.
-
-### What's *not* here yet
-
-Category/city pages currently show an honest empty state instead of
-listings — there's nothing to list yet, because **admin CRUD for
-providers/categories/cities/services, search & filters, availability
-calendars, reservations, dashboards, messaging, reviews, the trip
-planner, payments, and the CMS/blog are separate phases** (see
-Roadmap). Nav/footer links only point at pages that exist today.
+Every feature above was built and then verified end-to-end against a
+live MySQL instance (not just linted) as each phase landed — see the
+commit history for the specific flows tested per phase.
 
 ## Setup
 
@@ -59,12 +63,17 @@ Roadmap). Nav/footer links only point at pages that exist today.
    in `config/database.php`.
 3. **Point your web server's document root at the project root** (where
    `index.php` lives) and make sure PHP 8+ with the `mysqli` extension
-   is enabled. With Apache, `.htaccess` is already set up. To try it
-   locally with PHP's built-in server:
+   is enabled. With Apache, `.htaccess` is already set up (routing,
+   `sitemap.xml`, security headers, upload folder script-execution
+   lockdown). To try it locally with PHP's built-in server:
    ```bash
    php -S localhost:8000
    ```
-4. Visit `/index.php`.
+4. Visit `/index.php`. To actually send email, set SMTP host/port/
+   username/password under **Admin → Settings → Email/SMTP** — until
+   then, triggered emails are logged (not lost) in **Admin → Email
+   Templates → Recent send log**, and password reset links are shown
+   inline instead of emailed.
 
 ### Demo login
 
@@ -75,46 +84,48 @@ Roadmap). Nav/footer links only point at pages that exist today.
 
 ```
 config/       database.php, config.php — bootstrap, never requested directly
-includes/     functions.php, auth.php, header/footer/navbar.php
-admin/        admin auth + dashboard (_layout_top/_bottom.php are shared chrome)
-provider/     provider auth + dashboard
-customer/     customer auth + dashboard
-pages/        public content pages (city, category, search, static CMS pages)
-ajax/         AJAX endpoints (newsletter today; search/booking/etc. land later)
+includes/     functions.php, auth.php, mailer.php, booking/trip/review/
+              messaging/membership-functions.php, header/footer/navbar.php
+admin/        admin auth + full management panel (_layout_top/_bottom.php
+              are the shared sidebar/topbar chrome)
+provider/     provider auth + dashboard (services, bookings, availability,
+              analytics, reviews, membership, profile, messages)
+customer/     customer auth + dashboard (bookings, trips, favorites,
+              profile, messages, review-form)
+pages/        public pages (home sections live in index.php; city, category,
+              search, service, provider, trip planner, blog, static CMS)
+ajax/         AJAX endpoints (search, autocomplete, favorites, messaging,
+              notifications, availability, trip builder, newsletter)
 assets/       css/, js/, img/
-uploads/      user-uploaded files (git-ignored contents)
+uploads/      user-uploaded files (git-ignored contents; script execution
+              disabled via uploads/.htaccess)
 database/     schema.sql
+sitemap.php   served at /sitemap.xml
+robots.txt
 ```
-
-## Roadmap
-
-- **Phase 1 — done.** Architecture, database, config, auth, roles,
-  sessions, initial frontend + admin shell.
-- **Phase 2.** Full admin CRUD: providers, customers, categories, cities.
-- **Phase 3.** Services, dynamic category fields, provider profiles, maps.
-- **Phase 4.** AJAX search, filters, geolocation, discovery.
-- **Phase 5.** Availability, calendars, reservations/booking workflow.
-- **Phase 6.** Customer & provider dashboards (full).
-- **Phase 7.** Messaging, notifications, email (SMTP + templates).
-- **Phase 8.** Reviews, favorites, ratings.
-- **Phase 9.** Memberships, verified/premium providers, payments, commission.
-- **Phase 10.** Trip Planner, budget calculator, itinerary builder.
-- **Phase 11.** Blog, travel guides, SEO tooling.
-- **Phase 12.** Security/performance hardening pass, polish.
 
 ## Security notes
 
 - All queries go through mysqli prepared statements via the `db_*()`
-  helpers in `includes/functions.php` — no string-concatenated SQL.
-- CSRF tokens on every state-changing form (`csrf_field()` /
-  `verify_csrf()`).
+  helpers in `includes/functions.php` — no string-concatenated SQL
+  anywhere in the codebase (checked, not just assumed).
+- CSRF tokens (`hash_equals` comparison) on every state-changing form
+  and AJAX endpoint.
 - Passwords hashed with `password_hash()` / verified with
   `password_verify()`.
 - Login attempts are rate-limited per email+IP (5 attempts / 15 minutes).
 - Sessions: `httponly`, `SameSite=Lax`, `secure` when served over HTTPS,
   strict mode, regenerated on login.
-- Uploads (`upload_file()`) validate extension, MIME type (via
-  `finfo`), and size, and are written under `uploads/` with randomized
-  filenames.
+- Uploads (`upload_file()`) validate extension, real MIME type (via
+  `finfo`, not just the filename), and size; files are written under
+  `uploads/` with randomized filenames, and `uploads/.htaccess` denies
+  script execution there as defense-in-depth even if a bad file got
+  through.
+- Password reset never reveals account existence once SMTP is
+  configured (the link is only shown inline as a fallback when no SMTP
+  is set up, which is disclosed in the UI).
+- Every resource-modifying endpoint scopes its query to the acting
+  user (`WHERE id = ? AND provider_id = ?` / `customer_id = ?` / trip
+  ownership, etc.) rather than trusting a submitted ID alone.
 - `config/`, `includes/`, `database/`, `*.sql`, and the admin layout
   partials are denied at the web server level via `.htaccess`.

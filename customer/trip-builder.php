@@ -15,23 +15,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $form = $_POST['form'] ?? '';
 
     if ($form === 'meta') {
+        $budgetMode = in_array($_POST['budget_mode'] ?? '', ['economy', 'standard', 'luxury', 'custom'], true) ? $_POST['budget_mode'] : 'standard';
+        $maxBudget = isset($_POST['max_budget']) && $_POST['max_budget'] !== '' ? (float) $_POST['max_budget'] : null;
         db_execute(
             $conn,
             'UPDATE trips SET trip_name=?, date_from=?, date_to=?, adults=?, children=?, budget_mode=?, max_budget=?, notes=? WHERE id=?',
             [
                 clean_input($_POST['trip_name'] ?? $trip['trip_name']), clean_input($_POST['date_from'] ?? '') ?: null,
                 clean_input($_POST['date_to'] ?? '') ?: null, max(1, (int) ($_POST['adults'] ?? 1)), max(0, (int) ($_POST['children'] ?? 0)),
-                $_POST['budget_mode'] ?? 'standard', $_POST['max_budget'] !== '' ? (float) $_POST['max_budget'] : null,
+                $budgetMode, $maxBudget,
                 clean_input($_POST['notes'] ?? ''), $tripId,
             ]
         );
         generate_trip_days($conn, $tripId, clean_input($_POST['date_from'] ?? ''), clean_input($_POST['date_to'] ?? ''));
         flash_set('success', 'Trip details updated.');
     } elseif ($form === 'status') {
-        db_execute($conn, 'UPDATE trips SET status = ? WHERE id = ?', [clean_input($_POST['status'] ?? 'draft'), $tripId]);
+        $status = in_array($_POST['status'] ?? '', ['draft', 'planned', 'completed', 'cancelled'], true) ? $_POST['status'] : 'draft';
+        db_execute($conn, 'UPDATE trips SET status = ? WHERE id = ?', [$status, $tripId]);
         flash_set('success', 'Status updated.');
     } elseif ($form === 'visibility') {
-        $visibility = $_POST['visibility'] === 'public' ? 'public' : 'private';
+        $visibility = ($_POST['visibility'] ?? '') === 'public' ? 'public' : 'private';
         $shareToken = $trip['share_token'];
         if ($visibility === 'public' && !$shareToken) {
             $shareToken = bin2hex(random_bytes(16));

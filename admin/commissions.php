@@ -6,7 +6,7 @@ $admin = current_user($conn);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     $categoryId = (int) ($_POST['category_id'] ?? 0);
-    $rate = $_POST['rate_percent'] !== '' ? (float) $_POST['rate_percent'] : null;
+    $rate = isset($_POST['rate_percent']) && $_POST['rate_percent'] !== '' ? (float) $_POST['rate_percent'] : null;
     $existing = db_select_one($conn, 'SELECT id FROM commissions WHERE category_id = ?', [$categoryId]);
 
     if ($rate === null) {

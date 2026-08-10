@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $old['latitude'] = clean_input($_POST['latitude'] ?? '');
     $old['longitude'] = clean_input($_POST['longitude'] ?? '');
     $old['price'] = (float) ($_POST['price'] ?? 0);
-    $old['max_guests'] = $_POST['max_guests'] !== '' ? (int) $_POST['max_guests'] : '';
+    $old['max_guests'] = isset($_POST['max_guests']) && $_POST['max_guests'] !== '' ? (int) $_POST['max_guests'] : '';
 
     require_field($old['title'], 'Title', $errors);
     if ($old['price'] <= 0) {
