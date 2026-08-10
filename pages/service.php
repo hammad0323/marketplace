@@ -274,6 +274,10 @@ require ROOT_PATH . '/includes/header.php';
           <?php if ($service['show_phone'] && $service['provider_phone']): ?>
             <a href="tel:<?php echo e($service['provider_phone']); ?>" class="btn-w btn-outline btn-block" style="margin-top:10px;"><i class="bi bi-telephone"></i> Call provider</a>
           <?php endif; ?>
+          <div style="position:relative;margin-top:10px;">
+            <button type="button" id="add-to-trip-btn" class="btn-w btn-outline btn-block" data-service-id="<?php echo (int) $service['id']; ?>"><i class="bi bi-map"></i> Add to Trip</button>
+            <div id="trip-picker" class="user-menu" style="width:100%;right:0;"></div>
+          </div>
         </div>
       </div>
     </div>

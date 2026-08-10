@@ -46,4 +46,46 @@
   }
 
   $form.on('input change', 'input, select', updatePreview);
+
+  // ---- Add to Trip picker --------------------------------------------
+  var $tripBtn = $('#add-to-trip-btn');
+  var $tripPicker = $('#trip-picker');
+  var csrfToken = $('meta[name="csrf-token"]').attr('content');
+
+  $tripBtn.on('click', function (e) {
+    e.stopPropagation();
+    if (!csrfToken) {
+      window.location.href = '/customer/login.php?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+      return;
+    }
+    if ($tripPicker.hasClass('open')) {
+      $tripPicker.removeClass('open');
+      return;
+    }
+    $tripPicker.html('<div style="padding:16px;text-align:center;color:var(--ink-mute);font-size:13px;">Loading…</div>').addClass('open');
+    $.get('/ajax/add-to-trip.php').done(function (res) {
+      if (!res.ok) { $tripPicker.removeClass('open'); return; }
+      var html = '<div style="padding:10px 12px;border-bottom:1px solid var(--border);font-weight:700;font-size:13px;">Add to which trip?</div>';
+      if (res.trips.length) {
+        res.trips.forEach(function (t) {
+          html += '<a href="#" class="trip-pick" data-trip-id="' + t.id + '" style="display:block;padding:10px 12px;font-size:13.5px;">' + t.trip_name + '</a>';
+        });
+      } else {
+        html += '<div style="padding:12px;font-size:13px;color:var(--ink-mute);">No trips yet.</div>';
+      }
+      html += '<a href="/pages/trip-planner.php" style="display:block;padding:10px 12px;font-size:13px;color:var(--purple-600);font-weight:600;border-top:1px solid var(--border);"><i class="bi bi-plus-lg"></i> Create a new trip</a>';
+      $tripPicker.html(html);
+    });
+  });
+
+  $(document).on('click', '.trip-pick', function (e) {
+    e.preventDefault();
+    var tripId = $(this).data('trip-id');
+    $.post('/ajax/add-to-trip.php', { trip_id: tripId, service_id: serviceId, csrf_token: csrfToken })
+      .done(function (res) {
+        showToast(res.ok ? res.message : 'Could not add to trip.', res.ok ? 'success' : 'danger');
+        $tripPicker.removeClass('open');
+      });
+  });
+  $(document).on('click', function () { $tripPicker.removeClass('open'); });
 })(jQuery);

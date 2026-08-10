@@ -5,6 +5,7 @@ if (!defined('APP_LOADED')) {
 }
 $tabs = [
     'dashboard' => ['label' => 'Dashboard', 'href' => '/customer/index.php', 'icon' => 'bi-speedometer2'],
+    'trips' => ['label' => 'My Trips', 'href' => '/customer/trips.php', 'icon' => 'bi-map'],
     'bookings' => ['label' => 'Bookings', 'href' => '/customer/bookings.php', 'icon' => 'bi-calendar-check'],
     'favorites' => ['label' => 'Favorites', 'href' => '/customer/favorites.php', 'icon' => 'bi-heart'],
     'profile' => ['label' => 'Profile', 'href' => '/customer/profile.php', 'icon' => 'bi-person'],

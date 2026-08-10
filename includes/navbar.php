@@ -24,6 +24,7 @@ function nav_active($path, $current)
       <ul class="nav-links">
         <li><a href="/index.php#cities" class="<?php echo nav_active('/index.php', $currentPath); ?>">Explore</a></li>
         <li><a href="/index.php#categories">Categories</a></li>
+        <li><a href="/pages/trip-planner.php">Trip Planner</a></li>
         <li><a href="/pages/page.php?slug=about">About</a></li>
       </ul>
     </nav>

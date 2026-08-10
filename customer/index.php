@@ -22,17 +22,17 @@ require ROOT_PATH . '/includes/header.php';
     <?php require ROOT_PATH . '/includes/customer-tabs.php'; ?>
 
     <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
-      <div class="stat-card"><div class="icon-wrap"><i class="bi bi-map"></i></div><div class="value"><?php echo (int) $tripCount; ?></div><div class="label">Saved trips</div></div>
+      <a href="/customer/trips.php" class="stat-card" style="display:block;"><div class="icon-wrap"><i class="bi bi-map"></i></div><div class="value"><?php echo (int) $tripCount; ?></div><div class="label">Saved trips</div></a>
       <a href="/customer/bookings.php" class="stat-card" style="display:block;"><div class="icon-wrap"><i class="bi bi-calendar-check"></i></div><div class="value"><?php echo (int) $bookingCount; ?></div><div class="label">Bookings</div></a>
       <div class="stat-card"><div class="icon-wrap"><i class="bi bi-heart"></i></div><div class="value"><?php echo (int) $favoriteCount; ?></div><div class="label">Favorites</div></div>
     </div>
 
-    <div class="roadmap-card" style="margin-top:24px;">
-      <div class="icon-wrap"><i class="bi bi-cone-striped"></i></div>
+    <div class="cta-band" style="margin-top:24px;padding:32px;">
       <div>
-        <strong>Messaging and reviews are coming in later phases.</strong>
-        <div style="font-size:13.5px;color:var(--ink-mute);">This dashboard shell is wired to your real account data — the modules above will fill in as each phase ships.</div>
+        <h3 style="font-size:18px;">Haven't planned your next trip yet?</h3>
+        <p style="font-size:13.5px;">Build a day-by-day itinerary with a live budget estimate in a couple of minutes.</p>
       </div>
+      <a href="/pages/trip-planner.php" class="btn-w btn-white">Plan a trip <i class="bi bi-arrow-right"></i></a>
     </div>
   </div>
 </div>
