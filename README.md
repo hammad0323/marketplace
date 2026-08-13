@@ -1,4 +1,4 @@
-# Wanderly — Trip Planning & Multi-Service Travel Marketplace
+# Toursity — Trip Planning & Multi-Service Travel Marketplace
 
 Vanilla, procedural **PHP 8 + mysqli + MySQL**. No framework, no Composer,
 no build step, no classes. Every request is a real `.php` file.

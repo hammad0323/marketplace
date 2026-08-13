@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = register_customer($conn, $old['name'], $old['email'], $old['phone'], $password);
         if ($result['ok']) {
             $login = attempt_login($conn, $old['email'], $password, 'customer');
-            flash_set('success', 'Welcome to Wanderly, ' . $old['name'] . '!');
+            flash_set('success', 'Welcome to ' . get_setting($conn, 'site_name', APP_NAME) . ', ' . $old['name'] . '!');
             redirect($_GET['redirect'] ?? '/customer/index.php');
         }
         $errors[] = $result['error'];
@@ -40,7 +40,7 @@ require ROOT_PATH . '/includes/header.php';
     <div class="hero-blob hero-blob-1"></div>
     <div class="hero-blob hero-blob-2"></div>
     <div class="auth-visual-content">
-      <span class="hero-eyebrow"><i class="bi bi-suitcase-lg"></i> Join Wanderly</span>
+      <span class="hero-eyebrow"><i class="bi bi-suitcase-lg"></i> Join <?php echo e($siteName); ?></span>
       <h2 style="margin-top:18px;">Plan smarter. Travel better.</h2>
       <p>Save favorites, build trip itineraries, message providers directly, and book with confidence.</p>
     </div>

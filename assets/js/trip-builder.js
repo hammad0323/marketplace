@@ -1,4 +1,4 @@
-/* Wanderly — native HTML5 drag-and-drop for the trip itinerary builder. */
+/* Toursity — native HTML5 drag-and-drop for the trip itinerary builder. */
 (function () {
   'use strict';
   var zones = document.querySelectorAll('.trip-day-dropzone');

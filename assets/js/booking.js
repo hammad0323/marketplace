@@ -1,4 +1,4 @@
-/* Wanderly — live animated price preview on the service booking widget. */
+/* Toursity — live animated price preview on the service booking widget. */
 (function ($) {
   'use strict';
   var $widget = $('#booking-widget');
@@ -35,10 +35,11 @@
       $.get(window.appUrl('/ajax/booking-price-preview.php') + '?' + params)
         .done(function (res) {
           if (!res || !res.ok) { $preview.hide(); return; }
-          animateValue($('#pv-base'), '$' + res.base.toFixed(2));
-          animateValue($('#pv-fee'), '$' + res.fee.toFixed(2));
-          animateValue($('#pv-tax'), '$' + res.tax.toFixed(2));
-          animateValue($('#pv-total'), '$' + res.total.toFixed(2));
+          var cur = res.currency_symbol || '$';
+          animateValue($('#pv-base'), cur + res.base.toFixed(2));
+          animateValue($('#pv-fee'), cur + res.fee.toFixed(2));
+          animateValue($('#pv-tax'), cur + res.tax.toFixed(2));
+          animateValue($('#pv-total'), cur + res.total.toFixed(2));
           $preview.slideDown(150);
         })
         .fail(function () { $preview.hide(); });

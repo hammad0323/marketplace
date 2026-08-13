@@ -43,7 +43,7 @@ require ROOT_PATH . '/includes/header.php';
   <div class="container-xl" style="max-width:640px;">
     <div class="section-head">
       <span class="eyebrow"><i class="bi bi-shop"></i> Providers</span>
-      <h1 class="section-heading">List your business on Wanderly</h1>
+      <h1 class="section-heading">List your business on <?php echo e($siteName); ?></h1>
       <p class="section-sub">Create your account, then submit your business for admin approval. Once approved you can add services, manage availability and take bookings.</p>
     </div>
 

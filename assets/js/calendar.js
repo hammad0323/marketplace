@@ -1,4 +1,4 @@
-/* Wanderly — click-to-toggle availability calendar (provider dashboard). */
+/* Toursity — click-to-toggle availability calendar (provider dashboard). */
 (function ($) {
   'use strict';
   var $grid = $('#calendar-grid');

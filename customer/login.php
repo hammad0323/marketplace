@@ -35,7 +35,7 @@ require ROOT_PATH . '/includes/header.php';
   </div>
   <div class="auth-form-side">
     <div class="auth-card">
-      <h1>Log in to Wanderly</h1>
+      <h1>Log in to <?php echo e($siteName); ?></h1>
       <p class="sub">Welcome back — we missed you.</p>
 
       <?php if ($error): ?>
@@ -55,7 +55,7 @@ require ROOT_PATH . '/includes/header.php';
         <button type="submit" class="btn-w btn-primary btn-block" style="margin-top:20px;">Log in</button>
       </form>
 
-      <p class="sub" style="margin-top:22px;">New to Wanderly? <a href="<?php echo url('/customer/register.php'); ?>" style="color:var(--purple-600);font-weight:700;">Create an account</a></p>
+      <p class="sub" style="margin-top:22px;">New to <?php echo e($siteName); ?>? <a href="<?php echo url('/customer/register.php'); ?>" style="color:var(--purple-600);font-weight:700;">Create an account</a></p>
       <p class="sub">
         <a href="<?php echo url('/provider/login.php'); ?>" style="color:var(--ink-mute);">Provider login</a> ·
         <a href="<?php echo url('/admin/login.php'); ?>" style="color:var(--ink-mute);">Admin login</a>

@@ -7,6 +7,7 @@ require_login('admin');
 $admin = current_user($conn);
 $adminPageTitle = $adminPageTitle ?? 'Dashboard';
 $adminActive = $adminActive ?? '';
+$siteName = get_setting($conn, 'site_name', APP_NAME);
 
 $adminNav = [
     ['group' => 'Overview', 'items' => [
@@ -44,7 +45,7 @@ $adminNav = [
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title><?php echo e($adminPageTitle); ?> — Admin — <?php echo e(APP_NAME); ?></title>
+<title><?php echo e($adminPageTitle); ?> — Admin — <?php echo e($siteName); ?></title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link href="<?php echo ASSETS_URL; ?>/css/style.css" rel="stylesheet">
@@ -62,7 +63,7 @@ $adminNav = [
 <body>
 <div class="admin-shell">
   <aside class="admin-sidebar">
-    <a href="<?php echo url('/admin/index.php'); ?>" class="brand"><span class="brand-mark"><i class="bi bi-compass"></i></span><?php echo e(APP_NAME); ?></a>
+    <a href="<?php echo url('/admin/index.php'); ?>" class="brand"><span class="brand-mark"><i class="bi bi-compass"></i></span><?php echo e($siteName); ?></a>
     <?php foreach ($adminNav as $group): ?>
       <div class="admin-nav-group">
         <div class="admin-nav-label"><?php echo e($group['group']); ?></div>

@@ -8,7 +8,12 @@ define('APP_DEBUG', (getenv('APP_DEBUG') === '1'));
 error_reporting(E_ALL);
 ini_set('display_errors', APP_DEBUG ? '1' : '0');
 
-define('APP_NAME', 'Wanderly');
+// Fallback only — the real, editable site name is the "site_name" row in
+// the settings table (Admin -> Settings -> General). This constant is what
+// shows up before that table can be reached: the admin login page before
+// config finishes loading, and as get_setting()'s default if the row is
+// ever missing.
+define('APP_NAME', 'Toursity');
 define('ROOT_PATH', dirname(__DIR__));
 define('UPLOAD_PATH', ROOT_PATH . '/uploads');
 

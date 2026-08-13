@@ -78,7 +78,7 @@ require ROOT_PATH . '/includes/header.php';
     <div class="panel">
       <h3 style="font-size:15px;margin-bottom:6px;">Bank transfer instructions</h3>
       <p class="form-hint">For paid plans, transfer the plan amount to our account below and reference your business name. Your plan activates once our team confirms the transfer (usually within one business day).</p>
-      <p style="font-size:13.5px;margin-top:10px;"><strong>Account name:</strong> Wanderly Ltd &nbsp; <strong>IBAN:</strong> XX00 0000 0000 0000 &nbsp; <strong>Reference:</strong> <?php echo e($provider['business_name']); ?></p>
+      <p style="font-size:13.5px;margin-top:10px;"><strong>Account name:</strong> <?php echo e($siteName); ?> Ltd &nbsp; <strong>IBAN:</strong> XX00 0000 0000 0000 &nbsp; <strong>Reference:</strong> <?php echo e($provider['business_name']); ?></p>
     </div>
 
     <?php if ($payments): ?>

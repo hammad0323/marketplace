@@ -1,4 +1,4 @@
-/* Wanderly admin — live search suggestions for the customer/provider search boxes. */
+/* Toursity admin — live search suggestions for the customer/provider search boxes. */
 (function ($) {
   'use strict';
 

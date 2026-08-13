@@ -24,6 +24,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect('/admin/settings.php');
 }
 
+// Self-heal: sites that ran schema.sql before "currency_symbol" existed
+// won't have the row yet — add it so the field always shows up here.
+db_execute($conn, 'INSERT IGNORE INTO settings (setting_key, setting_value, setting_group) VALUES ("currency_symbol", "$", "general")');
+
 $rows = db_select($conn, 'SELECT * FROM settings ORDER BY setting_group, setting_key');
 $grouped = [];
 foreach ($rows as $row) {
@@ -33,11 +37,16 @@ foreach ($rows as $row) {
 $fieldLabels = [
     'site_name' => 'Site name', 'site_tagline' => 'Tagline', 'site_logo' => 'Logo URL', 'site_favicon' => 'Favicon URL',
     'contact_email' => 'Contact email', 'contact_phone' => 'Contact phone', 'default_currency' => 'Default currency',
-    'default_commission_percent' => 'Default commission %', 'service_fee_percent' => 'Service fee %',
+    'currency_symbol' => 'Currency symbol', 'default_commission_percent' => 'Default commission %', 'service_fee_percent' => 'Service fee %',
     'facebook_url' => 'Facebook URL', 'instagram_url' => 'Instagram URL', 'twitter_url' => 'Twitter/X URL',
     'maps_provider' => 'Maps provider', 'maps_api_key' => 'Maps API key',
     'smtp_host' => 'SMTP host', 'smtp_port' => 'SMTP port', 'smtp_username' => 'SMTP username', 'smtp_password' => 'SMTP password',
     'smtp_encryption' => 'Encryption (none/tls/ssl)', 'smtp_from_name' => 'From name', 'smtp_from_email' => 'From email',
+];
+
+$fieldHints = [
+    'site_name' => 'Shown in the browser tab, emails, and everywhere else the site name appears.',
+    'currency_symbol' => 'Prefixes every price on the site — e.g. change "$" to "Rs" and every listing, booking, and dashboard updates at once.',
 ];
 
 $adminPageTitle = 'Settings';
@@ -56,6 +65,7 @@ require __DIR__ . '/_layout_top.php';
           <div>
             <label style="display:block;font-size:13px;font-weight:600;margin:12px 0 6px;"><?php echo e($fieldLabels[$s['setting_key']] ?? $s['setting_key']); ?></label>
             <input type="<?php echo strpos($s['setting_key'], 'password') !== false ? 'password' : 'text'; ?>" name="<?php echo e($s['setting_key']); ?>" value="<?php echo e($s['setting_value']); ?>" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);">
+            <?php if (!empty($fieldHints[$s['setting_key']])): ?><div class="form-hint"><?php echo e($fieldHints[$s['setting_key']]); ?></div><?php endif; ?>
           </div>
         <?php endforeach; ?>
       </div>

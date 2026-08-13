@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     switch ($action) {
         case 'approve':
             db_execute($conn, 'UPDATE providers SET status = "approved" WHERE id = ?', [$providerId]);
-            db_execute($conn, 'INSERT INTO notifications (user_id, type, title, message, link) VALUES (?, "provider_approved", "You are approved!", "Your business is now live on Wanderly.", "/provider/index.php")', [(int) $provider['user_id']]);
+            db_execute($conn, 'INSERT INTO notifications (user_id, type, title, message, link) VALUES (?, "provider_approved", "You are approved!", ?, "/provider/index.php")', [(int) $provider['user_id'], 'Your business is now live on ' . get_setting($conn, 'site_name', APP_NAME) . '.']);
             $providerOwner = db_select_one($conn, 'SELECT name, email FROM users WHERE id = ?', [(int) $provider['user_id']]);
             if ($providerOwner) {
                 send_email($conn, $providerOwner['email'], $providerOwner['name'], 'provider_approved', ['name' => $providerOwner['name'], 'business_name' => $provider['business_name']]);

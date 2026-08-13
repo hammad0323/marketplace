@@ -3,6 +3,8 @@ http_response_code(404);
 // Self-contained (no config.php dependency) so this page never relies on
 // the DB or session being available. Same auto-detection as BASE_PATH in
 // config/config.php, duplicated here on purpose — see the comment there.
+// Because of that, the site name in <title> below is a plain hardcoded
+// string, not read from Settings — update it by hand if you rename the site.
 $__docRoot = rtrim(str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? ''), '/');
 $__appRoot = rtrim(str_replace('\\', '/', __DIR__), '/');
 $basePath = ($__docRoot !== '' && strpos($__appRoot, $__docRoot) === 0) ? substr($__appRoot, strlen($__docRoot)) : '';
@@ -12,7 +14,7 @@ $basePath = ($__docRoot !== '' && strpos($__appRoot, $__docRoot) === 0) ? substr
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Page not found — Wanderly</title>
+<title>Page not found — Toursity</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <style>

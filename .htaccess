@@ -1,5 +1,5 @@
 # ============================================================================
-# Wanderly — Apache config. Works from the domain root OR a subfolder
+# Toursity — Apache config. Works from the domain root OR a subfolder
 # (e.g. https://www.example.com/beta) with NO edits below in almost every
 # case — config/config.php auto-detects the subfolder from where the app's
 # files sit relative to your host's document root, and every link/redirect/

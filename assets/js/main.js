@@ -1,4 +1,4 @@
-/* Wanderly — shared front-end interactions. jQuery + vanilla JS, no build step. */
+/* Toursity — shared front-end interactions. jQuery + vanilla JS, no build step. */
 
 (function ($) {
   'use strict';

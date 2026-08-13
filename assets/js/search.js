@@ -1,4 +1,4 @@
-/* Wanderly — AJAX filtering for the search results page. */
+/* Toursity — AJAX filtering for the search results page. */
 (function ($) {
   'use strict';
 

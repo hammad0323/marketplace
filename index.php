@@ -177,7 +177,7 @@ require ROOT_PATH . '/includes/header.php';
   <div class="container-xl">
     <div class="section-head center reveal">
       <span class="eyebrow"><i class="bi bi-lightning"></i> Simple by design</span>
-      <h2 class="section-heading">How Wanderly works</h2>
+      <h2 class="section-heading">How <?php echo e($siteName); ?> works</h2>
     </div>
     <div class="steps-grid stagger reveal">
       <div class="step-card">

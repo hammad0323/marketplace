@@ -1,4 +1,4 @@
-/* Wanderly — message thread send + lightweight polling. */
+/* Toursity — message thread send + lightweight polling. */
 (function ($) {
   'use strict';
   var $thread = $('#thread');

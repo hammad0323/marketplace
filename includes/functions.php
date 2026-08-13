@@ -213,8 +213,18 @@ function flash_get($type)
 // Formatting
 // ---------------------------------------------------------------------
 
-function format_price($amount, $currencySymbol = '$')
+/**
+ * $currencySymbol defaults to the site-wide "currency_symbol" setting
+ * (Admin -> Settings -> General) so changing it there updates every price
+ * shown across the site in one place. Pass an explicit symbol only when a
+ * price genuinely needs a different currency than the site default.
+ */
+function format_price($amount, $currencySymbol = null)
 {
+    if ($currencySymbol === null) {
+        global $conn;
+        $currencySymbol = $conn ? get_setting($conn, 'currency_symbol', '$') : '$';
+    }
     return $currencySymbol . number_format((float) $amount, 2);
 }
 

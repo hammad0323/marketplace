@@ -18,5 +18,5 @@ if ($units === null) {
 
 $breakdown = calculate_booking_price($conn, $service, $units);
 $breakdown['ok'] = true;
-$breakdown['currency_symbol'] = '$';
+$breakdown['currency_symbol'] = get_setting($conn, 'currency_symbol', '$');
 echo json_encode($breakdown);
