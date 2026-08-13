@@ -17,12 +17,12 @@ $basePath = ($__docRoot !== '' && strpos($__appRoot, $__docRoot) === 0) ? substr
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <style>
-  body { font-family: 'Inter', sans-serif; background: radial-gradient(120% 120% at 10% 0%, #2A1B57 0%, #171129 55%, #0F0B1E 100%); color: #fff; min-height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; text-align: center; }
+  body { font-family: 'Inter', sans-serif; background: radial-gradient(120% 120% at 10% 0%, #531B57 0%, #271129 55%, #1D0B1E 100%); color: #fff; min-height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; text-align: center; }
   .wrap { max-width: 460px; padding: 24px; }
-  .code { font-size: 96px; font-weight: 800; line-height: 1; background: linear-gradient(135deg, #C4B5FD, #F0ABFC); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .code { font-size: 96px; font-weight: 800; line-height: 1; background: linear-gradient(135deg, #D185D6, #F0ABFC); -webkit-background-clip: text; background-clip: text; color: transparent; }
   h1 { font-size: 22px; margin: 12px 0 8px; }
   p { color: rgba(255,255,255,0.7); margin-bottom: 28px; }
-  a { display: inline-flex; align-items:center; gap:8px; background: linear-gradient(135deg, #8B5CF6, #6D28D9); color: #fff; padding: 13px 26px; border-radius: 999px; text-decoration: none; font-weight: 600; }
+  a { display: inline-flex; align-items:center; gap:8px; background: linear-gradient(135deg, #812288, #501155); color: #fff; padding: 13px 26px; border-radius: 999px; text-decoration: none; font-weight: 600; }
 </style>
 </head>
 <body>

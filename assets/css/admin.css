@@ -70,10 +70,12 @@
 .table-w tr:last-child td { border-bottom: none; }
 .table-w tr:hover td { background: var(--purple-50); }
 
-.status-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+.status-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
 .status-chip.pending { background: #FEF3C7; color: #92400E; }
-.status-chip.approved, .status-chip.active { background: #D1FAE5; color: #065F46; }
-.status-chip.rejected, .status-chip.blocked, .status-chip.suspended { background: #FEE2E2; color: #991B1B; }
+.status-chip.approved, .status-chip.active, .status-chip.accepted, .status-chip.confirmed, .status-chip.paid, .status-chip.completed, .status-chip.published, .status-chip.sent { background: #D1FAE5; color: #065F46; }
+.status-chip.rejected, .status-chip.blocked, .status-chip.suspended, .status-chip.cancelled, .status-chip.refunded, .status-chip.expired, .status-chip.deleted, .status-chip.failed { background: #FEE2E2; color: #991B1B; }
+.status-chip.draft, .status-chip.hidden, .status-chip.logged_only { background: #F3F0F5; color: #4B4560; }
+.status-chip.planned { background: #F6E5F7; color: #6A1A70; }
 
 .roadmap-card {
   border: 1px dashed var(--border); border-radius: var(--radius-md); padding: 20px;
@@ -86,3 +88,17 @@
   .admin-sidebar { position: fixed; left: -280px; z-index: 50; transition: left 0.2s ease; }
   .admin-sidebar.open { left: 0; }
 }
+
+.search-suggest-menu {
+  display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 40;
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md); max-height: 280px; overflow-y: auto; text-align: left;
+}
+.search-suggest-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 9px 14px; cursor: pointer; font-size: 13.5px; border-bottom: 1px solid var(--border);
+}
+.search-suggest-row:last-child { border-bottom: none; }
+.search-suggest-row:hover { background: var(--purple-50); }
+.search-suggest-row .sub { font-size: 12px; color: var(--ink-mute); margin-top: 1px; }
+.search-suggest-row .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }

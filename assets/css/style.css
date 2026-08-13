@@ -6,29 +6,29 @@
    ========================================================================= */
 
 :root {
-  --purple-600: #7C3AED;
-  --purple: #8B5CF6;
-  --purple-light: #A78BFA;
-  --purple-soft: #C4B5FD;
-  --purple-50: #F5F3FF;
-  --bg: #F8F7FF;
+  --purple-600: #6A1A70;
+  --purple: #812288;
+  --purple-light: #BC39C6;
+  --purple-soft: #D185D6;
+  --purple-50: #F7EDF8;
+  --bg: #FEF7FF;
   --ink: #171323;
   --ink-soft: #4B4560;
   --ink-mute: #7A7590;
   --white: #FFFFFF;
-  --border: #E9E5F7;
+  --border: #F6E5F7;
   --success: #10B981;
   --warning: #F59E0B;
   --danger: #EF4444;
 
-  --gradient-purple: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
-  --gradient-hero: radial-gradient(120% 120% at 10% 0%, #2A1B57 0%, #171129 55%, #0F0B1E 100%);
-  --gradient-soft: linear-gradient(180deg, #F5F3FF 0%, #FFFFFF 100%);
+  --gradient-purple: linear-gradient(135deg, #812288 0%, #501155 100%);
+  --gradient-hero: radial-gradient(120% 120% at 10% 0%, #531B57 0%, #271129 55%, #1D0B1E 100%);
+  --gradient-soft: linear-gradient(180deg, #F7EDF8 0%, #FFFFFF 100%);
 
   --shadow-sm: 0 2px 8px rgba(23, 19, 35, 0.06);
   --shadow-md: 0 8px 24px rgba(23, 19, 35, 0.08);
-  --shadow-lg: 0 20px 48px rgba(76, 29, 149, 0.16);
-  --shadow-purple: 0 12px 30px rgba(139, 92, 246, 0.35);
+  --shadow-lg: 0 20px 48px rgba(80, 17, 85, 0.16);
+  --shadow-purple: 0 12px 30px rgba(129, 34, 136, 0.35);
 
   --radius-sm: 10px;
   --radius-md: 16px;
@@ -122,7 +122,7 @@ button { font-family: inherit; }
   color: var(--white);
   box-shadow: var(--shadow-purple);
 }
-.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 16px 36px rgba(139, 92, 246, 0.45); color: var(--white); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 16px 36px rgba(129, 34, 136, 0.45); color: var(--white); }
 
 .btn-outline {
   background: var(--white);
@@ -290,9 +290,9 @@ button { font-family: inherit; }
   opacity: 0.55;
   pointer-events: none;
 }
-.hero-blob-1 { width: 460px; height: 460px; background: #8B5CF6; top: -160px; right: -100px; animation: float-slow 9s ease-in-out infinite; }
-.hero-blob-2 { width: 320px; height: 320px; background: #C4B5FD; bottom: -140px; left: -80px; animation: float-slow 11s ease-in-out infinite reverse; }
-.hero-blob-3 { width: 220px; height: 220px; background: #6D28D9; top: 40%; left: 60%; animation: float-slow 7s ease-in-out infinite; }
+.hero-blob-1 { width: 460px; height: 460px; background: #812288; top: -160px; right: -100px; animation: float-slow 9s ease-in-out infinite; }
+.hero-blob-2 { width: 320px; height: 320px; background: #D185D6; bottom: -140px; left: -80px; animation: float-slow 11s ease-in-out infinite reverse; }
+.hero-blob-3 { width: 220px; height: 220px; background: #501155; top: 40%; left: 60%; animation: float-slow 7s ease-in-out infinite; }
 
 @keyframes float-slow {
   0%, 100% { transform: translate(0, 0) scale(1); }
@@ -318,7 +318,7 @@ button { font-family: inherit; }
   margin: 22px 0 16px;
 }
 .hero-title .accent {
-  background: linear-gradient(135deg, #C4B5FD, #F0ABFC);
+  background: linear-gradient(135deg, #D185D6, #F0ABFC);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -388,7 +388,7 @@ button { font-family: inherit; }
 .hero-stat .num {
   font-size: 34px;
   font-weight: 800;
-  background: linear-gradient(135deg, #fff, #C4B5FD);
+  background: linear-gradient(135deg, #fff, #D185D6);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -412,7 +412,7 @@ button { font-family: inherit; }
   border-radius: var(--radius-lg);
   overflow: hidden;
   aspect-ratio: 4/5;
-  background: linear-gradient(160deg, #C4B5FD, #6D28D9);
+  background: linear-gradient(160deg, #D185D6, #501155);
   box-shadow: var(--shadow-md);
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -592,7 +592,7 @@ button { font-family: inherit; }
   font-family: inherit; background: var(--white); color: var(--ink);
 }
 .form-w input:focus, .form-w select:focus, .form-w textarea:focus {
-  border-color: var(--purple); box-shadow: 0 0 0 4px rgba(139,92,246,0.12);
+  border-color: var(--purple); box-shadow: 0 0 0 4px rgba(129,34,136,0.12);
 }
 .form-hint { font-size: 12.5px; color: var(--ink-mute); margin-top: 5px; }
 .form-error { font-size: 12.5px; color: var(--danger); margin-top: 5px; }

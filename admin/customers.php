@@ -65,7 +65,9 @@ require __DIR__ . '/_layout_top.php';
   <div class="panel-head">
     <h3>All customers</h3>
     <form method="get" style="display:flex;gap:10px;">
-      <input type="text" name="q" value="<?php echo e($q); ?>" placeholder="Search name or email" style="padding:9px 14px;border-radius:999px;border:1.5px solid var(--border);font-size:13.5px;min-width:240px;">
+      <div style="position:relative;">
+        <input type="text" name="q" value="<?php echo e($q); ?>" placeholder="Search name or email" autocomplete="off" data-suggest="customer" style="padding:9px 14px;border-radius:999px;border:1.5px solid var(--border);font-size:13.5px;min-width:240px;">
+      </div>
       <button class="btn-w btn-outline btn-sm" type="submit"><i class="bi bi-search"></i></button>
     </form>
   </div>

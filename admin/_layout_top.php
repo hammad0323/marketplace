@@ -26,16 +26,16 @@ $adminNav = [
         ['key' => 'commissions', 'label' => 'Commissions', 'icon' => 'bi-percent', 'href' => '/admin/commissions.php', 'ready' => true],
     ]],
     ['group' => 'Content', 'items' => [
-        ['key' => 'trips', 'label' => 'Trip Planner', 'icon' => 'bi-map', 'href' => '#', 'ready' => false],
+        ['key' => 'trips', 'label' => 'Trip Planner', 'icon' => 'bi-map', 'href' => '/admin/trips.php', 'ready' => true],
         ['key' => 'reviews', 'label' => 'Reviews', 'icon' => 'bi-star', 'href' => '/admin/reviews.php', 'ready' => true],
         ['key' => 'blog', 'label' => 'Blog & Guides', 'icon' => 'bi-journal-text', 'href' => '/admin/blog.php', 'ready' => true],
         ['key' => 'cms', 'label' => 'Homepage CMS', 'icon' => 'bi-layout-text-window', 'href' => '#', 'ready' => false],
     ]],
     ['group' => 'System', 'items' => [
         ['key' => 'settings', 'label' => 'Settings', 'icon' => 'bi-gear', 'href' => '/admin/settings.php', 'ready' => true],
-        ['key' => 'seo', 'label' => 'SEO', 'icon' => 'bi-search', 'href' => '#', 'ready' => false],
+        ['key' => 'seo', 'label' => 'SEO', 'icon' => 'bi-search', 'href' => '/admin/seo.php', 'ready' => true],
         ['key' => 'emails', 'label' => 'Email Templates', 'icon' => 'bi-envelope', 'href' => '/admin/emails.php', 'ready' => true],
-        ['key' => 'logs', 'label' => 'Activity Logs', 'icon' => 'bi-clock-history', 'href' => '#', 'ready' => false],
+        ['key' => 'logs', 'label' => 'Activity Logs', 'icon' => 'bi-clock-history', 'href' => '/admin/logs.php', 'ready' => true],
     ]],
 ];
 ?>
@@ -95,3 +95,16 @@ $adminNav = [
       </div>
     </div>
     <div class="admin-content">
+<?php
+$flashSuccess = flash_get('success');
+$flashDanger = flash_get('danger');
+$flashInfo = flash_get('info');
+if ($flashSuccess): ?>
+      <div class="alert-w alert-success"><i class="bi bi-check-circle-fill"></i><?php echo e($flashSuccess); ?></div>
+<?php endif;
+if ($flashDanger): ?>
+      <div class="alert-w alert-danger"><i class="bi bi-exclamation-triangle-fill"></i><?php echo e($flashDanger); ?></div>
+<?php endif;
+if ($flashInfo): ?>
+      <div class="alert-w alert-info"><i class="bi bi-info-circle-fill"></i><?php echo e($flashInfo); ?></div>
+<?php endif; ?>

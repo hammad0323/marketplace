@@ -4,6 +4,22 @@ require_once __DIR__ . '/config/config.php';
 $pageTitle = '';
 $metaDescription = get_setting($conn, 'site_tagline', 'Plan, book, and explore — all in one place.');
 
+$homeSeo = db_select_one($conn, 'SELECT * FROM seo_settings WHERE page_type = "home" AND page_reference_id IS NULL');
+if ($homeSeo) {
+    if (!empty($homeSeo['meta_title'])) {
+        $pageTitle = $homeSeo['meta_title'];
+    }
+    if (!empty($homeSeo['meta_description'])) {
+        $metaDescription = $homeSeo['meta_description'];
+    }
+    if (!empty($homeSeo['og_image'])) {
+        $ogImage = $homeSeo['og_image'];
+    }
+    if (!empty($homeSeo['canonical_url'])) {
+        $canonicalUrl = $homeSeo['canonical_url'];
+    }
+}
+
 $featuredCities = db_select($conn, 'SELECT * FROM cities WHERE is_active = 1 ORDER BY is_featured DESC, sort_order ASC LIMIT 8');
 $topCategories = db_select($conn, 'SELECT * FROM categories WHERE is_active = 1 AND parent_id IS NULL ORDER BY sort_order ASC LIMIT 12');
 

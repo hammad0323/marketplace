@@ -3,6 +3,10 @@ require_once __DIR__ . '/../config/config.php';
 require ROOT_PATH . '/includes/search-query.php';
 
 $pageTitle = $destination !== '' ? $destination : ($activeCategory['name'] ?? 'Search results');
+$searchSeo = db_select_one($conn, 'SELECT meta_description FROM seo_settings WHERE page_type = "search" AND page_reference_id IS NULL');
+if (!empty($searchSeo['meta_description'])) {
+    $metaDescription = $searchSeo['meta_description'];
+}
 require ROOT_PATH . '/includes/header.php';
 ?>
 <div class="section-tight">

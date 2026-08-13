@@ -98,8 +98,8 @@ require ROOT_PATH . '/includes/header.php';
     var x = i * gap + (gap - barW) / 2;
     var y = h - barH - 18;
     var grad = ctx.createLinearGradient(0, y, 0, y + barH);
-    grad.addColorStop(0, '#8B5CF6');
-    grad.addColorStop(1, '#C4B5FD');
+    grad.addColorStop(0, '#812288');
+    grad.addColorStop(1, '#D185D6');
     ctx.fillStyle = grad;
     ctx.beginPath();
     if (ctx.roundRect) { ctx.roundRect(x, y, barW, barH, 4); } else { ctx.rect(x, y, barW, barH); }
