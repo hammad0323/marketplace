@@ -56,6 +56,13 @@ commit history for the specific flows tested per phase.
    mysql -u root -p -e "CREATE DATABASE wanderly CHARACTER SET utf8mb4"
    mysql -u root -p wanderly < database/schema.sql
    ```
+   Optionally, load `database/demo_data.sql` right after (same database,
+   run once) to populate the site with sample providers, services,
+   bookings, reviews, messages, trips, and blog posts — see the comment
+   header in that file for demo login credentials.
+   ```bash
+   mysql -u root -p wanderly < database/demo_data.sql
+   ```
 2. **Configure the connection** — `config/database.php` reads from
    environment variables (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`),
    falling back to `localhost` / `wanderly` / `root` / *(empty)*. Either
