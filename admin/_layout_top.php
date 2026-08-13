@@ -49,11 +49,20 @@ $adminNav = [
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link href="<?php echo ASSETS_URL; ?>/css/style.css" rel="stylesheet">
 <link href="<?php echo ASSETS_URL; ?>/css/admin.css" rel="stylesheet">
+<meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+<script>
+  window.BASE_PATH = <?php echo json_encode(BASE_PATH); ?>;
+  window.appUrl = function (path) {
+    path = String(path).replace(/\.php(\?|#|$)/, '$1');
+    if (path.charAt(0) !== '/') path = '/' + path;
+    return window.BASE_PATH + path;
+  };
+</script>
 </head>
 <body>
 <div class="admin-shell">
   <aside class="admin-sidebar">
-    <a href="/admin/index.php" class="brand"><span class="brand-mark"><i class="bi bi-compass"></i></span><?php echo e(APP_NAME); ?></a>
+    <a href="<?php echo url('/admin/index.php'); ?>" class="brand"><span class="brand-mark"><i class="bi bi-compass"></i></span><?php echo e(APP_NAME); ?></a>
     <?php foreach ($adminNav as $group): ?>
       <div class="admin-nav-group">
         <div class="admin-nav-label"><?php echo e($group['group']); ?></div>
@@ -77,12 +86,12 @@ $adminNav = [
         <h1><?php echo e($adminPageTitle); ?></h1>
       </div>
       <div style="display:flex;align-items:center;gap:14px;">
-        <a href="/index.php" class="btn-w btn-outline btn-sm" target="_blank"><i class="bi bi-box-arrow-up-right"></i> View site</a>
+        <a href="<?php echo url('/index.php'); ?>" class="btn-w btn-outline btn-sm" target="_blank"><i class="bi bi-box-arrow-up-right"></i> View site</a>
         <div class="user-chip" style="cursor:default;">
           <span class="avatar-dot"><?php echo e(strtoupper(substr($admin['name'], 0, 1))); ?></span>
           <?php echo e($admin['name']); ?>
         </div>
-        <a href="/admin/logout.php" class="btn-w btn-ghost btn-sm" title="Log out"><i class="bi bi-box-arrow-right"></i></a>
+        <a href="<?php echo url('/admin/logout.php'); ?>" class="btn-w btn-ghost btn-sm" title="Log out"><i class="bi bi-box-arrow-right"></i></a>
       </div>
     </div>
     <div class="admin-content">

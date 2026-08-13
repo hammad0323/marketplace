@@ -29,5 +29,8 @@ $notifications = db_select($conn, 'SELECT * FROM notifications WHERE user_id = ?
 $unread = db_count($conn, 'SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0', [$userId]);
 foreach ($notifications as &$n) {
     $n['time_ago'] = time_ago($n['created_at']);
+    if (!empty($n['link'])) {
+        $n['link'] = url($n['link']);
+    }
 }
 echo json_encode(['ok' => true, 'unread' => $unread, 'items' => $notifications]);

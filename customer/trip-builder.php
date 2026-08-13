@@ -175,7 +175,7 @@ require ROOT_PATH . '/includes/header.php';
                 <?php if ($item['cover']): ?><img src="<?php echo e($item['cover']); ?>" style="width:44px;height:44px;border-radius:8px;object-fit:cover;"><?php endif; ?>
                 <div style="flex:1;">
                   <?php if ($item['service_id']): ?>
-                    <a href="/pages/service.php?slug=<?php echo e($item['service_slug']); ?>" style="font-weight:700;font-size:13.5px;color:var(--ink);"><?php echo e($item['service_title']); ?></a>
+                    <a href="<?php echo url('/pages/service.php'); ?>?slug=<?php echo e($item['service_slug']); ?>" style="font-weight:700;font-size:13.5px;color:var(--ink);"><?php echo e($item['service_title']); ?></a>
                     <div style="font-size:12px;color:var(--ink-mute);"><?php echo e($item['category_name'] ?? ''); ?> · <?php echo format_price($item['price']); ?>/<?php echo e($item['price_unit']); ?></div>
                   <?php else: ?>
                     <div style="font-weight:700;font-size:13.5px;"><?php echo e($item['custom_title']); ?></div>

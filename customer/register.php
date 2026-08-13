@@ -70,8 +70,8 @@ require ROOT_PATH . '/includes/header.php';
         <button type="submit" class="btn-w btn-primary btn-block" style="margin-top:24px;">Create account</button>
       </form>
 
-      <p class="sub" style="margin-top:22px;">Already have an account? <a href="/customer/login.php" style="color:var(--purple-600);font-weight:700;">Log in</a></p>
-      <p class="sub">Running a business? <a href="/provider/register.php" style="color:var(--purple-600);font-weight:700;">Register as a provider</a></p>
+      <p class="sub" style="margin-top:22px;">Already have an account? <a href="<?php echo url('/customer/login.php'); ?>" style="color:var(--purple-600);font-weight:700;">Log in</a></p>
+      <p class="sub">Running a business? <a href="<?php echo url('/provider/register.php'); ?>" style="color:var(--purple-600);font-weight:700;">Register as a provider</a></p>
     </div>
   </div>
 </div>

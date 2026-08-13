@@ -15,18 +15,18 @@ function nav_active($path, $current)
 ?>
 <header class="navbar-w">
   <div class="container-xl navbar-inner">
-    <a href="/index.php" class="brand">
+    <a href="<?php echo url('/index.php'); ?>" class="brand">
       <span class="brand-mark"><i class="bi bi-compass"></i></span>
       <?php echo e($siteName); ?>
     </a>
 
     <nav>
       <ul class="nav-links">
-        <li><a href="/index.php#cities" class="<?php echo nav_active('/index.php', $currentPath); ?>">Explore</a></li>
-        <li><a href="/index.php#categories">Categories</a></li>
-        <li><a href="/pages/trip-planner.php">Trip Planner</a></li>
-        <li><a href="/pages/blog.php">Blog</a></li>
-        <li><a href="/pages/page.php?slug=about">About</a></li>
+        <li><a href="<?php echo url('/index.php'); ?>#cities" class="<?php echo nav_active('/index.php', $currentPath); ?>">Explore</a></li>
+        <li><a href="<?php echo url('/index.php'); ?>#categories">Categories</a></li>
+        <li><a href="<?php echo url('/pages/trip-planner.php'); ?>">Trip Planner</a></li>
+        <li><a href="<?php echo url('/pages/blog.php'); ?>">Blog</a></li>
+        <li><a href="<?php echo url('/pages/page.php'); ?>?slug=about">About</a></li>
       </ul>
     </nav>
 
@@ -50,22 +50,22 @@ function nav_active($path, $current)
           </div>
           <div class="user-menu">
             <?php if ($loggedInUser['role_slug'] === 'admin'): ?>
-              <a href="/admin/index.php"><i class="bi bi-speedometer2"></i> Admin Dashboard</a>
+              <a href="<?php echo url('/admin/index.php'); ?>"><i class="bi bi-speedometer2"></i> Admin Dashboard</a>
             <?php elseif ($loggedInUser['role_slug'] === 'provider'): ?>
-              <a href="/provider/index.php"><i class="bi bi-speedometer2"></i> Provider Dashboard</a>
-              <a href="/provider/profile.php"><i class="bi bi-person"></i> Business Profile</a>
+              <a href="<?php echo url('/provider/index.php'); ?>"><i class="bi bi-speedometer2"></i> Provider Dashboard</a>
+              <a href="<?php echo url('/provider/profile.php'); ?>"><i class="bi bi-person"></i> Business Profile</a>
             <?php else: ?>
-              <a href="/customer/index.php"><i class="bi bi-speedometer2"></i> My Dashboard</a>
-              <a href="/customer/favorites.php"><i class="bi bi-heart"></i> Favorites</a>
-              <a href="/customer/profile.php"><i class="bi bi-person"></i> Profile</a>
+              <a href="<?php echo url('/customer/index.php'); ?>"><i class="bi bi-speedometer2"></i> My Dashboard</a>
+              <a href="<?php echo url('/customer/favorites.php'); ?>"><i class="bi bi-heart"></i> Favorites</a>
+              <a href="<?php echo url('/customer/profile.php'); ?>"><i class="bi bi-person"></i> Profile</a>
             <?php endif; ?>
             <a href="/<?php echo e($loggedInUser['role_slug']); ?>/logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a>
           </div>
         </div>
       <?php else: ?>
-        <a href="/provider/register.php" class="btn-w btn-ghost btn-sm">List your business</a>
-        <a href="/customer/login.php" class="btn-w btn-outline btn-sm">Log in</a>
-        <a href="/customer/register.php" class="btn-w btn-primary btn-sm">Sign up</a>
+        <a href="<?php echo url('/provider/register.php'); ?>" class="btn-w btn-ghost btn-sm">List your business</a>
+        <a href="<?php echo url('/customer/login.php'); ?>" class="btn-w btn-outline btn-sm">Log in</a>
+        <a href="<?php echo url('/customer/register.php'); ?>" class="btn-w btn-primary btn-sm">Sign up</a>
       <?php endif; ?>
       <button class="mobile-toggle" aria-label="Menu"><i class="bi bi-list" style="font-size:20px;"></i></button>
     </div>

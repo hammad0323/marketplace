@@ -119,7 +119,7 @@ require ROOT_PATH . '/includes/header.php';
 <div class="section-tight">
   <div class="container-xl">
     <div style="font-size:13.5px;color:var(--ink-mute);margin-bottom:14px;">
-      <a href="/pages/category.php?slug=<?php echo e($_GET['cat'] ?? ''); ?>" style="color:var(--ink-mute);"><i class="bi <?php echo e($service['category_icon'] ?: 'bi-tag'); ?>"></i> <?php echo e($service['category_name']); ?></a>
+      <a href="<?php echo url('/pages/category.php'); ?>?slug=<?php echo e($_GET['cat'] ?? ''); ?>" style="color:var(--ink-mute);"><i class="bi <?php echo e($service['category_icon'] ?: 'bi-tag'); ?>"></i> <?php echo e($service['category_name']); ?></a>
       <?php if ($service['city_name']): ?> · <i class="bi bi-geo-alt"></i> <?php echo e($service['city_name']); ?><?php endif; ?>
     </div>
 
@@ -142,7 +142,7 @@ require ROOT_PATH . '/includes/header.php';
     <div style="display:grid;grid-template-columns:2fr 1fr;gap:40px;align-items:start;">
       <div>
         <div class="panel" style="display:flex;align-items:center;justify-content:space-between;">
-          <a href="/pages/provider.php?slug=<?php echo e($service['provider_slug']); ?>" style="display:flex;align-items:center;gap:12px;">
+          <a href="<?php echo url('/pages/provider.php'); ?>?slug=<?php echo e($service['provider_slug']); ?>" style="display:flex;align-items:center;gap:12px;">
             <span class="avatar-dot" style="width:44px;height:44px;font-size:16px;"><?php echo e(strtoupper(substr($service['business_name'], 0, 1))); ?></span>
             <div>
               <div style="font-weight:700;"><?php echo e($service['business_name']); ?><?php if ($service['is_verified']): ?> <i class="bi bi-patch-check-fill" style="color:var(--purple);"></i><?php endif; ?></div>
@@ -288,7 +288,7 @@ require ROOT_PATH . '/includes/header.php';
       <div class="provider-grid">
         <?php foreach ($similar as $sim): ?>
           <div class="service-card">
-            <a href="/pages/service.php?slug=<?php echo e($sim['slug']); ?>">
+            <a href="<?php echo url('/pages/service.php'); ?>?slug=<?php echo e($sim['slug']); ?>">
               <div class="thumb"></div>
               <div class="card-body">
                 <div class="card-title"><?php echo e($sim['title']); ?></div>

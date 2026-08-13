@@ -52,7 +52,7 @@ require ROOT_PATH . '/includes/header.php';
         <input type="email" name="email" required>
         <button type="submit" class="btn-w btn-primary btn-block" style="margin-top:20px;">Send reset link</button>
       </form>
-      <p class="sub" style="margin-top:20px;"><a href="/customer/login.php" style="color:var(--purple-600);font-weight:700;">Back to login</a></p>
+      <p class="sub" style="margin-top:20px;"><a href="<?php echo url('/customer/login.php'); ?>" style="color:var(--purple-600);font-weight:700;">Back to login</a></p>
     </div>
   </div>
 </div>

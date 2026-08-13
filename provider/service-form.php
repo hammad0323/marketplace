@@ -34,7 +34,7 @@ if (!$service && !$category) {
         </div>
         <div class="category-grid stagger reveal in-view">
           <?php foreach ($categories as $cat): ?>
-            <a class="category-card" href="/provider/service-form.php?category_id=<?php echo (int) $cat['id']; ?>">
+            <a class="category-card" href="<?php echo url('/provider/service-form.php'); ?>?category_id=<?php echo (int) $cat['id']; ?>">
               <div class="icon-wrap"><i class="bi <?php echo e($cat['icon'] ?: 'bi-tag'); ?>"></i></div>
               <div class="name"><?php echo e($cat['name']); ?></div>
             </a>
@@ -179,7 +179,7 @@ require ROOT_PATH . '/includes/header.php';
 ?>
 <div class="section-tight">
   <div class="container-xl" style="max-width:820px;">
-    <a href="/provider/services.php" style="color:var(--ink-mute);font-size:13.5px;"><i class="bi bi-arrow-left"></i> Back to services</a>
+    <a href="<?php echo url('/provider/services.php'); ?>" style="color:var(--ink-mute);font-size:13.5px;"><i class="bi bi-arrow-left"></i> Back to services</a>
 
     <div class="section-head" style="margin-top:16px;">
       <span class="eyebrow"><i class="bi <?php echo e($category['icon'] ?: 'bi-tag'); ?>"></i> <?php echo e($category['name']); ?></span>

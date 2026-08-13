@@ -50,15 +50,15 @@ require ROOT_PATH . '/includes/header.php';
         <label>Password</label>
         <input type="password" name="password" required>
         <div style="text-align:right;margin-top:8px;">
-          <a href="/customer/forgot-password.php" style="font-size:13px;color:var(--purple-600);font-weight:600;">Forgot password?</a>
+          <a href="<?php echo url('/customer/forgot-password.php'); ?>" style="font-size:13px;color:var(--purple-600);font-weight:600;">Forgot password?</a>
         </div>
         <button type="submit" class="btn-w btn-primary btn-block" style="margin-top:20px;">Log in</button>
       </form>
 
-      <p class="sub" style="margin-top:22px;">New to Wanderly? <a href="/customer/register.php" style="color:var(--purple-600);font-weight:700;">Create an account</a></p>
+      <p class="sub" style="margin-top:22px;">New to Wanderly? <a href="<?php echo url('/customer/register.php'); ?>" style="color:var(--purple-600);font-weight:700;">Create an account</a></p>
       <p class="sub">
-        <a href="/provider/login.php" style="color:var(--ink-mute);">Provider login</a> ·
-        <a href="/admin/login.php" style="color:var(--ink-mute);">Admin login</a>
+        <a href="<?php echo url('/provider/login.php'); ?>" style="color:var(--ink-mute);">Provider login</a> ·
+        <a href="<?php echo url('/admin/login.php'); ?>" style="color:var(--ink-mute);">Admin login</a>
       </p>
     </div>
   </div>

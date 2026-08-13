@@ -12,7 +12,7 @@
     var date = $day.data('date');
     $day.css('transform', 'scale(0.9)');
 
-    $.post('/ajax/toggle-availability.php', { service_id: serviceId, date: date, csrf_token: csrf })
+    $.post(window.appUrl('/ajax/toggle-availability.php'), { service_id: serviceId, date: date, csrf_token: csrf })
       .done(function (res) {
         if (res.ok) {
           if (res.status === 'blocked') {

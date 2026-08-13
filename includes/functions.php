@@ -158,12 +158,39 @@ function verify_csrf()
 }
 
 // ---------------------------------------------------------------------
+// URL helper — makes every internal link/redirect subfolder-aware and
+// extension-less. Every href/action/redirect() in the app should route
+// through this (or the BASE_PATH-derived constants) rather than using a
+// raw "/xxx.php" string, so a deployment move (e.g. domain root <-> a
+// /beta subfolder) is a one-constant change instead of a find/replace.
+// ---------------------------------------------------------------------
+
+function url($path = '')
+{
+    $path = (string) $path;
+    if ($path === '') {
+        return BASE_PATH !== '' ? BASE_PATH . '/' : '/';
+    }
+    // Leave full external URLs (and protocol-relative ones) untouched.
+    if (preg_match('#^([a-z][a-z0-9+.\-]*:)?//#i', $path)) {
+        return $path;
+    }
+    // Strip a trailing .php so generated links are extension-less;
+    // .htaccess maps the clean URL back to the real file server-side.
+    $path = preg_replace('/\.php(\?|#|$)/', '$1', $path);
+    if ($path[0] !== '/') {
+        $path = '/' . $path;
+    }
+    return BASE_PATH . $path;
+}
+
+// ---------------------------------------------------------------------
 // Flash messages / redirects
 // ---------------------------------------------------------------------
 
 function redirect($path)
 {
-    header('Location: ' . $path);
+    header('Location: ' . url($path));
     exit;
 }
 

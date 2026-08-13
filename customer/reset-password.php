@@ -32,10 +32,10 @@ require ROOT_PATH . '/includes/header.php';
 
       <?php if ($error): ?>
         <div class="alert-w alert-danger"><i class="bi bi-exclamation-triangle-fill"></i> <?php echo e($error); ?></div>
-        <a href="/customer/forgot-password.php" class="btn-w btn-outline btn-block" style="margin-top:12px;">Request a new link</a>
+        <a href="<?php echo url('/customer/forgot-password.php'); ?>" class="btn-w btn-outline btn-block" style="margin-top:12px;">Request a new link</a>
       <?php elseif ($done): ?>
         <div class="alert-w alert-success"><i class="bi bi-check-circle-fill"></i> Password updated. You can log in now.</div>
-        <a href="/customer/login.php" class="btn-w btn-primary btn-block" style="margin-top:12px;">Go to login</a>
+        <a href="<?php echo url('/customer/login.php'); ?>" class="btn-w btn-primary btn-block" style="margin-top:12px;">Go to login</a>
       <?php else: ?>
         <form method="post" class="form-w">
           <?php echo csrf_field(); ?>

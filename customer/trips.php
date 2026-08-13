@@ -30,7 +30,7 @@ require ROOT_PATH . '/includes/header.php';
         <span class="eyebrow"><i class="bi bi-map"></i> Customer</span>
         <h1 class="section-heading">My trips</h1>
       </div>
-      <a href="/pages/trip-planner.php" class="btn-w btn-primary"><i class="bi bi-plus-lg"></i> Plan a new trip</a>
+      <a href="<?php echo url('/pages/trip-planner.php'); ?>" class="btn-w btn-primary"><i class="bi bi-plus-lg"></i> Plan a new trip</a>
     </div>
 
     <?php require ROOT_PATH . '/includes/customer-tabs.php'; ?>
@@ -38,7 +38,7 @@ require ROOT_PATH . '/includes/header.php';
     <?php if ($trips): ?>
       <div class="provider-grid stagger reveal in-view">
         <?php foreach ($trips as $t): ?>
-          <a class="service-card" href="/customer/trip-builder.php?id=<?php echo (int) $t['id']; ?>" style="display:block;">
+          <a class="service-card" href="<?php echo url('/customer/trip-builder.php'); ?>?id=<?php echo (int) $t['id']; ?>" style="display:block;">
             <div class="thumb" style="background:var(--gradient-purple);display:flex;align-items:center;justify-content:center;">
               <i class="bi bi-map" style="font-size:32px;color:rgba(255,255,255,0.6);"></i>
               <span class="badge-pill"><?php echo ucfirst($t['status']); ?></span>
@@ -56,7 +56,7 @@ require ROOT_PATH . '/includes/header.php';
         <?php endforeach; ?>
       </div>
     <?php else: ?>
-      <div class="empty-state"><div class="icon-wrap"><i class="bi bi-map"></i></div><h4>No trips yet</h4><p>Build your first day-by-day itinerary with a live budget estimate.</p><a href="/pages/trip-planner.php" class="btn-w btn-primary">Plan a trip</a></div>
+      <div class="empty-state"><div class="icon-wrap"><i class="bi bi-map"></i></div><h4>No trips yet</h4><p>Build your first day-by-day itinerary with a live budget estimate.</p><a href="<?php echo url('/pages/trip-planner.php'); ?>" class="btn-w btn-primary">Plan a trip</a></div>
     <?php endif; ?>
   </div>
 </div>

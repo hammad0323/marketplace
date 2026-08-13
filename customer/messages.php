@@ -58,7 +58,7 @@ require ROOT_PATH . '/includes/header.php';
       <div class="panel" style="display:flex;flex-direction:column;padding:0;">
         <?php if ($conversation): ?>
           <div style="padding:14px 18px;border-bottom:1px solid var(--border);font-weight:700;">
-            <a href="/pages/provider.php?slug=<?php echo e($conversation['provider_slug']); ?>" style="color:var(--ink);"><?php echo e($conversation['business_name']); ?></a>
+            <a href="<?php echo url('/pages/provider.php'); ?>?slug=<?php echo e($conversation['provider_slug']); ?>" style="color:var(--ink);"><?php echo e($conversation['business_name']); ?></a>
           </div>
           <div id="thread" data-conversation="<?php echo $conversationId; ?>" data-csrf="<?php echo e(csrf_token()); ?>" style="flex:1;overflow-y:auto;padding:16px;max-height:420px;">
             <?php foreach ($threadMessages as $m): $mine = (int) $m['sender_id'] === (int) $user['id']; ?>

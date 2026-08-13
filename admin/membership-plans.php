@@ -68,7 +68,7 @@ require __DIR__ . '/_layout_top.php';
     <div><label style="font-size:13px;font-weight:600;">Search priority</label><input type="number" name="priority_ranking" value="<?php echo e($editingPlan['priority_ranking'] ?? '0'); ?>" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--border);"></div>
     <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" name="is_active" value="1" <?php echo ($editingPlan['is_active'] ?? 1) ? 'checked' : ''; ?> style="width:auto;"> Active</label>
     <div style="grid-column:span 2;text-align:right;">
-      <?php if ($editingPlan): ?><a href="/admin/membership-plans.php" class="btn-w btn-outline btn-sm">Cancel</a><?php endif; ?>
+      <?php if ($editingPlan): ?><a href="<?php echo url('/admin/membership-plans.php'); ?>" class="btn-w btn-outline btn-sm">Cancel</a><?php endif; ?>
       <button type="submit" class="btn-w btn-primary btn-sm"><?php echo $editingPlan ? 'Save' : 'Create plan'; ?></button>
     </div>
   </form>

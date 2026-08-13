@@ -44,9 +44,9 @@ require ROOT_PATH . '/includes/header.php';
             <div class="service-card">
               <div class="thumb">
                 <?php echo render_fav_button($conn, 'service', $svc['id']); ?>
-                <a href="/pages/service.php?slug=<?php echo e($svc['slug']); ?>"><?php if ($svc['cover']): ?><img src="<?php echo e($svc['cover']); ?>"><?php endif; ?></a>
+                <a href="<?php echo url('/pages/service.php'); ?>?slug=<?php echo e($svc['slug']); ?>"><?php if ($svc['cover']): ?><img src="<?php echo e($svc['cover']); ?>"><?php endif; ?></a>
               </div>
-              <a href="/pages/service.php?slug=<?php echo e($svc['slug']); ?>" class="card-body" style="display:block;">
+              <a href="<?php echo url('/pages/service.php'); ?>?slug=<?php echo e($svc['slug']); ?>" class="card-body" style="display:block;">
                 <div class="card-meta"><?php echo e($svc['business_name']); ?></div>
                 <div class="card-title"><?php echo e($svc['title']); ?></div>
                 <div class="card-footer-row"><div class="price-tag"><?php echo format_price($svc['price']); ?> <span>/ <?php echo e($svc['price_unit']); ?></span></div></div>
@@ -60,7 +60,7 @@ require ROOT_PATH . '/includes/header.php';
         <h3 style="font-size:16px;margin-bottom:14px;">Saved providers</h3>
         <div class="provider-grid stagger reveal in-view">
           <?php foreach ($favoriteProviders as $p): ?>
-            <a class="provider-card" href="/pages/provider.php?slug=<?php echo e($p['slug']); ?>">
+            <a class="provider-card" href="<?php echo url('/pages/provider.php'); ?>?slug=<?php echo e($p['slug']); ?>">
               <div class="thumb"><?php if ($p['cover_image']): ?><img src="<?php echo e($p['cover_image']); ?>"><?php endif; ?></div>
               <div class="card-body">
                 <div class="card-title"><?php echo e($p['business_name']); ?></div>
@@ -71,7 +71,7 @@ require ROOT_PATH . '/includes/header.php';
         </div>
       <?php endif; ?>
     <?php else: ?>
-      <div class="empty-state"><div class="icon-wrap"><i class="bi bi-heart"></i></div><h4>No favorites yet</h4><p>Tap the heart icon on any listing to save it here.</p><a href="/index.php" class="btn-w btn-primary">Start exploring</a></div>
+      <div class="empty-state"><div class="icon-wrap"><i class="bi bi-heart"></i></div><h4>No favorites yet</h4><p>Tap the heart icon on any listing to save it here.</p><a href="<?php echo url('/index.php'); ?>" class="btn-w btn-primary">Start exploring</a></div>
     <?php endif; ?>
   </div>
 </div>

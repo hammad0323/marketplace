@@ -58,7 +58,7 @@ require ROOT_PATH . '/includes/header.php';
         <?php foreach ($bookings as $b): ?>
           <div class="panel" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
             <div>
-              <div style="font-weight:700;"><a href="/pages/service.php?slug=<?php echo e($b['service_slug']); ?>" style="color:var(--ink);"><?php echo e($b['service_title']); ?></a></div>
+              <div style="font-weight:700;"><a href="<?php echo url('/pages/service.php'); ?>?slug=<?php echo e($b['service_slug']); ?>" style="color:var(--ink);"><?php echo e($b['service_title']); ?></a></div>
               <div class="card-meta"><?php echo e($b['business_name']); ?> · <?php echo e(format_date($b['date_from'])); ?><?php echo $b['date_to'] && $b['date_to'] !== $b['date_from'] ? ' – ' . e(format_date($b['date_to'])) : ''; ?></div>
               <div style="font-size:12px;color:var(--ink-mute);margin-top:4px;">Ref: <code><?php echo e($b['booking_ref']); ?></code></div>
             </div>
@@ -73,14 +73,14 @@ require ROOT_PATH . '/includes/header.php';
                 </form>
               <?php endif; ?>
               <?php if ($b['status'] === 'completed' && !$b['review_id']): ?>
-                <a href="/customer/review-form.php?booking_id=<?php echo (int) $b['id']; ?>" class="btn-w btn-primary btn-sm"><i class="bi bi-star"></i> Review</a>
+                <a href="<?php echo url('/customer/review-form.php'); ?>?booking_id=<?php echo (int) $b['id']; ?>" class="btn-w btn-primary btn-sm"><i class="bi bi-star"></i> Review</a>
               <?php endif; ?>
             </div>
           </div>
         <?php endforeach; ?>
       </div>
     <?php else: ?>
-      <div class="empty-state"><div class="icon-wrap"><i class="bi bi-calendar-check"></i></div><h4>No bookings yet</h4><p>When you reserve a service, it'll show up here.</p><a href="/index.php" class="btn-w btn-primary">Start exploring</a></div>
+      <div class="empty-state"><div class="icon-wrap"><i class="bi bi-calendar-check"></i></div><h4>No bookings yet</h4><p>When you reserve a service, it'll show up here.</p><a href="<?php echo url('/index.php'); ?>" class="btn-w btn-primary">Start exploring</a></div>
     <?php endif; ?>
   </div>
 </div>

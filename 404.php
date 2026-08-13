@@ -1,4 +1,12 @@
-<?php http_response_code(404); ?>
+<?php
+http_response_code(404);
+// Self-contained (no config.php dependency) so this page never relies on
+// the DB or session being available. Same auto-detection as BASE_PATH in
+// config/config.php, duplicated here on purpose — see the comment there.
+$__docRoot = rtrim(str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? ''), '/');
+$__appRoot = rtrim(str_replace('\\', '/', __DIR__), '/');
+$basePath = ($__docRoot !== '' && strpos($__appRoot, $__docRoot) === 0) ? substr($__appRoot, strlen($__docRoot)) : '';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,7 +29,7 @@
     <div class="code">404</div>
     <h1>This trip doesn't exist</h1>
     <p>The page you're looking for may have moved or never existed.</p>
-    <a href="/index.php"><i class="bi bi-arrow-left"></i> Back to home</a>
+    <a href="<?php echo htmlspecialchars($basePath, ENT_QUOTES, 'UTF-8'); ?>/"><i class="bi bi-arrow-left"></i> Back to home</a>
   </div>
 </body>
 </html>

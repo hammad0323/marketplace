@@ -47,7 +47,7 @@ require __DIR__ . '/_layout_top.php';
 <div class="panel">
   <div class="panel-head">
     <h3>All categories</h3>
-    <a href="/admin/category-form.php" class="btn-w btn-primary btn-sm"><i class="bi bi-plus-lg"></i> New category</a>
+    <a href="<?php echo url('/admin/category-form.php'); ?>" class="btn-w btn-primary btn-sm"><i class="bi bi-plus-lg"></i> New category</a>
   </div>
 
   <?php if ($categories): ?>
@@ -66,7 +66,7 @@ require __DIR__ . '/_layout_top.php';
           <td><?php echo (int) $cat['sort_order']; ?></td>
           <td><?php echo status_badge($cat['is_active'] ? 'active' : 'blocked'); ?></td>
           <td style="text-align:right;white-space:nowrap;">
-            <a href="/admin/category-form.php?id=<?php echo (int) $cat['id']; ?>" class="btn-w btn-outline btn-sm">Edit</a>
+            <a href="<?php echo url('/admin/category-form.php'); ?>?id=<?php echo (int) $cat['id']; ?>" class="btn-w btn-outline btn-sm">Edit</a>
             <form method="post" style="display:inline;">
               <?php echo csrf_field(); ?>
               <input type="hidden" name="category_id" value="<?php echo (int) $cat['id']; ?>">

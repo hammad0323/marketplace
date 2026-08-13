@@ -114,7 +114,7 @@ $adminActive = 'categories';
 require __DIR__ . '/_layout_top.php';
 ?>
 
-<a href="/admin/categories.php" style="color:var(--ink-mute);font-size:13.5px;"><i class="bi bi-arrow-left"></i> Back to categories</a>
+<a href="<?php echo url('/admin/categories.php'); ?>" style="color:var(--ink-mute);font-size:13.5px;"><i class="bi bi-arrow-left"></i> Back to categories</a>
 
 <div class="panel" style="margin-top:16px;">
   <div class="panel-head"><h3><?php echo $category ? 'Edit category' : 'New category'; ?></h3></div>

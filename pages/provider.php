@@ -99,7 +99,7 @@ require ROOT_PATH . '/includes/header.php';
             <div class="provider-grid">
               <?php foreach ($services as $s): ?>
                 <div class="service-card">
-                  <a href="/pages/service.php?slug=<?php echo e($s['slug']); ?>">
+                  <a href="<?php echo url('/pages/service.php'); ?>?slug=<?php echo e($s['slug']); ?>">
                     <div class="thumb"><?php if ($s['cover']): ?><img src="<?php echo e($s['cover']); ?>"><?php endif; ?></div>
                     <div class="card-body">
                       <div class="card-title"><?php echo e($s['title']); ?></div>

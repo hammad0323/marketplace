@@ -33,7 +33,7 @@ require ROOT_PATH . '/includes/header.php';
       <p class="hero-sub">Hotels, cars, tours, restaurants and experiences from verified local providers — plus a trip planner that builds your itinerary and budget for you.</p>
     </div>
 
-    <form class="search-card reveal in-view" action="/pages/search.php" method="get">
+    <form class="search-card reveal in-view" action="<?php echo url('/pages/search.php'); ?>" method="get">
       <div class="search-field">
         <label>Where to</label>
         <input type="text" name="destination" placeholder="City, region or landmark" autocomplete="off" data-autocomplete>
@@ -81,7 +81,7 @@ require ROOT_PATH . '/includes/header.php';
     </div>
     <div class="city-grid stagger reveal">
       <?php foreach ($featuredCities as $city): ?>
-        <a class="city-card" href="/pages/city.php?slug=<?php echo e($city['slug']); ?>">
+        <a class="city-card" href="<?php echo url('/pages/city.php'); ?>?slug=<?php echo e($city['slug']); ?>">
           <?php if (!empty($city['image'])): ?>
             <img src="<?php echo e($city['image']); ?>" alt="<?php echo e($city['name']); ?>" loading="lazy">
           <?php endif; ?>
@@ -111,7 +111,7 @@ require ROOT_PATH . '/includes/header.php';
     </div>
     <div class="category-grid stagger reveal">
       <?php foreach ($topCategories as $cat): ?>
-        <a class="category-card" href="/pages/category.php?slug=<?php echo e($cat['slug']); ?>">
+        <a class="category-card" href="<?php echo url('/pages/category.php'); ?>?slug=<?php echo e($cat['slug']); ?>">
           <div class="icon-wrap"><i class="bi <?php echo e($cat['icon'] ?: 'bi-tag'); ?>"></i></div>
           <div class="name"><?php echo e($cat['name']); ?></div>
         </a>
@@ -131,7 +131,7 @@ require ROOT_PATH . '/includes/header.php';
     <?php if ($featuredProviders): ?>
       <div class="provider-grid stagger reveal">
         <?php foreach ($featuredProviders as $p): ?>
-          <a class="provider-card" href="/pages/provider.php?slug=<?php echo e($p['slug']); ?>">
+          <a class="provider-card" href="<?php echo url('/pages/provider.php'); ?>?slug=<?php echo e($p['slug']); ?>">
             <div class="thumb">
               <?php if ($p['is_verified']): ?><span class="badge-pill"><i class="bi bi-patch-check-fill"></i> Verified</span><?php endif; ?>
               <?php if (!empty($p['cover_image'])): ?><img src="<?php echo e($p['cover_image']); ?>" alt="<?php echo e($p['business_name']); ?>"><?php endif; ?>
@@ -151,7 +151,7 @@ require ROOT_PATH . '/includes/header.php';
         <div class="icon-wrap"><i class="bi bi-shop"></i></div>
         <h4>No approved providers yet</h4>
         <p>Once businesses register and admin approves them, they'll be featured here.</p>
-        <a href="/provider/register.php" class="btn-w btn-primary">Register your business</a>
+        <a href="<?php echo url('/provider/register.php'); ?>" class="btn-w btn-primary">Register your business</a>
       </div>
     <?php endif; ?>
   </div>
@@ -195,7 +195,7 @@ require ROOT_PATH . '/includes/header.php';
         <h3>Are you a hotel, driver, guide or restaurant?</h3>
         <p>List your services and reach travelers actively planning their trip.</p>
       </div>
-      <a href="/provider/register.php" class="btn-w btn-white">Become a provider <i class="bi bi-arrow-right"></i></a>
+      <a href="<?php echo url('/provider/register.php'); ?>" class="btn-w btn-white">Become a provider <i class="bi bi-arrow-right"></i></a>
     </div>
   </div>
 </section>

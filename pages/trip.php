@@ -62,7 +62,7 @@ require ROOT_PATH . '/includes/header.php';
             <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border-radius:10px;margin-bottom:8px;">
               <div style="flex:1;">
                 <?php if ($item['service_id']): ?>
-                  <a href="/pages/service.php?slug=<?php echo e($item['service_slug']); ?>" style="font-weight:700;font-size:13.5px;color:var(--ink);"><?php echo e($item['service_title']); ?></a>
+                  <a href="<?php echo url('/pages/service.php'); ?>?slug=<?php echo e($item['service_slug']); ?>" style="font-weight:700;font-size:13.5px;color:var(--ink);"><?php echo e($item['service_title']); ?></a>
                   <div style="font-size:12px;color:var(--ink-mute);"><?php echo e($item['category_name'] ?? ''); ?></div>
                 <?php else: ?>
                   <div style="font-weight:700;font-size:13.5px;"><?php echo e($item['custom_title']); ?></div>
@@ -76,7 +76,7 @@ require ROOT_PATH . '/includes/header.php';
     </div>
 
     <div style="text-align:center;">
-      <a href="/pages/trip-planner.php" class="btn-w btn-primary">Plan your own trip <i class="bi bi-arrow-right"></i></a>
+      <a href="<?php echo url('/pages/trip-planner.php'); ?>" class="btn-w btn-primary">Plan your own trip <i class="bi bi-arrow-right"></i></a>
     </div>
   </div>
 </div>

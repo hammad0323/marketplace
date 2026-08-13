@@ -42,8 +42,8 @@ require ROOT_PATH . '/includes/header.php';
         <input type="password" name="password" required>
         <button type="submit" class="btn-w btn-primary btn-block" style="margin-top:20px;">Log in</button>
       </form>
-      <p class="sub" style="margin-top:22px;">New provider? <a href="/provider/register.php" style="color:var(--purple-600);font-weight:700;">List your business</a></p>
-      <p class="sub"><a href="/customer/login.php" style="color:var(--ink-mute);">Customer login</a> · <a href="/admin/login.php" style="color:var(--ink-mute);">Admin login</a></p>
+      <p class="sub" style="margin-top:22px;">New provider? <a href="<?php echo url('/provider/register.php'); ?>" style="color:var(--purple-600);font-weight:700;">List your business</a></p>
+      <p class="sub"><a href="<?php echo url('/customer/login.php'); ?>" style="color:var(--ink-mute);">Customer login</a> · <a href="<?php echo url('/admin/login.php'); ?>" style="color:var(--ink-mute);">Admin login</a></p>
     </div>
   </div>
 </div>

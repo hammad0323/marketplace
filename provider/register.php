@@ -89,7 +89,7 @@ require ROOT_PATH . '/includes/header.php';
       </div>
       <button type="submit" class="btn-w btn-primary btn-block" style="margin-top:24px;">Submit for approval</button>
     </form>
-    <p class="sub" style="margin-top:18px;">Already a provider? <a href="/provider/login.php" style="color:var(--purple-600);font-weight:700;">Log in</a></p>
+    <p class="sub" style="margin-top:18px;">Already a provider? <a href="<?php echo url('/provider/login.php'); ?>" style="color:var(--purple-600);font-weight:700;">Log in</a></p>
   </div>
 </div>
 <?php require ROOT_PATH . '/includes/footer.php'; ?>

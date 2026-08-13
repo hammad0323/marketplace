@@ -45,7 +45,7 @@
       formData.append('csrf_token', csrf);
       itemIds.forEach(function (id) { formData.append('item_ids[]', id); });
 
-      fetch('/ajax/move-trip-item.php', { method: 'POST', body: formData })
+      fetch(window.appUrl('/ajax/move-trip-item.php'), { method: 'POST', body: formData })
         .then(function (r) { return r.json(); })
         .then(function (res) {
           if (res.ok && window.showToast) window.showToast('Itinerary updated', 'success');

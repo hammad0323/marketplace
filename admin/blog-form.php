@@ -83,7 +83,7 @@ $adminActive = 'blog';
 require __DIR__ . '/_layout_top.php';
 ?>
 
-<a href="/admin/blog.php" style="color:var(--ink-mute);font-size:13.5px;"><i class="bi bi-arrow-left"></i> Back to posts</a>
+<a href="<?php echo url('/admin/blog.php'); ?>" style="color:var(--ink-mute);font-size:13.5px;"><i class="bi bi-arrow-left"></i> Back to posts</a>
 
 <div class="panel" style="margin-top:16px;max-width:800px;">
   <?php foreach ($errors as $err): ?><div class="alert-w alert-danger"><i class="bi bi-exclamation-triangle-fill"></i> <?php echo e($err); ?></div><?php endforeach; ?>

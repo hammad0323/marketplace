@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <input type="password" name="password" required>
       <button type="submit" class="btn-w btn-primary btn-block" style="margin-top:20px;">Log in</button>
     </form>
-    <p class="sub" style="text-align:center;margin-top:20px;"><a href="/index.php" style="color:var(--ink-mute);">&larr; Back to site</a></p>
+    <p class="sub" style="text-align:center;margin-top:20px;"><a href="<?php echo url('/index.php'); ?>" style="color:var(--ink-mute);">&larr; Back to site</a></p>
   </div>
 </body>
 </html>

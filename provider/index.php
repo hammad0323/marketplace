@@ -51,7 +51,7 @@ require ROOT_PATH . '/includes/header.php';
 
       <?php if ($provider['status'] === 'approved'): ?>
         <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;">
-          <a href="/pages/provider.php?slug=<?php echo e($provider['slug']); ?>" class="btn-w btn-outline" target="_blank"><i class="bi bi-box-arrow-up-right"></i> View public profile</a>
+          <a href="<?php echo url('/pages/provider.php'); ?>?slug=<?php echo e($provider['slug']); ?>" class="btn-w btn-outline" target="_blank"><i class="bi bi-box-arrow-up-right"></i> View public profile</a>
         </div>
       <?php endif; ?>
 

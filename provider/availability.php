@@ -72,7 +72,7 @@ require ROOT_PATH . '/includes/header.php';
     <?php require ROOT_PATH . '/includes/provider-tabs.php'; ?>
 
     <?php if (!$services): ?>
-      <div class="empty-state"><div class="icon-wrap"><i class="bi bi-list-ul"></i></div><h4>Add a service first</h4><p>Availability is managed per service.</p><a href="/provider/service-form.php" class="btn-w btn-primary">Add a service</a></div>
+      <div class="empty-state"><div class="icon-wrap"><i class="bi bi-list-ul"></i></div><h4>Add a service first</h4><p>Availability is managed per service.</p><a href="<?php echo url('/provider/service-form.php'); ?>" class="btn-w btn-primary">Add a service</a></div>
     <?php elseif (!$service): ?>
       <div class="empty-state"><div class="icon-wrap"><i class="bi bi-exclamation-triangle"></i></div><h4>Service not found</h4></div>
     <?php else: ?>

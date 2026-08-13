@@ -13,9 +13,9 @@ if (!defined('APP_LOADED')) {
         <div class="thumb">
           <?php if ($svc['is_featured']): ?><span class="badge-pill"><i class="bi bi-star-fill"></i> Featured</span><?php endif; ?>
           <?php echo render_fav_button($conn, 'service', $svc['id']); ?>
-          <a href="/pages/service.php?slug=<?php echo e($svc['slug']); ?>"><?php if ($svc['cover']): ?><img src="<?php echo e($svc['cover']); ?>" alt="<?php echo e($svc['title']); ?>"><?php endif; ?></a>
+          <a href="<?php echo url('/pages/service.php'); ?>?slug=<?php echo e($svc['slug']); ?>"><?php if ($svc['cover']): ?><img src="<?php echo e($svc['cover']); ?>" alt="<?php echo e($svc['title']); ?>"><?php endif; ?></a>
         </div>
-        <a href="/pages/service.php?slug=<?php echo e($svc['slug']); ?>" class="card-body" style="display:block;">
+        <a href="<?php echo url('/pages/service.php'); ?>?slug=<?php echo e($svc['slug']); ?>" class="card-body" style="display:block;">
           <div class="card-meta"><i class="bi <?php echo e($svc['category_icon'] ?: 'bi-tag'); ?>"></i> <?php echo e($svc['category_name']); ?><?php if ($svc['is_verified']): ?> · <i class="bi bi-patch-check-fill" style="color:var(--purple);"></i> Verified<?php endif; ?></div>
           <div class="card-title"><?php echo e($svc['title']); ?></div>
           <div class="card-meta">

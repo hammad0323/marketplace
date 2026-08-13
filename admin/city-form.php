@@ -86,7 +86,7 @@ $adminActive = 'cities';
 require __DIR__ . '/_layout_top.php';
 ?>
 
-<a href="/admin/cities.php" style="color:var(--ink-mute);font-size:13.5px;"><i class="bi bi-arrow-left"></i> Back to cities</a>
+<a href="<?php echo url('/admin/cities.php'); ?>" style="color:var(--ink-mute);font-size:13.5px;"><i class="bi bi-arrow-left"></i> Back to cities</a>
 
 <div class="panel" style="margin-top:16px;max-width:720px;">
   <div class="panel-head"><h3><?php echo $city ? 'Edit city' : 'New city'; ?></h3></div>

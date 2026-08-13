@@ -1,19 +1,66 @@
-# Hardening for the Apache/shared-hosting deployment. The app works
-# without this file — every page is a real .php file, no rewriting
-# is required for routing — this just closes off a few things.
+# ============================================================================
+# Wanderly — Apache config. Works from the domain root OR a subfolder
+# (e.g. https://www.example.com/beta) with NO edits below in almost every
+# case — config/config.php auto-detects the subfolder from where the app's
+# files sit relative to your host's document root, and every link/redirect/
+# asset path in the app is generated from that one constant (BASE_PATH).
+#
+# The ONE thing Apache itself can't auto-detect (a plain .htaccess file
+# has no way to know its own URL path) is the ErrorDocument 500 line
+# below. If pages/CSS/JS work but a real PHP fatal error shows Apache's
+# default ugly error page instead of our styled one, that's why — see
+# the comment right above that line.
+# ============================================================================
 
+DirectoryIndex index.php
 Options -Indexes
 
-ErrorDocument 404 /404.php
-ErrorDocument 500 /500.php
-
-# config/ and includes/ are pulled in via require, never requested
-# directly, but deny them outright as a second layer of defense.
 RewriteEngine On
-RewriteCond %{REQUEST_URI} ^/(config|includes|database)/
+
+# --- config/, includes/, database/ are pulled in via require, never
+# requested directly — deny them outright as a second layer of defense.
+RewriteCond %{REQUEST_URI} ^/(.*/)?(config|includes|database)/
 RewriteRule ^ - [F,L]
 
+# --- dynamic sitemap.xml / robots.txt (real files: sitemap.php, robots.php)
 RewriteRule ^sitemap\.xml$ sitemap.php [L]
+RewriteRule ^robots\.txt$ robots.php [L]
+
+# --- Clean URLs, step 1: if a .php URL is requested directly (an old
+# bookmark, a link from before this was added, someone typing it by
+# hand), 301-redirect to the extension-less version so there's exactly
+# one canonical URL per page. %{THE_REQUEST} is the ORIGINAL request
+# line, so this can't loop with step 2 below. Query strings are kept
+# automatically (mod_rewrite appends them unless the target already
+# has a "?", which /%1 here does not).
+RewriteCond %{THE_REQUEST} \s/+(.*)\.php[\s?] [NC]
+RewriteRule ^ /%1 [R=301,L]
+
+# --- Clean URLs, step 2: internally serve the matching .php file for
+# an extension-less request, without changing what's in the address
+# bar. %{REQUEST_FILENAME} is already the fully-resolved filesystem
+# path, so this needs no subfolder-awareness of its own.
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.php -f
+RewriteRule ^(.*)$ $1.php [L]
+
+# --- 404: anything left over that isn't a real file or directory.
+# Using a RewriteRule (not ErrorDocument) here means it's resolved
+# relative to this .htaccess's own folder, so it's correct from a
+# subfolder deployment automatically, with no edits needed.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ 404.php [L]
+
+# --- 500: only reachable via a genuine Apache-level fatal error (a DB
+# connection failure is already handled inside PHP itself, in
+# config/database.php, and always renders correctly regardless of this
+# line). Unlike everything above, ErrorDocument paths are ALWAYS
+# relative to your server's document root, not to this folder — if
+# you deploy into a subfolder (e.g. /beta), change the line below to
+# match, e.g.: ErrorDocument 500 /beta/500.php
+# If the site lives at your domain root, leave it as-is.
+ErrorDocument 500 /500.php
 
 <FilesMatch "\.sql$">
     Require all denied

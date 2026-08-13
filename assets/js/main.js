@@ -112,11 +112,11 @@
     if (!type || !id) return;
 
     if (!token) {
-      window.location.href = '/customer/login.php?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.href = window.appUrl('/customer/login.php') + '?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
       return;
     }
 
-    $.post('/ajax/favorite.php', { type: type, id: id, csrf_token: token })
+    $.post(window.appUrl('/ajax/favorite.php'), { type: type, id: id, csrf_token: token })
       .done(function (res) {
         if (res && res.ok) {
           $btn.toggleClass('is-fav', res.favorited);
@@ -126,7 +126,7 @@
       })
       .fail(function (xhr) {
         if (xhr.status === 401) {
-          window.location.href = '/customer/login.php?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+          window.location.href = window.appUrl('/customer/login.php') + '?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
         } else {
           showToast('Something went wrong. Please try again.', 'danger');
         }
@@ -161,7 +161,7 @@
 
   function loadNotifications() {
     if (!$bell.length) return;
-    $.get('/ajax/notifications.php').done(function (data) {
+    $.get(window.appUrl('/ajax/notifications.php')).done(function (data) {
       if (data && data.ok) renderNotifications(data);
     });
   }
@@ -175,12 +175,12 @@
     });
     $(document).on('click', '#notif-mark-all', function (e) {
       e.preventDefault();
-      $.post('/ajax/notifications.php', { action: 'mark_all_read', csrf_token: $('meta[name=csrf-token]').attr('content') });
+      $.post(window.appUrl('/ajax/notifications.php'), { action: 'mark_all_read', csrf_token: $('meta[name=csrf-token]').attr('content') });
       $('.notif-item').css('background', 'none');
       $('#notif-count').hide();
     });
     $(document).on('click', '.notif-item', function () {
-      $.post('/ajax/notifications.php', { action: 'mark_read', id: $(this).data('id'), csrf_token: $('meta[name=csrf-token]').attr('content') });
+      $.post(window.appUrl('/ajax/notifications.php'), { action: 'mark_read', id: $(this).data('id'), csrf_token: $('meta[name=csrf-token]').attr('content') });
     });
   }
 
@@ -206,7 +206,7 @@
       $btn.prop('disabled', true).text('Detecting your location…');
       navigator.geolocation.getCurrentPosition(
         function (pos) {
-          var onSearchPage = window.location.pathname.indexOf('/pages/search.php') !== -1;
+          var onSearchPage = window.location.pathname.indexOf('/pages/search') !== -1;
           var params = new URLSearchParams(onSearchPage ? window.location.search : '');
           params.set('lat', pos.coords.latitude.toFixed(6));
           params.set('lng', pos.coords.longitude.toFixed(6));
@@ -214,7 +214,7 @@
           if (onSearchPage) {
             window.location.search = params.toString();
           } else {
-            window.location.href = '/pages/search.php?' + params.toString();
+            window.location.href = window.appUrl('/pages/search.php') + '?' + params.toString();
           }
         },
         function () {

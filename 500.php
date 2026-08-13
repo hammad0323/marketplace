@@ -1,4 +1,13 @@
-<?php http_response_code(500); ?>
+<?php
+http_response_code(500);
+// Self-contained (no config.php dependency) on purpose — this page is
+// shown precisely when the DB connection fails, so it must render fine
+// without needing the DB, session, or anything else. Same base-path
+// auto-detection as config/config.php's BASE_PATH, duplicated here.
+$__docRoot = rtrim(str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? ''), '/');
+$__appRoot = rtrim(str_replace('\\', '/', __DIR__), '/');
+$basePath = ($__docRoot !== '' && strpos($__appRoot, $__docRoot) === 0) ? substr($__appRoot, strlen($__docRoot)) : '';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,7 +30,7 @@
     <div class="code">500</div>
     <h1>Something went wrong on our end</h1>
     <p>Our team has been notified. Please try again in a moment.</p>
-    <a href="/index.php"><i class="bi bi-arrow-left"></i> Back to home</a>
+    <a href="<?php echo htmlspecialchars($basePath, ENT_QUOTES, 'UTF-8'); ?>/"><i class="bi bi-arrow-left"></i> Back to home</a>
   </div>
 </body>
 </html>

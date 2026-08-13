@@ -43,7 +43,7 @@ require ROOT_PATH . '/includes/header.php';
 
     <?php if ($tags): ?>
       <div style="display:flex;gap:8px;margin-top:32px;flex-wrap:wrap;">
-        <?php foreach ($tags as $t): ?><a href="/pages/blog.php?tag=<?php echo e($t['slug']); ?>" class="btn-w btn-outline btn-sm">#<?php echo e($t['name']); ?></a><?php endforeach; ?>
+        <?php foreach ($tags as $t): ?><a href="<?php echo url('/pages/blog.php'); ?>?tag=<?php echo e($t['slug']); ?>" class="btn-w btn-outline btn-sm">#<?php echo e($t['name']); ?></a><?php endforeach; ?>
       </div>
     <?php endif; ?>
   </div>
@@ -55,7 +55,7 @@ require ROOT_PATH . '/includes/header.php';
     <h3 style="font-size:19px;font-weight:800;margin-bottom:20px;">More guides</h3>
     <div class="provider-grid">
       <?php foreach ($related as $r): ?>
-        <a class="service-card" href="/pages/blog-post.php?slug=<?php echo e($r['slug']); ?>">
+        <a class="service-card" href="<?php echo url('/pages/blog-post.php'); ?>?slug=<?php echo e($r['slug']); ?>">
           <div class="thumb"><?php if ($r['featured_image']): ?><img src="<?php echo e($r['featured_image']); ?>"><?php endif; ?></div>
           <div class="card-body"><div class="card-title"><?php echo e($r['title']); ?></div></div>
         </a>

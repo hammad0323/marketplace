@@ -32,7 +32,7 @@
     if (!text) return;
     $input.val('').prop('disabled', true);
 
-    $.post('/ajax/send-message.php', { conversation_id: conversationId, message_text: text, csrf_token: csrf })
+    $.post(window.appUrl('/ajax/send-message.php'), { conversation_id: conversationId, message_text: text, csrf_token: csrf })
       .done(function (res) {
         if (res.ok) appendMessage(res.message);
         else showToast(res.error || 'Could not send message.', 'danger');
@@ -42,7 +42,7 @@
   });
 
   setInterval(function () {
-    $.get('/ajax/messages-poll.php', { conversation_id: conversationId, after_id: lastId })
+    $.get(window.appUrl('/ajax/messages-poll.php'), { conversation_id: conversationId, after_id: lastId })
       .done(function (res) {
         if (res.ok && res.items.length) {
           res.items.forEach(appendMessage);

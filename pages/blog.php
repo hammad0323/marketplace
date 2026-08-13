@@ -41,7 +41,7 @@ require ROOT_PATH . '/includes/header.php';
 
     <?php if ($categories): ?>
       <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:32px;">
-        <a href="/pages/blog.php" class="btn-w btn-sm <?php echo $categorySlug === '' ? 'btn-primary' : 'btn-outline'; ?>">All</a>
+        <a href="<?php echo url('/pages/blog.php'); ?>" class="btn-w btn-sm <?php echo $categorySlug === '' ? 'btn-primary' : 'btn-outline'; ?>">All</a>
         <?php foreach ($categories as $cat): ?>
           <a href="?category=<?php echo e($cat['slug']); ?>" class="btn-w btn-sm <?php echo $categorySlug === $cat['slug'] ? 'btn-primary' : 'btn-outline'; ?>"><?php echo e($cat['name']); ?> (<?php echo (int) $cat['post_count']; ?>)</a>
         <?php endforeach; ?>
@@ -51,7 +51,7 @@ require ROOT_PATH . '/includes/header.php';
     <?php if ($posts): ?>
       <div class="provider-grid stagger reveal in-view">
         <?php foreach ($posts as $p): ?>
-          <a class="service-card" href="/pages/blog-post.php?slug=<?php echo e($p['slug']); ?>">
+          <a class="service-card" href="<?php echo url('/pages/blog-post.php'); ?>?slug=<?php echo e($p['slug']); ?>">
             <div class="thumb"><?php if ($p['featured_image']): ?><img src="<?php echo e($p['featured_image']); ?>"><?php endif; ?></div>
             <div class="card-body">
               <?php if ($p['category_name']): ?><div class="card-meta"><i class="bi bi-tag"></i> <?php echo e($p['category_name']); ?></div><?php endif; ?>

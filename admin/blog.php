@@ -20,7 +20,7 @@ require __DIR__ . '/_layout_top.php';
 <div class="panel">
   <div class="panel-head">
     <h3>All posts</h3>
-    <a href="/admin/blog-form.php" class="btn-w btn-primary btn-sm"><i class="bi bi-plus-lg"></i> New post</a>
+    <a href="<?php echo url('/admin/blog-form.php'); ?>" class="btn-w btn-primary btn-sm"><i class="bi bi-plus-lg"></i> New post</a>
   </div>
   <?php if ($posts): ?>
     <table class="table-w">
@@ -33,7 +33,7 @@ require __DIR__ . '/_layout_top.php';
             <td><?php echo status_badge($p['status'] === 'published' ? 'approved' : 'pending'); ?></td>
             <td><?php echo $p['published_at'] ? e(format_date($p['published_at'])) : '—'; ?></td>
             <td style="text-align:right;">
-              <a href="/admin/blog-form.php?id=<?php echo (int) $p['id']; ?>" class="btn-w btn-outline btn-sm">Edit</a>
+              <a href="<?php echo url('/admin/blog-form.php'); ?>?id=<?php echo (int) $p['id']; ?>" class="btn-w btn-outline btn-sm">Edit</a>
               <form method="post" style="display:inline;" onsubmit="return confirm('Delete this post?');">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="delete">

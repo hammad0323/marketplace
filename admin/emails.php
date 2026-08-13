@@ -38,7 +38,7 @@ require __DIR__ . '/_layout_top.php';
 ?>
 
 <?php if ($editingTemplate): ?>
-  <a href="/admin/emails.php" style="color:var(--ink-mute);font-size:13.5px;"><i class="bi bi-arrow-left"></i> Back to templates</a>
+  <a href="<?php echo url('/admin/emails.php'); ?>" style="color:var(--ink-mute);font-size:13.5px;"><i class="bi bi-arrow-left"></i> Back to templates</a>
   <div class="panel" style="margin-top:16px;">
     <div class="panel-head"><h3>Edit: <?php echo e($editingTemplate['template_key']); ?></h3></div>
     <form method="post" class="form-w">

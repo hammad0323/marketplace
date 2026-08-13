@@ -78,10 +78,10 @@ require ROOT_PATH . '/includes/header.php';
       <?php elseif ($atLimit): ?>
         <div class="alert-w alert-info" style="margin:0;display:flex;align-items:center;gap:10px;">
           <i class="bi bi-info-circle-fill"></i> You've reached your plan's service limit.
-          <a href="/provider/membership.php" class="btn-w btn-primary btn-sm" style="margin-left:8px;">Upgrade</a>
+          <a href="<?php echo url('/provider/membership.php'); ?>" class="btn-w btn-primary btn-sm" style="margin-left:8px;">Upgrade</a>
         </div>
       <?php else: ?>
-        <a href="/provider/service-form.php" class="btn-w btn-primary"><i class="bi bi-plus-lg"></i> Add service</a>
+        <a href="<?php echo url('/provider/service-form.php'); ?>" class="btn-w btn-primary"><i class="bi bi-plus-lg"></i> Add service</a>
       <?php endif; ?>
     </div>
 
@@ -100,7 +100,7 @@ require ROOT_PATH . '/includes/header.php';
                 <td><?php echo format_price($s['price']); ?> / <?php echo e($s['price_unit']); ?></td>
                 <td><?php echo status_badge($s['status']); ?></td>
                 <td style="text-align:right;white-space:nowrap;">
-                  <a href="/provider/service-form.php?id=<?php echo (int) $s['id']; ?>" class="btn-w btn-outline btn-sm">Edit</a>
+                  <a href="<?php echo url('/provider/service-form.php'); ?>?id=<?php echo (int) $s['id']; ?>" class="btn-w btn-outline btn-sm">Edit</a>
                   <form method="post" style="display:inline;">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="service_id" value="<?php echo (int) $s['id']; ?>">
@@ -132,7 +132,7 @@ require ROOT_PATH . '/includes/header.php';
         <div class="icon-wrap"><i class="bi bi-list-ul"></i></div>
         <h4>No services yet</h4>
         <p>Add your first hotel room, car, table or experience to start getting bookings.</p>
-        <?php if ($provider['status'] === 'approved'): ?><a href="/provider/service-form.php" class="btn-w btn-primary">Add your first service</a><?php endif; ?>
+        <?php if ($provider['status'] === 'approved'): ?><a href="<?php echo url('/provider/service-form.php'); ?>" class="btn-w btn-primary">Add your first service</a><?php endif; ?>
       </div>
     <?php endif; ?>
   </div>

@@ -19,7 +19,7 @@
   function runSearch(page) {
     var params = currentFilters(page);
     $results.css('opacity', 0.5);
-    $.get('/ajax/search-results.php', $.param(params))
+    $.get(window.appUrl('/ajax/search-results.php'), $.param(params))
       .done(function (html) {
         $results.html(html);
         $results.css('opacity', 1);
@@ -73,7 +73,7 @@
     }
     if (q.length < 2) { $box.hide(); return; }
     $input.data('debounce', setTimeout(function () {
-      $.get('/ajax/autocomplete.php', { q: q }).done(function (items) {
+      $.get(window.appUrl('/ajax/autocomplete.php'), { q: q }).done(function (items) {
         if (!items.length) { $box.hide(); return; }
         $box.empty();
         items.forEach(function (item) {

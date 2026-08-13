@@ -55,9 +55,9 @@ require ROOT_PATH . '/includes/header.php';
             <div class="thumb">
               <?php if ($svc['is_featured']): ?><span class="badge-pill"><i class="bi bi-star-fill"></i> Featured</span><?php endif; ?>
               <?php echo render_fav_button($conn, 'service', $svc['id']); ?>
-              <a href="/pages/service.php?slug=<?php echo e($svc['slug']); ?>"><?php if ($svc['cover']): ?><img src="<?php echo e($svc['cover']); ?>" alt="<?php echo e($svc['title']); ?>"><?php endif; ?></a>
+              <a href="<?php echo url('/pages/service.php'); ?>?slug=<?php echo e($svc['slug']); ?>"><?php if ($svc['cover']): ?><img src="<?php echo e($svc['cover']); ?>" alt="<?php echo e($svc['title']); ?>"><?php endif; ?></a>
             </div>
-            <a href="/pages/service.php?slug=<?php echo e($svc['slug']); ?>" class="card-body" style="display:block;">
+            <a href="<?php echo url('/pages/service.php'); ?>?slug=<?php echo e($svc['slug']); ?>" class="card-body" style="display:block;">
               <div class="card-meta"><i class="bi <?php echo e($svc['category_icon'] ?: 'bi-tag'); ?>"></i> <?php echo e($svc['category_name']); ?></div>
               <div class="card-title"><?php echo e($svc['title']); ?></div>
               <div class="card-footer-row">
@@ -73,7 +73,7 @@ require ROOT_PATH . '/includes/header.php';
         <div class="icon-wrap"><i class="bi bi-signpost-2"></i></div>
         <h4>No services listed in <?php echo e($city['name']); ?> yet</h4>
         <p>Providers can already register — approved listings will appear here automatically.</p>
-        <a href="/provider/register.php" class="btn-w btn-primary">List a service in <?php echo e($city['name']); ?></a>
+        <a href="<?php echo url('/provider/register.php'); ?>" class="btn-w btn-primary">List a service in <?php echo e($city['name']); ?></a>
       </div>
     <?php endif; ?>
   </div>
