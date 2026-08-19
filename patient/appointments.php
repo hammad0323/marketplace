@@ -22,7 +22,7 @@ $appointments = mysqli_query(db(), "
 
 $pageTitle = 'My Appointments';
 $heading = 'My Appointments';
-$extraScripts = '<script src="/assets/js/patient-appointments.js"></script>';
+$extraScripts = '<script src="/assets/js/calendar-widget.js"></script><script src="/assets/js/patient-appointments.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="tabs-row">
@@ -67,7 +67,7 @@ require __DIR__ . '/includes/header.php';
         <button class="modal-close" data-modal-close aria-label="Close"><i class="ri-close-line"></i></button>
         <div style="padding:36px;">
             <h3 style="margin-bottom:18px;">Reschedule Appointment</h3>
-            <div class="calendar-grid" id="reschedule-calendar" style="margin-bottom:16px;"></div>
+            <div id="reschedule-calendar" style="margin-bottom:16px;"></div>
             <div id="reschedule-date-label" style="font-size:13px;color:var(--color-text-muted);margin-bottom:8px;"></div>
             <div class="slot-grid" id="reschedule-slots"></div>
             <button type="button" class="btn btn-primary btn-block" id="confirm-reschedule-btn" style="margin-top:20px;" disabled>Confirm New Time</button>

@@ -79,6 +79,11 @@ foreach ($doctors as &$d) {
 unset($d);
 
 $specs = mysqli_query(db(), 'SELECT id, name, slug FROM specializations WHERE is_active = 1 ORDER BY name');
+$cityOptions = mysqli_query(db(), "
+    SELECT DISTINCT clinic_city FROM doctors
+    WHERE verification_status = 'verified' AND clinic_city IS NOT NULL AND clinic_city != ''
+    ORDER BY clinic_city ASC
+");
 
 $specName = '';
 if ($specSlug !== '') {
@@ -120,7 +125,12 @@ require __DIR__ . '/includes/header.php';
                 </div>
                 <div class="form-group">
                     <label class="form-label">City</label>
-                    <input type="text" name="city" class="form-control" placeholder="e.g. Austin" value="<?= e($city) ?>">
+                    <select name="city" class="form-control">
+                        <option value="">All Cities</option>
+                        <?php while ($co = mysqli_fetch_assoc($cityOptions)): ?>
+                        <option value="<?= e($co['clinic_city']) ?>" <?= $city === $co['clinic_city'] ? 'selected' : '' ?>><?= e($co['clinic_city']) ?></option>
+                        <?php endwhile; ?>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Fee Range ($)</label>

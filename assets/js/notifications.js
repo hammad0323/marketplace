@@ -49,7 +49,7 @@
             return;
         }
         $list.html(notifications.map(function (n) {
-            return '<a href="' + n.link + '" style="display:block;padding:10px 12px;white-space:normal;' + (n.is_read == 0 ? 'background:rgba(139,92,246,0.05);' : '') + '">' +
+            return '<a href="' + n.link + '" style="display:block;padding:10px 12px;white-space:normal;' + (n.is_read == 0 ? 'background:rgba(12,107,93,0.05);' : '') + '">' +
                 '<strong style="display:block;font-size:13px;">' + n.title + '</strong>' +
                 '<span style="font-size:12px;color:var(--color-text-muted);">' + n.message + '</span></a>';
         }).join(''));

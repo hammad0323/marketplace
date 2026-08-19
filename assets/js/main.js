@@ -173,4 +173,15 @@
             bar.style.background = colors[score];
         });
     });
+
+    // ---- Generic horizontal carousel nav (e.g. homepage city carousel) --------
+    document.querySelectorAll('[data-carousel]').forEach(function (wrap) {
+        var track = wrap.querySelector('[data-carousel-track]');
+        if (!track) return;
+        var scrollAmount = function () { return Math.min(track.clientWidth * 0.8, 480); };
+        var prev = wrap.querySelector('[data-carousel-prev]');
+        var next = wrap.querySelector('[data-carousel-next]');
+        if (prev) prev.addEventListener('click', function () { track.scrollBy({ left: -scrollAmount(), behavior: 'smooth' }); });
+        if (next) next.addEventListener('click', function () { track.scrollBy({ left: scrollAmount(), behavior: 'smooth' }); });
+    });
 })();

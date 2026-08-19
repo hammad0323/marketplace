@@ -169,16 +169,16 @@ function email_template($title, $bodyHtml, $ctaText = null, $ctaUrl = null)
     $ctaHtml = '';
     if ($ctaText && $ctaUrl) {
         $ctaHtml = '<tr><td style="padding:8px 0 4px;">
-            <a href="' . e($ctaUrl) . '" style="display:inline-block;padding:13px 28px;border-radius:999px;background:#8B5CF6;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;">' . e($ctaText) . '</a>
+            <a href="' . e($ctaUrl) . '" style="display:inline-block;padding:13px 28px;border-radius:999px;background:#0C6B5D;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;">' . e($ctaText) . '</a>
         </td></tr>';
     }
 
     return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#F8F7FF;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F7FF;padding:32px 16px;">
+<body style="margin:0;padding:0;background:#F3FCFB;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F3FCFB;padding:32px 16px;">
 <tr><td align="center">
 <table role="presentation" width="100%" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden;">
-<tr><td style="background:linear-gradient(135deg,#8B5CF6,#A78BFA);padding:28px 32px;">
+<tr><td style="background:linear-gradient(135deg,#0C6B5D,#22C3AB);padding:28px 32px;">
     <span style="color:#ffffff;font-size:20px;font-weight:800;">' . $siteName . '</span>
 </td></tr>
 <tr><td style="padding:32px;">
@@ -186,7 +186,7 @@ function email_template($title, $bodyHtml, $ctaText = null, $ctaUrl = null)
     <div style="color:#4B5563;font-size:14.5px;line-height:1.7;">' . $bodyHtml . '</div>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:24px;">' . $ctaHtml . '</table>
 </td></tr>
-<tr><td style="padding:20px 32px;background:#F8F7FF;color:#9CA3AF;font-size:12px;">
+<tr><td style="padding:20px 32px;background:#F3FCFB;color:#9CA3AF;font-size:12px;">
     This is an automated message from ' . $siteName . '. Please do not reply directly to this email.
 </td></tr>
 </table>

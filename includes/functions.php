@@ -272,7 +272,7 @@ function avatar_url($path, $fallbackSeed = 'U')
     $initial = strtoupper(substr($fallbackSeed, 0, 1));
     return 'data:image/svg+xml;utf8,' . rawurlencode(
         '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">'
-        . '<rect width="100" height="100" rx="50" fill="#8B5CF6"/>'
+        . '<rect width="100" height="100" rx="50" fill="#0C6B5D"/>'
         . '<text x="50" y="58" font-size="42" font-family="sans-serif" fill="#fff" text-anchor="middle">' . $initial . '</text>'
         . '</svg>'
     );

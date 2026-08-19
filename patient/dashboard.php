@@ -41,7 +41,7 @@ $extraScripts = '<script src="/assets/js/vendor/chart.umd.js"></script><script>'
     . 'type: "line",'
     . 'data: { labels: ' . json_encode($chartLabels) . ', datasets: [{'
     . 'label: "Appointments", data: ' . json_encode($chartData) . ','
-    . 'borderColor: "#8B5CF6", backgroundColor: "rgba(139,92,246,0.12)", fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: "#8B5CF6"'
+    . 'borderColor: "#0C6B5D", backgroundColor: "rgba(12,107,93,0.12)", fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: "#0C6B5D"'
     . '}] },'
     . 'options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }'
     . '});</script>';

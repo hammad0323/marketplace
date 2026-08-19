@@ -25,6 +25,7 @@
         selectedDate = null; selectedSlot = null;
         $('#confirm-reschedule-btn').prop('disabled', true);
         $('#reschedule-slots').empty();
+        $('#reschedule-calendar').removeData('selected-date');
         buildCalendar();
         $rescheduleModal.addClass('open');
         document.body.style.overflow = 'hidden';
@@ -37,24 +38,9 @@
         document.body.style.overflow = '';
     }
 
-    function buildCalendar() {
-        var $cal = $('#reschedule-calendar').empty();
-        var today = new Date();
-        for (var i = 0; i < 21; i++) {
-            var d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
-            var iso = d.toISOString().slice(0, 10);
-            var $day = $('<div class="calendar-day has-slots"></div>').text(d.getDate()).attr('data-date', iso)
-                .attr('title', d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }));
-            if (i === 0) $day.addClass('today');
-            $cal.append($day);
-        }
-    }
-
-    $(document).on('click', '#reschedule-calendar .calendar-day', function () {
-        $('#reschedule-calendar .calendar-day').removeClass('selected');
-        $(this).addClass('selected');
-        selectedDate = $(this).data('date');
-        $('#reschedule-date-label').text($(this).attr('title'));
+    function loadRescheduleSlots(date, title) {
+        selectedDate = date;
+        $('#reschedule-date-label').text(title);
         var $slots = $('#reschedule-slots').html('<div class="skeleton" style="height:44px;grid-column:1/-1;"></div>');
         $.getJSON('/ajax/check-availability.php', { doctor_id: activeAppt.doctorId, date: selectedDate, type: activeAppt.type }, function (res) {
             $slots.empty();
@@ -70,7 +56,14 @@
                 $slots.append($btn);
             });
         });
-    });
+    }
+
+    function buildCalendar() {
+        var calendar = window.buildMonthCalendar($('#reschedule-calendar'), {
+            onSelect: loadRescheduleSlots
+        });
+        calendar.selectToday();
+    }
 
     $(document).on('click', '#reschedule-slots .slot-btn:not(:disabled)', function () {
         $('#reschedule-slots .slot-btn').removeClass('selected');

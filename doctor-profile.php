@@ -71,7 +71,7 @@ $extraHead = '<script type="application/ld+json">' . json_encode([
     'medicalSpecialty' => array_column($doctorSpecializations, 'name'), 'url' => APP_URL . '/doctor-profile?slug=' . $doctor['slug'],
     'aggregateRating' => $doctor['rating_count'] > 0 ? ['@type' => 'AggregateRating', 'ratingValue' => $doctor['rating_avg'], 'reviewCount' => $doctor['rating_count']] : null,
 ]) . '</script>';
-$extraScripts = '<script src="/assets/js/booking.js"></script>';
+$extraScripts = '<script src="/assets/js/calendar-widget.js"></script><script src="/assets/js/booking.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 40px);">
@@ -211,7 +211,7 @@ require __DIR__ . '/includes/header.php';
                     </div>
 
                     <div style="font-size:12.5px;font-weight:700;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:8px;">Select a date</div>
-                    <div class="calendar-grid" id="booking-calendar" style="margin-bottom:16px;"></div>
+                    <div id="booking-calendar" style="margin-bottom:16px;"></div>
                     <div id="selected-date-label" style="font-size:13px;color:var(--color-text-muted);margin-bottom:8px;"></div>
                     <div class="slot-grid" id="slot-grid"></div>
 

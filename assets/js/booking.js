@@ -5,20 +5,16 @@
 
     var doctorId = $widget.data('doctor-id');
     var selectedDate = null, selectedType = 'online', selectedSlot = null;
+    var calendar;
 
     function buildCalendar() {
-        var $cal = $('#booking-calendar').empty();
-        var today = new Date();
-        for (var i = 0; i < 21; i++) {
-            var d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
-            var iso = d.toISOString().slice(0, 10);
-            var $day = $('<div class="calendar-day has-slots"></div>')
-                .text(d.getDate())
-                .attr('data-date', iso)
-                .attr('title', d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }));
-            if (i === 0) $day.addClass('today');
-            $cal.append($day);
-        }
+        calendar = window.buildMonthCalendar($('#booking-calendar'), {
+            onSelect: function (iso, title) {
+                selectedDate = iso;
+                $('#selected-date-label').text(title);
+                loadSlots(selectedDate);
+            }
+        });
     }
 
     function loadSlots(date) {
@@ -51,14 +47,7 @@
     }
 
     buildCalendar();
-
-    $(document).on('click', '#booking-calendar .calendar-day', function () {
-        $('#booking-calendar .calendar-day').removeClass('selected');
-        $(this).addClass('selected');
-        selectedDate = $(this).data('date');
-        $('#selected-date-label').text($(this).attr('title'));
-        loadSlots(selectedDate);
-    });
+    calendar.selectToday();
 
     $(document).on('click', '.consult-type-toggle button', function () {
         $('.consult-type-toggle button').removeClass('btn-primary').addClass('btn-outline');

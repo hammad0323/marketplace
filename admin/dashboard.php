@@ -42,12 +42,12 @@ $heading = 'Admin Dashboard';
 $extraScripts = '<script src="/assets/js/vendor/chart.umd.js"></script><script>'
     . 'new Chart(document.getElementById("apptChart"), {'
     . 'type: "line",'
-    . 'data: { labels: ' . json_encode($chartLabels) . ', datasets: [{ label: "Appointments", data: ' . json_encode($chartData) . ', borderColor: "#8B5CF6", backgroundColor: "rgba(139,92,246,0.12)", fill: true, tension: 0.4 }] },'
+    . 'data: { labels: ' . json_encode($chartLabels) . ', datasets: [{ label: "Appointments", data: ' . json_encode($chartData) . ', borderColor: "#0C6B5D", backgroundColor: "rgba(12,107,93,0.12)", fill: true, tension: 0.4 }] },'
     . 'options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }'
     . '});'
     . 'new Chart(document.getElementById("statusChart"), {'
     . 'type: "doughnut",'
-    . 'data: { labels: ' . json_encode($statusLabels) . ', datasets: [{ data: ' . json_encode($statusData) . ', backgroundColor: ["#F59E0B","#8B5CF6","#22C55E","#EF4444","#A78BFA","#C4B5FD"] }] },'
+    . 'data: { labels: ' . json_encode($statusLabels) . ', datasets: [{ data: ' . json_encode($statusData) . ', backgroundColor: ["#F59E0B","#0C6B5D","#22C55E","#EF4444","#22C3AB","#C4EEE7"] }] },'
     . 'options: { plugins: { legend: { position: "bottom" } } }'
     . '});</script>';
 require __DIR__ . '/includes/header.php';

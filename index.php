@@ -6,6 +6,16 @@ $metaDescription = get_setting('site_tagline') . '. Search verified specialists,
 
 $specs = mysqli_query(db(), 'SELECT id, name, slug, icon, description FROM specializations WHERE is_active = 1 ORDER BY sort_order LIMIT 10');
 
+$cities = mysqli_query(db(), "
+    SELECT d.clinic_city AS city, COUNT(*) AS doctor_count
+    FROM doctors d JOIN users u ON u.id = d.user_id
+    WHERE d.verification_status = 'verified' AND u.status = 'active'
+      AND d.clinic_city IS NOT NULL AND d.clinic_city != ''
+    GROUP BY d.clinic_city
+    ORDER BY doctor_count DESC, city ASC
+    LIMIT 12
+")->fetch_all(MYSQLI_ASSOC);
+
 $featuredDoctors = mysqli_query(db(), "
     SELECT d.*, u.full_name, u.avatar
     FROM doctors d
@@ -25,6 +35,7 @@ $totalDoctors = mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM do
 $totalAppointments = mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM appointments"))['c'];
 $totalSpecs = mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM specializations WHERE is_active=1"))['c'];
 
+$extraScripts = '<script src="/assets/js/search-suggest.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 
@@ -41,15 +52,22 @@ require __DIR__ . '/includes/header.php';
             <h1>Healthcare that fits <span class="text-gradient">your schedule</span>, not a waiting room.</h1>
             <p class="lead">Search verified specialists, compare fees and reviews, and book an online or in-clinic consultation in under two minutes.</p>
 
-            <form class="search-box" action="/doctors" method="get" style="margin-bottom:32px;">
+            <form class="search-box" id="hero-search-box" action="/doctors" method="get" style="margin-bottom:32px;" autocomplete="off">
                 <i class="ri-search-line" style="color:var(--color-text-muted);"></i>
-                <input type="text" name="q" placeholder="Search doctor, condition, or specialization…">
+                <input type="text" id="hero-search-input" name="q" placeholder="Search doctor, condition, or specialization…">
                 <span class="divider"></span>
                 <select name="specialization">
                     <option value="">All Specialties</option>
                     <?php mysqli_data_seek($specs, 0); while ($s = mysqli_fetch_assoc($specs)): ?>
                     <option value="<?= e($s['slug']) ?>"><?= e($s['name']) ?></option>
                     <?php endwhile; ?>
+                </select>
+                <span class="divider"></span>
+                <select name="city">
+                    <option value="">All Cities</option>
+                    <?php foreach ($cities as $c): ?>
+                    <option value="<?= e($c['city']) ?>"><?= e($c['city']) ?></option>
+                    <?php endforeach; ?>
                 </select>
                 <button type="submit" class="btn btn-primary">Search</button>
             </form>
@@ -97,6 +115,31 @@ require __DIR__ . '/includes/header.php';
         </div>
     </div>
 </section>
+
+<?php if (count($cities) > 0): ?>
+<section class="section" style="padding-top:0;">
+    <div class="container">
+        <div class="section-head" data-reveal>
+            <span class="eyebrow">Explore by Location</span>
+            <h2>Find doctors near you</h2>
+            <p>Browse verified doctors practicing in your city.</p>
+        </div>
+        <div class="city-carousel-wrap" data-reveal data-carousel>
+            <button type="button" class="carousel-nav-btn" data-carousel-prev aria-label="Scroll left"><i class="ri-arrow-left-s-line"></i></button>
+            <div class="city-carousel-track" data-carousel-track>
+                <?php foreach ($cities as $c): ?>
+                <a href="/doctors?city=<?= e($c['city']) ?>" class="city-chip">
+                    <span class="city-chip-icon"><i class="ri-map-pin-2-fill"></i></span>
+                    <span class="city-chip-name"><?= e($c['city']) ?></span>
+                    <span class="city-chip-count"><?= (int) $c['doctor_count'] ?> doctor<?= $c['doctor_count'] == 1 ? '' : 's' ?></span>
+                </a>
+                <?php endforeach; ?>
+            </div>
+            <button type="button" class="carousel-nav-btn" data-carousel-next aria-label="Scroll right"><i class="ri-arrow-right-s-line"></i></button>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
 
 <section class="section" style="background:var(--color-surface);">
     <div class="container">

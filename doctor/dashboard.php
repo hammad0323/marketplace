@@ -39,7 +39,7 @@ $heading = 'My Dashboard';
 $extraScripts = '<script src="/assets/js/vendor/chart.umd.js"></script><script src="/assets/js/doctor-appointments.js"></script><script>'
     . 'new Chart(document.getElementById("apptChart"), {'
     . 'type: "bar",'
-    . 'data: { labels: ' . json_encode($chartLabels) . ', datasets: [{ label: "Appointments", data: ' . json_encode($chartData) . ', backgroundColor: "#8B5CF6", borderRadius: 8 }] },'
+    . 'data: { labels: ' . json_encode($chartLabels) . ', datasets: [{ label: "Appointments", data: ' . json_encode($chartData) . ', backgroundColor: "#0C6B5D", borderRadius: 8 }] },'
     . 'options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }'
     . '});</script>';
 require __DIR__ . '/includes/header.php';
