@@ -317,6 +317,21 @@ function tp_find_redirect(string $path): ?array
     );
 }
 
+/**
+ * redirects.new_url is stored relative to the site root (e.g.
+ * "/bmi-calculator", no base path, so it stays valid if the project
+ * is ever moved between a subfolder and the domain root) — UNLESS an
+ * admin typed a full external URL into the manual redirect form.
+ * Always resolve through this before sending a Location header.
+ */
+function tp_resolve_redirect_target(string $newUrl): string
+{
+    if (str_starts_with($newUrl, 'http://') || str_starts_with($newUrl, 'https://')) {
+        return $newUrl;
+    }
+    return tp_url($newUrl);
+}
+
 function tp_flash_set(string $type, string $message): void
 {
     $_SESSION['flash'][] = ['type' => $type, 'message' => $message];
@@ -377,6 +392,54 @@ function tp_asset(string $path): string
 function tp_url(string $path = ''): string
 {
     return TOOLS_PLATFORM_URL . '/' . ltrim($path, '/');
+}
+
+/**
+ * The scheme+host part only (no path) — e.g. "https://www.beglet.com".
+ * Auto-detected from the request; override with the "site_url" setting
+ * (Admin → Settings) if you ever need to force a specific domain (e.g.
+ * behind a proxy that mangles the Host header).
+ */
+function tp_site_origin(): string
+{
+    $override = trim((string) tp_setting('site_url'));
+    if ($override !== '') {
+        return rtrim($override, '/');
+    }
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['SERVER_PORT'] ?? '') == 443 ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    return $scheme . '://' . $host;
+}
+
+/** Fully-qualified URL for contexts that require one: canonical, OG/Twitter, JSON-LD, sitemap.xml. */
+function tp_absolute_url(string $path = ''): string
+{
+    return tp_site_origin() . tp_url($path);
+}
+
+/** Given a value that may already be absolute (http...) or root-relative (/...), return it fully-qualified. */
+function tp_to_absolute(string $urlOrPath): string
+{
+    if ($urlOrPath === '' || str_starts_with($urlOrPath, 'http://') || str_starts_with($urlOrPath, 'https://')) {
+        return $urlOrPath;
+    }
+    return tp_site_origin() . '/' . ltrim($urlOrPath, '/');
+}
+
+/**
+ * The current request's path relative to the site root — i.e. with
+ * TOOLS_PLATFORM_URL's base path stripped and any query string removed.
+ * Used to match the `redirects` table, whose old_url/new_url are always
+ * stored relative to the site root (portable across a subfolder move).
+ */
+function tp_request_path_relative(): string
+{
+    $path = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
+    $base = TOOLS_PLATFORM_URL;
+    if ($base !== '' && str_starts_with($path, $base)) {
+        $path = substr($path, strlen($base));
+    }
+    return '/' . ltrim($path, '/');
 }
 
 // ------------------------------------------------------------
@@ -447,20 +510,19 @@ function tp_reserved_slugs(): array
 // ------------------------------------------------------------
 function tp_regenerate_sitemap(): bool
 {
-    $base = tp_url();
-    $urls = [['loc' => $base, 'priority' => '1.0']];
+    $urls = [['loc' => tp_absolute_url(), 'priority' => '1.0']];
 
     foreach (get_categories(true) as $cat) {
-        $urls[] = ['loc' => tp_url($cat['slug'] . '.php'), 'priority' => '0.8'];
+        $urls[] = ['loc' => tp_absolute_url($cat['slug']), 'priority' => '0.8'];
     }
     foreach (tp_query("SELECT slug, updated_at FROM tools WHERE status = 'published'") as $tool) {
-        $urls[] = ['loc' => tp_url($tool['slug'] . '.php'), 'lastmod' => substr($tool['updated_at'], 0, 10), 'priority' => '0.7'];
+        $urls[] = ['loc' => tp_absolute_url($tool['slug']), 'lastmod' => substr($tool['updated_at'], 0, 10), 'priority' => '0.7'];
     }
     foreach (tp_query("SELECT slug, updated_at FROM pages WHERE status = 'published'") as $page) {
-        $urls[] = ['loc' => tp_url($page['slug'] . '.php'), 'lastmod' => substr($page['updated_at'], 0, 10), 'priority' => '0.5'];
+        $urls[] = ['loc' => tp_absolute_url($page['slug']), 'lastmod' => substr($page['updated_at'], 0, 10), 'priority' => '0.5'];
     }
     foreach (tp_query("SELECT slug, updated_at FROM blog_posts WHERE status = 'published'") as $post) {
-        $urls[] = ['loc' => tp_url('blog/' . $post['slug'] . '.php'), 'lastmod' => substr($post['updated_at'], 0, 10), 'priority' => '0.6'];
+        $urls[] = ['loc' => tp_absolute_url('blog/' . $post['slug']), 'lastmod' => substr($post['updated_at'], 0, 10), 'priority' => '0.6'];
     }
 
     $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
@@ -477,14 +539,33 @@ function tp_regenerate_sitemap(): bool
     return (bool) @file_put_contents(TOOLS_PLATFORM_ROOT . '/sitemap.xml', $xml);
 }
 
+/**
+ * NOTE: a robots.txt written here only has effect if it's actually
+ * served from the domain root (https://yourdomain.com/robots.txt) —
+ * that's a hard rule search engines follow, not a suggestion. If this
+ * app is deployed at www.yourdomain.com/tools/, THIS file
+ * (.../tools/robots.txt) will be ignored by crawlers; merge the
+ * Disallow lines below into whatever robots.txt already lives at your
+ * actual domain root instead (or deploy at a subdomain, where the
+ * subdomain root IS this app's root).
+ */
 function tp_regenerate_robots(): bool
 {
-    $lines = ["User-agent: *", "Allow: /", "Disallow: /admin/", "Disallow: /includes/", "Disallow: /database/", "Disallow: /logs/", "Disallow: /api/"];
+    $base = TOOLS_PLATFORM_URL; // '' at domain root, e.g. '/tools' in a subfolder
+    $lines = [
+        'User-agent: *',
+        'Allow: ' . ($base ?: '/'),
+        'Disallow: ' . $base . '/admin/',
+        'Disallow: ' . $base . '/includes/',
+        'Disallow: ' . $base . '/database/',
+        'Disallow: ' . $base . '/logs/',
+        'Disallow: ' . $base . '/api/',
+    ];
     $extra = trim((string) tp_setting('robots_extra_rules'));
     if ($extra !== '') {
         $lines[] = $extra;
     }
     $lines[] = '';
-    $lines[] = 'Sitemap: ' . tp_url('sitemap.xml');
+    $lines[] = 'Sitemap: ' . tp_absolute_url('sitemap.xml');
     return (bool) @file_put_contents(TOOLS_PLATFORM_ROOT . '/robots.txt', implode("\n", $lines) . "\n");
 }

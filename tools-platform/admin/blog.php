@@ -37,7 +37,7 @@ require __DIR__ . '/includes/admin-header.php';
         <td><?= date('M j, Y', strtotime($p['created_at'])) ?></td>
         <td>
           <a href="<?= tp_url('admin/blog-form.php?id=' . $p['id']) ?>" class="btn btn-sm btn-outline-primary">Edit</a>
-          <a href="<?= tp_url('blog/' . $p['slug'] . '.php') ?>" target="_blank" class="btn btn-sm btn-outline-secondary">Preview</a>
+          <a href="<?= tp_url('blog/' . $p['slug']) ?>" target="_blank" class="btn btn-sm btn-outline-secondary">Preview</a>
           <a href="<?= tp_url('admin/blog.php?delete=' . $p['id']) ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this post?')">Delete</a>
         </td>
       </tr>

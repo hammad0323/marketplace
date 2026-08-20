@@ -12,28 +12,28 @@ $popularForFooter = get_popular_tools(6);
       <div class="col-6 col-md-3">
         <h6>Categories</h6>
         <?php foreach (array_slice($footerCategories, 0, 8) as $cat): ?>
-          <a href="<?= tp_url($cat['slug'] . '.php') ?>" class="d-block"><?= e($cat['name']) ?></a>
+          <a href="<?= tp_url($cat['slug']) ?>" class="d-block"><?= e($cat['name']) ?></a>
         <?php endforeach; ?>
       </div>
       <div class="col-6 col-md-3">
         <h6>Popular Tools</h6>
         <?php foreach ($popularForFooter as $t): ?>
-          <a href="<?= tp_url($t['slug'] . '.php') ?>" class="d-block"><?= e($t['name']) ?></a>
+          <a href="<?= tp_url($t['slug']) ?>" class="d-block"><?= e($t['name']) ?></a>
         <?php endforeach; ?>
       </div>
       <div class="col-6 col-md-3">
         <h6>Company</h6>
-        <a href="<?= tp_url('about.php') ?>" class="d-block">About Us</a>
-        <a href="<?= tp_url('contact.php') ?>" class="d-block">Contact</a>
-        <a href="<?= tp_url('blog.php') ?>" class="d-block">Blog</a>
-        <a href="<?= tp_url('all-tools.php') ?>" class="d-block">All Tools</a>
+        <a href="<?= tp_url('about') ?>" class="d-block">About Us</a>
+        <a href="<?= tp_url('contact') ?>" class="d-block">Contact</a>
+        <a href="<?= tp_url('blog') ?>" class="d-block">Blog</a>
+        <a href="<?= tp_url('all-tools') ?>" class="d-block">All Tools</a>
       </div>
       <div class="col-6 col-md-3">
         <h6>Legal</h6>
-        <a href="<?= tp_url('privacy-policy.php') ?>" class="d-block">Privacy Policy</a>
-        <a href="<?= tp_url('terms.php') ?>" class="d-block">Terms of Service</a>
-        <a href="<?= tp_url('disclaimer.php') ?>" class="d-block">Disclaimer</a>
-        <a href="<?= tp_url('cookie-policy.php') ?>" class="d-block">Cookie Policy</a>
+        <a href="<?= tp_url('privacy-policy') ?>" class="d-block">Privacy Policy</a>
+        <a href="<?= tp_url('terms') ?>" class="d-block">Terms of Service</a>
+        <a href="<?= tp_url('disclaimer') ?>" class="d-block">Disclaimer</a>
+        <a href="<?= tp_url('cookie-policy') ?>" class="d-block">Cookie Policy</a>
       </div>
     </div>
     <div class="tp-sub d-flex flex-wrap justify-content-between gap-2">

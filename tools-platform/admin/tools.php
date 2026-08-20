@@ -161,7 +161,7 @@ require __DIR__ . '/includes/admin-header.php';
       <?php foreach ($tools as $t): ?>
       <tr>
         <td><input type="checkbox" class="row-checkbox" name="ids[]" value="<?= (int) $t['id'] ?>"></td>
-        <td><i class="bi <?= e($t['icon'] ?: 'bi-calculator') ?> me-1"></i><?= e($t['name']) ?><br><small class="text-muted">/<?= e($t['slug']) ?>.php</small></td>
+        <td><i class="bi <?= e($t['icon'] ?: 'bi-calculator') ?> me-1"></i><?= e($t['name']) ?><br><small class="text-muted">/<?= e($t['slug']) ?></small></td>
         <td><?= e($t['category_name']) ?></td>
         <td><span class="badge bg-<?= $t['status'] === 'published' ? 'success' : ($t['status'] === 'draft' ? 'secondary' : 'danger') ?>"><?= e($t['status']) ?></span></td>
         <td><?= number_format($t['views']) ?></td>
@@ -173,7 +173,7 @@ require __DIR__ . '/includes/admin-header.php';
         <td class="text-nowrap">
           <a href="<?= tp_url('admin/tool-form.php?id=' . $t['id']) ?>" class="btn btn-sm btn-outline-primary">Edit</a>
           <a href="<?= tp_url('admin/tools.php?duplicate=' . $t['id']) ?>" class="btn btn-sm btn-outline-secondary">Duplicate</a>
-          <a href="<?= tp_url($t['slug'] . '.php') ?>" target="_blank" class="btn btn-sm btn-outline-secondary">Preview</a>
+          <a href="<?= tp_url($t['slug']) ?>" target="_blank" class="btn btn-sm btn-outline-secondary">Preview</a>
         </td>
       </tr>
       <?php endforeach; ?>

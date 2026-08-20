@@ -10,6 +10,11 @@ $slug = $blogSlug ?? '';
 $post = get_blog_post_by_slug($slug);
 
 if (!$post) {
+    $redirect = tp_find_redirect('/blog/' . $slug);
+    if ($redirect) {
+        header('Location: ' . tp_resolve_redirect_target($redirect['new_url']), true, (int) $redirect['redirect_type']);
+        exit;
+    }
     http_response_code(404);
     require __DIR__ . '/../404.php';
     exit;
@@ -30,7 +35,7 @@ $pageDescriptionFallback = $seoRow['meta_description'] ?? $post['excerpt'];
 $pageSeo = $seoRow;
 $breadcrumbItems = [
     ['label' => 'Home', 'url' => tp_url()],
-    ['label' => 'Blog', 'url' => tp_url('blog.php')],
+    ['label' => 'Blog', 'url' => tp_url('blog')],
     ['label' => $post['title'], 'url' => null],
 ];
 require __DIR__ . '/header.php';
@@ -49,7 +54,7 @@ require __DIR__ . '/header.php';
     <div class="row g-3">
       <?php foreach ($relatedTools as $t): ?>
         <div class="col-sm-6">
-          <a href="<?= tp_url($t['slug'] . '.php') ?>" class="tp-card tp-tool-card text-decoration-none">
+          <a href="<?= tp_url($t['slug']) ?>" class="tp-card tp-tool-card text-decoration-none">
             <span class="tp-icon"><i class="bi <?= e($t['icon'] ?: 'bi-calculator') ?>"></i></span>
             <h3><?= e($t['name']) ?></h3>
             <p><?= e($t['short_description']) ?></p>

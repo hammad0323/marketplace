@@ -18,7 +18,27 @@ try {
 
     $conn = @mysqli_connect($dbHost, $dbUser, $dbPass, $dbName);
     if ($conn) {
-        $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '/';
+
+        // Redirect rows are stored relative to the site root, without a
+        // ".php" suffix — strip both from the real request path (the
+        // same base-path detection config.php uses) before matching.
+        $documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+        $documentRootReal = $documentRoot !== '' ? (realpath($documentRoot) ?: rtrim(str_replace('\\', '/', $documentRoot), '/')) : '';
+        $siteRootReal = str_replace('\\', '/', realpath(__DIR__) ?: __DIR__);
+        $documentRootReal = str_replace('\\', '/', $documentRootReal);
+        $basePath = '';
+        if ($documentRootReal !== '' && str_starts_with($siteRootReal, $documentRootReal)) {
+            $basePath = '/' . trim(substr($siteRootReal, strlen($documentRootReal)), '/');
+        }
+        if ($basePath !== '' && $basePath !== '/' && str_starts_with($path, $basePath)) {
+            $path = substr($path, strlen($basePath));
+        }
+        if (str_ends_with($path, '.php')) {
+            $path = substr($path, 0, -4);
+        }
+        $path = '/' . ltrim($path, '/');
+
         $stmt = @mysqli_prepare($conn, "SELECT new_url, redirect_type FROM redirects WHERE old_url = ? AND status = 'active' LIMIT 1");
         if ($stmt && $path) {
             mysqli_stmt_bind_param($stmt, 's', $path);
@@ -26,7 +46,12 @@ try {
             $result = mysqli_stmt_get_result($stmt);
             $redirect = $result ? mysqli_fetch_assoc($result) : null;
             if ($redirect) {
-                header('Location: ' . $redirect['new_url'], true, (int) $redirect['redirect_type']);
+                $target = $redirect['new_url'];
+                $isExternal = str_starts_with($target, 'http://') || str_starts_with($target, 'https://');
+                if (!$isExternal) {
+                    $target = ($basePath && $basePath !== '/' ? $basePath : '') . '/' . ltrim($target, '/');
+                }
+                header('Location: ' . $target, true, (int) $redirect['redirect_type']);
                 mysqli_close($conn);
                 exit;
             }

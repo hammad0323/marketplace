@@ -22,7 +22,7 @@ require __DIR__ . '/includes/header.php';
   <div class="row g-3">
     <?php foreach ($tools as $t): ?>
       <div class="col-sm-6 col-lg-4">
-        <a href="<?= tp_url($t['slug'] . '.php') ?>" class="tp-card tp-tool-card text-decoration-none">
+        <a href="<?= tp_url($t['slug']) ?>" class="tp-card tp-tool-card text-decoration-none">
           <span class="tp-icon"><i class="bi <?= e($t['icon'] ?: 'bi-calculator') ?>"></i></span>
           <h3><?= e($t['name']) ?></h3>
           <p><?= e($t['short_description']) ?></p>

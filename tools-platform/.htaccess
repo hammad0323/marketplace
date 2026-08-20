@@ -9,7 +9,52 @@
 </IfModule>
 
 Options -Indexes
-ErrorDocument 404 /404.php
+
+# ------------------------------------------------------------------
+# Clean URLs (no ".php" in any public link) + safe subfolder deploy.
+#
+# Nothing below hardcodes a domain or a subfolder name (no RewriteBase,
+# no leading-slash targets) — every rule resolves relative to whatever
+# directory this .htaccess lives in, so uploading this project into a
+# subfolder (e.g. www.example.com/tools/) or a domain root both work
+# without editing this file. Route files on disk keep their real
+# ".php" extension (Apache/PHP require that to execute them); only the
+# public-facing URL loses the extension.
+# ------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # 1. A request that literally still ends in ".php" gets redirected to
+  #    its extension-less form (avoids the same page existing at two
+  #    URLs, which search engines treat as duplicate content). Skips
+  #    /admin/ and /api/, which intentionally keep their .php URLs.
+  RewriteCond %{REQUEST_URI} !^/(.*/)?admin/ [NC]
+  RewriteCond %{REQUEST_URI} !^/(.*/)?api/ [NC]
+  RewriteCond %{THE_REQUEST} \s/+(.*)\.php[\s?] [NC]
+  RewriteRule ^ /%1 [R=301,L,QSA]
+
+  # 2. Real files (CSS/JS/images, admin/*.php, the tool .php files once
+  #    reached internally, etc.) are served as-is.
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
+  # 3. Clean URL → real file: /salary-calculator internally serves
+  #    salary-calculator.php if that file exists (same for categories,
+  #    static pages, and blog/<slug>). Checked BEFORE the plain
+  #    directory passthrough below, so e.g. /blog correctly serves
+  #    blog.php even though a same-named blog/ directory also exists
+  #    (it holds the individual blog post files).
+  RewriteCond %{REQUEST_FILENAME}\.php -f
+  RewriteRule ^(.*)$ $1.php [L,QSA]
+
+  # 4. A real directory with no matching ".php" sibling (assets/,
+  #    uploads/) is served as-is.
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # 5. Nothing matched — hand off to the custom 404 page.
+  RewriteRule ^ 404.php [L]
+</IfModule>
 
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json

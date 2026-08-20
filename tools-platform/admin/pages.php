@@ -31,12 +31,12 @@ require __DIR__ . '/includes/admin-header.php';
       <?php foreach ($pages as $p): ?>
       <tr>
         <td><?= e($p['title']) ?></td>
-        <td>/<?= e($p['slug']) ?>.php</td>
+        <td>/<?= e($p['slug']) ?></td>
         <td><span class="badge bg-<?= $p['status'] === 'published' ? 'success' : 'secondary' ?>"><?= e($p['status']) ?></span></td>
         <td><?= $p['is_system'] ? 'System' : 'Custom' ?></td>
         <td>
           <a href="<?= tp_url('admin/page-form.php?id=' . $p['id']) ?>" class="btn btn-sm btn-outline-primary">Edit</a>
-          <a href="<?= tp_url($p['slug'] . '.php') ?>" target="_blank" class="btn btn-sm btn-outline-secondary">Preview</a>
+          <a href="<?= tp_url($p['slug']) ?>" target="_blank" class="btn btn-sm btn-outline-secondary">Preview</a>
           <?php if (!$p['is_system']): ?>
             <a href="<?= tp_url('admin/pages.php?delete=' . $p['id']) ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this page?')">Delete</a>
           <?php endif; ?>

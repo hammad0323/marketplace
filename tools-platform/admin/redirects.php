@@ -38,11 +38,11 @@ require __DIR__ . '/includes/admin-header.php';
 ?>
 <div class="admin-card mb-3">
   <h3 class="h6 fw-bold">Add 301 Redirect</h3>
-  <p class="text-muted small">Slug changes on tools/categories/pages/posts create these automatically — use this form for manual redirects (e.g. an old external URL).</p>
+  <p class="text-muted small">Slug changes on tools/categories/pages/posts create these automatically — use this form for manual redirects (e.g. an old external URL). URLs are extension-less and relative to the site root (e.g. "/old-slug", not "/old-slug.php") — they're matched after the base folder and any ".php" are stripped from the incoming request.</p>
   <form method="post" class="row g-2">
     <?= tp_csrf_field() ?>
-    <div class="col-md-4"><input type="text" name="old_url" class="form-control" placeholder="/old-url.php" required></div>
-    <div class="col-md-4"><input type="text" name="new_url" class="form-control" placeholder="/new-url.php" required></div>
+    <div class="col-md-4"><input type="text" name="old_url" class="form-control" placeholder="/old-slug" required></div>
+    <div class="col-md-4"><input type="text" name="new_url" class="form-control" placeholder="/new-slug" required></div>
     <div class="col-md-2">
       <select name="redirect_type" class="form-select">
         <option value="301">301 (Permanent)</option>

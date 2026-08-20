@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $result = tp_execute(
                 'INSERT INTO categories (name, slug, description, icon, color, status, sort_order) VALUES (?,?,?,?,?,?,?)',
-                'sssssi',
+                'ssssssi',
                 [$name, $slug, $description, $icon, $color, $status, $sortOrder]
             );
             $id = $result['insert_id'];
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             tp_execute(
                 "INSERT INTO redirects (old_url, new_url, redirect_type) VALUES (?, ?, 301)",
                 'ss',
-                ['/' . $oldSlug . '.php', '/' . $slug . '.php']
+                ['/' . $oldSlug, '/' . $slug]
             );
         }
         tp_write_category_route($slug);

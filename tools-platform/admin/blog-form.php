@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $result = tp_execute(
                 'INSERT INTO blog_posts (blog_category_id, admin_id, title, slug, excerpt, content, featured_image, status) VALUES (?,?,?,?,?,?,?,?)',
-                'iisssss',
+                'iissssss',
                 [$categoryId, $_SESSION['admin_id'], $title, $slug, $excerpt, $contentHtml, $featuredImage, $status]
             );
             $id = $result['insert_id'];
@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($oldSlug && $oldSlug !== $slug) {
             tp_delete_route_file($oldSlug, 'blog');
-            tp_execute('INSERT INTO redirects (old_url, new_url, redirect_type) VALUES (?, ?, 301)', 'ss', ['/blog/' . $oldSlug . '.php', '/blog/' . $slug . '.php']);
+            tp_execute('INSERT INTO redirects (old_url, new_url, redirect_type) VALUES (?, ?, 301)', 'ss', ['/blog/' . $oldSlug, '/blog/' . $slug]);
         }
         tp_write_blog_route($slug);
 

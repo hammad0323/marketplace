@@ -35,6 +35,12 @@ function save_seo_settings(string $entityType, int $entityId, array $fields): vo
     foreach ($columns as $col) {
         $values[$col] = $fields[$col] ?? ($existing[$col] ?? null);
     }
+    // seo_settings.robots is NOT NULL DEFAULT 'index,follow' — every other
+    // column is nullable, so this is the only one that needs a fallback
+    // when a caller doesn't pass it and there's no existing row yet.
+    if ($values['robots'] === null || $values['robots'] === '') {
+        $values['robots'] = 'index,follow';
+    }
 
     if ($existing) {
         $set = implode(', ', array_map(fn($c) => "$c = ?", $columns));
@@ -63,14 +69,14 @@ function generate_meta_tags(array $seo, string $fallbackTitle, string $fallbackD
 {
     $title = $seo['seo_title'] ?? $fallbackTitle;
     $description = $seo['meta_description'] ?? $fallbackDescription;
-    $canonical = $seo['canonical_url'] ?? $pageUrl;
+    $canonical = tp_to_absolute($seo['canonical_url'] ?? $pageUrl);
     $robots = $seo['robots'] ?? 'index,follow';
     $ogTitle = $seo['og_title'] ?? $title;
     $ogDescription = $seo['og_description'] ?? $description;
-    $ogImage = $seo['og_image'] ?? tp_asset('images/og-default.jpg');
+    $ogImage = tp_to_absolute($seo['og_image'] ?? tp_asset('images/og-default.jpg'));
     $twitterTitle = $seo['twitter_title'] ?? $ogTitle;
     $twitterDescription = $seo['twitter_description'] ?? $ogDescription;
-    $twitterImage = $seo['twitter_image'] ?? $ogImage;
+    $twitterImage = tp_to_absolute($seo['twitter_image'] ?? $ogImage);
     $siteName = tp_setting('site_name');
 
     $html = '';
@@ -113,13 +119,13 @@ function generate_schema(string $type, array $data): string
                 '@type' => $type,
                 'name' => $data['name'] ?? '',
                 'description' => $data['description'] ?? '',
-                'url' => $data['url'] ?? '',
+                'url' => tp_to_absolute($data['url'] ?? ''),
                 'applicationCategory' => $data['category'] ?? 'UtilitiesApplication',
                 'operatingSystem' => 'Any (Web Browser)',
                 'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'USD'],
             ];
             if (!empty($data['image'])) {
-                $schema['image'] = $data['image'];
+                $schema['image'] = tp_to_absolute($data['image']);
             }
             break;
 
@@ -158,7 +164,7 @@ function generate_schema(string $type, array $data): string
                     '@type' => 'ListItem',
                     'position' => $i + 1,
                     'name' => $item['label'],
-                    'item' => $item['url'],
+                    'item' => tp_to_absolute($item['url'] ?? ''),
                 ];
             }
             $schema = ['@context' => 'https://schema.org', '@type' => 'BreadcrumbList', 'itemListElement' => $items];
@@ -169,10 +175,10 @@ function generate_schema(string $type, array $data): string
                 '@context' => 'https://schema.org',
                 '@type' => 'WebSite',
                 'name' => tp_setting('site_name'),
-                'url' => tp_url(),
+                'url' => tp_absolute_url(),
                 'potentialAction' => [
                     '@type' => 'SearchAction',
-                    'target' => tp_url('search.php?q={search_term_string}'),
+                    'target' => tp_absolute_url('search?q={search_term_string}'),
                     'query-input' => 'required name=search_term_string',
                 ],
             ];
@@ -183,8 +189,8 @@ function generate_schema(string $type, array $data): string
                 '@context' => 'https://schema.org',
                 '@type' => 'Organization',
                 'name' => tp_setting('site_name'),
-                'url' => tp_url(),
-                'logo' => tp_setting('logo') ?: tp_asset('images/logo.png'),
+                'url' => tp_absolute_url(),
+                'logo' => tp_to_absolute(tp_setting('logo') ?: tp_asset('images/logo.png')),
             ];
             break;
     }

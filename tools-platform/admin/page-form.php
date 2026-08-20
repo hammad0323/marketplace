@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($oldSlug && $oldSlug !== $slug) {
             tp_delete_route_file($oldSlug);
-            tp_execute('INSERT INTO redirects (old_url, new_url, redirect_type) VALUES (?, ?, 301)', 'ss', ['/' . $oldSlug . '.php', '/' . $slug . '.php']);
+            tp_execute('INSERT INTO redirects (old_url, new_url, redirect_type) VALUES (?, ?, 301)', 'ss', ['/' . $oldSlug, '/' . $slug]);
         }
         tp_write_page_route($slug);
 

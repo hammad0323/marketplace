@@ -17,7 +17,10 @@ $pageTitle = $pageTitle ?? tp_setting('site_name') . ' — ' . tp_setting('site_
 $pageDescriptionFallback = $pageDescriptionFallback ?? tp_setting('site_tagline');
 $pageSeo = $pageSeo ?? [];
 $pageSchemas = $pageSchemas ?? [generate_schema('WebSite', []), generate_schema('Organization', [])];
-$currentUrl = tp_url(ltrim($_SERVER['REQUEST_URI'] ?? '', '/'));
+// REQUEST_URI already includes the base path (e.g. /tools/...) exactly as
+// the browser sent it, so we only need to add the scheme+host — prepending
+// tp_url() on top would double the base path in a subfolder deployment.
+$currentUrl = tp_site_origin() . strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
 
 $navCategories = get_categories(true);
 ?>
@@ -70,18 +73,18 @@ $navCategories = get_categories(true);
           <?php foreach (array_chunk($navCategories, (int) ceil(count($navCategories) / 3) ?: 1) as $col): ?>
             <div class="col-4 tp-mega-col">
               <?php foreach ($col as $cat): ?>
-                <a href="<?= tp_url($cat['slug'] . '.php') ?>"><i class="bi <?= e($cat['icon']) ?> me-1"></i> <?= e($cat['name']) ?></a>
+                <a href="<?= tp_url($cat['slug']) ?>"><i class="bi <?= e($cat['icon']) ?> me-1"></i> <?= e($cat['name']) ?></a>
               <?php endforeach; ?>
             </div>
           <?php endforeach; ?>
           </div>
         </div>
       </div>
-      <a href="<?= tp_url('popular.php') ?>" class="tp-nav-link">Popular</a>
-      <a href="<?= tp_url('trending.php') ?>" class="tp-nav-link">Trending</a>
-      <a href="<?= tp_url('new-tools.php') ?>" class="tp-nav-link">New Tools</a>
-      <a href="<?= tp_url('blog.php') ?>" class="tp-nav-link">Blog</a>
-      <a href="<?= tp_url('about.php') ?>" class="tp-nav-link">About</a>
+      <a href="<?= tp_url('popular') ?>" class="tp-nav-link">Popular</a>
+      <a href="<?= tp_url('trending') ?>" class="tp-nav-link">Trending</a>
+      <a href="<?= tp_url('new-tools') ?>" class="tp-nav-link">New Tools</a>
+      <a href="<?= tp_url('blog') ?>" class="tp-nav-link">Blog</a>
+      <a href="<?= tp_url('about') ?>" class="tp-nav-link">About</a>
     </nav>
 
     <div class="d-flex align-items-center gap-2">
@@ -99,10 +102,10 @@ $navCategories = get_categories(true);
   <div class="offcanvas-body d-flex flex-column gap-1">
     <a href="<?= tp_url() ?>" class="tp-nav-link">Home</a>
     <?php foreach ($navCategories as $cat): ?>
-      <a href="<?= tp_url($cat['slug'] . '.php') ?>" class="tp-nav-link"><i class="bi <?= e($cat['icon']) ?> me-1"></i><?= e($cat['name']) ?></a>
+      <a href="<?= tp_url($cat['slug']) ?>" class="tp-nav-link"><i class="bi <?= e($cat['icon']) ?> me-1"></i><?= e($cat['name']) ?></a>
     <?php endforeach; ?>
-    <a href="<?= tp_url('blog.php') ?>" class="tp-nav-link">Blog</a>
-    <a href="<?= tp_url('about.php') ?>" class="tp-nav-link">About</a>
+    <a href="<?= tp_url('blog') ?>" class="tp-nav-link">Blog</a>
+    <a href="<?= tp_url('about') ?>" class="tp-nav-link">About</a>
   </div>
 </div>
 

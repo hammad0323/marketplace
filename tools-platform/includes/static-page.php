@@ -11,6 +11,11 @@ $slug = $pageSlugCms ?? '';
 $page = get_page_by_slug($slug);
 
 if (!$page) {
+    $redirect = tp_find_redirect('/' . $slug);
+    if ($redirect) {
+        header('Location: ' . tp_resolve_redirect_target($redirect['new_url']), true, (int) $redirect['redirect_type']);
+        exit;
+    }
     http_response_code(404);
     require __DIR__ . '/../404.php';
     exit;

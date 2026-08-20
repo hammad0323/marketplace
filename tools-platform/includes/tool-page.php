@@ -2,12 +2,14 @@
 /**
  * tool-page.php — the ONE template every tool URL routes through.
  *
- * A tool's public URL (e.g. /salary-calculator.php) is a 3-line thin
- * file: it sets $toolSlug and requires this file. Everything else —
- * breadcrumbs, SEO, schema, related tools, FAQ, layout — is generated
- * from the database. The tool's *own* file (tools/<tool_file>) is
- * included only for its input form + calculation JS; it must NOT
- * output <html>/<head>/nav/footer itself.
+ * The real file on disk (e.g. salary-calculator.php) is a 3-line thin
+ * file: it sets $toolSlug and requires this file. .htaccess rewrites
+ * the public, extension-less URL (/salary-calculator) to that real
+ * file, so visitors and search engines never see ".php". Everything
+ * else — breadcrumbs, SEO, schema, related tools, FAQ, layout — is
+ * generated from the database. The tool's *own* file
+ * (tools/<tool_file>) is included only for its input form +
+ * calculation JS; it must NOT output <html>/<head>/nav/footer itself.
  */
 
 require_once __DIR__ . '/config.php';
@@ -21,9 +23,9 @@ if (empty($toolSlug)) {
 $tool = get_tool_by_slug($toolSlug);
 
 if (!$tool || $tool['status'] !== 'published') {
-    $redirect = tp_find_redirect('/' . $toolSlug . '.php');
+    $redirect = tp_find_redirect('/' . $toolSlug);
     if ($redirect) {
-        header('Location: ' . $redirect['new_url'], true, (int) $redirect['redirect_type']);
+        header('Location: ' . tp_resolve_redirect_target($redirect['new_url']), true, (int) $redirect['redirect_type']);
         exit;
     }
     http_response_code(404);
@@ -47,7 +49,7 @@ $pageSeo = $seoRow ?: [];
 $schemaData = [
     'name' => $tool['name'],
     'description' => $tool['short_description'],
-    'url' => tp_url($tool['slug'] . '.php'),
+    'url' => tp_absolute_url($tool['slug']),
     'category' => $category['name'] ?? '',
     'image' => $tool['featured_image'] ?: null,
 ];
@@ -64,7 +66,7 @@ if (!empty($content['how_to_use']) && substr_count($content['how_to_use'], "\n")
 
 $breadcrumbItems = [
     ['label' => 'Home', 'url' => tp_url()],
-    ['label' => $category['name'] ?? 'Tools', 'url' => $category ? tp_url($category['slug'] . '.php') : null],
+    ['label' => $category['name'] ?? 'Tools', 'url' => $category ? tp_url($category['slug']) : null],
     ['label' => $seoRow['breadcrumb_title'] ?? $tool['name'], 'url' => null],
 ];
 
@@ -191,7 +193,7 @@ require __DIR__ . '/header.php';
         <div class="row g-3">
           <?php foreach ($related as $r): ?>
             <div class="col-sm-6">
-              <a href="<?= tp_url($r['slug'] . '.php') ?>" class="tp-card tp-tool-card text-decoration-none">
+              <a href="<?= tp_url($r['slug']) ?>" class="tp-card tp-tool-card text-decoration-none">
                 <span class="tp-icon"><i class="bi <?= e($r['icon'] ?: 'bi-calculator') ?>"></i></span>
                 <h3><?= e($r['name']) ?></h3>
                 <p><?= e($r['short_description']) ?></p>
@@ -205,7 +207,7 @@ require __DIR__ . '/header.php';
       <section class="reveal p-4 rounded-4 text-center" style="background:var(--tp-gradient-accent);color:#fff;">
         <h2 class="h5 fw-bold mb-1">Need another tool?</h2>
         <p class="mb-3">Explore <?= (int) get_tool_count_for_category((int) $tool['category_id']) ?>+ tools in <?= e($category['name'] ?? 'this category') ?>.</p>
-        <a href="<?= $category ? tp_url($category['slug'] . '.php') : tp_url('all-tools.php') ?>" class="btn btn-light fw-semibold">Browse <?= e($category['name'] ?? 'All Tools') ?></a>
+        <a href="<?= $category ? tp_url($category['slug']) : tp_url('all-tools') ?>" class="btn btn-light fw-semibold">Browse <?= e($category['name'] ?? 'All Tools') ?></a>
       </section>
     </div>
   </div>

@@ -53,13 +53,13 @@ require __DIR__ . '/includes/admin-header.php';
       <tr>
         <td><input type="checkbox" class="row-checkbox" name="ids[]" value="<?= (int) $cat['id'] ?>"></td>
         <td><i class="bi <?= e($cat['icon']) ?>" style="color:<?= e($cat['color']) ?>;font-size:1.2rem;"></i></td>
-        <td><?= e($cat['name']) ?> <br><small class="text-muted">/<?= e($cat['slug']) ?>.php</small></td>
+        <td><?= e($cat['name']) ?> <br><small class="text-muted">/<?= e($cat['slug']) ?></small></td>
         <td><?= (int) $cat['tool_count'] ?></td>
         <td><span class="badge bg-<?= $cat['status'] === 'published' ? 'success' : 'secondary' ?>"><?= e($cat['status']) ?></span></td>
         <td><?= (int) $cat['sort_order'] ?></td>
         <td>
           <a href="<?= tp_url('admin/category-form.php?id=' . $cat['id']) ?>" class="btn btn-sm btn-outline-primary">Edit</a>
-          <a href="<?= tp_url($cat['slug'] . '.php') ?>" target="_blank" class="btn btn-sm btn-outline-secondary">Preview</a>
+          <a href="<?= tp_url($cat['slug']) ?>" target="_blank" class="btn btn-sm btn-outline-secondary">Preview</a>
         </td>
       </tr>
       <?php endforeach; ?>

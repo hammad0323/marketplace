@@ -25,14 +25,14 @@ require __DIR__ . '/includes/header.php';
     <h1 class="hero-title mt-2 mx-auto">Smart Tools for Work, Business &amp; Everyday Life</h1>
     <p class="hero-sub mx-auto mt-3">Free calculators, converters, generators and productivity tools designed for professionals, students and everyday users.</p>
 
-    <form action="<?= tp_url('search.php') ?>" method="get" class="tp-search-shell mx-auto mt-4" style="max-width:640px;">
+    <form action="<?= tp_url('search') ?>" method="get" class="tp-search-shell mx-auto mt-4" style="max-width:640px;">
       <i class="bi bi-search text-muted"></i>
       <input type="text" name="q" placeholder="Search <?= (int) $totalTools ?>+ tools..." aria-label="Search tools">
       <button type="submit">Search</button>
     </form>
 
     <div class="d-flex justify-content-center gap-3 mt-4">
-      <a href="<?= tp_url('all-tools.php') ?>" class="btn btn-light fw-semibold px-4">Explore All Tools</a>
+      <a href="<?= tp_url('all-tools') ?>" class="btn btn-light fw-semibold px-4">Explore All Tools</a>
       <a href="#browse-profession" class="btn btn-outline-light fw-semibold px-4">Browse Categories</a>
     </div>
 
@@ -48,12 +48,12 @@ require __DIR__ . '/includes/header.php';
   <div class="tp-container">
     <div class="d-flex justify-content-between align-items-end mb-4 reveal">
       <div><span class="tp-eyebrow">Most used</span><h2 class="tp-section-title">Popular Tools</h2></div>
-      <a href="<?= tp_url('popular.php') ?>">View all <i class="bi bi-arrow-right"></i></a>
+      <a href="<?= tp_url('popular') ?>">View all <i class="bi bi-arrow-right"></i></a>
     </div>
     <div class="row g-3">
       <?php foreach ($popular as $t): ?>
       <div class="col-sm-6 col-lg-3 reveal">
-        <a href="<?= tp_url($t['slug'] . '.php') ?>" class="tp-card tp-tool-card text-decoration-none">
+        <a href="<?= tp_url($t['slug']) ?>" class="tp-card tp-tool-card text-decoration-none">
           <span class="tp-icon"><i class="bi <?= e($t['icon'] ?: 'bi-calculator') ?>"></i></span>
           <h3><?= e($t['name']) ?></h3>
           <p><?= e($t['short_description']) ?></p>
@@ -74,7 +74,7 @@ require __DIR__ . '/includes/header.php';
     <div class="row g-3">
       <?php foreach ($categories as $cat): ?>
       <div class="col-6 col-md-4 col-lg-3 reveal">
-        <a href="<?= tp_url($cat['slug'] . '.php') ?>" class="tp-card text-decoration-none d-block p-3 h-100" style="background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08);">
+        <a href="<?= tp_url($cat['slug']) ?>" class="tp-card text-decoration-none d-block p-3 h-100" style="background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08);">
           <span class="tp-icon mb-2" style="background:<?= e($cat['color']) ?>;"><i class="bi <?= e($cat['icon']) ?>"></i></span>
           <h3 class="h6 fw-bold text-white mb-1"><?= e($cat['name']) ?></h3>
           <p class="text-white-50 small mb-0"><?= (int) get_tool_count_for_category((int) $cat['id']) ?> tools</p>
@@ -90,12 +90,12 @@ require __DIR__ . '/includes/header.php';
   <div class="tp-container">
     <div class="d-flex justify-content-between align-items-end mb-4 reveal">
       <div><span class="tp-eyebrow">Right now</span><h2 class="tp-section-title">Trending Tools</h2></div>
-      <a href="<?= tp_url('trending.php') ?>">View all <i class="bi bi-arrow-right"></i></a>
+      <a href="<?= tp_url('trending') ?>">View all <i class="bi bi-arrow-right"></i></a>
     </div>
     <div class="row g-3">
       <?php foreach ($trending as $t): ?>
       <div class="col-sm-6 col-lg-4 reveal">
-        <a href="<?= tp_url($t['slug'] . '.php') ?>" class="tp-card tp-tool-card text-decoration-none">
+        <a href="<?= tp_url($t['slug']) ?>" class="tp-card tp-tool-card text-decoration-none">
           <span class="tp-icon"><i class="bi <?= e($t['icon'] ?: 'bi-calculator') ?>"></i></span>
           <h3><?= e($t['name']) ?></h3>
           <p><?= e($t['short_description']) ?></p>
@@ -116,7 +116,7 @@ require __DIR__ . '/includes/header.php';
     <div class="row g-3">
       <?php foreach ($featured as $t): ?>
       <div class="col-sm-6 col-lg-3 reveal">
-        <a href="<?= tp_url($t['slug'] . '.php') ?>" class="tp-card tp-tool-card text-decoration-none">
+        <a href="<?= tp_url($t['slug']) ?>" class="tp-card tp-tool-card text-decoration-none">
           <span class="tp-icon"><i class="bi <?= e($t['icon'] ?: 'bi-calculator') ?>"></i></span>
           <h3><?= e($t['name']) ?></h3>
           <p><?= e($t['short_description']) ?></p>
@@ -136,7 +136,7 @@ require __DIR__ . '/includes/header.php';
     <div class="row g-3">
       <?php foreach ($recent as $t): ?>
       <div class="col-sm-6 col-lg-3 reveal">
-        <a href="<?= tp_url($t['slug'] . '.php') ?>" class="tp-card tp-tool-card text-decoration-none">
+        <a href="<?= tp_url($t['slug']) ?>" class="tp-card tp-tool-card text-decoration-none">
           <span class="tp-icon"><i class="bi <?= e($t['icon'] ?: 'bi-calculator') ?>"></i></span>
           <h3><?= e($t['name']) ?></h3>
           <p><?= e($t['short_description']) ?></p>
@@ -175,7 +175,7 @@ require __DIR__ . '/includes/header.php';
 <section class="tp-section tp-section-dark text-center">
   <div class="tp-container reveal">
     <h2 class="tp-section-title">Find the right tool for your next task.</h2>
-    <a href="<?= tp_url('all-tools.php') ?>" class="btn btn-light fw-semibold px-4 mt-3">Explore All Tools</a>
+    <a href="<?= tp_url('all-tools') ?>" class="btn btn-light fw-semibold px-4 mt-3">Explore All Tools</a>
   </div>
 </section>
 

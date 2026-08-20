@@ -141,7 +141,7 @@ document.documentElement.classList.add('js');
       return;
     }
     results.innerHTML = items.map((t) => `
-      <a href="${baseUrl}/${t.slug}.php" class="search-result-item">
+      <a href="${baseUrl}/${t.slug}" class="search-result-item">
         <span class="tp-icon"><i class="bi ${t.icon || 'bi-calculator'}"></i></span>
         <span>
           <strong>${t.name}</strong>
