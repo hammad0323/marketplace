@@ -71,11 +71,11 @@ http_response_code(404);
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Page Not Found</title>
 <style>
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0B1020;color:#F8FAFC;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;text-align:center;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#1E1B2E;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;text-align:center;}
   .box{max-width:480px;padding:2rem;}
-  h1{font-size:5rem;margin:0;background:linear-gradient(135deg,#6366F1,#22D3EE);-webkit-background-clip:text;background-clip:text;color:transparent;}
-  p{color:#94A3B8;}
-  a{display:inline-block;margin-top:1rem;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;padding:.75rem 1.5rem;border-radius:999px;text-decoration:none;font-weight:600;}
+  h1{font-size:5rem;margin:0;color:#7C3AED;font-weight:800;}
+  p{color:#6B7280;}
+  a{display:inline-block;margin-top:1rem;background:#7C3AED;color:#fff;padding:.75rem 1.5rem;border-radius:999px;text-decoration:none;font-weight:600;}
 </style>
 </head>
 <body>

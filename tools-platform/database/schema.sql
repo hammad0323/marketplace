@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS categories (
     description TEXT NULL,
     icon VARCHAR(80) NULL DEFAULT 'bi-grid',
     image VARCHAR(255) NULL,
-    color VARCHAR(20) NULL DEFAULT '#6366F1',
+    color VARCHAR(20) NULL DEFAULT '#7C3AED',
     profession_group VARCHAR(100) NULL,
     seo_title VARCHAR(160) NULL,
     meta_description VARCHAR(300) NULL,

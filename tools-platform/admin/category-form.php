@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $slugInput = tp_sanitize_text($_POST['slug'] ?? '', 170);
     $description = tp_sanitize_text($_POST['description'] ?? '', 2000);
     $icon = tp_sanitize_text($_POST['icon'] ?? 'bi-grid', 80);
-    $color = tp_sanitize_text($_POST['color'] ?? '#6366F1', 20);
+    $color = tp_sanitize_text($_POST['color'] ?? '#7C3AED', 20);
     $status = in_array($_POST['status'] ?? '', ['published', 'draft', 'hidden'], true) ? $_POST['status'] : 'published';
     $sortOrder = (int) ($_POST['sort_order'] ?? 0);
 
@@ -88,7 +88,7 @@ require __DIR__ . '/includes/admin-header.php';
             <input type="text" name="name" class="form-control" data-slug-source value="<?= e($category['name'] ?? '') ?>" required>
           </div>
           <div class="col-md-6">
-            <label class="form-label">Slug (URL: /slug.php)</label>
+            <label class="form-label">Slug (URL: /slug)</label>
             <input type="text" name="slug" class="form-control" data-slug-target data-existing="<?= $category ? 1 : 0 ?>" data-original="<?= e($category['slug'] ?? '') ?>" value="<?= e($category['slug'] ?? '') ?>">
           </div>
           <div class="col-md-12">
@@ -101,7 +101,7 @@ require __DIR__ . '/includes/admin-header.php';
           </div>
           <div class="col-md-4">
             <label class="form-label">Color</label>
-            <input type="color" name="color" class="form-control form-control-color" value="<?= e($category['color'] ?? '#6366F1') ?>">
+            <input type="color" name="color" class="form-control form-control-color" value="<?= e($category['color'] ?? '#7C3AED') ?>">
           </div>
           <div class="col-md-4">
             <label class="form-label">Sort Order</label>

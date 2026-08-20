@@ -190,7 +190,7 @@ require __DIR__ . '/includes/admin-header.php';
         <div class="row g-3">
           <div class="col-md-6"><label class="form-label">Tool Name</label>
             <input type="text" name="name" class="form-control" data-slug-source value="<?= e($tool['name'] ?? '') ?>" required></div>
-          <div class="col-md-6"><label class="form-label">Slug (URL: /slug.php)</label>
+          <div class="col-md-6"><label class="form-label">Slug (URL: /slug)</label>
             <input type="text" name="slug" class="form-control" data-slug-target data-existing="<?= $tool ? 1 : 0 ?>" data-original="<?= e($tool['slug'] ?? '') ?>" value="<?= e($tool['slug'] ?? '') ?>"></div>
           <div class="col-md-6"><label class="form-label">Category</label>
             <select name="category_id" class="form-select" required>

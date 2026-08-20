@@ -222,7 +222,7 @@ function generate_breadcrumbs(array $items): array
     $html .= '</ol></nav>';
 
     $schema = generate_schema('BreadcrumbList', ['items' => array_map(
-        fn($i) => ['label' => $i['label'], 'url' => $i['url'] ?? tp_url()],
+        fn($i) => ['label' => $i['label'], 'url' => tp_to_absolute($i['url'] ?? tp_request_path_relative())],
         $items
     )]);
 

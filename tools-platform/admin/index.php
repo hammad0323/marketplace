@@ -29,13 +29,13 @@ require __DIR__ . '/includes/admin-header.php';
 <div class="row g-3 mb-4">
   <?php
   $cards = [
-      ['Total Tools', $stats['total_tools'], 'bi-tools', '#6366F1'],
+      ['Total Tools', $stats['total_tools'], 'bi-tools', '#7C3AED'],
       ['Published', $stats['published_tools'], 'bi-check-circle', '#10B981'],
       ['Drafts', $stats['draft_tools'], 'bi-pencil-square', '#D97706'],
       ['Categories', $stats['total_categories'], 'bi-folder2', '#8B5CF6'],
-      ['Total Views', $stats['total_views'], 'bi-eye', '#22D3EE'],
-      ["Today's Views", $stats['today_views'], 'bi-calendar-day', '#0891B2'],
-      ['Monthly Views', $stats['month_views'], 'bi-calendar-month', '#4F46E5'],
+      ['Total Views', $stats['total_views'], 'bi-eye', '#A78BFA'],
+      ["Today's Views", $stats['today_views'], 'bi-calendar-day', '#5B21B6'],
+      ['Monthly Views', $stats['month_views'], 'bi-calendar-month', '#6D28D9'],
   ];
   foreach ($cards as [$label, $value, $icon, $color]):
   ?>
@@ -102,7 +102,7 @@ new Chart(document.getElementById('dailyViewsChart'), {
   type: 'line',
   data: {
     labels: <?= json_encode(array_column($dailyViews, 'view_date')) ?>,
-    datasets: [{ label: 'Views', data: <?= json_encode(array_map('intval', array_column($dailyViews, 'c'))) ?>, borderColor: '#6366F1', backgroundColor: 'rgba(99,102,241,.1)', fill: true, tension: .35 }]
+    datasets: [{ label: 'Views', data: <?= json_encode(array_map('intval', array_column($dailyViews, 'c'))) ?>, borderColor: '#7C3AED', backgroundColor: 'rgba(124,58,237,.1)', fill: true, tension: .35 }]
   },
   options: { plugins: { legend: { display: false } } }
 });
@@ -110,7 +110,7 @@ new Chart(document.getElementById('categoryViewsChart'), {
   type: 'doughnut',
   data: {
     labels: <?= json_encode(array_column($categoryViews, 'name')) ?>,
-    datasets: [{ data: <?= json_encode(array_map('intval', array_column($categoryViews, 'total'))) ?>, backgroundColor: ['#6366F1','#22D3EE','#8B5CF6','#10B981','#0B1020','#0891B2','#4F46E5','#D97706'] }]
+    datasets: [{ data: <?= json_encode(array_map('intval', array_column($categoryViews, 'total'))) ?>, backgroundColor: ['#7C3AED','#A78BFA','#8B5CF6','#5B21B6','#6D28D9','#C4B5FD','#4C1D95','#D8B4FE'] }]
   }
 });
 </script>

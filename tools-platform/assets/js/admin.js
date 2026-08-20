@@ -100,7 +100,7 @@ $(function () {
   }
 
   function renderSeoScore(res) {
-    const color = res.score >= 86 ? '#10B981' : res.score >= 71 ? '#22D3EE' : res.score >= 51 ? '#6366F1' : res.score >= 31 ? '#D97706' : '#DC2626';
+    const color = res.score >= 86 ? '#10B981' : res.score >= 71 ? '#7C3AED' : res.score >= 51 ? '#A78BFA' : res.score >= 31 ? '#D97706' : '#DC2626';
     let html = `<div class="d-flex justify-content-between mb-1"><strong>SEO Score</strong><span>${res.score}% — ${res.grade}</span></div>`;
     html += `<div class="tp-seo-score-bar mb-3"><div class="tp-seo-score-fill" style="width:${res.score}%;background:${color};"></div></div>`;
     const groups = {};

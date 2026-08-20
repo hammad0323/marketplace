@@ -1,8 +1,8 @@
 <div class="mb-3">
   <label for="f_hex">HEX Color</label>
   <div class="d-flex gap-2">
-    <input type="text" class="form-control" id="f_hex" placeholder="#6366F1" value="#6366F1">
-    <input type="color" class="form-control form-control-color" id="f_color_picker" value="#6366F1">
+    <input type="text" class="form-control" id="f_hex" placeholder="#7C3AED" value="#7C3AED">
+    <input type="color" class="form-control form-control-color" id="f_color_picker" value="#7C3AED">
   </div>
 </div>
 <button type="button" class="tp-btn-calc" id="tpCalculateBtn">Convert Color</button>
@@ -13,7 +13,7 @@ document.getElementById('f_color_picker').addEventListener('input', function () 
 function tpHexToRgb(hex) {
   hex = hex.replace('#', '').trim();
   if (hex.length === 3) hex = hex.split('').map((c) => c + c).join('');
-  if (!/^[0-9a-fA-F]{6}$/.test(hex)) throw new Error('Enter a valid HEX color like #6366F1.');
+  if (!/^[0-9a-fA-F]{6}$/.test(hex)) throw new Error('Enter a valid HEX color like #7C3AED.');
   const r = parseInt(hex.substr(0, 2), 16);
   const g = parseInt(hex.substr(2, 2), 16);
   const b = parseInt(hex.substr(4, 2), 16);
