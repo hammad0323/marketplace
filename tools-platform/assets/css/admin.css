@@ -1,0 +1,21 @@
+/* admin.css — calm, no animation on purpose (this is a workspace, not a landing page) */
+body { background: #F1F5F9; font-family: 'Inter', sans-serif; }
+.admin-shell { display: flex; min-height: 100vh; }
+.admin-sidebar {
+  width: 240px; background: var(--tp-navy, #0B1020); color: #fff; flex-shrink: 0;
+  display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh;
+}
+.admin-brand { color: #fff; font-weight: 800; padding: 1.2rem 1.25rem; font-size: 1.1rem; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.08); }
+.admin-sidebar nav { display: flex; flex-direction: column; padding: .75rem; gap: .15rem; overflow-y: auto; }
+.admin-sidebar nav a { color: rgba(255,255,255,.75); text-decoration: none; padding: .6rem .75rem; border-radius: 8px; font-size: .9rem; }
+.admin-sidebar nav a:hover, .admin-sidebar nav a.active { background: rgba(255,255,255,.08); color: #fff; }
+.admin-main { flex: 1; min-width: 0; }
+.admin-topbar { background: #fff; border-bottom: 1px solid #E2E8F0; padding: .9rem 1.5rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+.admin-content { padding: 1.5rem; }
+.stat-card { background: #fff; border-radius: 12px; border: 1px solid #E2E8F0; padding: 1.25rem; }
+.stat-card .stat-value { font-size: 1.6rem; font-weight: 800; }
+.stat-card .stat-label { color: #64748B; font-size: .82rem; text-transform: uppercase; letter-spacing: .04em; }
+.admin-card { background: #fff; border-radius: 12px; border: 1px solid #E2E8F0; padding: 1.5rem; }
+.nav-tabs .nav-link.active { font-weight: 600; }
+.tp-seo-score-widget { border: 1px solid #E2E8F0; border-radius: 12px; padding: 1rem; background: #F8FAFC; }
+.faq-repeater-item, .related-picker { border: 1px solid #E2E8F0; border-radius: 10px; padding: .75rem; margin-bottom: .5rem; background: #F8FAFC; }

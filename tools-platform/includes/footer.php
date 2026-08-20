@@ -1,0 +1,52 @@
+<?php
+if (!defined('TOOLS_PLATFORM_ROOT')) {
+    http_response_code(403);
+    exit('Direct access is not permitted.');
+}
+$footerCategories = get_categories(true);
+$popularForFooter = get_popular_tools(6);
+?>
+<footer class="tp-footer">
+  <div class="tp-container">
+    <div class="row g-4">
+      <div class="col-6 col-md-3">
+        <h6>Categories</h6>
+        <?php foreach (array_slice($footerCategories, 0, 8) as $cat): ?>
+          <a href="<?= tp_url($cat['slug'] . '.php') ?>" class="d-block"><?= e($cat['name']) ?></a>
+        <?php endforeach; ?>
+      </div>
+      <div class="col-6 col-md-3">
+        <h6>Popular Tools</h6>
+        <?php foreach ($popularForFooter as $t): ?>
+          <a href="<?= tp_url($t['slug'] . '.php') ?>" class="d-block"><?= e($t['name']) ?></a>
+        <?php endforeach; ?>
+      </div>
+      <div class="col-6 col-md-3">
+        <h6>Company</h6>
+        <a href="<?= tp_url('about.php') ?>" class="d-block">About Us</a>
+        <a href="<?= tp_url('contact.php') ?>" class="d-block">Contact</a>
+        <a href="<?= tp_url('blog.php') ?>" class="d-block">Blog</a>
+        <a href="<?= tp_url('all-tools.php') ?>" class="d-block">All Tools</a>
+      </div>
+      <div class="col-6 col-md-3">
+        <h6>Legal</h6>
+        <a href="<?= tp_url('privacy-policy.php') ?>" class="d-block">Privacy Policy</a>
+        <a href="<?= tp_url('terms.php') ?>" class="d-block">Terms of Service</a>
+        <a href="<?= tp_url('disclaimer.php') ?>" class="d-block">Disclaimer</a>
+        <a href="<?= tp_url('cookie-policy.php') ?>" class="d-block">Cookie Policy</a>
+      </div>
+    </div>
+    <div class="tp-sub d-flex flex-wrap justify-content-between gap-2">
+      <span><?= e(tp_setting('footer_copyright')) ?></span>
+      <span>Fast • Free • No Registration Required</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="<?= tp_asset('js/main.js') ?>"></script>
+<?php if ($fs = tp_setting('footer_scripts')): ?><?= $fs /* admin-controlled, trusted input */ ?><?php endif; ?>
+</body>
+</html>
