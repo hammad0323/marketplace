@@ -64,20 +64,26 @@ $navCategories = get_categories(true);
       <span class="brand-mark"><i class="bi bi-grid-1x2-fill"></i></span> <?= e(tp_setting('site_name')) ?>
     </a>
 
-    <nav class="d-none d-lg-flex align-items-center gap-1">
+    <nav class="tp-nav-desktop d-none d-lg-flex align-items-center">
       <a href="<?= tp_url() ?>" class="tp-nav-link">Home</a>
       <div class="dropdown">
         <a href="#" class="tp-nav-link dropdown-toggle" data-bs-toggle="dropdown">Categories</a>
-        <div class="dropdown-menu tp-mega p-4" style="min-width:720px;">
-          <div class="row g-4">
-          <?php foreach (array_chunk($navCategories, (int) ceil(count($navCategories) / 3) ?: 1) as $col): ?>
-            <div class="col-4 tp-mega-col">
-              <?php foreach ($col as $cat): ?>
-                <a href="<?= tp_url($cat['slug']) ?>"><i class="bi <?= e($cat['icon']) ?> me-1"></i> <?= e($cat['name']) ?></a>
-              <?php endforeach; ?>
+        <div class="dropdown-menu tp-mega p-2" style="min-width:560px;">
+          <div class="tp-mega-header">Browse by category</div>
+          <div class="row g-1">
+          <?php foreach ($navCategories as $cat): ?>
+            <div class="col-6">
+              <a href="<?= tp_url($cat['slug']) ?>" class="tp-mega-item">
+                <span class="tp-mega-icon" style="background:color-mix(in srgb, <?= e($cat['color']) ?> 14%, transparent);color:<?= e($cat['color']) ?>;"><i class="bi <?= e($cat['icon']) ?>"></i></span>
+                <span class="tp-mega-text">
+                  <strong><?= e($cat['name']) ?></strong>
+                  <small><?= (int) get_tool_count_for_category((int) $cat['id']) ?> tools</small>
+                </span>
+              </a>
             </div>
           <?php endforeach; ?>
           </div>
+          <a href="<?= tp_url('all-tools') ?>" class="tp-mega-footer">View all tools <i class="bi bi-arrow-right"></i></a>
         </div>
       </div>
       <a href="<?= tp_url('popular') ?>" class="tp-nav-link">Popular</a>
@@ -92,12 +98,12 @@ $navCategories = get_categories(true);
         <button class="currency-btn dropdown-toggle" data-bs-toggle="dropdown" title="Change currency symbol" data-currency-label>$ USD</button>
         <ul class="dropdown-menu dropdown-menu-end tp-currency-menu" data-currency-menu></ul>
       </div>
-      <button class="theme-toggle-btn" data-theme-toggle title="Toggle theme"><span data-theme-icon>🖥️</span></button>
-      <button class="btn btn-sm d-none d-md-inline-flex align-items-center gap-1" style="border:1px solid var(--tp-border);border-radius:999px;" data-search-open>
+      <button class="tp-btn-search d-none d-md-inline-flex" data-search-open>
         <i class="bi bi-search"></i> Search tools
       </button>
-      <a href="<?= tp_url('all-tools') ?>" class="btn tp-btn-cta d-none d-md-inline-flex">Browse Tools</a>
-      <button class="btn d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#tpMobileNav"><i class="bi bi-list fs-4"></i></button>
+      <button class="theme-toggle-btn" data-theme-toggle title="Toggle theme"><span data-theme-icon>🖥️</span></button>
+      <a href="<?= tp_url('all-tools') ?>" class="tp-btn-cta d-none d-md-inline-flex">Browse Tools</a>
+      <button class="tp-btn-hamburger d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#tpMobileNav"><i class="bi bi-list"></i></button>
     </div>
   </div>
 </header>
@@ -106,11 +112,21 @@ $navCategories = get_categories(true);
   <div class="offcanvas-header"><h5>Menu</h5><button class="btn-close" data-bs-dismiss="offcanvas"></button></div>
   <div class="offcanvas-body d-flex flex-column gap-1">
     <a href="<?= tp_url() ?>" class="tp-nav-link">Home</a>
-    <?php foreach ($navCategories as $cat): ?>
-      <a href="<?= tp_url($cat['slug']) ?>" class="tp-nav-link"><i class="bi <?= e($cat['icon']) ?> me-1"></i><?= e($cat['name']) ?></a>
-    <?php endforeach; ?>
+    <a href="<?= tp_url('popular') ?>" class="tp-nav-link">Popular</a>
+    <a href="<?= tp_url('trending') ?>" class="tp-nav-link">Trending</a>
+    <a href="<?= tp_url('new-tools') ?>" class="tp-nav-link">New Tools</a>
     <a href="<?= tp_url('blog') ?>" class="tp-nav-link">Blog</a>
     <a href="<?= tp_url('about') ?>" class="tp-nav-link">About</a>
+    <div class="tp-mega-header mt-2">Categories</div>
+    <?php foreach ($navCategories as $cat): ?>
+      <a href="<?= tp_url($cat['slug']) ?>" class="tp-mega-item">
+        <span class="tp-mega-icon" style="background:color-mix(in srgb, <?= e($cat['color']) ?> 14%, transparent);color:<?= e($cat['color']) ?>;"><i class="bi <?= e($cat['icon']) ?>"></i></span>
+        <span class="tp-mega-text">
+          <strong><?= e($cat['name']) ?></strong>
+          <small><?= (int) get_tool_count_for_category((int) $cat['id']) ?> tools</small>
+        </span>
+      </a>
+    <?php endforeach; ?>
   </div>
 </div>
 
@@ -118,7 +134,7 @@ $navCategories = get_categories(true);
   <div class="tp-container pt-5">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="text-white m-0">Search tools</h4>
-      <button class="btn btn-light rounded-circle" data-search-close><i class="bi bi-x-lg"></i></button>
+      <button class="tp-btn tp-btn-light tp-btn-icon" data-search-close><i class="bi bi-x-lg"></i></button>
     </div>
     <div class="tp-search-shell">
       <i class="bi bi-search text-muted"></i>

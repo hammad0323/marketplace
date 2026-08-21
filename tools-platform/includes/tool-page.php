@@ -207,7 +207,7 @@ require __DIR__ . '/header.php';
       <section class="reveal p-4 rounded-4 text-center" style="background:var(--tp-gradient-accent);color:#fff;">
         <h2 class="h5 fw-bold mb-1">Need another tool?</h2>
         <p class="mb-3">Explore <?= (int) get_tool_count_for_category((int) $tool['category_id']) ?>+ tools in <?= e($category['name'] ?? 'this category') ?>.</p>
-        <a href="<?= $category ? tp_url($category['slug']) : tp_url('all-tools') ?>" class="btn btn-light fw-semibold">Browse <?= e($category['name'] ?? 'All Tools') ?></a>
+        <a href="<?= $category ? tp_url($category['slug']) : tp_url('all-tools') ?>" class="tp-btn tp-btn-light">Browse <?= e($category['name'] ?? 'All Tools') ?></a>
       </section>
     </div>
   </div>

@@ -34,8 +34,8 @@ require __DIR__ . '/includes/header.php';
         </form>
 
         <div class="d-flex flex-wrap gap-3 mt-4">
-          <a href="<?= tp_url('all-tools') ?>" class="btn btn-light fw-semibold px-4">Explore All Tools</a>
-          <a href="#browse-profession" class="btn btn-outline-light fw-semibold px-4">Browse Categories</a>
+          <a href="<?= tp_url('all-tools') ?>" class="tp-btn tp-btn-light">Explore All Tools</a>
+          <a href="#browse-profession" class="tp-btn tp-btn-outline">Browse Categories</a>
         </div>
       </div>
 
@@ -219,7 +219,7 @@ require __DIR__ . '/includes/header.php';
 <section class="tp-section tp-section-dark text-center">
   <div class="tp-container reveal">
     <h2 class="tp-section-title">Find the right tool for your next task.</h2>
-    <a href="<?= tp_url('all-tools') ?>" class="btn btn-light fw-semibold px-4 mt-3">Explore All Tools</a>
+    <a href="<?= tp_url('all-tools') ?>" class="tp-btn tp-btn-light mt-3">Explore All Tools</a>
   </div>
 </section>
 
