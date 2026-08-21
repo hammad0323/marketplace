@@ -17,7 +17,7 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const roi = (netProfit / cost) * 100;
 
     tpShowResult(roi.toFixed(2) + '%', {
-      label: `Net profit: $${netProfit.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`, raw: roi.toFixed(2), historyLabel: 'ROI',
+      label: `Net profit: ${tpFormatMoney(netProfit)}`, raw: roi.toFixed(2), historyLabel: 'ROI',
     });
   } catch (e) { tpShowError(e.message); }
 });

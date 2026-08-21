@@ -18,7 +18,7 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const variancePct = (variance / Math.abs(budget)) * 100;
     const direction = variance > 0 ? 'over budget' : variance < 0 ? 'under budget' : 'on budget';
 
-    tpShowResult('$' + variance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), {
+    tpShowResult(tpFormatMoney(variance), {
       label: `${Math.abs(variancePct).toFixed(2)}% ${direction}`, raw: variance.toFixed(2), historyLabel: 'Variance',
     });
   } catch (e) { tpShowError(e.message); }

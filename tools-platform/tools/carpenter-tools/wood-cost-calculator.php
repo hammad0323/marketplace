@@ -21,7 +21,7 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const totalBoardFeet = boardFeet * (1 + waste / 100);
     const totalCost = totalBoardFeet * price;
 
-    tpShowResult('$' + totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), {
+    tpShowResult(tpFormatMoney(totalCost), {
       label: `${totalBoardFeet.toFixed(1)} board feet including ${waste}% waste`, raw: totalCost.toFixed(2), historyLabel: 'Wood Cost',
     });
   } catch (e) { tpShowError(e.message); }

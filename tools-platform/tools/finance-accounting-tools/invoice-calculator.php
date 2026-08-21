@@ -23,8 +23,8 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const taxAmount = afterDiscount * (taxRate / 100);
     const total = afterDiscount + taxAmount;
 
-    tpShowResult('$' + total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), {
-      label: `Discount: -$${discountAmount.toFixed(2)}, Tax: +$${taxAmount.toFixed(2)}`, raw: total.toFixed(2), historyLabel: 'Invoice Total',
+    tpShowResult(tpFormatMoney(total), {
+      label: `Discount: -${tpFormatMoney(discountAmount)}, Tax: +${tpFormatMoney(taxAmount)}`, raw: total.toFixed(2), historyLabel: 'Invoice Total',
     });
   } catch (e) { tpShowError(e.message); }
 });

@@ -61,7 +61,7 @@ $navCategories = get_categories(true);
 <header class="tp-navbar">
   <div class="tp-container d-flex align-items-center justify-content-between py-2">
     <a href="<?= tp_url() ?>" class="brand d-flex align-items-center gap-2 text-decoration-none">
-      <i class="bi bi-grid-1x2-fill"></i> <?= e(tp_setting('site_name')) ?>
+      <span class="brand-mark"><i class="bi bi-grid-1x2-fill"></i></span> <?= e(tp_setting('site_name')) ?>
     </a>
 
     <nav class="d-none d-lg-flex align-items-center gap-1">
@@ -88,10 +88,15 @@ $navCategories = get_categories(true);
     </nav>
 
     <div class="d-flex align-items-center gap-2">
+      <div class="dropdown">
+        <button class="currency-btn dropdown-toggle" data-bs-toggle="dropdown" title="Change currency symbol" data-currency-label>$ USD</button>
+        <ul class="dropdown-menu dropdown-menu-end tp-currency-menu" data-currency-menu></ul>
+      </div>
       <button class="theme-toggle-btn" data-theme-toggle title="Toggle theme"><span data-theme-icon>🖥️</span></button>
       <button class="btn btn-sm d-none d-md-inline-flex align-items-center gap-1" style="border:1px solid var(--tp-border);border-radius:999px;" data-search-open>
         <i class="bi bi-search"></i> Search tools
       </button>
+      <a href="<?= tp_url('all-tools') ?>" class="btn tp-btn-cta d-none d-md-inline-flex">Browse Tools</a>
       <button class="btn d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#tpMobileNav"><i class="bi bi-list fs-4"></i></button>
     </div>
   </div>

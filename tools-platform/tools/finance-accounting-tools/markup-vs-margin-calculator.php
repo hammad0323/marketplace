@@ -19,7 +19,7 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const margin = (profit / price) * 100;
 
     tpShowResult(`Markup: ${markup.toFixed(2)}%`, {
-      label: `Margin: ${margin.toFixed(2)}% — Profit: $${profit.toFixed(2)}`, raw: markup.toFixed(2), historyLabel: 'Markup vs Margin',
+      label: `Margin: ${margin.toFixed(2)}% — Profit: ${tpFormatMoney(profit)}`, raw: markup.toFixed(2), historyLabel: 'Markup vs Margin',
     });
   } catch (e) { tpShowError(e.message); }
 });

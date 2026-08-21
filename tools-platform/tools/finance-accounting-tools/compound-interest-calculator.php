@@ -32,8 +32,8 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const amount = principal * Math.pow(1 + (rate / 100) / n, n * years);
     const interestEarned = amount - principal;
 
-    tpShowResult('$' + amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), {
-      label: `Future Value — Interest Earned: $${interestEarned.toLocaleString(undefined,{maximumFractionDigits:2})}`,
+    tpShowResult(tpFormatMoney(amount), {
+      label: `Future Value — Interest Earned: ${tpFormatMoney(interestEarned)}`,
       raw: amount.toFixed(2), historyLabel: 'Compound Interest',
     });
   } catch (e) { tpShowError(e.message); }

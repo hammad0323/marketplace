@@ -21,8 +21,8 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const interest = (principal * rate * years) / 100;
     const total = principal + interest;
 
-    tpShowResult('$' + interest.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), {
-      label: `Simple Interest — Total Payable: $${total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`,
+    tpShowResult(tpFormatMoney(interest), {
+      label: `Simple Interest — Total Payable: ${tpFormatMoney(total)}`,
       raw: interest.toFixed(2), historyLabel: 'Simple Interest',
     });
   } catch (e) { tpShowError(e.message); }

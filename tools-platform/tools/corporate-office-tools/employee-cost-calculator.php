@@ -28,7 +28,7 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const totalCost = salary + benefitsCost + payrollTaxCost + overhead;
     const loadMultiplier = totalCost / salary;
 
-    tpShowResult('$' + totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), {
+    tpShowResult(tpFormatMoney(totalCost), {
       label: `Load multiplier: ${loadMultiplier.toFixed(2)}x base salary`, raw: totalCost.toFixed(2), historyLabel: 'Employee Cost',
     });
   } catch (e) { tpShowError(e.message); }

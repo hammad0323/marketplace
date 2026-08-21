@@ -22,7 +22,7 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const net = gross - taxAmount - deductions;
     if (net < 0) throw new Error('Deductions and tax exceed gross salary — please check your inputs.');
 
-    tpShowResult('$' + net.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), {
+    tpShowResult(tpFormatMoney(net), {
       label: 'Estimated Net Salary', raw: net.toFixed(2), historyLabel: 'Net Salary',
     });
   } catch (e) { tpShowError(e.message); }

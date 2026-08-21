@@ -22,8 +22,8 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const total = bill + tipAmount;
     const perPerson = total / people;
 
-    tpShowResult('$' + perPerson.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' / person', {
-      label: `Total: $${total.toFixed(2)} (Tip: $${tipAmount.toFixed(2)})`, raw: perPerson.toFixed(2), historyLabel: 'Tip Split',
+    tpShowResult(tpFormatMoney(perPerson) + ' / person', {
+      label: `Total: ${tpFormatMoney(total)} (Tip: ${tpFormatMoney(tipAmount)})`, raw: perPerson.toFixed(2), historyLabel: 'Tip Split',
     });
   } catch (e) { tpShowError(e.message); }
 });

@@ -16,8 +16,8 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const tax = income * (rate / 100);
     const net = income - tax;
 
-    tpShowResult('$' + tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), {
-      label: `Net income after tax: $${net.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`, raw: tax.toFixed(2), historyLabel: 'Tax Owed',
+    tpShowResult(tpFormatMoney(tax), {
+      label: `Net income after tax: ${tpFormatMoney(net)}`, raw: tax.toFixed(2), historyLabel: 'Tax Owed',
     });
   } catch (e) { tpShowError(e.message); }
 });

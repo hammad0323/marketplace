@@ -212,5 +212,4 @@ require __DIR__ . '/header.php';
     </div>
   </div>
 </div>
-<script src="<?= tp_asset('js/tp-calculator.js') ?>"></script>
 <?php require __DIR__ . '/footer.php'; ?>

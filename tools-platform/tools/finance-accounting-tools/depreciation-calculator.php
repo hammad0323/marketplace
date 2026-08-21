@@ -23,7 +23,7 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const annualDepreciation = depreciableBase / life;
     const rate = (annualDepreciation / cost) * 100;
 
-    tpShowResult('$' + annualDepreciation.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' / year', {
+    tpShowResult(tpFormatMoney(annualDepreciation) + ' / year', {
       label: `${rate.toFixed(1)}% of cost per year over ${life} years`, raw: annualDepreciation.toFixed(2), historyLabel: 'Annual Depreciation',
     });
   } catch (e) { tpShowError(e.message); }

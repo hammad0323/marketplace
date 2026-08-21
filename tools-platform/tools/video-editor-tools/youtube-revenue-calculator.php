@@ -15,7 +15,7 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
 
     const revenue = (views / 1000) * rpm;
 
-    tpShowResult('$' + revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), {
+    tpShowResult(tpFormatMoney(revenue), {
       label: 'Estimated Monthly Revenue (rough estimate — actual RPM varies by niche, region and season)',
       raw: revenue.toFixed(2), historyLabel: 'YouTube Revenue Estimate',
     });

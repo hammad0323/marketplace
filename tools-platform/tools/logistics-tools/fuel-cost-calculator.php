@@ -21,7 +21,7 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const gallonsNeeded = distance / efficiency;
     const cost = gallonsNeeded * price;
 
-    tpShowResult('$' + cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), {
+    tpShowResult(tpFormatMoney(cost), {
       label: `≈ ${gallonsNeeded.toFixed(1)} gallons for ${distance} miles`, raw: cost.toFixed(2), historyLabel: 'Fuel Cost',
     });
   } catch (e) { tpShowError(e.message); }

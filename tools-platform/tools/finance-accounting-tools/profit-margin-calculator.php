@@ -18,7 +18,7 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const markup = cost > 0 ? (profit / cost) * 100 : null;
 
     tpShowResult(margin.toFixed(2) + '%', {
-      label: `Profit Margin — Profit: $${profit.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}` + (markup !== null ? `, Markup: ${markup.toFixed(2)}%` : ''),
+      label: `Profit Margin — Profit: ${tpFormatMoney(profit)}` + (markup !== null ? `, Markup: ${markup.toFixed(2)}%` : ''),
       raw: margin.toFixed(2), historyLabel: 'Profit Margin',
     });
   } catch (e) { tpShowError(e.message); }

@@ -40,6 +40,13 @@ Ships with:
   deployment" below.
 - Dark/light/system theme (localStorage), parallax hero + scroll-reveal
   animations that respect `prefers-reduced-motion`, AJAX search overlay.
+- A header currency switcher (USD/EUR/GBP/PKR/INR/AED and more) that changes
+  the symbol/format every money-outputting tool displays, backed by a shared
+  `tpFormatMoney()` helper (`assets/js/tp-calculator.js`) and persisted in
+  localStorage. This changes only the displayed symbol — a "loan amount" of
+  250000 stays 250000 in whatever currency the visitor means, so switching
+  currency never rescales a tool's math (the one place real FX conversion
+  happens is the dedicated Currency Converter tool).
 
 ## Deploy in 3 steps
 

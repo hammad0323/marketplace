@@ -5,6 +5,51 @@
  * once, generically, via data-attributes on the standard markup that
  * includes/tool-page.php renders around every calculator.
  */
+
+/**
+ * Visitor-selectable currency SYMBOL/format, not a live FX converter: a
+ * "loan amount" of 250000 the visitor typed means 250000 in whatever
+ * currency they had in mind, so switching currency only changes how a
+ * number is displayed, never rescales it (that's the honest behavior —
+ * see the Currency Converter tool for the one place real FX math happens).
+ */
+const TP_CURRENCIES = {
+  USD: { symbol: '$', name: 'US Dollar' },
+  EUR: { symbol: '€', name: 'Euro' },
+  GBP: { symbol: '£', name: 'British Pound' },
+  PKR: { symbol: '₨', name: 'Pakistani Rupee' },
+  INR: { symbol: '₹', name: 'Indian Rupee' },
+  AED: { symbol: 'د.إ', name: 'UAE Dirham' },
+  SAR: { symbol: '﷼', name: 'Saudi Riyal' },
+  CAD: { symbol: 'C$', name: 'Canadian Dollar' },
+  AUD: { symbol: 'A$', name: 'Australian Dollar' },
+  JPY: { symbol: '¥', name: 'Japanese Yen' },
+  CNY: { symbol: '¥', name: 'Chinese Yuan' },
+  SGD: { symbol: 'S$', name: 'Singapore Dollar' },
+  BDT: { symbol: '৳', name: 'Bangladeshi Taka' },
+  ZAR: { symbol: 'R', name: 'South African Rand' },
+  NGN: { symbol: '₦', name: 'Nigerian Naira' },
+};
+
+function tpGetCurrency() {
+  try {
+    const stored = localStorage.getItem('tp_currency');
+    return stored && TP_CURRENCIES[stored] ? stored : 'USD';
+  } catch (e) { return 'USD'; }
+}
+
+function tpSetCurrency(code) {
+  if (!TP_CURRENCIES[code]) return;
+  try { localStorage.setItem('tp_currency', code); } catch (e) { /* private mode etc — safe to ignore */ }
+  document.dispatchEvent(new CustomEvent('tp:currencychange', { detail: { code } }));
+}
+
+function tpFormatMoney(amount, decimals = 2) {
+  const symbol = TP_CURRENCIES[tpGetCurrency()].symbol;
+  const formatted = Number(amount).toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  return symbol + formatted;
+}
+
 function tpShowResult(value, opts) {
   opts = opts || {};
   const box = document.getElementById('tpResultBox');

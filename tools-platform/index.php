@@ -16,35 +16,77 @@ $bodyClass = 'home-page';
 require __DIR__ . '/includes/header.php';
 ?>
 
-<section class="parallax-hero py-5">
+<section class="parallax-hero pt-5 pb-3">
   <div class="parallax-hero-bg"></div>
   <div class="hero-blob" style="width:220px;height:220px;background:var(--tp-cyan);top:10%;left:8%;"></div>
   <div class="hero-blob" style="width:160px;height:160px;background:var(--tp-violet);top:60%;right:10%;animation-delay:2s;"></div>
-  <div class="tp-container py-5 text-center">
-    <span class="tp-eyebrow text-white-50">One Platform. Hundreds of Smart Tools.</span>
-    <h1 class="hero-title mt-2 mx-auto">Smart Tools for Work, Business &amp; Everyday Life</h1>
-    <p class="hero-sub mx-auto mt-3">Free calculators, converters, generators and productivity tools designed for professionals, students and everyday users.</p>
+  <div class="tp-container py-5">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <span class="tp-eyebrow">One Platform. Hundreds of Smart Tools.</span>
+        <h1 class="hero-title mt-3">Smart Tools for Work, Business &amp; Everyday Life</h1>
+        <p class="hero-sub mt-3">Free calculators, converters, generators and productivity tools designed for professionals, students and everyday users.</p>
 
-    <form action="<?= tp_url('search') ?>" method="get" class="tp-search-shell mx-auto mt-4" style="max-width:640px;">
-      <i class="bi bi-search text-muted"></i>
-      <input type="text" name="q" placeholder="Search <?= (int) $totalTools ?>+ tools..." aria-label="Search tools">
-      <button type="submit">Search</button>
-    </form>
+        <form action="<?= tp_url('search') ?>" method="get" class="tp-search-shell mt-4" style="max-width:520px;">
+          <i class="bi bi-search text-muted"></i>
+          <input type="text" name="q" placeholder="Search <?= (int) $totalTools ?>+ tools..." aria-label="Search tools">
+          <button type="submit">Search</button>
+        </form>
 
-    <div class="d-flex justify-content-center gap-3 mt-4">
-      <a href="<?= tp_url('all-tools') ?>" class="btn btn-light fw-semibold px-4">Explore All Tools</a>
-      <a href="#browse-profession" class="btn btn-outline-light fw-semibold px-4">Browse Categories</a>
-    </div>
+        <div class="d-flex flex-wrap gap-3 mt-4">
+          <a href="<?= tp_url('all-tools') ?>" class="btn btn-light fw-semibold px-4">Explore All Tools</a>
+          <a href="#browse-profession" class="btn btn-outline-light fw-semibold px-4">Browse Categories</a>
+        </div>
+      </div>
 
-    <div class="row mt-5 text-white-50">
-      <div class="col-4"><div class="fs-2 fw-bold text-white" data-counter="<?= $totalTools ?>">0</div>Tools</div>
-      <div class="col-4"><div class="fs-2 fw-bold text-white" data-counter="<?= $totalCategories ?>">0</div>Categories</div>
-      <div class="col-4"><div class="fs-2 fw-bold text-white" data-counter="100">0</div>% Free</div>
+      <div class="col-lg-6 d-none d-lg-block">
+        <div class="position-relative" style="padding:2rem 1rem;">
+          <div class="tp-mockup-card mx-auto" style="max-width:380px;">
+            <div class="tp-mockup-dots mb-3">
+              <span style="background:#F87171;"></span><span style="background:#FBBF24;"></span><span style="background:#34D399;"></span>
+            </div>
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <span class="tp-icon" style="width:38px;height:38px;"><i class="bi bi-calculator"></i></span>
+              <div><strong>Loan EMI Calculator</strong><div class="text-muted small">Real-time result</div></div>
+            </div>
+            <div class="tp-mockup-row"><span class="text-muted">Loan Amount</span><span class="fw-semibold">$250,000</span></div>
+            <div class="tp-mockup-row"><span class="text-muted">Interest Rate</span><span class="fw-semibold">7.5%</span></div>
+            <div class="tp-mockup-row"><span class="text-muted">Tenure</span><span class="fw-semibold">360 months</span></div>
+            <div class="rounded-3 p-3 mt-3 text-center" style="background:var(--tp-gradient-brand);color:#fff;">
+              <div class="small text-white-50 text-uppercase">Monthly EMI</div>
+              <div class="fs-3 fw-bold">$1,748.04</div>
+            </div>
+          </div>
+          <div class="tp-mockup-float" style="top:-10px;right:0;">
+            <i class="bi bi-check2-circle text-success"></i> Instant &amp; Free
+          </div>
+          <div class="tp-mockup-float" style="bottom:10px;left:-10px;animation-delay:1.5s;">
+            <i class="bi bi-shield-check" style="color:var(--tp-indigo);"></i> No Signup Needed
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<section class="tp-section">
+<div class="tp-container">
+  <div class="tp-stats-bar row g-3 text-center">
+    <div class="col-4">
+      <div class="stat-value" data-counter="<?= $totalTools ?>">0</div>
+      <div class="stat-label">Tools</div>
+    </div>
+    <div class="col-4">
+      <div class="stat-value" data-counter="<?= $totalCategories ?>">0</div>
+      <div class="stat-label">Categories</div>
+    </div>
+    <div class="col-4">
+      <div class="stat-value" data-counter="100">0</div>
+      <div class="stat-label">% Free</div>
+    </div>
+  </div>
+</div>
+
+<section class="tp-section pt-4">
   <div class="tp-container">
     <div class="d-flex justify-content-between align-items-end mb-4 reveal">
       <div><span class="tp-eyebrow">Most used</span><h2 class="tp-section-title">Popular Tools</h2></div>
@@ -153,19 +195,21 @@ require __DIR__ . '/includes/header.php';
       <span class="tp-eyebrow">Why ToolStack</span>
       <h2 class="tp-section-title">Built for speed, accuracy and privacy</h2>
     </div>
-    <div class="row g-4 text-center">
+    <div class="row g-3">
       <?php foreach ([
-          ['bi-lightning-charge', 'Fast', 'Instant client-side calculations — no waiting on a server round-trip.'],
-          ['bi-gift', 'Free', 'Every tool is free to use, with no paywalls or hidden limits.'],
-          ['bi-check2-circle', 'Accurate', 'Real, documented formulas — reviewed, not guessed.'],
-          ['bi-incognito', 'No Registration', 'Use any tool instantly. No account required.'],
-          ['bi-phone', 'Mobile Friendly', 'Every calculator is optimized for touch and small screens.'],
-          ['bi-shield-lock', 'Privacy Focused', 'Sensitive inputs never leave your browser unless you explicitly opt in.'],
+          ['bi-lightning-charge', 'Fast', 'Instant client-side calculations — no waiting on a server round-trip.', '#7C3AED'],
+          ['bi-gift', 'Free', 'Every tool is free to use, with no paywalls or hidden limits.', '#10B981'],
+          ['bi-check2-circle', 'Accurate', 'Real, documented formulas — reviewed, not guessed.', '#5B21B6'],
+          ['bi-incognito', 'No Registration', 'Use any tool instantly. No account required.', '#A78BFA'],
+          ['bi-phone', 'Mobile Friendly', 'Every calculator is optimized for touch and small screens.', '#8B5CF6'],
+          ['bi-shield-lock', 'Privacy Focused', 'Sensitive inputs never leave your browser unless you explicitly opt in.', '#6D28D9'],
       ] as $item): ?>
       <div class="col-6 col-md-4 col-lg-2 reveal">
-        <div class="tp-icon mx-auto mb-2" style="background:var(--tp-gradient-accent);"><i class="bi <?= $item[0] ?>"></i></div>
-        <h3 class="h6 fw-bold"><?= $item[1] ?></h3>
-        <p class="text-muted small"><?= $item[2] ?></p>
+        <div class="tp-card p-3 h-100 text-center">
+          <div class="tp-icon mx-auto mb-2" style="background:color-mix(in srgb, <?= $item[3] ?> 14%, transparent);color:<?= $item[3] ?>;"><i class="bi <?= $item[0] ?>"></i></div>
+          <h3 class="h6 fw-bold"><?= $item[1] ?></h3>
+          <p class="text-muted small mb-0"><?= $item[2] ?></p>
+        </div>
       </div>
       <?php endforeach; ?>
     </div>

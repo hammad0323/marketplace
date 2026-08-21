@@ -26,7 +26,7 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     tpShowResult(meetsMoq ? 'Meets MOQ ✓' : `Short by ${shortfall.toLocaleString()} units`, {
       label: meetsMoq
         ? `You can order your desired ${desired.toLocaleString()} units.`
-        : `You'll need to order ${orderQty.toLocaleString()} units to meet MOQ (+$${extraCost.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} extra)`,
+        : `You'll need to order ${orderQty.toLocaleString()} units to meet MOQ (+${tpFormatMoney(extraCost)} extra)`,
       raw: orderQty, historyLabel: 'MOQ Check',
     });
   } catch (e) { tpShowError(e.message); }

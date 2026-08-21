@@ -27,8 +27,8 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const fuelCost = gallonsNeeded * fuelPrice;
     const total = fuelCost + extras;
 
-    tpShowResult('$' + total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), {
-      label: `Fuel: $${fuelCost.toFixed(2)} + Extras: $${extras.toFixed(2)}`, raw: total.toFixed(2), historyLabel: 'Trip Cost',
+    tpShowResult(tpFormatMoney(total), {
+      label: `Fuel: ${tpFormatMoney(fuelCost)} + Extras: ${tpFormatMoney(extras)}`, raw: total.toFixed(2), historyLabel: 'Trip Cost',
     });
   } catch (e) { tpShowError(e.message); }
 });

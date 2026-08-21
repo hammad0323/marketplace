@@ -25,7 +25,7 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const revenue = units * price;
 
     tpShowResult(Math.ceil(units).toLocaleString() + ' units', {
-      label: `Break-Even Point — Revenue: $${revenue.toLocaleString(undefined,{maximumFractionDigits:0})}`,
+      label: `Break-Even Point — Revenue: ${tpFormatMoney(revenue, 0)}`,
       raw: units.toFixed(2), historyLabel: 'Break-Even Units',
     });
   } catch (e) { tpShowError(e.message); }

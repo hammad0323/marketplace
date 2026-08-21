@@ -20,8 +20,8 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
 
     const total = (weight * rate) + fees;
 
-    tpShowResult('$' + total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), {
-      label: `${weight}kg × $${rate}/kg + $${fees} fees`, raw: total.toFixed(2), historyLabel: 'Freight Cost',
+    tpShowResult(tpFormatMoney(total), {
+      label: `${weight}kg × ${tpFormatMoney(rate)}/kg + ${tpFormatMoney(fees)} fees`, raw: total.toFixed(2), historyLabel: 'Freight Cost',
     });
   } catch (e) { tpShowError(e.message); }
 });

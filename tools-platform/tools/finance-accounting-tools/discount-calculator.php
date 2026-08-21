@@ -16,8 +16,8 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const savings = price * (discount / 100);
     const finalPrice = price - savings;
 
-    tpShowResult('$' + finalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), {
-      label: `You save $${savings.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`, raw: finalPrice.toFixed(2), historyLabel: 'Discounted Price',
+    tpShowResult(tpFormatMoney(finalPrice), {
+      label: `You save ${tpFormatMoney(savings)}`, raw: finalPrice.toFixed(2), historyLabel: 'Discounted Price',
     });
   } catch (e) { tpShowError(e.message); }
 });

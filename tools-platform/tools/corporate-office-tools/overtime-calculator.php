@@ -25,7 +25,7 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const otRate = rate * multiplier;
     const otPay = otRate * hours;
 
-    tpShowResult('$' + otPay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), {
+    tpShowResult(tpFormatMoney(otPay), {
       label: 'Overtime Pay', raw: otPay.toFixed(2), historyLabel: 'Overtime Pay',
     });
   } catch (e) { tpShowError(e.message); }

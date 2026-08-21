@@ -16,7 +16,7 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const workingCapital = assets - liabilities;
     const health = workingCapital >= 0 ? 'Positive — able to cover short-term obligations' : 'Negative — potential short-term liquidity risk';
 
-    tpShowResult('$' + workingCapital.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), {
+    tpShowResult(tpFormatMoney(workingCapital), {
       label: health, raw: workingCapital.toFixed(2), historyLabel: 'Working Capital',
     });
   } catch (e) { tpShowError(e.message); }

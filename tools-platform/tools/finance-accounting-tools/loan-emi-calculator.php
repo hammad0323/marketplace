@@ -29,8 +29,8 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
     const totalPayment = emi * months;
     const totalInterest = totalPayment - principal;
 
-    tpShowResult('$' + emi.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), {
-      label: `Monthly EMI — Total Interest: $${totalInterest.toLocaleString(undefined,{maximumFractionDigits:0})}, Total Payment: $${totalPayment.toLocaleString(undefined,{maximumFractionDigits:0})}`,
+    tpShowResult(tpFormatMoney(emi), {
+      label: `Monthly EMI — Total Interest: ${tpFormatMoney(totalInterest, 0)}, Total Payment: ${tpFormatMoney(totalPayment, 0)}`,
       raw: emi.toFixed(2), historyLabel: 'Loan EMI',
     });
   } catch (e) { tpShowError(e.message); }

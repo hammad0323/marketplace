@@ -25,7 +25,7 @@ document.getElementById('tpCalculateBtn').addEventListener('click', function () 
 
     const ebitda = netIncome + interest + taxes + da;
 
-    tpShowResult('$' + ebitda.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), {
+    tpShowResult(tpFormatMoney(ebitda), {
       label: 'EBITDA', raw: ebitda.toFixed(2), historyLabel: 'EBITDA',
     });
   } catch (e) { tpShowError(e.message); }

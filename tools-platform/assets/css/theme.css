@@ -63,6 +63,10 @@ body {
   transition: background-color .25s var(--tp-ease), color .25s var(--tp-ease);
 }
 
+h1, h2, h3, .tp-section-title, .hero-title {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+}
+
 a { color: var(--tp-indigo-dark); text-decoration: none; }
 a:hover { color: var(--tp-indigo); }
 
@@ -76,13 +80,24 @@ a:hover { color: var(--tp-indigo); }
   border-bottom: 1px solid var(--tp-border);
 }
 .tp-navbar .brand {
-  font-weight: 800; font-size: 1.25rem; letter-spacing: -0.02em;
-  color: var(--tp-indigo-dark);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800; font-size: 1.2rem; letter-spacing: -0.02em;
+  color: var(--tp-text);
+}
+.brand-mark {
+  width: 34px; height: 34px; border-radius: 10px; background: var(--tp-gradient-brand);
+  color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 1.05rem;
+  box-shadow: 0 4px 12px rgba(124,58,237,.35);
 }
 .tp-nav-link {
-  color: var(--tp-text); font-weight: 500; padding: .5rem .9rem; border-radius: var(--tp-radius-sm);
+  color: var(--tp-text-muted); font-weight: 600; font-size: .92rem; padding: .5rem .85rem; border-radius: 999px;
 }
 .tp-nav-link:hover { background: var(--tp-surface-2); color: var(--tp-indigo); }
+.tp-btn-cta {
+  background: var(--tp-indigo); color: #fff !important; font-weight: 700; font-size: .88rem;
+  border-radius: 999px; padding: .5rem 1.1rem; border: none;
+}
+.tp-btn-cta:hover { background: var(--tp-indigo-dark); color: #fff !important; }
 
 .tp-mega { border: 1px solid var(--tp-border); box-shadow: var(--tp-shadow-lg); border-radius: var(--tp-radius-md); padding: 1.5rem; }
 .tp-mega-col h6 { color: var(--tp-text-muted); text-transform: uppercase; font-size: .72rem; letter-spacing: .08em; font-weight: 700; }
@@ -91,13 +106,24 @@ a:hover { color: var(--tp-indigo); }
 
 .theme-toggle-btn { border: 1px solid var(--tp-border); background: var(--tp-surface); border-radius: 999px; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; }
 
+.currency-btn {
+  border: 1px solid var(--tp-border); background: var(--tp-surface); border-radius: 999px;
+  height: 40px; padding: 0 .9rem; font-weight: 700; font-size: .85rem; color: var(--tp-text);
+  display: inline-flex; align-items: center; gap: .3rem;
+}
+.currency-btn:hover { border-color: var(--tp-indigo); color: var(--tp-indigo); }
+.tp-currency-menu { max-height: 340px; overflow-y: auto; min-width: 220px; border: 1px solid var(--tp-border); box-shadow: var(--tp-shadow-lg); border-radius: var(--tp-radius-md); }
+
 /* ---------------- Hero / parallax ---------------- */
 .parallax-hero { position: relative; overflow: hidden; background: var(--tp-gradient-brand); }
 .parallax-hero-bg {
   position: absolute; inset: -10%; z-index: 0;
   background:
     radial-gradient(650px circle at 20% 20%, rgba(255,255,255,.10), transparent 60%),
-    radial-gradient(600px circle at 85% 80%, rgba(255,255,255,.08), transparent 60%);
+    radial-gradient(600px circle at 85% 80%, rgba(255,255,255,.08), transparent 60%),
+    linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px);
+  background-size: auto, auto, 42px 42px, 42px 42px;
   will-change: transform;
 }
 .parallax-hero .tp-container { position: relative; z-index: 1; }
@@ -107,8 +133,22 @@ a:hover { color: var(--tp-indigo); }
 }
 @keyframes tp-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-18px); } }
 
-.hero-title { font-size: clamp(2rem, 5vw, 3.4rem); font-weight: 800; color: #fff; letter-spacing: -0.02em; line-height: 1.1; }
-.hero-sub { color: rgba(255,255,255,.85); font-size: clamp(1rem, 1.6vw, 1.2rem); max-width: 640px; }
+.hero-title { font-size: clamp(2rem, 5vw, 3.4rem); font-weight: 800; color: #fff; letter-spacing: -0.03em; line-height: 1.1; }
+.hero-sub { color: rgba(255,255,255,.85); font-size: clamp(1rem, 1.6vw, 1.2rem); max-width: 560px; }
+
+/* Decorative product-preview card in the hero — static mockup, not a live tool */
+.tp-mockup-card {
+  background: var(--tp-surface); border-radius: var(--tp-radius-lg); box-shadow: var(--tp-shadow-lg);
+  padding: 1.5rem; transform: rotate(1.2deg); position: relative;
+}
+.tp-mockup-card .tp-mockup-dots span { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.tp-mockup-card .tp-mockup-row { display: flex; justify-content: space-between; align-items: center; padding: .6rem 0; border-bottom: 1px solid var(--tp-border); font-size: .88rem; }
+.tp-mockup-card .tp-mockup-row:last-child { border-bottom: none; }
+.tp-mockup-float {
+  position: absolute; background: var(--tp-surface); border-radius: var(--tp-radius-md); box-shadow: var(--tp-shadow-lg);
+  padding: .9rem 1.1rem; font-weight: 700; font-size: .85rem; display: flex; align-items: center; gap: .5rem;
+  animation: tp-float 7s ease-in-out infinite;
+}
 
 .tp-search-shell {
   background: var(--tp-surface); border-radius: 999px; box-shadow: var(--tp-shadow-lg);
@@ -123,14 +163,15 @@ a:hover { color: var(--tp-indigo); }
 /* ---------------- Cards ---------------- */
 .tp-card {
   background: var(--tp-surface); border: 1px solid var(--tp-border); border-radius: var(--tp-radius-md);
-  box-shadow: var(--tp-shadow-sm); transition: transform .2s var(--tp-ease), box-shadow .2s var(--tp-ease), border-color .2s var(--tp-ease);
+  box-shadow: var(--tp-shadow-sm); transition: transform .25s var(--tp-ease), box-shadow .25s var(--tp-ease), border-color .25s var(--tp-ease);
 }
-.tp-card:hover { transform: translateY(-4px); box-shadow: var(--tp-shadow-md); border-color: var(--tp-cyan); }
+.tp-card:hover { transform: translateY(-5px); box-shadow: var(--tp-shadow-lg); border-color: var(--tp-cyan); }
 .tp-tool-card { padding: 1.4rem; height: 100%; display: flex; flex-direction: column; gap: .6rem; }
 .tp-tool-card .tp-icon {
   width: 46px; height: 46px; border-radius: var(--tp-radius-sm); display: flex; align-items: center; justify-content: center;
-  background: var(--tp-surface-2); color: var(--tp-indigo); font-size: 1.25rem;
+  background: var(--tp-surface-2); color: var(--tp-indigo); font-size: 1.25rem; transition: transform .25s var(--tp-ease);
 }
+.tp-tool-card:hover .tp-icon { transform: scale(1.08) rotate(-4deg); }
 .tp-tool-card h3 { font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--tp-text); }
 .tp-tool-card p { color: var(--tp-text-muted); font-size: .9rem; margin: 0; flex: 1; }
 .tp-badge { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: .25rem .55rem; border-radius: 999px; }
@@ -138,12 +179,24 @@ a:hover { color: var(--tp-indigo); }
 .tp-badge-popular { background: rgba(16,185,129,.12); color: var(--tp-emerald); }
 .tp-badge-trending { background: rgba(217,119,6,.12); color: #D97706; }
 
-.tp-section { padding: 4rem 0; }
+.tp-section { padding: 4.5rem 0; }
 .tp-section-dark { background: var(--tp-gradient-brand); color: var(--tp-text-inverse); }
 .tp-section-dark .tp-eyebrow { color: rgba(255,255,255,.75); }
 .tp-section-dark .tp-section-title { color: #fff; }
-.tp-eyebrow { color: var(--tp-indigo); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: .78rem; }
-.tp-section-title { font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 800; letter-spacing: -0.02em; color: var(--tp-text); }
+.tp-eyebrow {
+  color: var(--tp-indigo); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: .76rem;
+  background: rgba(124,58,237,.1); padding: .3rem .7rem; border-radius: 999px; display: inline-block;
+}
+.tp-section-dark .tp-eyebrow, .parallax-hero .tp-eyebrow { background: rgba(255,255,255,.12); color: rgba(255,255,255,.9); }
+.tp-section-title { font-size: clamp(1.5rem, 3vw, 2.3rem); font-weight: 800; letter-spacing: -0.03em; color: var(--tp-text); margin-top: .6rem; }
+
+/* ---------------- Stats / trust bar ---------------- */
+.tp-stats-bar {
+  background: var(--tp-surface); border: 1px solid var(--tp-border); border-radius: var(--tp-radius-lg);
+  box-shadow: var(--tp-shadow-lg); padding: 1.75rem 1rem; margin-top: -4.5rem; position: relative; z-index: 2;
+}
+.tp-stats-bar .stat-value { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 800; color: var(--tp-indigo-dark); font-family: 'Plus Jakarta Sans', sans-serif; }
+.tp-stats-bar .stat-label { color: var(--tp-text-muted); font-size: .85rem; font-weight: 600; }
 
 /* ---------------- Calculator interface ---------------- */
 .tp-calc-shell {

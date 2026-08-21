@@ -39,6 +39,30 @@ document.documentElement.classList.add('js');
   });
 })();
 
+(function currencySelector() {
+  const menu = document.querySelector('[data-currency-menu]');
+  const label = document.querySelector('[data-currency-label]');
+  if (!menu || typeof TP_CURRENCIES === 'undefined') return;
+
+  menu.innerHTML = Object.entries(TP_CURRENCIES).map(([code, c]) => `
+    <li><button type="button" class="dropdown-item d-flex justify-content-between gap-3" data-currency-option="${code}">
+      <span>${c.name}</span><span class="text-muted">${c.symbol} ${code}</span>
+    </button></li>
+  `).join('');
+
+  function updateLabel(code) {
+    if (label) label.textContent = `${TP_CURRENCIES[code].symbol} ${code}`;
+  }
+  updateLabel(tpGetCurrency());
+
+  document.addEventListener('click', (e) => {
+    const opt = e.target.closest('[data-currency-option]');
+    if (!opt) return;
+    tpSetCurrency(opt.dataset.currencyOption);
+    updateLabel(opt.dataset.currencyOption);
+  });
+})();
+
 (function scrollReveal() {
   const items = document.querySelectorAll('.reveal');
   if (!items.length) return;
