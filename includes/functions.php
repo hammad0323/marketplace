@@ -477,6 +477,35 @@ function pagination_links($pagination, $baseUrl)
 }
 
 // ---------------------------------------------------------------------------
+// Public detail-page URLs — path-based (/doctors/{slug}), not ?slug=, so
+// every doctor/product/medicine/post is a distinct crawlable path instead of
+// a query-string variant of one generic page. Routed by .htaccess.
+// ---------------------------------------------------------------------------
+function doctor_url($slug) { return '/doctors/' . $slug; }
+function product_url($slug) { return '/products/' . $slug; }
+function medicine_url($slug) { return '/medicines/' . $slug; }
+function blog_url($slug) { return '/blog/' . $slug; }
+
+/**
+ * Canonical URL for a filterable listing page (doctors/products/medicines).
+ * Each distinct combination of content-defining filters (specialization,
+ * city, search term, price range...) is real, differently-ranking-worthy
+ * content and gets its own self-referencing canonical — but $params must
+ * NOT include `page` or `sort`: paginating or re-sorting the same filter
+ * combination doesn't change what the page is "about", so every page/sort
+ * variant of one filter combination shares that combination's single
+ * canonical (collapsing to page 1, unsorted), instead of each being treated
+ * as separate content.
+ */
+function filtered_canonical($path, array $params)
+{
+    $params = array_filter($params, fn($v) => $v !== '' && $v !== null && $v !== false);
+    ksort($params);
+    $qs = http_build_query($params);
+    return APP_URL . $path . ($qs !== '' ? '?' . $qs : '');
+}
+
+// ---------------------------------------------------------------------------
 // SEO
 // ---------------------------------------------------------------------------
 
@@ -504,19 +533,19 @@ function build_sitemap_xml()
         $xml .= '<url><loc>' . e(APP_URL . $path) . '</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>' . "\n";
     }
     while ($d = mysqli_fetch_assoc($doctors)) {
-        $xml .= '<url><loc>' . e(APP_URL . '/doctor-profile?slug=' . $d['slug']) . '</loc><lastmod>' . date('Y-m-d', strtotime($d['updated_at'])) . '</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>' . "\n";
+        $xml .= '<url><loc>' . e(APP_URL . doctor_url($d['slug'])) . '</loc><lastmod>' . date('Y-m-d', strtotime($d['updated_at'])) . '</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>' . "\n";
     }
     while ($s = mysqli_fetch_assoc($specs)) {
         $xml .= '<url><loc>' . e(APP_URL . '/doctors?specialization=' . $s['slug']) . '</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>' . "\n";
     }
     while ($b = mysqli_fetch_assoc($blogPosts)) {
-        $xml .= '<url><loc>' . e(APP_URL . '/blog-post?slug=' . $b['slug']) . '</loc><lastmod>' . date('Y-m-d', strtotime($b['published_at'])) . '</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>' . "\n";
+        $xml .= '<url><loc>' . e(APP_URL . blog_url($b['slug'])) . '</loc><lastmod>' . date('Y-m-d', strtotime($b['published_at'])) . '</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>' . "\n";
     }
     while ($p = mysqli_fetch_assoc($storeProducts)) {
-        $xml .= '<url><loc>' . e(APP_URL . '/product-detail?slug=' . $p['slug']) . '</loc><lastmod>' . date('Y-m-d', strtotime($p['created_at'])) . '</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>' . "\n";
+        $xml .= '<url><loc>' . e(APP_URL . product_url($p['slug'])) . '</loc><lastmod>' . date('Y-m-d', strtotime($p['created_at'])) . '</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>' . "\n";
     }
     while ($m = mysqli_fetch_assoc($medicines)) {
-        $xml .= '<url><loc>' . e(APP_URL . '/medicine-detail?slug=' . $m['slug']) . '</loc><lastmod>' . date('Y-m-d', strtotime($m['updated_at'])) . '</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>' . "\n";
+        $xml .= '<url><loc>' . e(APP_URL . medicine_url($m['slug'])) . '</loc><lastmod>' . date('Y-m-d', strtotime($m['updated_at'])) . '</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>' . "\n";
     }
 
     $xml .= '</urlset>';

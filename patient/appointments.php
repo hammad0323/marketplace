@@ -54,7 +54,7 @@ require __DIR__ . '/includes/header.php';
         <button class="btn btn-outline btn-sm btn-reschedule" data-doctor-id="<?= (int)$a['doctor_id'] ?>" data-type="<?= e($a['consultation_type']) ?>">Reschedule</button>
         <button class="btn btn-danger btn-sm btn-cancel">Cancel</button>
         <?php elseif ($a['status'] === 'completed' && !$a['has_review']): ?>
-        <a href="/doctor-profile?slug=<?= e($a['doctor_slug']) ?>#tab-reviews" class="btn btn-outline btn-sm">Leave Review</a>
+        <a href="<?= e(doctor_url($a['doctor_slug'])) ?>#tab-reviews" class="btn btn-outline btn-sm">Leave Review</a>
         <?php endif; ?>
     </div>
 </div>

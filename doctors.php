@@ -96,6 +96,10 @@ if ($specSlug !== '') {
 
 $pageTitle = 'Find Doctors — ' . SITE_NAME;
 $metaDescription = 'Search and compare verified doctors by specialty, fee, and rating. Book online or in-person consultations instantly.';
+$canonical = filtered_canonical('/doctors', [
+    'q' => $q, 'specialization' => $specSlug, 'city' => $city,
+    'min_fee' => $minFee, 'max_fee' => $maxFee, 'free' => $freeOnly ? 1 : '', 'premium' => $premiumOnly ? 1 : '',
+]);
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);padding-bottom:0;">
@@ -189,7 +193,7 @@ require __DIR__ . '/includes/header.php';
                     </div>
                     <div class="doctor-card-footer">
                         <div class="fee"><?= format_currency($d['consultation_fee_online']) ?> <small>/ online</small></div>
-                        <a href="/doctor-profile?slug=<?= e($d['slug']) ?>" class="btn btn-outline btn-sm">View Profile</a>
+                        <a href="<?= e(doctor_url($d['slug'])) ?>" class="btn btn-outline btn-sm">View Profile</a>
                     </div>
                 </div>
                 <?php endforeach; ?>

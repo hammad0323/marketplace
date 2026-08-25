@@ -26,7 +26,7 @@ require __DIR__ . '/includes/header.php';
             <div style="display:flex;gap:10px;align-items:center;">
                 <img src="<?= e(avatar_url($o['doctor_avatar'], $o['doctor_name'])) ?>" style="width:38px;height:38px;border-radius:50%;object-fit:cover;">
                 <div>
-                    <a href="/doctor-profile?slug=<?= e($o['doctor_slug']) ?>" style="font-weight:700;"><?= e($o['doctor_name']) ?></a>
+                    <a href="<?= e(doctor_url($o['doctor_slug'])) ?>" style="font-weight:700;"><?= e($o['doctor_name']) ?></a>
                     <div style="font-size:12px;color:var(--color-text-muted);"><?= e($o['order_number']) ?></div>
                 </div>
             </div>

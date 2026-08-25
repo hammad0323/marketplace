@@ -3,11 +3,16 @@
  * Public site header. Pages set $pageTitle / $metaDescription / $metaKeywords
  * / $ogImage / $canonical before requiring this file; all have sensible
  * defaults. The default canonical strips ALL query params — correct for
- * listing/filter pages (avoids duplicate-content across filter combos), but
- * WRONG for detail pages keyed by a query param (e.g. ?slug=...): those
- * pages must set $canonical themselves (including their identifying param)
- * before requiring this file, or every record of that type would
- * canonicalize to the same generic URL.
+ * simple pages with no content-defining params (login, contact, blog...).
+ * Two kinds of pages must set $canonical themselves instead:
+ *   - Detail pages (doctor/product/medicine/post) use their own path-based
+ *     URL (doctor_url()/product_url()/medicine_url()/blog_url()).
+ *   - Filterable listings (doctors.php, products.php, medicines.php) use
+ *     filtered_canonical(), which keeps content-defining filters (specialty,
+ *     city, search term...) as their own distinct, self-referencing
+ *     canonical, but deliberately excludes `page` and `sort` — so every
+ *     page/sort variant of the SAME filter combination shares one canonical
+ *     instead of each being treated as separate content.
  */
 $pageTitle = $pageTitle ?? SITE_NAME . ' — Trusted Doctors, Online & In-Person';
 $metaDescription = $metaDescription ?? get_setting('site_tagline', 'Book verified doctors for online and in-person consultations.');

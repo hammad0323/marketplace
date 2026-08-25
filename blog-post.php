@@ -33,7 +33,7 @@ $related = mysqli_query(db(), "
 $pageTitle = $post['meta_title'] ?: ($post['title'] . ' — ' . SITE_NAME);
 $metaDescription = $post['meta_description'] ?: excerpt($post['excerpt'] ?: strip_tags($post['content']), 155);
 $ogImage = $post['featured_image'] ? APP_URL . '/uploads/' . $post['featured_image'] : null;
-$canonical = APP_URL . '/blog-post?slug=' . $post['slug'];
+$canonical = APP_URL . blog_url($post['slug']);
 $extraHead = '<script type="application/ld+json">' . json_encode([
     '@context' => 'https://schema.org', '@type' => 'BlogPosting', 'headline' => $post['title'],
     'datePublished' => $post['published_at'], 'author' => ['@type' => 'Person', 'name' => $post['author_name']],
@@ -68,7 +68,7 @@ require __DIR__ . '/includes/header.php';
         <h4 style="margin-bottom:16px;">More from the blog</h4>
         <div class="grid grid-3 stagger">
             <?php foreach ($related as $r): ?>
-            <a href="/blog-post?slug=<?= e($r['slug']) ?>" class="card card-hover" style="overflow:hidden;display:block;" data-reveal>
+            <a href="<?= e(blog_url($r['slug'])) ?>" class="card card-hover" style="overflow:hidden;display:block;" data-reveal>
                 <?php if ($r['featured_image']): ?>
                 <img src="/uploads/<?= e($r['featured_image']) ?>" alt="" style="width:100%;height:120px;object-fit:cover;">
                 <?php else: ?>

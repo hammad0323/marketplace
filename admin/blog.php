@@ -34,7 +34,7 @@ require __DIR__ . '/includes/header.php';
             <td><?= $p['published_at'] ? format_date($p['published_at']) : '—' ?></td>
             <td style="white-space:nowrap;">
                 <?php if ($p['status'] === 'published'): ?>
-                <a href="/blog-post?slug=<?= e($p['slug']) ?>" target="_blank" class="btn btn-ghost btn-sm">View</a>
+                <a href="<?= e(blog_url($p['slug'])) ?>" target="_blank" class="btn btn-ghost btn-sm">View</a>
                 <?php endif; ?>
                 <button class="btn btn-outline btn-sm btn-edit-post">Edit</button>
                 <button class="btn btn-danger btn-sm btn-delete-post">Delete</button>

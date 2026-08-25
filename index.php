@@ -170,7 +170,7 @@ require __DIR__ . '/includes/header.php';
                 </div>
                 <div class="doctor-card-footer">
                     <div class="fee"><?= format_currency($d['consultation_fee_online']) ?> <small>/ online</small></div>
-                    <a href="/doctor-profile?slug=<?= e($d['slug']) ?>" class="btn btn-outline btn-sm">View Profile</a>
+                    <a href="<?= e(doctor_url($d['slug'])) ?>" class="btn btn-outline btn-sm">View Profile</a>
                 </div>
             </div>
             <?php endforeach; ?>

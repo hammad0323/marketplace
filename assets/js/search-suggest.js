@@ -28,7 +28,7 @@
         if (hasDoctors) {
             html += '<div class="search-suggest-group-label">Doctors</div>';
             res.doctors.forEach(function (d) {
-                html += '<a class="search-suggest-item" href="/doctor-profile?slug=' + encodeURIComponent(d.slug) + '">' +
+                html += '<a class="search-suggest-item" href="/doctors/' + encodeURIComponent(d.slug) + '">' +
                     '<img src="' + d.avatar + '" alt="">' +
                     '<span><strong>' + escapeHtml(d.full_name) + '</strong><span>' + escapeHtml(d.spec_names || 'General') + '</span></span></a>';
             });

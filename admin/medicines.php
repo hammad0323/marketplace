@@ -49,7 +49,7 @@ require __DIR__ . '/includes/header.php';
             <td><span class="status-pill status-<?= $m['status'] === 'published' ? 'active' : 'pending' ?>"><?= ucfirst($m['status']) ?></span></td>
             <td style="white-space:nowrap;">
                 <?php if ($m['status'] === 'published'): ?>
-                <a href="/medicine-detail?slug=<?= e($m['slug']) ?>" target="_blank" class="btn btn-ghost btn-sm">View</a>
+                <a href="<?= e(medicine_url($m['slug'])) ?>" target="_blank" class="btn btn-ghost btn-sm">View</a>
                 <?php endif; ?>
                 <button class="btn btn-outline btn-sm btn-edit-medicine">Edit</button>
                 <button class="btn btn-danger btn-sm btn-delete-medicine">Delete</button>

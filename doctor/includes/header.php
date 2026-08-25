@@ -70,7 +70,7 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — ' . SITE_NAME;
                         <i class="ri-arrow-down-s-line"></i>
                     </button>
                     <div class="dropdown-menu" id="doctor-user-dropdown">
-                        <a href="/doctor-profile?slug=<?= e($doctorSlug) ?>" target="_blank"><i class="ri-external-link-line"></i> View Public Profile</a>
+                        <a href="<?= e(doctor_url($doctorSlug)) ?>" target="_blank"><i class="ri-external-link-line"></i> View Public Profile</a>
                         <a href="/doctor/profile"><i class="ri-user-line"></i> Edit Profile</a>
                         <div class="dropdown-divider"></div>
                         <a href="/logout"><i class="ri-logout-box-line"></i> Logout</a>

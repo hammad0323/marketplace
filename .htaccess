@@ -42,7 +42,37 @@ RewriteCond %{REQUEST_URI} !^/ajax/
 RewriteCond %{THE_REQUEST} ^[A-Z]+\ /([^?\s]+)\.php[?\s]
 RewriteRule ^ /%1 [R=301,L]
 
-# 2) Serve the matching .php file for a clean-URL request, transparently
+# 1b) Old ?slug=... detail URLs (doctor-profile, product-detail, blog-post,
+#     medicine-detail) 301 to their new path-based equivalent below, so any
+#     already-indexed or bookmarked link keeps working and search engines
+#     re-index the new URL instead of treating both as duplicate content.
+RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+RewriteCond %{QUERY_STRING} ^slug=([\w-]+)$
+RewriteRule ^doctor-profile$ /doctors/%1? [R=301,L]
+
+RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+RewriteCond %{QUERY_STRING} ^slug=([\w-]+)$
+RewriteRule ^product-detail$ /products/%1? [R=301,L]
+
+RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+RewriteCond %{QUERY_STRING} ^slug=([\w-]+)$
+RewriteRule ^blog-post$ /blog/%1? [R=301,L]
+
+RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+RewriteCond %{QUERY_STRING} ^slug=([\w-]+)$
+RewriteRule ^medicine-detail$ /medicines/%1? [R=301,L]
+
+# 2) Pretty detail-page URLs: the slug lives in the path, not a query string
+#    (/doctors/{slug}, /products/{slug}, /medicines/{slug}, /blog/{slug}).
+#    These are plain files (doctors.php etc.), not directories, and
+#    /doctor/*, /product/*, /medicine/* are never used, so this can't
+#    collide with the doctor dashboard panel at /doctor/... or anything else.
+RewriteRule ^doctors/([\w-]+)/?$ doctor-profile.php?slug=$1 [L,QSA]
+RewriteRule ^products/([\w-]+)/?$ product-detail.php?slug=$1 [L,QSA]
+RewriteRule ^medicines/([\w-]+)/?$ medicine-detail.php?slug=$1 [L,QSA]
+RewriteRule ^blog/([\w-]+)/?$ blog-post.php?slug=$1 [L,QSA]
+
+# 3) Serve the matching .php file for a clean-URL request, transparently
 #    (no redirect, no visible change to the address bar).
 RewriteCond %{REQUEST_URI} !^/(ajax|assets|uploads|database)/
 RewriteCond %{REQUEST_FILENAME} !-d

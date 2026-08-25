@@ -49,6 +49,7 @@ $categories = mysqli_query(db(), "SELECT DISTINCT category FROM medicine_info WH
 
 $pageTitle = ($q !== '' ? 'Search: ' . $q . ' — ' : '') . 'Medicine Information — ' . SITE_NAME;
 $metaDescription = 'Search dosage, uses, side effects, and precautions for medicines, contributed by verified doctors on ' . SITE_NAME . '.';
+$canonical = filtered_canonical('/medicines', ['q' => $q, 'category' => $category]);
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);padding-bottom:0;">
@@ -83,7 +84,7 @@ require __DIR__ . '/includes/header.php';
         <?php else: ?>
         <div class="grid grid-3 stagger">
             <?php foreach ($medicines as $m): ?>
-            <a href="/medicine-detail?slug=<?= e($m['slug']) ?>" class="card card-hover" style="padding:20px;display:block;" data-reveal>
+            <a href="<?= e(medicine_url($m['slug'])) ?>" class="card card-hover" style="padding:20px;display:block;" data-reveal>
                 <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px;">
                     <?php if ($m['featured_image']): ?>
                     <img src="/uploads/<?= e($m['featured_image']) ?>" alt="" style="width:44px;height:44px;border-radius:10px;object-fit:cover;flex-shrink:0;">

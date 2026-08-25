@@ -29,7 +29,7 @@ require __DIR__ . '/includes/header.php';
         <?php else: ?>
         <div class="grid grid-3 stagger">
             <?php foreach ($posts as $p): ?>
-            <a href="/blog-post?slug=<?= e($p['slug']) ?>" class="card card-hover" style="overflow:hidden;display:block;" data-reveal>
+            <a href="<?= e(blog_url($p['slug'])) ?>" class="card card-hover" style="overflow:hidden;display:block;" data-reveal>
                 <?php if ($p['featured_image']): ?>
                 <img src="/uploads/<?= e($p['featured_image']) ?>" alt="<?= e($p['title']) ?>" style="width:100%;height:170px;object-fit:cover;">
                 <?php else: ?>

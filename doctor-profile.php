@@ -65,10 +65,10 @@ if ($privacy['show_reviews']) {
 
 $pageTitle = $doctor['full_name'] . ' — ' . ($specNames ?: 'Doctor') . ' | ' . SITE_NAME;
 $metaDescription = excerpt($doctor['bio'] ?: ($doctor['full_name'] . ' is a verified ' . ($specNames ?: 'doctor') . ' on ' . SITE_NAME . '.'), 155);
-$canonical = APP_URL . '/doctor-profile?slug=' . $doctor['slug'];
+$canonical = APP_URL . doctor_url($doctor['slug']);
 $extraHead = '<script type="application/ld+json">' . json_encode([
     '@context' => 'https://schema.org', '@type' => 'Physician', 'name' => $doctor['full_name'],
-    'medicalSpecialty' => array_column($doctorSpecializations, 'name'), 'url' => APP_URL . '/doctor-profile?slug=' . $doctor['slug'],
+    'medicalSpecialty' => array_column($doctorSpecializations, 'name'), 'url' => $canonical,
     'aggregateRating' => $doctor['rating_count'] > 0 ? ['@type' => 'AggregateRating', 'ratingValue' => $doctor['rating_avg'], 'reviewCount' => $doctor['rating_count']] : null,
 ]) . '</script>';
 $extraScripts = '<script src="/assets/js/calendar-widget.js"></script><script src="/assets/js/booking.js"></script>';
@@ -167,7 +167,7 @@ require __DIR__ . '/includes/header.php';
                             <p style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px;">
                                 <?= $p['type'] === 'service' ? e($p['duration_label'] ?: '') : (((int) $p['stock'] > 0) ? (int) $p['stock'] . ' in stock' : '<span style="color:var(--color-danger);">Out of stock</span>') ?>
                             </p>
-                            <a href="/product-detail?slug=<?= e($p['slug']) ?>" class="btn btn-primary btn-block">View Details &amp; Order</a>
+                            <a href="<?= e(product_url($p['slug'])) ?>" class="btn btn-primary btn-block">View Details &amp; Order</a>
                         </div>
                         <?php endforeach; ?>
                     </div>

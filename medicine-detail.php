@@ -37,7 +37,7 @@ $related = mysqli_query(db(), "
 $pageTitle = $medicine['meta_title'] ?: ($medicine['name'] . ' — Uses, Dosage &amp; Side Effects | ' . SITE_NAME);
 $metaDescription = $medicine['meta_description'] ?: excerpt($medicine['uses'] ?: strip_tags($medicine['content']), 155);
 $ogImage = $medicine['featured_image'] ? APP_URL . '/uploads/' . $medicine['featured_image'] : null;
-$canonical = APP_URL . '/medicine-detail?slug=' . $medicine['slug'];
+$canonical = APP_URL . medicine_url($medicine['slug']);
 $extraHead = '<script type="application/ld+json">' . json_encode(array_filter([
     '@context' => 'https://schema.org', '@type' => 'Drug', 'name' => $medicine['name'],
     'nonProprietaryName' => $medicine['generic_name'],
@@ -98,7 +98,7 @@ require __DIR__ . '/includes/header.php';
             <div>
                 <span style="font-size:12.5px;color:var(--color-text-muted);">Contributed by</span>
                 <?php if ($medicine['author_role'] === 'doctor' && $medicine['doctor_slug']): ?>
-                <a href="/doctor-profile?slug=<?= e($medicine['doctor_slug']) ?>" style="display:block;font-weight:700;"><?= e($medicine['author_name']) ?></a>
+                <a href="<?= e(doctor_url($medicine['doctor_slug'])) ?>" style="display:block;font-weight:700;"><?= e($medicine['author_name']) ?></a>
                 <?php else: ?>
                 <strong style="display:block;"><?= e($medicine['author_name']) ?></strong>
                 <?php endif; ?>
@@ -114,7 +114,7 @@ require __DIR__ . '/includes/header.php';
         <h4 style="margin-bottom:16px;">Related medicines</h4>
         <div class="grid grid-4 stagger">
             <?php foreach ($related as $r): ?>
-            <a href="/medicine-detail?slug=<?= e($r['slug']) ?>" class="card card-hover" style="padding:14px;text-align:center;" data-reveal>
+            <a href="<?= e(medicine_url($r['slug'])) ?>" class="card card-hover" style="padding:14px;text-align:center;" data-reveal>
                 <?php if ($r['featured_image']): ?>
                 <img src="/uploads/<?= e($r['featured_image']) ?>" alt="" style="width:40px;height:40px;border-radius:10px;object-fit:cover;margin:0 auto 8px;">
                 <?php else: ?>

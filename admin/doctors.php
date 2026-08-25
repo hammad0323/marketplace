@@ -57,7 +57,7 @@ require __DIR__ . '/includes/header.php';
                 <button class="btn btn-primary btn-sm btn-doc-action" data-action="activate">Activate</button>
                 <?php endif; ?>
                 <?php endif; ?>
-                <a href="/doctor-profile?slug=<?= e($d['slug']) ?>" target="_blank" class="btn btn-ghost btn-sm">View</a>
+                <a href="<?= e(doctor_url($d['slug'])) ?>" target="_blank" class="btn btn-ghost btn-sm">View</a>
             </td>
         </tr>
         <?php endwhile; ?>

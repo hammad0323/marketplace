@@ -81,6 +81,9 @@ $categories = mysqli_query(db(), 'SELECT id, name, slug FROM product_categories 
 
 $pageTitle = ($q !== '' ? 'Search: ' . $q . ' — ' : '') . 'Products & Services — ' . SITE_NAME;
 $metaDescription = 'Browse health products and service packages offered directly by verified, premium doctors on ' . SITE_NAME . '.';
+$canonical = filtered_canonical('/products', [
+    'q' => $q, 'category' => $categorySlug, 'type' => $type, 'min_price' => $minPrice, 'max_price' => $maxPrice,
+]);
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);padding-bottom:0;">
@@ -147,7 +150,7 @@ require __DIR__ . '/includes/header.php';
             <?php else: ?>
             <div class="grid grid-3 stagger">
                 <?php foreach ($products as $p): ?>
-                <a href="/product-detail?slug=<?= e($p['slug']) ?>" class="card card-hover" style="overflow:hidden;display:block;" data-reveal>
+                <a href="<?= e(product_url($p['slug'])) ?>" class="card card-hover" style="overflow:hidden;display:block;" data-reveal>
                     <?php if ($p['image']): ?>
                     <img src="/uploads/<?= e($p['image']) ?>" alt="<?= e($p['name']) ?>" style="width:100%;height:160px;object-fit:cover;">
                     <?php else: ?>

@@ -48,7 +48,7 @@ $related = mysqli_query(db(), "
 $pageTitle = ($product['meta_title'] ?: ($product['name'] . ' — ' . SITE_NAME));
 $metaDescription = $product['meta_description'] ?: excerpt($product['description'] ?: $product['name'], 155);
 $ogImage = $product['image'] ? APP_URL . '/uploads/' . $product['image'] : null;
-$canonical = APP_URL . '/product-detail?slug=' . $product['slug'];
+$canonical = APP_URL . product_url($product['slug']);
 $extraHead = '<script type="application/ld+json">' . json_encode(array_filter([
     '@context' => 'https://schema.org',
     '@type' => $product['type'] === 'service' ? 'Service' : 'Product',
@@ -92,7 +92,7 @@ require __DIR__ . '/includes/header.php';
 
                     <div class="divider-fade"></div>
                     <h2 style="font-size:16px;margin-bottom:14px;">Offered by</h2>
-                    <a href="/doctor-profile?slug=<?= e($product['doctor_slug']) ?>" class="card" style="padding:16px;display:flex;align-items:center;gap:12px;">
+                    <a href="<?= e(doctor_url($product['doctor_slug'])) ?>" class="card" style="padding:16px;display:flex;align-items:center;gap:12px;">
                         <img src="<?= e(avatar_url($product['doctor_avatar'], $product['doctor_name'])) ?>" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
                         <div>
                             <strong style="display:block;"><?= e($product['doctor_name']) ?></strong>
@@ -105,7 +105,7 @@ require __DIR__ . '/includes/header.php';
                 <h3 style="margin:28px 0 14px;">More from this doctor</h3>
                 <div class="grid grid-2 stagger">
                     <?php foreach ($related as $r): ?>
-                    <a href="/product-detail?slug=<?= e($r['slug']) ?>" class="card card-hover" style="padding:14px;display:flex;gap:12px;align-items:center;" data-reveal>
+                    <a href="<?= e(product_url($r['slug'])) ?>" class="card card-hover" style="padding:14px;display:flex;gap:12px;align-items:center;" data-reveal>
                         <?php if ($r['image']): ?><img src="/uploads/<?= e($r['image']) ?>" style="width:52px;height:52px;border-radius:10px;object-fit:cover;flex-shrink:0;"><?php else: ?>
                         <div style="width:52px;height:52px;border-radius:10px;background:var(--gradient-primary);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;"><i class="<?= $r['type'] === 'service' ? 'ri-heart-pulse-line' : 'ri-capsule-line' ?>"></i></div>
                         <?php endif; ?>
@@ -134,7 +134,7 @@ require __DIR__ . '/includes/header.php';
 
                     <?php if (!is_logged_in()): ?>
                         <p style="color:var(--color-text-muted);font-size:13.5px;margin-bottom:14px;">Log in as a patient to request this <?= $product['type'] ?>.</p>
-                        <a href="#" class="btn btn-primary btn-block" data-requires-auth data-action-url="/product-detail?slug=<?= e($slug) ?>">Log In to Purchase</a>
+                        <a href="#" class="btn btn-primary btn-block" data-requires-auth data-action-url="<?= e(product_url($slug)) ?>">Log In to Purchase</a>
                     <?php elseif (current_role() !== 'patient'): ?>
                         <p style="color:var(--color-text-muted);font-size:13.5px;">Only patient accounts can purchase from the storefront.</p>
                     <?php elseif ($product['type'] === 'product' && (int) $product['stock'] <= 0): ?>
