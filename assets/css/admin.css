@@ -43,45 +43,9 @@
 .admin-topbar h1 { font-size: 19px; font-weight: 800; margin: 0; }
 .admin-content { padding: 28px; }
 
-.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
-.stat-card {
-  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-md);
-  padding: 22px; transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
-.stat-card .icon-wrap {
-  width: 42px; height: 42px; border-radius: 12px; background: var(--purple-50); color: var(--purple-600);
-  display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 14px;
-}
-.stat-card .value { font-size: 27px; font-weight: 800; letter-spacing: -0.01em; }
-.stat-card .label { font-size: 13px; color: var(--ink-mute); margin-top: 2px; }
-.stat-card .delta { font-size: 12px; font-weight: 700; margin-top: 10px; display: inline-flex; align-items: center; gap: 4px; }
-.stat-card .delta.up { color: var(--success); }
-.stat-card .delta.down { color: var(--danger); }
-
-.panel { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; }
-.panel + .panel { margin-top: 20px; }
-.panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-.panel-head h3 { font-size: 16px; font-weight: 700; margin: 0; }
-
-.table-w { width: 100%; border-collapse: collapse; font-size: 14px; }
-.table-w th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-mute); padding: 10px 14px; border-bottom: 1px solid var(--border); }
-.table-w td { padding: 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-.table-w tr:last-child td { border-bottom: none; }
-.table-w tr:hover td { background: var(--purple-50); }
-
-.status-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
-.status-chip.pending { background: #FEF3C7; color: #92400E; }
-.status-chip.approved, .status-chip.active, .status-chip.accepted, .status-chip.confirmed, .status-chip.paid, .status-chip.completed, .status-chip.published, .status-chip.sent { background: #D1FAE5; color: #065F46; }
-.status-chip.rejected, .status-chip.blocked, .status-chip.suspended, .status-chip.cancelled, .status-chip.refunded, .status-chip.expired, .status-chip.deleted, .status-chip.failed { background: #FEE2E2; color: #991B1B; }
-.status-chip.draft, .status-chip.hidden, .status-chip.logged_only { background: #F3F0F5; color: #4B4560; }
-.status-chip.planned { background: #F6E5F7; color: #6A1A70; }
-
-.roadmap-card {
-  border: 1px dashed var(--border); border-radius: var(--radius-md); padding: 20px;
-  display: flex; align-items: center; gap: 14px; background: var(--purple-50);
-}
-.roadmap-card .icon-wrap { width: 40px; height: 40px; border-radius: 10px; background: var(--white); display:flex; align-items:center; justify-content:center; color: var(--purple-600); }
+/* .stat-grid, .stat-card, .panel, .table-w, .status-chip and .roadmap-card
+   are shared dashboard components used on customer/provider pages too —
+   defined once in style.css so they're styled everywhere, not just here. */
 
 @media (max-width: 1000px) {
   .stat-grid { grid-template-columns: repeat(2, 1fr); }

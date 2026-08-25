@@ -53,6 +53,7 @@ UPDATE cities SET image = 'https://placehold.co/800x500/7C3AED/FFFFFF?text=New+Y
 -- Give the two select-type dynamic fields real dropdown options
 UPDATE category_fields SET field_options = 'Standard,Deluxe,Suite,Family Suite,Executive Suite' WHERE field_key = 'room_type';
 UPDATE category_fields SET field_options = 'Automatic,Manual' WHERE field_key = 'transmission';
+UPDATE category_fields SET field_options = 'New,Used,Refurbished' WHERE field_key = 'condition';
 
 -- ---------------------------------------------------------------------
 -- PROVIDER USER ACCOUNTS  (role_id 2 = Provider)
@@ -354,5 +355,46 @@ INSERT INTO support_ticket_replies (ticket_id, sender_id, message, created_at) V
 -- ---------------------------------------------------------------------
 INSERT INTO newsletter_subscribers (email) VALUES
   ('traveler1@example.com'), ('traveler2@example.com'), ('wanderlust@example.com'), ('tripfan@example.com');
+
+-- ---------------------------------------------------------------------
+-- STORE / E-COMMERCE — a demo Store provider selling physical products,
+-- plus a couple of demo orders through the cart + checkout flow.
+-- (Category id 7 "Store", category_fields ids 14-16 "Brand/SKU/Condition"
+-- come from schema.sql's base seed.)
+-- ---------------------------------------------------------------------
+
+INSERT INTO users (id, role_id, name, email, phone, password_hash, status, email_verified_at) VALUES
+  (109, 2, 'Priya Nair', 'karachitravelgear@wanderly.test', '+92 300 5556677', '$2y$12$S6TVvHpOEWZfUTed6YsSqeNVkVcsO82m9wPobNiCF.iWAVEwMD5sG', 'active', NOW());
+
+INSERT INTO providers (id, user_id, business_name, slug, category_id, city_id, address, latitude, longitude, description, logo, cover_image, status, is_verified, is_featured, membership_plan_id, avg_rating, review_count, profile_views, created_at) VALUES
+  (9, 109, 'Karachi Travel Gear', 'karachi-travel-gear', 7, 1, 'Tariq Road, Karachi', 24.8710, 67.0530, 'A local shop stocking backpacks, packing accessories and travel electronics, shipped anywhere in the city.', 'https://placehold.co/300x300/8B5CF6/FFFFFF?text=KTG', 'https://placehold.co/1200x400/6D28D9/FFFFFF?text=Karachi+Travel+Gear', 'approved', 1, 0, 1, 0, 0, 187, '2026-06-01 10:00:00');
+
+INSERT INTO services (id, provider_id, category_id, city_id, title, slug, short_description, description, address, price, price_unit, stock_quantity, status, is_featured, cancellation_policy, created_at) VALUES
+  (17, 9, 7, 1, 'Travel Backpack 40L', 'travel-backpack-40l', 'Carry-on friendly backpack with a padded laptop sleeve and rain cover.', 'A durable 40L backpack built for weekend trips and carry-on travel, with a padded 15" laptop sleeve, multiple organizer pockets, and a hidden rain cover.', 'Tariq Road, Karachi', 45.00, 'fixed', 25, 'approved', 1, 'Unopened items can be returned within 7 days of delivery for a full refund.', '2026-06-01 11:00:00'),
+  (18, 9, 7, 1, 'Universal Travel Adapter', 'universal-travel-adapter', 'All-in-one plug adapter with dual USB-A and one USB-C port.', 'Works in over 150 countries — UK, EU, US, and AU plug types built in, plus two USB-A ports and a USB-C port for charging multiple devices at once.', 'Tariq Road, Karachi', 12.00, 'fixed', 60, 'approved', 0, 'Unopened items can be returned within 7 days of delivery for a full refund.', '2026-06-01 11:15:00'),
+  (19, 9, 7, 1, 'Packing Cubes Set (4-pack)', 'packing-cubes-set-4-pack', 'Compression packing cubes in four sizes to organize a full suitcase.', 'Keep your suitcase organized with four mesh-top compression cubes in graduated sizes — great for separating clothes, shoes, and toiletries.', 'Tariq Road, Karachi', 18.00, 'fixed', 40, 'approved', 0, 'Unopened items can be returned within 7 days of delivery for a full refund.', '2026-06-01 11:30:00');
+
+INSERT INTO service_images (service_id, image_path, is_cover, sort_order) VALUES
+  (17, 'https://placehold.co/800x600/A78BFA/1E1B4B?text=Travel+Backpack+1', 1, 0), (17, 'https://placehold.co/800x600/A78BFA/1E1B4B?text=Travel+Backpack+2', 0, 1),
+  (18, 'https://placehold.co/800x600/A78BFA/1E1B4B?text=Travel+Adapter+1', 1, 0), (18, 'https://placehold.co/800x600/A78BFA/1E1B4B?text=Travel+Adapter+2', 0, 1),
+  (19, 'https://placehold.co/800x600/A78BFA/1E1B4B?text=Packing+Cubes+1', 1, 0), (19, 'https://placehold.co/800x600/A78BFA/1E1B4B?text=Packing+Cubes+2', 0, 1);
+
+INSERT INTO service_field_values (service_id, category_field_id, field_value) VALUES
+  (17, 14, 'Wanderlite'), (17, 15, 'WL-BP40-BLK'), (17, 16, 'New'),
+  (18, 14, 'Wanderlite'), (18, 15, 'WL-ADPT-UNI'), (18, 16, 'New'),
+  (19, 14, 'Wanderlite'), (19, 15, 'WL-CUBE-4PK'), (19, 16, 'New');
+
+-- A delivered order (customer 201 bought a backpack + adapter) and a
+-- pending one (customer 202 just placed an order for packing cubes).
+INSERT INTO orders (id, order_ref, customer_id, subtotal, tax_amount, service_fee, total_amount, status, shipping_name, shipping_phone, shipping_address, shipping_city_id, created_at) VALUES
+  (1, 'OD-DEMO0001', 201, 57.00, 2.85, 1.71, 61.56, 'delivered', 'Ayesha Khan', '+92 301 1112233', 'House 12, Street 4, DHA Phase 5, Karachi', 1, '2026-07-05 12:00:00'),
+  (2, 'OD-DEMO0002', 202, 18.00, 0.90, 0.54, 19.44, 'pending', 'Bilal Ahmed', '+92 301 2223344', 'Flat 3B, Clifton Block 2, Karachi', 1, '2026-08-12 16:00:00');
+
+INSERT INTO order_items (order_id, service_id, provider_id, title, unit_price, quantity, total_price, commission_amount, status, created_at) VALUES
+  (1, 17, 9, 'Travel Backpack 40L', 45.00, 1, 48.60, 4.50, 'delivered', '2026-07-05 12:00:00'),
+  (1, 18, 9, 'Universal Travel Adapter', 12.00, 1, 12.96, 1.20, 'delivered', '2026-07-05 12:00:00'),
+  (2, 19, 9, 'Packing Cubes Set (4-pack)', 18.00, 1, 19.44, 1.80, 'pending', '2026-08-12 16:00:00');
+
+UPDATE services SET stock_quantity = stock_quantity - 1 WHERE id IN (17, 18);
 
 SET FOREIGN_KEY_CHECKS = 1;

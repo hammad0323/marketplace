@@ -49,7 +49,7 @@ require ROOT_PATH . '/includes/header.php';
               <a href="<?php echo url('/pages/service.php'); ?>?slug=<?php echo e($svc['slug']); ?>" class="card-body" style="display:block;">
                 <div class="card-meta"><?php echo e($svc['business_name']); ?></div>
                 <div class="card-title"><?php echo e($svc['title']); ?></div>
-                <div class="card-footer-row"><div class="price-tag"><?php echo format_price($svc['price']); ?> <span>/ <?php echo e($svc['price_unit']); ?></span></div></div>
+                <div class="card-footer-row"><div class="price-tag"><?php echo format_price($svc['price']); ?> <?php if ($svc['price_unit'] !== 'fixed'): ?><span>/ <?php echo e($svc['price_unit']); ?></span><?php endif; ?></div></div>
               </a>
             </div>
           <?php endforeach; ?>

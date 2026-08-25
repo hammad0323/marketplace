@@ -5,11 +5,14 @@ if (is_logged_in()) {
     redirect('/index.php');
 }
 
-$categories = db_select($conn, 'SELECT id, name FROM categories WHERE is_active = 1 AND parent_id IS NULL ORDER BY sort_order');
+$categories = db_select($conn, 'SELECT id, name, icon, listing_type FROM categories WHERE is_active = 1 AND parent_id IS NULL ORDER BY sort_order');
+$categoriesById = array_column($categories, null, 'id');
+
 $cities = db_select($conn, 'SELECT id, name FROM cities WHERE is_active = 1 ORDER BY sort_order');
 
 $errors = [];
-$old = ['name' => '', 'email' => '', 'phone' => '', 'business_name' => '', 'category_id' => '', 'city_id' => '', 'address' => '', 'website' => '', 'description' => ''];
+$initialCategoryId = (int) ($_GET['category'] ?? 0);
+$old = ['name' => '', 'email' => '', 'phone' => '', 'business_name' => '', 'category_id' => isset($categoriesById[$initialCategoryId]) ? (string) $initialCategoryId : '', 'city_id' => '', 'address' => '', 'website' => '', 'description' => ''];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
@@ -36,6 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+$lockedCategory = isset($categoriesById[(int) $old['category_id']]) ? $categoriesById[(int) $old['category_id']] : null;
+
 $pageTitle = 'List your business';
 require ROOT_PATH . '/includes/header.php';
 ?>
@@ -44,7 +49,13 @@ require ROOT_PATH . '/includes/header.php';
     <div class="section-head">
       <span class="eyebrow"><i class="bi bi-shop"></i> Providers</span>
       <h1 class="section-heading">List your business on <?php echo e($siteName); ?></h1>
-      <p class="section-sub">Create your account, then submit your business for admin approval. Once approved you can add services, manage availability and take bookings.</p>
+      <p class="section-sub">
+        <?php if ($lockedCategory): ?>
+          Create your account, then submit your business for admin approval. Once approved you can add <?php echo $lockedCategory['listing_type'] === 'product' ? 'products and start selling' : 'services and take bookings'; ?>.
+        <?php else: ?>
+          Create your account, then submit your business for admin approval. Once approved you can add services, manage availability and take bookings.
+        <?php endif; ?>
+      </p>
     </div>
 
     <?php foreach ($errors as $err): ?>
@@ -60,12 +71,21 @@ require ROOT_PATH . '/includes/header.php';
         <div><label>Business name</label><input type="text" name="business_name" value="<?php echo e($old['business_name']); ?>" required></div>
         <div>
           <label>Category</label>
-          <select name="category_id" required>
-            <option value="">Select a category</option>
-            <?php foreach ($categories as $cat): ?>
-              <option value="<?php echo (int) $cat['id']; ?>" <?php echo (string) $cat['id'] === $old['category_id'] ? 'selected' : ''; ?>><?php echo e($cat['name']); ?></option>
-            <?php endforeach; ?>
-          </select>
+          <?php if ($lockedCategory): ?>
+            <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--purple-50);">
+              <i class="bi <?php echo e($lockedCategory['icon'] ?: 'bi-tag'); ?>" style="color:var(--purple-600);"></i>
+              <strong style="flex:1;font-size:14.5px;"><?php echo e($lockedCategory['name']); ?></strong>
+              <a href="<?php echo url('/provider/register.php'); ?>" style="font-size:12.5px;color:var(--purple-600);font-weight:600;">Change</a>
+            </div>
+            <input type="hidden" name="category_id" value="<?php echo (int) $lockedCategory['id']; ?>">
+          <?php else: ?>
+            <select name="category_id" required>
+              <option value="">Select a category</option>
+              <?php foreach ($categories as $cat): ?>
+                <option value="<?php echo (int) $cat['id']; ?>" <?php echo (string) $cat['id'] === $old['category_id'] ? 'selected' : ''; ?>><?php echo e($cat['name']); ?></option>
+              <?php endforeach; ?>
+            </select>
+          <?php endif; ?>
         </div>
         <div>
           <label>City</label>

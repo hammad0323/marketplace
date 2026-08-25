@@ -146,6 +146,14 @@ button { font-family: inherit; }
 .btn-sm { padding: 9px 18px; font-size: 13px; }
 .btn-block { width: 100%; }
 
+.btn-highlight {
+  background: var(--purple-50);
+  color: var(--purple-600);
+  border-color: var(--purple-soft);
+  font-weight: 700;
+}
+.btn-highlight:hover { background: var(--gradient-purple); color: var(--white); border-color: transparent; transform: translateY(-2px); }
+
 /* --------------------------------------------------------------------- */
 /* Navbar                                                                 */
 /* --------------------------------------------------------------------- */
@@ -636,6 +644,54 @@ button { font-family: inherit; }
 @keyframes toast-in { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
 
 /* --------------------------------------------------------------------- */
+/* Dashboard components — stat cards, panels, tables, status chips.
+   Shared by the admin panel and the customer/provider dashboards, so
+   this lives here (not admin.css) to be styled on every page that uses
+   it, not just /admin/. */
+/* --------------------------------------------------------------------- */
+
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
+.stat-card {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: 22px; transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.stat-card .icon-wrap {
+  width: 42px; height: 42px; border-radius: 12px; background: var(--purple-50); color: var(--purple-600);
+  display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 14px;
+}
+.stat-card .value { font-size: 27px; font-weight: 800; letter-spacing: -0.01em; }
+.stat-card .label { font-size: 13px; color: var(--ink-mute); margin-top: 2px; }
+.stat-card .delta { font-size: 12px; font-weight: 700; margin-top: 10px; display: inline-flex; align-items: center; gap: 4px; }
+.stat-card .delta.up { color: var(--success); }
+.stat-card .delta.down { color: var(--danger); }
+
+.panel { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; }
+.panel + .panel { margin-top: 20px; }
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.panel-head h3 { font-size: 16px; font-weight: 700; margin: 0; }
+
+.table-w { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table-w th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-mute); padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.table-w td { padding: 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.table-w tr:last-child td { border-bottom: none; }
+.table-w tr:hover td { background: var(--purple-50); }
+.table-responsive { overflow-x: auto; }
+
+.status-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.status-chip.pending { background: #FEF3C7; color: #92400E; }
+.status-chip.approved, .status-chip.active, .status-chip.accepted, .status-chip.confirmed, .status-chip.paid, .status-chip.completed, .status-chip.published, .status-chip.sent { background: #D1FAE5; color: #065F46; }
+.status-chip.rejected, .status-chip.blocked, .status-chip.suspended, .status-chip.cancelled, .status-chip.refunded, .status-chip.expired, .status-chip.deleted, .status-chip.failed { background: #FEE2E2; color: #991B1B; }
+.status-chip.draft, .status-chip.hidden, .status-chip.logged_only, .status-chip.processing { background: #F3F0F5; color: #4B4560; }
+.status-chip.planned, .status-chip.shipped { background: #F6E5F7; color: #6A1A70; }
+
+.roadmap-card {
+  border: 1px dashed var(--border); border-radius: var(--radius-md); padding: 20px;
+  display: flex; align-items: center; gap: 14px; background: var(--purple-50);
+}
+.roadmap-card .icon-wrap { width: 40px; height: 40px; border-radius: 10px; background: var(--white); display:flex; align-items:center; justify-content:center; color: var(--purple-600); }
+
+/* --------------------------------------------------------------------- */
 /* Empty states                                                          */
 /* --------------------------------------------------------------------- */
 
@@ -676,4 +732,5 @@ button { font-family: inherit; }
   .cta-band { flex-direction: column; text-align: center; padding: 40px 28px; }
   .footer-grid { grid-template-columns: 1fr; }
   .section { padding: 56px 0; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
 }

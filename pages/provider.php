@@ -103,7 +103,7 @@ require ROOT_PATH . '/includes/header.php';
                     <div class="thumb"><?php if ($s['cover']): ?><img src="<?php echo e($s['cover']); ?>"><?php endif; ?></div>
                     <div class="card-body">
                       <div class="card-title"><?php echo e($s['title']); ?></div>
-                      <div class="price-tag"><?php echo format_price($s['price']); ?> <span>/ <?php echo e($s['price_unit']); ?></span></div>
+                      <div class="price-tag"><?php echo format_price($s['price']); ?> <?php if ($s['price_unit'] !== 'fixed'): ?><span>/ <?php echo e($s['price_unit']); ?></span><?php endif; ?></div>
                     </div>
                   </a>
                 </div>

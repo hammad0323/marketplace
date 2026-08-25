@@ -6,7 +6,7 @@ $service = $slug ? db_select_one(
     $conn,
     'SELECT s.*, p.business_name, p.slug AS provider_slug, p.is_verified, p.show_phone, p.show_email, p.show_map,
         u.phone AS provider_phone, u.email AS provider_email,
-        c.name AS city_name, cat.name AS category_name, cat.icon AS category_icon
+        c.name AS city_name, cat.name AS category_name, cat.icon AS category_icon, cat.listing_type AS category_listing_type
      FROM services s
      JOIN providers p ON p.id = s.provider_id JOIN users u ON u.id = p.user_id
      LEFT JOIN cities c ON c.id = s.city_id LEFT JOIN categories cat ON cat.id = s.category_id
@@ -18,6 +18,41 @@ if (!$service) {
     http_response_code(404);
     require ROOT_PATH . '/404.php';
     exit;
+}
+
+$isProduct = $service['category_listing_type'] === 'product';
+
+if ($isProduct && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form'] ?? '') === 'add_to_cart') {
+    if (!is_logged_in()) {
+        redirect('/customer/login.php?redirect=' . urlencode('/pages/service.php?slug=' . $slug));
+    }
+    verify_csrf();
+    if (current_user_role() !== 'customer') {
+        flash_set('danger', 'Only customer accounts can buy products.');
+        redirect('/pages/service.php?slug=' . $slug);
+    }
+
+    $qty = max(1, (int) ($_POST['quantity'] ?? 1));
+    if ($service['stock_quantity'] !== null && (int) $service['stock_quantity'] < 1) {
+        flash_set('danger', 'Sorry, this product is out of stock.');
+        redirect('/pages/service.php?slug=' . $slug);
+    }
+    if ($service['stock_quantity'] !== null) {
+        $qty = min($qty, (int) $service['stock_quantity']);
+    }
+
+    $existing = db_select_one($conn, 'SELECT id, quantity FROM cart_items WHERE user_id = ? AND service_id = ?', [(int) current_user_id(), (int) $service['id']]);
+    if ($existing) {
+        $newQty = (int) $existing['quantity'] + $qty;
+        if ($service['stock_quantity'] !== null) {
+            $newQty = min($newQty, (int) $service['stock_quantity']);
+        }
+        db_execute($conn, 'UPDATE cart_items SET quantity = ? WHERE id = ?', [$newQty, (int) $existing['id']]);
+    } else {
+        db_execute($conn, 'INSERT INTO cart_items (user_id, service_id, quantity) VALUES (?, ?, ?)', [(int) current_user_id(), (int) $service['id'], $qty]);
+    }
+    flash_set('success', 'Added to cart.');
+    redirect('/customer/cart.php');
 }
 
 $bookingErrors = [];
@@ -192,7 +227,7 @@ require ROOT_PATH . '/includes/header.php';
 
         <?php if ($service['cancellation_policy']): ?>
         <div class="panel">
-          <h3 style="font-size:16px;margin-bottom:10px;">Cancellation policy</h3>
+          <h3 style="font-size:16px;margin-bottom:10px;"><?php echo $isProduct ? 'Return & refund policy' : 'Cancellation policy'; ?></h3>
           <p style="color:var(--ink-soft);font-size:14px;line-height:1.7;"><?php echo e($service['cancellation_policy']); ?></p>
         </div>
         <?php endif; ?>
@@ -223,6 +258,31 @@ require ROOT_PATH . '/includes/header.php';
       </div>
 
       <div style="position:sticky;top:96px;">
+        <?php if ($isProduct): ?>
+          <div class="panel" id="product-widget">
+            <div class="price-tag" style="font-size:24px;"><?php echo format_price($service['price']); ?> <span style="font-size:14px;">/ item</span></div>
+
+            <?php if ($service['stock_quantity'] === null || (int) $service['stock_quantity'] > 0): ?>
+              <div style="font-size:13px;color:var(--success);font-weight:600;margin-top:6px;"><i class="bi bi-check-circle-fill"></i> In stock<?php echo $service['stock_quantity'] !== null ? ' (' . (int) $service['stock_quantity'] . ' left)' : ''; ?></div>
+            <?php else: ?>
+              <div style="font-size:13px;color:var(--danger);font-weight:600;margin-top:6px;"><i class="bi bi-x-circle-fill"></i> Out of stock</div>
+            <?php endif; ?>
+
+            <form method="post" style="margin-top:16px;">
+              <?php echo csrf_field(); ?>
+              <input type="hidden" name="form" value="add_to_cart">
+              <label style="font-size:12px;font-weight:700;">Quantity</label>
+              <input type="number" name="quantity" min="1" <?php echo $service['stock_quantity'] !== null ? 'max="' . (int) $service['stock_quantity'] . '"' : ''; ?> value="1" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--border);" <?php echo ($service['stock_quantity'] !== null && (int) $service['stock_quantity'] < 1) ? 'disabled' : ''; ?>>
+              <button type="submit" class="btn-w btn-primary btn-block" style="margin-top:16px;" <?php echo ($service['stock_quantity'] !== null && (int) $service['stock_quantity'] < 1) ? 'disabled' : ''; ?>><i class="bi bi-cart-plus"></i> Add to cart</button>
+            </form>
+            <a href="<?php echo url('/customer/cart.php'); ?>" class="btn-w btn-outline btn-block" style="margin-top:10px;"><i class="bi bi-bag-check"></i> View cart</a>
+            <p class="form-hint" style="text-align:center;margin-top:10px;">Add more items from other stores, then check out once.</p>
+            <a href="?slug=<?php echo e($slug); ?>&message=1" class="btn-w btn-outline btn-block" style="margin-top:10px;"><i class="bi bi-chat-dots"></i> Message seller</a>
+            <?php if ($service['show_phone'] && $service['provider_phone']): ?>
+              <a href="tel:<?php echo e($service['provider_phone']); ?>" class="btn-w btn-outline btn-block" style="margin-top:10px;"><i class="bi bi-telephone"></i> Call seller</a>
+            <?php endif; ?>
+          </div>
+        <?php else: ?>
         <div class="panel" id="booking-widget" data-service-id="<?php echo (int) $service['id']; ?>" data-unit="<?php echo e($service['price_unit']); ?>">
           <div class="price-tag" style="font-size:24px;"><?php echo format_price($service['price']); ?> <span style="font-size:14px;">/ <?php echo e($service['price_unit']); ?></span></div>
 
@@ -279,6 +339,7 @@ require ROOT_PATH . '/includes/header.php';
             <div id="trip-picker" class="user-menu" style="width:100%;right:0;"></div>
           </div>
         </div>
+        <?php endif; ?>
       </div>
     </div>
 
@@ -292,7 +353,7 @@ require ROOT_PATH . '/includes/header.php';
               <div class="thumb"></div>
               <div class="card-body">
                 <div class="card-title"><?php echo e($sim['title']); ?></div>
-                <div class="price-tag"><?php echo format_price($sim['price']); ?> <span>/ <?php echo e($sim['price_unit']); ?></span></div>
+                <div class="price-tag"><?php echo format_price($sim['price']); ?> <?php if ($sim['price_unit'] !== 'fixed'): ?><span>/ <?php echo e($sim['price_unit']); ?></span><?php endif; ?></div>
               </div>
             </a>
           </div>

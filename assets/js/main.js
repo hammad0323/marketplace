@@ -26,6 +26,12 @@
     $('.user-menu').removeClass('open');
   });
 
+  // ---- "List your business" category dropdown --------------------------
+  $('#list-business-btn').on('click', function (e) {
+    e.stopPropagation();
+    $('#business-type-menu').toggleClass('open');
+  });
+
   // ---- Admin sidebar toggle (mobile) --------------------------------
   $('.admin-menu-toggle').on('click', function () {
     $('.admin-sidebar').toggleClass('open');

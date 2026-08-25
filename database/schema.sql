@@ -129,6 +129,11 @@ CREATE TABLE IF NOT EXISTS categories (
   icon VARCHAR(100) DEFAULT NULL,
   image VARCHAR(255) DEFAULT NULL,
   description TEXT,
+  -- 'service' categories (Hotels, Rent a Car, ...) go through the existing
+  -- date/availability-based booking flow. 'product' categories (Store
+  -- owners) go through the cart + checkout + orders flow instead — see
+  -- cart_items/orders/order_items below.
+  listing_type ENUM('service','product') NOT NULL DEFAULT 'service',
   seo_title VARCHAR(180) DEFAULT NULL,
   seo_description VARCHAR(300) DEFAULT NULL,
   sort_order INT UNSIGNED NOT NULL DEFAULT 0,
@@ -295,6 +300,9 @@ CREATE TABLE IF NOT EXISTS services (
   price DECIMAL(10,2) NOT NULL DEFAULT 0,
   price_unit ENUM('hour','day','night','person','fixed') NOT NULL DEFAULT 'fixed',
   max_guests INT UNSIGNED DEFAULT NULL,
+  -- Only meaningful for products (category.listing_type = 'product'); NULL
+  -- for services, which don't track inventory. Decremented at checkout.
+  stock_quantity INT UNSIGNED DEFAULT NULL,
   status ENUM('pending','approved','rejected','hidden') NOT NULL DEFAULT 'pending',
   is_featured TINYINT(1) NOT NULL DEFAULT 0,
   avg_rating DECIMAL(3,2) NOT NULL DEFAULT 0,
@@ -403,6 +411,74 @@ CREATE TABLE IF NOT EXISTS booking_items (
   unit_price DECIMAL(10,2) NOT NULL DEFAULT 0,
   total_price DECIMAL(10,2) NOT NULL DEFAULT 0,
   FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------------
+-- STORE / E-COMMERCE (products, cart, orders)
+-- A parallel checkout path for category.listing_type = 'product' listings
+-- (Store owners) — separate from bookings because one cart/order can span
+-- multiple products from multiple providers at once, which the
+-- single-provider bookings table isn't shaped for.
+-- ---------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS cart_items (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  service_id INT UNSIGNED NOT NULL,
+  quantity INT UNSIGNED NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_cart_item (user_id, service_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS orders (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  order_ref VARCHAR(30) NOT NULL UNIQUE,
+  customer_id INT UNSIGNED NOT NULL,
+  subtotal DECIMAL(10,2) NOT NULL DEFAULT 0,
+  tax_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  service_fee DECIMAL(10,2) NOT NULL DEFAULT 0,
+  discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  total_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  -- Rolled up from the order's items — see recalculate_order_status().
+  status ENUM('pending','processing','shipped','delivered','cancelled','refunded') NOT NULL DEFAULT 'pending',
+  shipping_name VARCHAR(150) DEFAULT NULL,
+  shipping_phone VARCHAR(30) DEFAULT NULL,
+  shipping_address VARCHAR(255) DEFAULT NULL,
+  shipping_city_id INT UNSIGNED DEFAULT NULL,
+  shipping_notes TEXT DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (customer_id) REFERENCES users(id),
+  FOREIGN KEY (shipping_city_id) REFERENCES cities(id),
+  INDEX idx_orders_customer (customer_id),
+  INDEX idx_orders_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS order_items (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  order_id INT UNSIGNED NOT NULL,
+  service_id INT UNSIGNED DEFAULT NULL,
+  provider_id INT UNSIGNED NOT NULL,
+  -- Snapshotted at purchase time so a later price/title edit never
+  -- changes a historical order.
+  title VARCHAR(180) NOT NULL,
+  unit_price DECIMAL(10,2) NOT NULL,
+  quantity INT UNSIGNED NOT NULL DEFAULT 1,
+  total_price DECIMAL(10,2) NOT NULL,
+  commission_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  -- Each provider fulfills their own line items independently, so status
+  -- lives per-item, not just on the parent order.
+  status ENUM('pending','processing','shipped','delivered','cancelled','refunded') NOT NULL DEFAULT 'pending',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE SET NULL,
+  FOREIGN KEY (provider_id) REFERENCES providers(id),
+  INDEX idx_orderitems_order (order_id),
+  INDEX idx_orderitems_provider (provider_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ---------------------------------------------------------------------
@@ -852,13 +928,14 @@ INSERT INTO cities (country_id, name, slug, description, latitude, longitude, is
   (5, 'Istanbul', 'istanbul', 'Where East meets West across the Bosphorus.', 41.0082, 28.9784, 1, 1, 7, NULL),
   (6, 'New York', 'new-york', 'The city that never sleeps.', 40.7128, -74.0060, 1, 1, 8, NULL);
 
-INSERT INTO categories (id, name, slug, icon, description, sort_order, is_active) VALUES
-  (1, 'Hotels', 'hotels', 'bi-building', 'Hotels, resorts, guest houses, apartments and villas.', 1, 1),
-  (2, 'Rent a Car', 'rent-a-car', 'bi-car-front', 'Cars, SUVs, luxury vehicles and vans with or without a driver.', 2, 1),
-  (3, 'Restaurants', 'restaurants', 'bi-cup-hot', 'Restaurants and cafes for every cuisine and budget.', 3, 1),
-  (4, 'Tours & Activities', 'tours-activities', 'bi-map', 'Guided tours, adventure activities and local experiences.', 4, 1),
-  (5, 'Airport Transfers', 'airport-transfers', 'bi-airplane', 'Reliable pickup and drop-off transport.', 5, 1),
-  (6, 'Buses & Coaches', 'buses-coaches', 'bi-bus-front', 'Group transport for tours and events.', 6, 1);
+INSERT INTO categories (id, name, slug, icon, description, sort_order, is_active, listing_type) VALUES
+  (1, 'Hotels', 'hotels', 'bi-building', 'Hotels, resorts, guest houses, apartments and villas.', 1, 1, 'service'),
+  (2, 'Rent a Car', 'rent-a-car', 'bi-car-front', 'Cars, SUVs, luxury vehicles and vans with or without a driver.', 2, 1, 'service'),
+  (3, 'Restaurants', 'restaurants', 'bi-cup-hot', 'Restaurants and cafes for every cuisine and budget.', 3, 1, 'service'),
+  (4, 'Tours & Activities', 'tours-activities', 'bi-map', 'Guided tours, adventure activities and local experiences.', 4, 1, 'service'),
+  (5, 'Airport Transfers', 'airport-transfers', 'bi-airplane', 'Reliable pickup and drop-off transport.', 5, 1, 'service'),
+  (6, 'Buses & Coaches', 'buses-coaches', 'bi-bus-front', 'Group transport for tours and events.', 6, 1, 'service'),
+  (7, 'Store', 'store', 'bi-bag-check', 'Shops selling travel gear, souvenirs and local goods, bought online and shipped to you.', 7, 1, 'product');
 
 INSERT INTO category_fields (category_id, field_label, field_key, field_type, is_required, sort_order) VALUES
   (1, 'Room Type', 'room_type', 'select', 1, 1),
@@ -873,7 +950,10 @@ INSERT INTO category_fields (category_id, field_label, field_key, field_type, is
   (2, 'Driver Included', 'driver_included', 'checkbox', 0, 5),
   (3, 'Cuisine', 'cuisine', 'text', 1, 1),
   (3, 'Seating Capacity', 'seating_capacity', 'number', 0, 2),
-  (3, 'Opening Hours', 'opening_hours', 'text', 0, 3);
+  (3, 'Opening Hours', 'opening_hours', 'text', 0, 3),
+  (7, 'Brand', 'brand', 'text', 0, 1),
+  (7, 'SKU', 'sku', 'text', 0, 2),
+  (7, 'Condition', 'condition', 'select', 0, 3);
 
 INSERT INTO amenities (name, icon) VALUES
   ('Free WiFi', 'bi-wifi'), ('Swimming Pool', 'bi-water'), ('Parking', 'bi-p-square'),

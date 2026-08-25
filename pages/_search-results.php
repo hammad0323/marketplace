@@ -23,7 +23,7 @@ if (!defined('APP_LOADED')) {
             <?php if (isset($svc['distance_km'])): ?> · <?php echo number_format((float) $svc['distance_km'], 1); ?> km away<?php endif; ?>
           </div>
           <div class="card-footer-row">
-            <div class="price-tag"><?php echo format_price($svc['price']); ?> <span>/ <?php echo e($svc['price_unit']); ?></span></div>
+            <div class="price-tag"><?php echo format_price($svc['price']); ?> <?php if ($svc['price_unit'] !== 'fixed'): ?><span>/ <?php echo e($svc['price_unit']); ?></span><?php endif; ?></div>
             <div class="card-rating"><i class="bi bi-star-fill"></i> <?php echo number_format((float) $svc['avg_rating'], 1); ?></div>
           </div>
         </a>

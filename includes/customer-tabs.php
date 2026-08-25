@@ -7,6 +7,7 @@ $tabs = [
     'dashboard' => ['label' => 'Dashboard', 'href' => '/customer/index.php', 'icon' => 'bi-speedometer2'],
     'trips' => ['label' => 'My Trips', 'href' => '/customer/trips.php', 'icon' => 'bi-map'],
     'bookings' => ['label' => 'Bookings', 'href' => '/customer/bookings.php', 'icon' => 'bi-calendar-check'],
+    'orders' => ['label' => 'Orders', 'href' => '/customer/orders.php', 'icon' => 'bi-bag-check'],
     'favorites' => ['label' => 'Favorites', 'href' => '/customer/favorites.php', 'icon' => 'bi-heart'],
     'profile' => ['label' => 'Profile', 'href' => '/customer/profile.php', 'icon' => 'bi-person'],
 ];

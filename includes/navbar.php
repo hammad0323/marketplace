@@ -7,6 +7,8 @@ if (!defined('APP_LOADED')) {
 $siteName = $siteName ?? get_setting($conn, 'site_name', APP_NAME);
 $loggedInUser = is_logged_in() ? current_user($conn) : null;
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$navBusinessCategories = db_select($conn, 'SELECT id, name, icon, listing_type FROM categories WHERE is_active = 1 AND parent_id IS NULL ORDER BY sort_order');
+$navCartCount = ($loggedInUser && $loggedInUser['role_slug'] === 'customer') ? get_cart_count($conn, (int) $loggedInUser['id']) : 0;
 
 function nav_active($path, $current)
 {
@@ -34,6 +36,12 @@ function nav_active($path, $current)
       <?php if ($loggedInUser): ?>
         <?php if ($loggedInUser['role_slug'] !== 'admin'): ?>
           <a href="/<?php echo e($loggedInUser['role_slug']); ?>/messages.php" class="btn-w btn-ghost btn-sm" style="padding:9px;" title="Messages"><i class="bi bi-chat-dots" style="font-size:16px;"></i></a>
+        <?php endif; ?>
+        <?php if ($loggedInUser['role_slug'] === 'customer'): ?>
+          <a href="<?php echo url('/customer/cart.php'); ?>" class="btn-w btn-ghost btn-sm" style="padding:9px;position:relative;" title="Cart">
+            <i class="bi bi-cart3" style="font-size:16px;"></i>
+            <?php if ($navCartCount > 0): ?><span style="position:absolute;top:2px;right:2px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;border-radius:999px;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;"><?php echo $navCartCount > 9 ? '9+' : $navCartCount; ?></span><?php endif; ?>
+          </a>
         <?php endif; ?>
         <div style="position:relative;">
           <button class="btn-w btn-ghost btn-sm" id="notif-bell" style="padding:9px;position:relative;" title="Notifications">
@@ -63,7 +71,15 @@ function nav_active($path, $current)
           </div>
         </div>
       <?php else: ?>
-        <a href="<?php echo url('/provider/register.php'); ?>" class="btn-w btn-ghost btn-sm">List your business</a>
+        <div style="position:relative;">
+          <button type="button" class="btn-w btn-highlight btn-sm" id="list-business-btn"><i class="bi bi-shop"></i> List your business</button>
+          <div class="user-menu" id="business-type-menu" style="min-width:230px;">
+            <div style="padding:8px 12px 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink-mute);">What are you listing?</div>
+            <?php foreach ($navBusinessCategories as $cat): ?>
+              <a href="<?php echo url('/provider/register.php'); ?>?category=<?php echo (int) $cat['id']; ?>"><i class="bi <?php echo e($cat['icon'] ?: 'bi-tag'); ?>"></i> <?php echo e($cat['name']); ?></a>
+            <?php endforeach; ?>
+          </div>
+        </div>
         <a href="<?php echo url('/customer/login.php'); ?>" class="btn-w btn-outline btn-sm">Log in</a>
         <a href="<?php echo url('/customer/register.php'); ?>" class="btn-w btn-primary btn-sm">Sign up</a>
       <?php endif; ?>

@@ -9,6 +9,9 @@ if (!$provider) {
     redirect('/provider/index.php');
 }
 
+$isProduct = !empty($provider['category_id']) && (db_select_one($conn, 'SELECT listing_type FROM categories WHERE id = ?', [(int) $provider['category_id']])['listing_type'] ?? 'service') === 'product';
+$itemWord = $isProduct ? 'product' : 'service';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     $action = $_POST['action'] ?? '';
@@ -23,22 +26,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'toggle' && in_array($service['status'], ['approved', 'hidden'], true)) {
         $newStatus = $service['status'] === 'hidden' ? 'approved' : 'hidden';
         db_execute($conn, 'UPDATE services SET status = ? WHERE id = ?', [$newStatus, $serviceId]);
-        flash_set('success', 'Service visibility updated.');
+        flash_set('success', ucfirst($itemWord) . ' visibility updated.');
     } elseif ($action === 'delete') {
         db_execute($conn, 'DELETE FROM services WHERE id = ?', [$serviceId]);
-        flash_set('success', 'Service deleted.');
+        flash_set('success', ucfirst($itemWord) . ' deleted.');
     } elseif ($action === 'duplicate') {
         $newId = db_insert_get_id(
             $conn,
-            'INSERT INTO services (provider_id, category_id, city_id, title, slug, short_description, description, address, latitude, longitude, price, price_unit, max_guests, status, cancellation_policy)
-             SELECT provider_id, category_id, city_id, CONCAT(title, " (Copy)"), ?, short_description, description, address, latitude, longitude, price, price_unit, max_guests, "pending", cancellation_policy
+            'INSERT INTO services (provider_id, category_id, city_id, title, slug, short_description, description, address, latitude, longitude, price, price_unit, max_guests, stock_quantity, status, cancellation_policy)
+             SELECT provider_id, category_id, city_id, CONCAT(title, " (Copy)"), ?, short_description, description, address, latitude, longitude, price, price_unit, max_guests, stock_quantity, "pending", cancellation_policy
              FROM services WHERE id = ?',
             [unique_slug($conn, 'services', $service['title'] . '-copy'), $serviceId]
         );
         db_execute($conn, 'INSERT INTO service_images (service_id, image_path, is_cover, sort_order) SELECT ?, image_path, is_cover, sort_order FROM service_images WHERE service_id = ?', [$newId, $serviceId]);
         db_execute($conn, 'INSERT INTO service_amenity_map (service_id, amenity_id) SELECT ?, amenity_id FROM service_amenity_map WHERE service_id = ?', [$newId, $serviceId]);
         db_execute($conn, 'INSERT INTO service_field_values (service_id, category_field_id, field_value) SELECT ?, category_field_id, field_value FROM service_field_values WHERE service_id = ?', [$newId, $serviceId]);
-        flash_set('success', 'Service duplicated as a draft.');
+        flash_set('success', ucfirst($itemWord) . ' duplicated as a draft.');
     }
     redirect('/provider/services.php');
 }
@@ -61,7 +64,7 @@ if (!empty($provider['membership_plan_id'])) {
 }
 $atLimit = $maxServices !== null && count($services) >= (int) $maxServices;
 
-$pageTitle = 'My Services';
+$pageTitle = $isProduct ? 'My Products' : 'My Services';
 $providerActiveTab = 'services';
 require ROOT_PATH . '/includes/header.php';
 ?>
@@ -70,18 +73,18 @@ require ROOT_PATH . '/includes/header.php';
     <div class="section-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
       <div>
         <span class="eyebrow"><i class="bi bi-list-ul"></i> Provider</span>
-        <h1 class="section-heading">My services</h1>
-        <p class="section-sub"><?php echo count($services); ?><?php echo $maxServices !== null ? ' / ' . (int) $maxServices : ''; ?> services on your current plan.</p>
+        <h1 class="section-heading">My <?php echo $itemWord; ?>s</h1>
+        <p class="section-sub"><?php echo count($services); ?><?php echo $maxServices !== null ? ' / ' . (int) $maxServices : ''; ?> <?php echo $itemWord; ?>s on your current plan.</p>
       </div>
       <?php if ($provider['status'] !== 'approved'): ?>
-        <div class="alert-w alert-info" style="margin:0;"><i class="bi bi-info-circle-fill"></i> Your business must be approved before services go live.</div>
+        <div class="alert-w alert-info" style="margin:0;"><i class="bi bi-info-circle-fill"></i> Your business must be approved before <?php echo $itemWord; ?>s go live.</div>
       <?php elseif ($atLimit): ?>
         <div class="alert-w alert-info" style="margin:0;display:flex;align-items:center;gap:10px;">
-          <i class="bi bi-info-circle-fill"></i> You've reached your plan's service limit.
+          <i class="bi bi-info-circle-fill"></i> You've reached your plan's <?php echo $itemWord; ?> limit.
           <a href="<?php echo url('/provider/membership.php'); ?>" class="btn-w btn-primary btn-sm" style="margin-left:8px;">Upgrade</a>
         </div>
       <?php else: ?>
-        <a href="<?php echo url('/provider/service-form.php'); ?>" class="btn-w btn-primary"><i class="bi bi-plus-lg"></i> Add service</a>
+        <a href="<?php echo url('/provider/service-form.php'); ?>" class="btn-w btn-primary"><i class="bi bi-plus-lg"></i> Add <?php echo $itemWord; ?></a>
       <?php endif; ?>
     </div>
 
@@ -97,7 +100,7 @@ require ROOT_PATH . '/includes/header.php';
                 <td><div style="width:52px;height:40px;border-radius:8px;background:var(--purple-soft);overflow:hidden;"><?php if ($s['cover']): ?><img src="<?php echo e($s['cover']); ?>" style="width:100%;height:100%;object-fit:cover;"><?php endif; ?></div></td>
                 <td><strong><?php echo e($s['title']); ?></strong></td>
                 <td><?php echo e($s['category_name'] ?? '—'); ?></td>
-                <td><?php echo format_price($s['price']); ?> / <?php echo e($s['price_unit']); ?></td>
+                <td><?php echo format_price($s['price']); ?><?php echo $isProduct ? '' : ' / ' . e($s['price_unit']); ?><?php if ($isProduct): ?><div style="font-size:12px;color:var(--ink-mute);"><?php echo $s['stock_quantity'] !== null ? (int) $s['stock_quantity'] . ' in stock' : 'No stock set'; ?></div><?php endif; ?></td>
                 <td><?php echo status_badge($s['status']); ?></td>
                 <td style="text-align:right;white-space:nowrap;">
                   <a href="<?php echo url('/provider/service-form.php'); ?>?id=<?php echo (int) $s['id']; ?>" class="btn-w btn-outline btn-sm">Edit</a>
@@ -130,9 +133,9 @@ require ROOT_PATH . '/includes/header.php';
     <?php else: ?>
       <div class="empty-state">
         <div class="icon-wrap"><i class="bi bi-list-ul"></i></div>
-        <h4>No services yet</h4>
-        <p>Add your first hotel room, car, table or experience to start getting bookings.</p>
-        <?php if ($provider['status'] === 'approved'): ?><a href="<?php echo url('/provider/service-form.php'); ?>" class="btn-w btn-primary">Add your first service</a><?php endif; ?>
+        <h4>No <?php echo $itemWord; ?>s yet</h4>
+        <p><?php echo $isProduct ? 'Add your first product to start selling.' : 'Add your first hotel room, car, table or experience to start getting bookings.'; ?></p>
+        <?php if ($provider['status'] === 'approved'): ?><a href="<?php echo url('/provider/service-form.php'); ?>" class="btn-w btn-primary">Add your first <?php echo $itemWord; ?></a><?php endif; ?>
       </div>
     <?php endif; ?>
   </div>
