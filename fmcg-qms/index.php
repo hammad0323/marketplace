@@ -19,20 +19,30 @@ $pageTitle = 'Intelligent Quality Management for FMCG Manufacturing';
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= out(APP_NAME) ?> - Intelligent Quality Management for FMCG Manufacturing</title>
+<title><?= out(app_name()) ?> - Intelligent Quality Management for FMCG Manufacturing</title>
 <meta name="description" content="Digitize quality inspections, detect problems faster, manage CAPA, improve production performance and make smarter quality decisions with AI.">
+<?php $favicon = app_favicon_url(); ?>
+<?php if ($favicon): ?><link rel="icon" href="<?= out($favicon) ?>"><?php endif; ?>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="<?= base_url('assets/css/style.css') ?>" rel="stylesheet">
+<?php $__primary = app_primary_color(); if ($__primary !== PRIMARY_COLOR_DEFAULT): ?>
+<style>:root{--primary:<?= out($__primary) ?>;--primary-dark:<?= out($__primary) ?>;} .btn-primary{background:<?= out($__primary) ?> !important;border-color:<?= out($__primary) ?> !important;} .text-primary{color:<?= out($__primary) ?> !important;}</style>
+<?php endif; ?>
 </head>
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="background:rgba(15,23,42,.85); backdrop-filter:blur(10px);">
   <div class="container">
     <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="#">
-      <span style="width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#2563EB,#60A5FA);display:flex;align-items:center;justify-content:center;font-weight:800;">Q</span>
-      <?= out(APP_NAME) ?>
+      <?php $logo = app_logo_url(); ?>
+      <?php if ($logo): ?>
+        <img src="<?= out($logo) ?>" alt="<?= out(app_name()) ?>" style="height:32px;width:auto;border-radius:8px;">
+      <?php else: ?>
+        <span style="width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,<?= out($__primary) ?>,#60A5FA);display:flex;align-items:center;justify-content:center;font-weight:800;">Q</span>
+      <?php endif; ?>
+      <?= out(app_name()) ?>
     </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav1"><span class="navbar-toggler-icon"></span></button>
     <div class="collapse navbar-collapse justify-content-end" id="nav1">
@@ -186,7 +196,7 @@ $pageTitle = 'Intelligent Quality Management for FMCG Manufacturing';
 <section class="lp-section text-center text-white" style="background:linear-gradient(135deg,#1D4ED8,#2563EB);" id="cta">
   <div class="container reveal">
     <h2 class="fw-bold mb-3">Ready to modernize your quality management?</h2>
-    <p class="mb-4 text-white-75" style="max-width:560px; margin:0 auto;">See how <?= out(APP_NAME) ?> turns manual inspections into real-time quality intelligence.</p>
+    <p class="mb-4 text-white-75" style="max-width:560px; margin:0 auto;">See how <?= out(app_name()) ?> turns manual inspections into real-time quality intelligence.</p>
     <div class="d-flex justify-content-center gap-3 flex-wrap">
       <a href="mailto:sales@qualitycore.app" class="btn btn-light btn-lg px-4 fw-semibold">Request Demo</a>
       <a href="<?= base_url('login.php') ?>" class="btn btn-outline-light btn-lg px-4">Explore Platform</a>
@@ -198,7 +208,7 @@ $pageTitle = 'Intelligent Quality Management for FMCG Manufacturing';
   <div class="container">
     <div class="row g-4">
       <div class="col-md-4">
-        <div class="fw-bold text-white mb-2"><?= out(APP_NAME) ?></div>
+        <div class="fw-bold text-white mb-2"><?= out(app_name()) ?></div>
         <p class="small">Intelligent Quality Management for FMCG Manufacturing - QMS, Food Safety, SPC, CAPA, Audits, Supplier Quality and AI in one platform.</p>
       </div>
       <div class="col-md-2"><div class="fw-semibold text-white small mb-2">Platform</div>
@@ -212,7 +222,7 @@ $pageTitle = 'Intelligent Quality Management for FMCG Manufacturing';
       </div>
     </div>
     <hr class="border-secondary my-4">
-    <div class="small text-center">&copy; <?= date('Y') ?> <?= out(APP_NAME) ?>. All rights reserved.</div>
+    <div class="small text-center">&copy; <?= date('Y') ?> <?= out(app_name()) ?>. All rights reserved.</div>
   </div>
 </footer>
 

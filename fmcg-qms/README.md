@@ -27,10 +27,11 @@ Rather than one-off CRUD pages per feature, the platform is built around reusabl
 | Permission Engine | `permissions.php` | Role + company-scoped access control |
 | Audit Trail | `audit.php` (+ `log_activity()` in `auth.php`) | Every create/update/delete/login is logged |
 
-New quality tools (5 Whys, Fishbone, HACCP checklists, EMP, checkweigher, sensory, etc.) are
+New quality tools (5 Whys, Fishbone, FTA, HACCP checklists, EMP, checkweigher, sensory, APQP,
+PPAP, QFD, DOE, VSM, SMED, Poka-Yoke, Kanban, TPM, BRCGS/SQF/ISO22000 checklists, etc.) are
 added through the **Dynamic Tool Builder** (Super Admin → Quality Tool Engine → Dynamic Tool
-Builder) — no code changes required. 24 tools spanning the platform's tool library ship
-pre-configured (see `database/tool_library.sql`).
+Builder) — no code changes required. **43 tools** spanning the platform's tool library ship
+pre-configured (see `database/tool_library.sql` and `database/tool_library_2.sql`).
 
 ## Folder Structure
 
@@ -43,7 +44,7 @@ fmcg-qms/
 ├── ajax/{admin,manager,employee,common}/   AJAX endpoints
 ├── api/v1/            Read-only Bearer-token API (ERP/MES/BI integration ready)
 ├── cron/             daily-deadline-check.php, kpi-recalc.php
-├── database/           schema.sql, tool_library.sql, seed_demo.sql
+├── database/           schema.sql, tool_library.sql, tool_library_2.sql, seed_demo.sql
 ├── assets/{css,js}       Design system + shared JS
 ├── uploads/           User-uploaded files (created at runtime)
 ├── index.php           Marketing landing page
@@ -53,7 +54,7 @@ fmcg-qms/
 
 ## Requirements
 
-- PHP 8.1+ with `mysqli`, `curl`, `fileinfo` extensions
+- PHP 8.1+ with `mysqli`, `curl`, `fileinfo`, `openssl` extensions (`openssl` is needed for STARTTLS/SSL SMTP delivery)
 - MySQL 5.7+ / MariaDB 10.3+
 - A web server (Apache/Nginx) or `php -S` for local testing
 
@@ -62,34 +63,66 @@ fmcg-qms/
 1. Create the database and load the schema:
    ```bash
    mysql -u root -p < database/schema.sql
-   mysql -u root -p fmcg_qms < database/tool_library.sql   # dynamic tool library (recommended)
-   mysql -u root -p fmcg_qms < database/seed_demo.sql       # OPTIONAL: demo company + sample data
+   mysql -u root -p fmcg_qms < database/tool_library.sql     # dynamic tool library batch 1 (recommended)
+   mysql -u root -p fmcg_qms < database/tool_library_2.sql   # dynamic tool library batch 2 (recommended)
+   mysql -u root -p fmcg_qms < database/seed_demo.sql        # OPTIONAL: demo companies + sample data
    ```
-   Skip `seed_demo.sql` for a completely empty installation — `schema.sql` and
-   `tool_library.sql` contain only reference/configuration data (subscription plans, the
-   tool library, default email templates, default KPI weights, compliance frameworks and
+   Skip `seed_demo.sql` for a completely empty installation — `schema.sql` and the
+   `tool_library*.sql` files contain only reference/configuration data (subscription plans,
+   the tool library, default email templates, default KPI weights, compliance frameworks and
    the Super Admin account), never business data.
 
-2. Configure the database connection via environment variables (or edit the defaults
-   directly in `includes/config.php`):
+2. Set the database credentials via environment variables, or edit the defaults directly in
+   `includes/config.php`:
    ```
    QMS_DB_HOST=localhost
    QMS_DB_USER=your_user
    QMS_DB_PASS=your_password
    QMS_DB_NAME=fmcg_qms
-   QMS_BASE_URL=/fmcg-qms      # sub-path the app is served from, or "" for root
    ```
+   **You do not need to set anything for the URL/path.** `BASE_URL` is auto-detected on every
+   request by comparing the app's real folder to your server's document root — so uploading
+   this folder (as-is, unzipped) to your site root, to `/beta`, to `/qms/beta`, or renaming the
+   folder entirely all work identically with zero config: every asset link, form action and
+   AJAX call resolves correctly wherever it lands. (`QMS_BASE_URL` env var still exists as a
+   manual override for unusual hosting setups where auto-detection gets it wrong.)
 
-3. Point your web server's document root at the `fmcg-qms/` folder, or run locally:
+3. Point your web server's document root at the `fmcg-qms/` folder (or the subfolder you
+   uploaded it into, e.g. `public_html/beta`), or run locally:
    ```bash
    php -S localhost:8000
    ```
+   On Apache/LiteSpeed hosting, the included `.htaccess` files block direct access to
+   `database/*.sql`, `includes/`, `logs/`, `cron/` and PHP execution inside `uploads/` — verify
+   they're honored (`AllowOverride All`) or, on Nginx, add the equivalent `location` deny rules.
 
-4. Schedule the cron jobs (every 15–30 min for deadlines, daily for KPI snapshots):
+4. In **Super Admin → Platform Settings**, set your **Site URL** (e.g.
+   `https://www.beglet.com/beta`) — this is used for links inside emails and any cron-generated
+   link, where the domain can't be auto-detected from a browser request. Everything you browse
+   to resolves its own links automatically without this.
+
+5. Schedule the cron jobs (every 15–30 min for deadlines, daily for KPI snapshots):
    ```
    */15 * * * * php /path/to/fmcg-qms/cron/daily-deadline-check.php
    0    1 * * * php /path/to/fmcg-qms/cron/kpi-recalc.php
    ```
+
+## Branding
+
+Everything is changeable from **Super Admin → Platform Settings** with no code or redeploy:
+platform name, logo (shown in the sidebar, login page and landing page), favicon, and primary
+brand color (applied via a CSS custom-property override across every screen). Changes apply
+immediately to every company on the platform.
+
+## Email Delivery
+
+Configure real SMTP delivery in **Super Admin → Email Settings** (host, port, encryption,
+username/password, from name/email) — the platform includes its own pure-PHP SMTP client
+(`includes/smtp.php`, no external library) supporting STARTTLS, implicit SSL and AUTH LOGIN,
+which is what actually gets email delivered on shared hosting where PHP's `mail()` is often
+disabled, unauthenticated, or silently dropped. Use the **Send Test Email** button on that page
+to confirm delivery before relying on it; recent send attempts and their status are logged
+right below it. If no SMTP host is configured, the platform falls back to `mail()`.
 
 ## Demo Login (after loading `seed_demo.sql`)
 

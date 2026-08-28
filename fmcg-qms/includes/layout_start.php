@@ -3,7 +3,7 @@
  * Shared app-shell layout (topbar + sidebar) for admin/manager/employee pages.
  * Expects $pageTitle and $activeMenu to be set by the including page.
  */
-$pageTitle = $pageTitle ?? APP_NAME;
+$pageTitle = $pageTitle ?? app_name();
 $activeMenu = $activeMenu ?? '';
 $role = current_role();
 $unread = is_logged_in() ? get_unread_count(current_user_id()) : 0;
@@ -84,19 +84,30 @@ $menu = $menus[$role] ?? [];
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title><?= out($pageTitle) ?> - <?= out(APP_NAME) ?></title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><rect width=24 height=24 rx=6 fill=%22%232563EB%22/><path d=%22M7 12.5l3 3 7-7%22 stroke=%22white%22 stroke-width=%222.4%22 fill=%22none%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/></svg>">
+<title><?= out($pageTitle) ?> - <?= out(app_name()) ?></title>
+<?php $favicon = app_favicon_url(); ?>
+<?php if ($favicon): ?><link rel="icon" href="<?= out($favicon) ?>">
+<?php else: ?><link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><rect width=24 height=24 rx=6 fill=%22%232563EB%22/><path d=%22M7 12.5l3 3 7-7%22 stroke=%22white%22 stroke-width=%222.4%22 fill=%22none%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/></svg>">
+<?php endif; ?>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.11/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="<?= base_url('assets/css/style.css') ?>?v=2" rel="stylesheet">
+<?php $__primary = app_primary_color(); if ($__primary !== PRIMARY_COLOR_DEFAULT): ?>
+<style>:root{--primary:<?= out($__primary) ?>;--primary-dark:<?= out($__primary) ?>;}</style>
+<?php endif; ?>
 </head>
 <body>
 <div class="app-shell">
   <aside class="app-sidebar" id="appSidebar">
-    <div class="brand"><span class="brand-badge">Q</span> <?= out(APP_NAME) ?></div>
+    <div class="brand">
+      <?php $logo = app_logo_url(); ?>
+      <?php if ($logo): ?><img src="<?= out($logo) ?>" alt="<?= out(app_name()) ?>" style="height:32px;width:auto;border-radius:6px;">
+      <?php else: ?><span class="brand-badge">Q</span><?php endif; ?>
+      <?= out(app_name()) ?>
+    </div>
     <?php foreach ($menu as $section): ?>
       <div class="nav-section-label"><?= out($section['label']) ?></div>
       <?php foreach ($section['items'] as [$key, $label, $icon, $href]): ?>

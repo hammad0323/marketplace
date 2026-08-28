@@ -1,8 +1,11 @@
 <?php
 /**
  * Email Engine - dynamic templates, queued delivery, variable substitution.
+ * Delivers via real SMTP when configured (Platform Settings > Email Settings); falls back
+ * to PHP's mail() otherwise (works if the host has a local MTA, e.g. sendmail/postfix).
  */
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/smtp.php';
 
 function render_template_string(string $content, array $vars): string
 {
@@ -33,7 +36,7 @@ function queue_email(?int $companyId, string $toEmail, string $toName, string $e
     if (!$tpl) {
         return false;
     }
-    $vars = array_merge(['platform_name' => APP_NAME, 'login_url' => base_url('login.php')], $vars);
+    $vars = array_merge(['platform_name' => app_name(), 'login_url' => app_absolute_url('login.php')], $vars);
     $subject = render_template_string($tpl['subject'], $vars);
     $body = render_template_string($tpl['body_html'], $vars);
     $result = db_execute(
@@ -45,18 +48,42 @@ function queue_email(?int $companyId, string $toEmail, string $toName, string $e
     return $result !== false;
 }
 
+function smtp_config_from_settings(): array
+{
+    return [
+        'host' => get_platform_setting('smtp_host', ''),
+        'port' => (int)get_platform_setting('smtp_port', 587),
+        'secure' => get_platform_setting('smtp_secure', 'tls'),
+        'username' => get_platform_setting('smtp_username', ''),
+        'password' => get_platform_setting('smtp_password', ''),
+        'from_email' => get_platform_setting('smtp_from_email', '') ?: ('no-reply@' . (parse_url(app_absolute_url(), PHP_URL_HOST) ?: 'localhost')),
+        'from_name' => get_platform_setting('smtp_from_name', '') ?: app_name(),
+    ];
+}
+
 /**
- * Attempts immediate delivery of one queued email; falls back gracefully (logs) when mail() unavailable,
- * which is the common case in sandboxed/dev environments without an MTA.
+ * Attempts immediate delivery of one queued email. Uses SMTP if a host is configured
+ * (Platform Settings > Email Settings), otherwise falls back to PHP's mail().
  */
 function deliver_email(array $queueRow): bool
 {
-    $headers = "MIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\n";
-    $headers .= "From: " . APP_NAME . " <no-reply@" . (parse_url(base_url(), PHP_URL_HOST) ?: 'qualitycore.app') . ">\r\n";
+    $smtpConfig = smtp_config_from_settings();
     $sent = false;
-    if (function_exists('mail')) {
-        $sent = @mail($queueRow['to_email'], $queueRow['subject'], $queueRow['body_html'], $headers);
+    $error = null;
+
+    if ($smtpConfig['host'] !== '') {
+        $sent = smtp_send($smtpConfig, $queueRow['to_email'], $queueRow['to_name'] ?: $queueRow['to_email'], $queueRow['subject'], $queueRow['body_html'], $error);
+        if (!$sent) {
+            error_log('SMTP delivery failed for ' . $queueRow['to_email'] . ': ' . $error);
+        }
+    } else {
+        $headers = "MIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\n";
+        $headers .= 'From: ' . $smtpConfig['from_name'] . ' <' . $smtpConfig['from_email'] . ">\r\n";
+        if (function_exists('mail')) {
+            $sent = @mail($queueRow['to_email'], $queueRow['subject'], $queueRow['body_html'], $headers);
+        }
     }
+
     $status = $sent ? 'sent' : 'failed';
     db_execute("UPDATE email_queue SET status = ?, sent_at = NOW(), attempts = attempts + 1 WHERE id = ?", 'si', [$status, $queueRow['id']]);
     db_execute(
@@ -88,4 +115,22 @@ function send_event_email(?int $companyId, string $toEmail, string $toName, stri
             deliver_email($row);
         }
     }
+}
+
+/** Sends an immediate, unqueued test email using the current SMTP configuration. Returns an error message, or null on success. */
+function send_test_email(string $toEmail): ?string
+{
+    $smtpConfig = smtp_config_from_settings();
+    if ($smtpConfig['host'] === '') {
+        if (!function_exists('mail') || !@mail($toEmail, 'Test Email from ' . app_name(), '<p>This is a test email from ' . out(app_name()) . '. If you received this, mail() delivery is working.</p>',
+            "MIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\nFrom: " . $smtpConfig['from_name'] . ' <' . $smtpConfig['from_email'] . ">\r\n")) {
+            return 'No SMTP host is configured and PHP mail() is unavailable or failed. Configure SMTP below.';
+        }
+        return null;
+    }
+    $error = null;
+    $sent = smtp_send($smtpConfig, $toEmail, $toEmail, 'Test Email from ' . app_name(),
+        '<p>This is a test email from <strong>' . out(app_name()) . '</strong> sent via your configured SMTP server (' . out_plain($smtpConfig['host']) . ').</p><p>If you received this, email delivery is working correctly.</p>',
+        $error);
+    return $sent ? null : ($error ?: 'Unknown SMTP error.');
 }

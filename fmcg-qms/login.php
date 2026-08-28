@@ -29,18 +29,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Login - <?= out(APP_NAME) ?></title>
+<title>Login - <?= out(app_name()) ?></title>
+<?php $favicon = app_favicon_url(); ?>
+<?php if ($favicon): ?><link rel="icon" href="<?= out($favicon) ?>"><?php endif; ?>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="<?= base_url('assets/css/style.css') ?>" rel="stylesheet">
+<?php $__primary = app_primary_color(); if ($__primary !== PRIMARY_COLOR_DEFAULT): ?>
+<style>:root{--primary:<?= out($__primary) ?>;--primary-dark:<?= out($__primary) ?>;}</style>
+<?php endif; ?>
 </head>
 <body>
 <div class="auth-wrap">
   <div class="auth-card">
     <div class="text-center mb-4">
-      <div class="brand-badge mx-auto mb-2" style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#2563EB,#60A5FA);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1.3rem;">Q</div>
-      <h4 class="fw-bold mb-0"><?= out(APP_NAME) ?></h4>
+      <?php $logo = app_logo_url(); ?>
+      <?php if ($logo): ?>
+        <img src="<?= out($logo) ?>" alt="<?= out(app_name()) ?>" class="mx-auto mb-2 d-block" style="height:48px;width:auto;border-radius:10px;">
+      <?php else: ?>
+        <div class="brand-badge mx-auto mb-2" style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--primary,#2563EB),#60A5FA);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1.3rem;">Q</div>
+      <?php endif; ?>
+      <h4 class="fw-bold mb-0"><?= out(app_name()) ?></h4>
       <p class="text-muted small mb-0">Sign in to your quality management workspace</p>
     </div>
     <?php if ($error): ?><div class="alert alert-danger py-2 small"><?= out($error) ?></div><?php endif; ?>

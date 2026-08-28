@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../../includes/bootstrap.php';
 json_response([
     'success' => true,
-    'name' => APP_NAME . ' API',
+    'name' => app_name() . ' API',
     'version' => 'v1',
     'authentication' => 'Authorization: Bearer <company_api_key> (generate in Manager > Settings)',
     'endpoints' => [

@@ -170,7 +170,7 @@ function ai_chat_query(int $companyId, int $userId, string $question): string
 {
     $context = build_ai_company_context($companyId);
     $response = ai_call_provider(
-        "You are the AI Quality Assistant for an FMCG manufacturer using the " . APP_NAME . " QMS platform. "
+        "You are the AI Quality Assistant for an FMCG manufacturer using the " . app_name() . " QMS platform. "
         . "Answer ONLY using the JSON company data context provided. Never reference or assume data from any other company. "
         . "If the data doesn't contain the answer, say so. Be concise and specific (department/product/batch names, numbers).",
         "Company data context: " . json_encode($context) . "\n\nQuestion: $question"

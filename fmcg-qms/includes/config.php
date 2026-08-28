@@ -28,14 +28,45 @@ define('DB_NAME', getenv('QMS_DB_NAME') ?: 'fmcg_qms');
 define('DB_PORT', getenv('QMS_DB_PORT') ?: 3306);
 
 define('BASE_PATH', dirname(__DIR__));
-define('BASE_URL', rtrim(getenv('QMS_BASE_URL') ?: '/fmcg-qms', '/'));
+
+/**
+ * Auto-detects the app's base URL path from the server environment, so the same codebase
+ * works unmodified at the site root, in a subfolder (e.g. /beta), or nested any number of
+ * levels deep - no config edit needed after upload. Compares the app's real filesystem path
+ * against DOCUMENT_ROOT (reliable on virtually every host: Apache, Nginx, LiteSpeed).
+ * QMS_BASE_URL env var, if set, always wins (for exotic setups where DOCUMENT_ROOT is wrong).
+ */
+function detect_base_url(): string
+{
+    $envOverride = getenv('QMS_BASE_URL');
+    if ($envOverride !== false && $envOverride !== '') {
+        return rtrim($envOverride, '/');
+    }
+    $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+    if ($docRoot === '') {
+        return ''; // CLI (cron) or unknown docroot: fall back to relative/root paths
+    }
+    $appRoot = realpath(dirname(__DIR__)); // filesystem path of the app root (parent of includes/)
+    $docRootReal = realpath($docRoot);
+    if ($appRoot === false || $docRootReal === false) {
+        return '';
+    }
+    $appRoot = rtrim(str_replace('\\', '/', $appRoot), '/');
+    $docRootReal = rtrim(str_replace('\\', '/', $docRootReal), '/');
+    if (strpos($appRoot, $docRootReal) !== 0) {
+        return ''; // app root isn't under the doc root (e.g. symlink oddities): safest fallback
+    }
+    return rtrim(substr($appRoot, strlen($docRootReal)), '/');
+}
+
+define('BASE_URL', detect_base_url());
 define('UPLOAD_PATH', BASE_PATH . '/uploads');
 define('UPLOAD_URL', BASE_URL . '/uploads');
 
-define('APP_NAME', 'QualityCore');
+define('APP_NAME_DEFAULT', 'QualityCore');
 define('APP_TAGLINE', 'Intelligent Quality Management for FMCG Manufacturing');
 
-define('PRIMARY_COLOR', '#2563EB');
+define('PRIMARY_COLOR_DEFAULT', '#2563EB');
 
 define('MAX_FILE_SIZE', 10 * 1024 * 1024); // 10MB
 define('ALLOWED_FILE_EXT', ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv']);
