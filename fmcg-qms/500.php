@@ -1,4 +1,7 @@
-<?php http_response_code(500); ?>
+<?php
+if (!defined('BASE_URL')) { require_once __DIR__ . '/includes/config.php'; }
+http_response_code(500);
+?>
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><title>500 - Something Went Wrong</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,4 +13,4 @@
 </head><body><div class="card"><div class="icon"><i class="bi bi-tools"></i></div>
 <h3 class="fw-bold">500 - Something Went Wrong</h3>
 <p class="text-white-50">An unexpected error occurred. Our team has been notified. Please try again shortly.</p>
-<a href="/" class="btn btn-primary mt-2">Back to Home</a></div></body></html>
+<a href="<?= BASE_URL ?>/" class="btn btn-primary mt-2">Back to Home</a></div></body></html>

@@ -6,8 +6,8 @@ json_response([
     'version' => 'v1',
     'authentication' => 'Authorization: Bearer <company_api_key> (generate in Manager > Settings)',
     'endpoints' => [
-        'GET /api/v1/batches.php' => 'List batches (paginated)',
-        'GET /api/v1/issues.php' => 'List quality issues (paginated)',
-        'GET /api/v1/kpis.php' => 'Latest KPI snapshot for the authenticated company',
+        'GET /api/v1/batches' => 'List batches (paginated)',
+        'GET /api/v1/issues' => 'List quality issues (paginated)',
+        'GET /api/v1/kpis' => 'Latest KPI snapshot for the authenticated company',
     ],
 ]);

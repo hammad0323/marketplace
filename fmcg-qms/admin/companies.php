@@ -64,7 +64,7 @@ $(function(){
     e.preventDefault();
     var id = $(this).data("id"), status = $(this).data("status");
     QMS.confirmAction({ title: "Change company status?", text: "This will set the company to " + status + "." }, function(){
-      $.post(QMS.baseUrl + "/ajax/admin/company-actions.php", { action:"toggle_status", id:id, status:status, csrf_token: QMS.csrfToken })
+      $.post(QMS.baseUrl + "/ajax/admin/company-actions", { action:"toggle_status", id:id, status:status, csrf_token: QMS.csrfToken })
         .done(function(res){ if(res.success){ QMS.toast("success","Status updated"); location.reload(); } else { QMS.toast("error", res.message||"Failed"); } });
     });
   });
@@ -72,7 +72,7 @@ $(function(){
     e.preventDefault();
     var id = $(this).data("id");
     QMS.confirmAction({ title:"Delete this company?", text:"This permanently removes ALL company data. This cannot be undone.", icon:"error", confirmText:"Delete permanently" }, function(){
-      $.post(QMS.baseUrl + "/ajax/admin/company-actions.php", { action:"delete", id:id, csrf_token: QMS.csrfToken })
+      $.post(QMS.baseUrl + "/ajax/admin/company-actions", { action:"delete", id:id, csrf_token: QMS.csrfToken })
         .done(function(res){ if(res.success){ QMS.toast("success","Company deleted"); location.reload(); } else { QMS.toast("error", res.message||"Failed"); } });
     });
   });

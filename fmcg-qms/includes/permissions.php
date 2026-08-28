@@ -8,7 +8,7 @@ function require_login(): void
 {
     if (!is_logged_in()) {
         $target = $_SERVER['REQUEST_URI'] ?? '';
-        header('Location: ' . BASE_URL . '/login.php?redirect=' . urlencode($target));
+        header('Location: ' . base_url('login.php') . '?redirect=' . urlencode($target));
         exit;
     }
 }

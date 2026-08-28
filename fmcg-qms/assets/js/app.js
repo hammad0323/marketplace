@@ -30,7 +30,7 @@
     if (!bellBadge || !window.jQuery) return;
 
     function load() {
-      jQuery.getJSON(QMS.baseUrl + '/ajax/common/notifications.php', { action: 'list' }, function (res) {
+      jQuery.getJSON(QMS.baseUrl + '/ajax/common/notifications', { action: 'list' }, function (res) {
         if (!res || !res.success) return;
         bellBadge.textContent = res.unread > 99 ? '99+' : res.unread;
         bellBadge.style.display = res.unread > 0 ? 'flex' : 'none';
@@ -53,7 +53,7 @@
     if (markAllBtn) {
       markAllBtn.addEventListener('click', function (e) {
         e.preventDefault();
-        jQuery.post(QMS.baseUrl + '/ajax/common/notifications.php', { action: 'mark_all_read', csrf_token: QMS.csrfToken }, load);
+        jQuery.post(QMS.baseUrl + '/ajax/common/notifications', { action: 'mark_all_read', csrf_token: QMS.csrfToken }, load);
       });
     }
   }
@@ -68,7 +68,7 @@
       var q = input.value.trim();
       if (q.length < 2) { results.classList.add('d-none'); return; }
       timer = setTimeout(function () {
-        jQuery.getJSON(QMS.baseUrl + '/ajax/common/global_search.php', { q: q }, function (res) {
+        jQuery.getJSON(QMS.baseUrl + '/ajax/common/global_search', { q: q }, function (res) {
           if (!res || !res.success) return;
           if (!res.items.length) {
             results.innerHTML = '<div class="p-3 text-muted small">No matches for "' + escapeHtml(q) + '"</div>';

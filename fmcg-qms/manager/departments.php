@@ -64,7 +64,7 @@ function openDeptModal(d){
 }
 $("#deptForm").on("submit", function(e){
   e.preventDefault();
-  $.post(QMS.baseUrl + "/ajax/manager/department-actions.php", $(this).serialize() + "&csrf_token=" + QMS.csrfToken)
+  $.post(QMS.baseUrl + "/ajax/manager/department-actions", $(this).serialize() + "&csrf_token=" + QMS.csrfToken)
     .done(function(res){ if(res.success){ QMS.toast("success","Department saved"); location.reload(); } else { QMS.toast("error", res.message||"Failed"); } });
 });
 </script>';

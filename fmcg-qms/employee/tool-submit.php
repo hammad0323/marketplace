@@ -131,7 +131,7 @@ $("#toolForm").on("submit", function(e){
   e.preventDefault();
   var formData = new FormData(this);
   formData.append("csrf_token", QMS.csrfToken);
-  $.ajax({ url: QMS.baseUrl + "/ajax/employee/submit-tool.php", type: "POST", data: formData, processData: false, contentType: false })
+  $.ajax({ url: QMS.baseUrl + "/ajax/employee/submit-tool", type: "POST", data: formData, processData: false, contentType: false })
     .done(function(res){
       if (!res.success) { QMS.toast("error", res.message || "Submission failed"); return; }
       var panel = document.getElementById("aiPanel");
@@ -144,7 +144,7 @@ $("#toolForm").on("submit", function(e){
       }
       panel.innerHTML = html;
       Swal.fire({ icon: res.deviations && res.deviations.length ? "warning" : "success", title: "Submitted", text: res.deviations && res.deviations.length ? "Deviation detected - issue created." : "Recorded successfully.", timer: 2200, showConfirmButton:false })
-        .then(function(){ window.location.href = QMS.baseUrl + "/employee/dashboard.php"; });
+        .then(function(){ window.location.href = QMS.baseUrl + "/employee/dashboard"; });
     })
     .fail(function(){ QMS.toast("error", "Submission failed. Please try again."); });
 });

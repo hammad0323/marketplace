@@ -59,7 +59,7 @@ document.getElementById("chatForm").addEventListener("submit", function(e){
   appendBubble(q, "user");
   input.value = "";
   appendBubble("Thinking...", "ai");
-  $.post(QMS.baseUrl + "/ajax/manager/ai-chat.php", { question: q, csrf_token: QMS.csrfToken }).done(function(res){
+  $.post(QMS.baseUrl + "/ajax/manager/ai-chat", { question: q, csrf_token: QMS.csrfToken }).done(function(res){
     document.getElementById("chatWindow").lastElementChild.remove();
     appendBubble(res.success ? res.answer : (res.message || "Something went wrong."), "ai");
   });

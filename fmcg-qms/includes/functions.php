@@ -144,8 +144,15 @@ function redirect(string $url): void
     exit;
 }
 
+/**
+ * Builds an app-relative URL and strips ".php" from the path (before an optional "?query"),
+ * so every link/redirect/form the app generates uses clean URLs (e.g. /manager/dashboard
+ * instead of /manager/dashboard.php). The .htaccess rewrite rule maps the clean URL back to
+ * the real .php file server-side; requesting the .php path directly still works too.
+ */
 function base_url(string $path = ''): string
 {
+    $path = preg_replace('/\.php(\?|$)/', '$1', $path);
     return BASE_URL . '/' . ltrim($path, '/');
 }
 
@@ -237,6 +244,7 @@ function app_absolute_url(string $path = ''): string
     } else {
         $base = BASE_URL; // CLI/cron with no site_url configured: best effort, path-only
     }
+    $path = preg_replace('/\.php(\?|$)/', '$1', $path);
     return $base . '/' . ltrim($path, '/');
 }
 

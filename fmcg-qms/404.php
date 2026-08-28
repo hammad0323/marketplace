@@ -13,4 +13,4 @@ http_response_code(404);
 </head><body><div class="card"><div class="icon"><i class="bi bi-signpost-split"></i></div>
 <h3 class="fw-bold">404 - Page Not Found</h3>
 <p class="text-white-50">The page you're looking for doesn't exist or may have been moved.</p>
-<a href="/" class="btn btn-primary mt-2">Back to Home</a></div></body></html>
+<a href="<?= BASE_URL ?>/" class="btn btn-primary mt-2">Back to Home</a></div></body></html>

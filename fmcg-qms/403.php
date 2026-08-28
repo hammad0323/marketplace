@@ -13,4 +13,4 @@ http_response_code(403);
 </head><body><div class="card"><div class="icon"><i class="bi bi-shield-lock"></i></div>
 <h3 class="fw-bold">403 - Access Denied</h3>
 <p class="text-white-50">You don't have permission to view this page, or your session has expired.</p>
-<a href="/" class="btn btn-primary mt-2">Back to Home</a></div></body></html>
+<a href="<?= BASE_URL ?>/" class="btn btn-primary mt-2">Back to Home</a></div></body></html>

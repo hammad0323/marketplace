@@ -53,7 +53,7 @@ include __DIR__ . '/../includes/layout_start.php';
 $extraScripts = '<script>
 $(document).on("change",".assign-toggle", function(){
   var toolId = $(this).data("tool-id"), checked = $(this).is(":checked");
-  $.post(QMS.baseUrl + "/ajax/manager/tool-assignment-actions.php", {
+  $.post(QMS.baseUrl + "/ajax/manager/tool-assignment-actions", {
     action: checked ? "assign" : "unassign", user_id: ' . (int)$selectedUserId . ', tool_id: toolId, csrf_token: QMS.csrfToken
   }).done(function(res){ if(res.success){ QMS.toast("success", checked ? "Tool assigned" : "Tool removed"); } else { QMS.toast("error", res.message||"Failed"); } });
 });

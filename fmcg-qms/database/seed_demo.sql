@@ -360,10 +360,10 @@ INSERT INTO preventive_maintenance (company_id, machine_id, maintenance_type, fr
 -- NOTIFICATIONS / AI LOGS / ACTIVITY
 -- ============================================================================
 INSERT INTO notifications (company_id, user_id, type, title, message, link, severity, is_read, created_at) VALUES
-(@c1,@mgr1,'quality_issue','Critical Quality Issue Detected','QI-2026-0041 - Cold Chain Temperature Monitoring: Temperature Reading out of specification.','manager/issue-view.php',	'danger',0,DATE_SUB(NOW(), INTERVAL 4 DAY)),
-(@c1,@mgr1,'capa','CAPA Overdue','CAPA-2026-0013 is overdue.','manager/capa-view.php',	'warning',0,DATE_SUB(NOW(), INTERVAL 1 DAY)),
-(@c1,@mgr1,'complaint','New Critical Complaint','CMP-2026-026 - Foreign material reported.','manager/complaints.php',	'danger',0,DATE_SUB(NOW(), INTERVAL 4 DAY)),
-(@c1,@priya,'action_assigned','Issue Assigned To You','QI-2026-0044 has been assigned to you.','employee/my-issues.php',	'info',1,DATE_SUB(NOW(), INTERVAL 3 DAY));
+(@c1,@mgr1,'quality_issue','Critical Quality Issue Detected','QI-2026-0041 - Cold Chain Temperature Monitoring: Temperature Reading out of specification.','manager/issue-view',	'danger',0,DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(@c1,@mgr1,'capa','CAPA Overdue','CAPA-2026-0013 is overdue.','manager/capa-view',	'warning',0,DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(@c1,@mgr1,'complaint','New Critical Complaint','CMP-2026-026 - Foreign material reported.','manager/complaints',	'danger',0,DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(@c1,@priya,'action_assigned','Issue Assigned To You','QI-2026-0044 has been assigned to you.','employee/my-issues',	'info',1,DATE_SUB(NOW(), INTERVAL 3 DAY));
 
 INSERT INTO ai_logs (company_id, user_id, feature, prompt, response, tokens_used, created_at) VALUES
 (@c1,@priya,'form_assistance','Cold Chain Temperature Monitoring reading 12.4C','Temperature is significantly outside the configured specification (2-8C). Verify refrigeration unit status and door seals before continuing production.',0,DATE_SUB(NOW(), INTERVAL 4 DAY)),

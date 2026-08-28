@@ -49,7 +49,7 @@ $(function(){ $("#empTable").DataTable({ order: [], pageLength: 20 }); });
 $(document).on("click",".toggle-emp", function(){
   var id=$(this).data("id"), status=$(this).data("status");
   QMS.confirmAction({ title: status==="inactive" ? "Disable this employee?" : "Enable this employee?", text:"" }, function(){
-    $.post(QMS.baseUrl + "/ajax/manager/employee-actions.php", { action:"toggle_status", id:id, status:status, csrf_token: QMS.csrfToken })
+    $.post(QMS.baseUrl + "/ajax/manager/employee-actions", { action:"toggle_status", id:id, status:status, csrf_token: QMS.csrfToken })
       .done(function(res){ if(res.success){ location.reload(); } else { QMS.toast("error", res.message||"Failed"); } });
   });
 });

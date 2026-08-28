@@ -107,6 +107,16 @@ fmcg-qms/
    0    1 * * * php /path/to/fmcg-qms/cron/kpi-recalc.php
    ```
 
+## Clean URLs (no `.php`)
+
+Every link, form, redirect and AJAX call the app generates uses a clean, extensionless URL
+(`/manager/dashboard` rather than `/manager/dashboard.php`) — `base_url()` strips `.php` when
+building any URL, and the `.htaccess` rewrite rule maps the clean URL back to the real `.php`
+file on the server side. This is on by default on Apache/LiteSpeed with `AllowOverride All`
+(the default on most shared hosting); an Nginx equivalent is included as a comment at the
+bottom of `.htaccess` for hosts that don't read it. Requesting a `.php` URL directly still
+works too (nothing is broken or redirected away from it), so there's no risk from old links.
+
 ## Branding
 
 Everything is changeable from **Super Admin → Platform Settings** with no code or redeploy:

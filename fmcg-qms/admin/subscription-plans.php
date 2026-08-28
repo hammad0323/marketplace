@@ -87,7 +87,7 @@ function openPlanModal(p){
 }
 $("#planForm").on("submit", function(e){
   e.preventDefault();
-  $.post(QMS.baseUrl + "/ajax/admin/plan-actions.php", $(this).serialize() + "&csrf_token=" + QMS.csrfToken)
+  $.post(QMS.baseUrl + "/ajax/admin/plan-actions", $(this).serialize() + "&csrf_token=" + QMS.csrfToken)
     .done(function(res){ if(res.success){ QMS.toast("success","Plan saved"); location.reload(); } else { QMS.toast("error", res.message||"Failed"); } });
 });
 </script>';

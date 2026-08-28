@@ -47,7 +47,7 @@ $extraScripts = '<script>
 $(function(){ $("#toolsTable").DataTable({ order: [], pageLength: 25 }); });
 $(document).on("click",".toggle-tool", function(){
   var id=$(this).data("id"), status=$(this).data("status");
-  $.post(QMS.baseUrl + "/ajax/admin/tool-actions.php", { action:"toggle_status", id:id, status:status, csrf_token: QMS.csrfToken })
+  $.post(QMS.baseUrl + "/ajax/admin/tool-actions", { action:"toggle_status", id:id, status:status, csrf_token: QMS.csrfToken })
     .done(function(res){ if(res.success){ location.reload(); } else { QMS.toast("error", res.message||"Failed"); } });
 });
 </script>';

@@ -1,6 +1,35 @@
-# QualityCore - basic hardening. Safe to delete if your host doesn't support .htaccess
-# (Nginx/LiteSpeed ignore it; apply the equivalent deny rules in your server config instead).
+# QualityCore - basic hardening + clean URLs. Safe to delete if your host doesn't support
+# .htaccess (Nginx/LiteSpeed ignore it; apply the equivalent rules in your server config instead
+# - see the Nginx example at the bottom of this file).
 Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Extensionless URLs (/manager/dashboard) transparently serve the matching .php file
+    # (manager/dashboard.php), without redirecting and without needing to know the app's
+    # deployment path - this works unmodified whether the app lives at the site root, in
+    # /beta, or anywhere else. Requests that already end in .php keep working too.
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}.php -f
+    RewriteRule ^(.*)$ $1.php [L]
+</IfModule>
+
+# ------------------------------------------------------------------------------------------
+# Nginx equivalent (put inside your server{} block if not using Apache):
+#
+#   location / {
+#       try_files $uri $uri.php $uri/ =404;
+#   }
+#   location ~ \.php$ {
+#       fastcgi_pass unix:/run/php/php-fpm.sock;   # match your PHP-FPM socket
+#       fastcgi_index index.php;
+#       include fastcgi_params;
+#       fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+#   }
+#   location ~ ^/(database|includes|logs|cron)/ { deny all; }
+#   location ~ ^/uploads/.*\.php$ { deny all; }
+# ------------------------------------------------------------------------------------------
 
 <FilesMatch "^(README\.md|\.gitignore)$">
     <IfModule mod_authz_core.c>
