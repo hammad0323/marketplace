@@ -156,7 +156,35 @@ model and API key to enable live AI responses. With AI disabled, or if the provi
 unreachable, every AI-powered feature (form suggestions, root-cause assistance, dashboard
 insights, chat) automatically falls back to deterministic, rule-based output computed from
 each company's own real data — the assistant never goes silent, and no company's data is
-ever sent to another company's context.
+ever sent to another company's context. The assistant is available to both managers
+(Insights → AI Assistant) and employees (Insights → AI Assistant), each scoped to that
+user's own company data.
+
+## Analytics (Power BI-style dashboard)
+
+Manager → Insights → Analytics gives a filterable (7/30/90-day) drill-down view on top of
+the main Dashboard: a KPI scorecard with RAG status and trend-vs-prior-period deltas, a
+multi-line quality-events trend chart, issue severity donut, a department quality
+comparison chart (click a bar to jump straight into that department's filtered issue
+list), a Pareto chart with a cumulative-percentage line, and supplier/OEE comparison
+charts.
+
+## Department Data Sharing (read-only)
+
+Manager → Settings → Department Data Sharing lets a manager grant one department
+read-only visibility into another department's quality data (e.g. Supply Chain can view
+Production's numbers without being able to edit anything). Shared departments appear
+under the employee's Insights → Department Data page, which contains no editable forms —
+access is enforced server-side (`includes/data_sharing.php`) and is fully revocable from
+the same Settings tab.
+
+## Root Cause Analysis
+
+Manager → Quality Operations → Root Cause Analysis renders 5 Whys, Fishbone/Ishikawa
+(as an actual server-generated SVG cause-and-effect diagram, not just raw form fields),
+Fault Tree Analysis, 8D and A3 submissions as structured, readable analyses. Employees
+can review everything they personally submitted, across every tool, under My Work →
+My Submissions.
 
 ## Security Notes
 

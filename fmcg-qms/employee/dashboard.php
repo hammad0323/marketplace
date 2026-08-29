@@ -11,6 +11,7 @@ $missed = count(array_filter($toolStatus, fn($t) => $t['status'] === 'missed'));
 
 $myIssues = db_all("SELECT * FROM quality_issues WHERE company_id=? AND assigned_to=? AND status<>'closed' ORDER BY created_at DESC LIMIT 5", [$cid, $uid]);
 $myActions = db_all("SELECT ca.*, c.capa_number FROM capa_actions ca JOIN capa c ON c.id=ca.capa_id WHERE ca.company_id=? AND ca.responsible_user=? AND ca.status<>'done' ORDER BY ca.due_date LIMIT 5", [$cid, $uid]);
+$aiInsight = ai_dashboard_insights($cid, $uid)[0] ?? null;
 
 $pageTitle = 'My Dashboard';
 $activeMenu = 'dashboard';
@@ -23,6 +24,15 @@ include __DIR__ . '/../includes/layout_start.php';
   <div class="col-md-4 col-6"><div class="stat-card"><div class="stat-icon" style="background:#FFFBEB;color:#D97706;"><i class="bi bi-hourglass-split"></i></div><div class="stat-value"><?= $pending ?></div><div class="stat-label">Pending</div></div></div>
   <div class="col-md-4 col-6"><div class="stat-card"><div class="stat-icon" style="background:#FEF2F2;color:#DC2626;"><i class="bi bi-x-circle"></i></div><div class="stat-value"><?= $missed ?></div><div class="stat-label">Missed</div></div></div>
 </div>
+
+<?php if ($aiInsight): ?>
+<div class="qc-card mb-4">
+  <div class="d-flex justify-content-between align-items-start">
+    <div class="ai-suggestion-box flex-grow-1 me-2"><i class="bi bi-stars mt-1"></i><span><?= out($aiInsight) ?></span></div>
+    <a href="<?= base_url('employee/ai-assistant.php') ?>" class="btn btn-sm btn-soft-primary text-nowrap"><i class="bi bi-robot"></i> Ask AI</a>
+  </div>
+</div>
+<?php endif; ?>
 
 <div class="qc-card mb-4">
   <div class="qc-card-header"><h3>My Quality Tools</h3><a href="<?= base_url('employee/floor-mode.php') ?>" class="small"><i class="bi bi-tablet"></i> Floor Mode</a></div>

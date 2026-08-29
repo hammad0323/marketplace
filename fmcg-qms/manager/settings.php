@@ -32,6 +32,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'regenerate_api_key') {
         set_company_setting($cid, 'api_key', bin2hex(random_bytes(24)));
         flash_set('success', 'API key regenerated.');
+    } elseif ($action === 'add_share') {
+        $viewerId = post_int('viewer_department_id');
+        $sourceId = post_int('source_department_id');
+        if ($viewerId === $sourceId) {
+            flash_set('danger', 'A department always sees its own data - choose two different departments.');
+        } elseif (add_department_share($cid, current_user_id(), $viewerId, $sourceId)) {
+            flash_set('success', 'Data sharing rule added.');
+        } else {
+            flash_set('danger', 'That sharing rule already exists.');
+        }
+    } elseif ($action === 'remove_share') {
+        remove_department_share(post_int('share_id'), $cid, current_user_id());
+        flash_set('success', 'Data sharing rule removed.');
     }
     redirect(base_url('manager/settings.php'));
 }
@@ -42,6 +55,8 @@ foreach (db_all("SELECT kpi_key, weight FROM kpi_definitions WHERE company_id=?"
 $lines = db_all("SELECT * FROM production_lines WHERE company_id=? ORDER BY name", [$cid]);
 $shifts = db_all("SELECT * FROM shifts WHERE company_id=? ORDER BY name", [$cid]);
 $machines = db_all("SELECT m.*, pl.name AS line_name FROM machines m LEFT JOIN production_lines pl ON pl.id=m.production_line_id WHERE m.company_id=? ORDER BY m.name", [$cid]);
+$departments = db_all("SELECT id, name FROM departments WHERE company_id=? AND status='active' ORDER BY name", [$cid]);
+$shares = get_department_shares($cid);
 
 $pageTitle = 'Settings';
 $activeMenu = 'settings';
@@ -56,6 +71,7 @@ include __DIR__ . '/../includes/layout_start.php';
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#shifts">Shifts</a></li>
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#machines">Machines</a></li>
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#apiTab">API Access</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#sharingTab">Department Data Sharing</a></li>
 </ul>
 <div class="tab-content">
   <div class="tab-pane fade show active" id="deadlines">
@@ -134,6 +150,54 @@ include __DIR__ . '/../includes/layout_start.php';
         <form method="POST"><?= csrf_field() ?><input type="hidden" name="form_action" value="regenerate_api_key"><button class="btn btn-outline-secondary">Regenerate</button></form>
       </div>
       <a href="<?= base_url('api/v1/index.php') ?>" target="_blank" class="small">View API documentation &rarr;</a>
+    </div>
+  </div>
+  <div class="tab-pane fade" id="sharingTab">
+    <div class="row g-3">
+      <div class="col-lg-5">
+        <form method="POST" class="qc-card">
+          <?= csrf_field() ?><input type="hidden" name="form_action" value="add_share">
+          <h3 class="mb-2">Grant Read-Only Access</h3>
+          <p class="small text-muted">Let one department view another department's quality data (dashboard, issues, submissions) without being able to change anything. Example: give Supply Chain visibility into Production's data.</p>
+          <div class="mb-2">
+            <label class="form-label small fw-semibold">Department that should be able to view</label>
+            <select class="form-select" name="viewer_department_id" required>
+              <?php foreach ($departments as $d): ?><option value="<?= $d['id'] ?>"><?= out($d['name']) ?></option><?php endforeach; ?>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Department whose data will be visible</label>
+            <select class="form-select" name="source_department_id" required>
+              <?php foreach ($departments as $d): ?><option value="<?= $d['id'] ?>"><?= out($d['name']) ?></option><?php endforeach; ?>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm">Grant Access</button>
+        </form>
+      </div>
+      <div class="col-lg-7">
+        <div class="qc-card">
+          <h3 class="mb-3">Active Sharing Rules</h3>
+          <table class="table table-sm mb-0">
+            <thead><tr><th>Can View</th><th></th><th>Department Data</th><th></th></tr></thead>
+            <tbody>
+            <?php foreach ($shares as $s): ?>
+              <tr>
+                <td class="small fw-semibold"><?= out($s['viewer_department_name']) ?></td>
+                <td class="text-muted"><i class="bi bi-arrow-right"></i></td>
+                <td class="small"><?= out($s['source_department_name']) ?></td>
+                <td class="text-end">
+                  <form method="POST" onsubmit="return confirm('Remove this sharing rule?');">
+                    <?= csrf_field() ?><input type="hidden" name="form_action" value="remove_share"><input type="hidden" name="share_id" value="<?= $s['id'] ?>">
+                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                  </form>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+            <?php if (!$shares): ?><tr><td colspan="4" class="text-center text-muted py-3">No sharing rules configured yet - every department only sees its own data by default.</td></tr><?php endif; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>

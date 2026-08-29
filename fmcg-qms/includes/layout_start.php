@@ -39,6 +39,7 @@ $menus = [
         ['label' => 'Quality Operations', 'items' => [
             ['tools', 'Quality Tools', 'bi-clipboard-check', 'manager/quality-tools.php'],
             ['submissions', 'Inspections / Submissions', 'bi-list-check', 'manager/submissions.php'],
+            ['root-cause', 'Root Cause Analysis', 'bi-diagram-2', 'manager/root-cause.php'],
             ['spc', 'SPC', 'bi-graph-up', 'manager/spc.php'],
             ['issues', 'Quality Issues', 'bi-exclamation-triangle', 'manager/issues.php'],
             ['ncr', 'NCR', 'bi-file-earmark-excel', 'manager/ncr.php'],
@@ -59,6 +60,7 @@ $menus = [
             ['complaints', 'Complaints', 'bi-chat-dots', 'manager/complaints.php'],
         ]],
         ['label' => 'Insights', 'items' => [
+            ['analytics', 'Analytics', 'bi-bar-chart-line', 'manager/analytics.php'],
             ['reports', 'Reports', 'bi-file-earmark-bar-graph', 'manager/reports.php'],
             ['ai-assistant', 'AI Assistant', 'bi-robot', 'manager/ai-assistant.php'],
         ]],
@@ -72,8 +74,13 @@ $menus = [
         ['label' => 'My Work', 'items' => [
             ['dashboard', 'Dashboard', 'bi-speedometer2', 'employee/dashboard.php'],
             ['floor-mode', 'Floor Mode', 'bi-tablet', 'employee/floor-mode.php'],
+            ['my-submissions', 'My Submissions', 'bi-clipboard-data', 'employee/my-submissions.php'],
             ['my-issues', 'My Issues', 'bi-exclamation-triangle', 'employee/my-issues.php'],
             ['my-actions', 'My Actions', 'bi-check2-square', 'employee/my-actions.php'],
+        ]],
+        ['label' => 'Insights', 'items' => [
+            ['shared-data', 'Department Data', 'bi-diagram-3', 'employee/shared-data.php'],
+            ['ai-assistant', 'AI Assistant', 'bi-robot', 'employee/ai-assistant.php'],
         ]],
     ],
 ];

@@ -18,3 +18,5 @@ require_once __DIR__ . '/capa_engine.php';
 require_once __DIR__ . '/kpi_engine.php';
 require_once __DIR__ . '/ai.php';
 require_once __DIR__ . '/reporting.php';
+require_once __DIR__ . '/data_sharing.php';
+require_once __DIR__ . '/diagrams.php';

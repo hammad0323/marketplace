@@ -100,9 +100,8 @@ function kpi_rework_rate(int $companyId, string $from, string $to): float
     return calc_rework_rate($rework, max($produced, 1));
 }
 
-function get_kpi_snapshot(int $companyId, string $period = '30d'): array
+function get_kpi_snapshot_range(int $companyId, string $from, string $to): array
 {
-    [$from, $to] = kpi_date_range($period);
     return [
         'defect_rate' => kpi_defect_rate($companyId, $from, $to),
         'fpy' => kpi_fpy($companyId, $from, $to),
@@ -118,12 +117,17 @@ function get_kpi_snapshot(int $companyId, string $period = '30d'): array
     ];
 }
 
-/**
- * Weighted overall company quality score using kpi_definitions (company-specific override, else global default).
- */
-function get_company_quality_score(int $companyId, string $period = '30d'): array
+function get_kpi_snapshot(int $companyId, string $period = '30d'): array
 {
-    $snapshot = get_kpi_snapshot($companyId, $period);
+    [$from, $to] = kpi_date_range($period);
+    return get_kpi_snapshot_range($companyId, $from, $to);
+}
+
+/**
+ * Weighted overall company quality score from a pre-computed snapshot (current or a custom/previous period range).
+ */
+function get_company_quality_score_from_snapshot(int $companyId, array $snapshot): array
+{
     $definitions = db_fetch_all(
         "SELECT * FROM kpi_definitions WHERE (company_id = ? OR company_id IS NULL) AND is_active = 1
          ORDER BY (company_id IS NOT NULL) DESC", 'i', [$companyId]
@@ -138,12 +142,21 @@ function get_company_quality_score(int $companyId, string $period = '30d'): arra
         $normalized = $def['direction'] === 'lower_better' ? max(0, 100 - $value) : $value;
         $components[$def['kpi_key']] = [
             'name' => $def['name'], 'value' => $value, 'normalized' => $normalized, 'weight' => (float)$def['weight'],
+            'direction' => $def['direction'],
             'rag' => kpi_rag_status($value, (float)$def['green_threshold'], (float)$def['amber_threshold'], $def['direction']),
         ];
     }
     $weightedInputs = array_map(fn($c) => ['value' => $c['normalized'], 'weight' => $c['weight']], $components);
     $score = calc_weighted_score($weightedInputs);
     return ['score' => $score, 'rag' => $score >= 85 ? 'green' : ($score >= 70 ? 'amber' : 'red'), 'components' => $components, 'snapshot' => $snapshot];
+}
+
+/**
+ * Weighted overall company quality score using kpi_definitions (company-specific override, else global default).
+ */
+function get_company_quality_score(int $companyId, string $period = '30d'): array
+{
+    return get_company_quality_score_from_snapshot($companyId, get_kpi_snapshot($companyId, $period));
 }
 
 function kpi_rag_status(float $value, float $greenThreshold, float $amberThreshold, string $direction): string
@@ -173,7 +186,7 @@ function get_department_heatmap(int $companyId, string $period = '30d'): array
         $qualityScore = round(max(0, 100 - $defectRate - ($openIssues * 2)), 1);
         $rag = $qualityScore >= 85 && $compliance >= 90 ? 'green' : (($qualityScore >= 65 && $compliance >= 70) ? 'amber' : 'red');
         $rows[] = [
-            'department' => $dept['name'], 'quality_score' => $qualityScore, 'defect_rate' => $defectRate,
+            'id' => (int)$dept['id'], 'department' => $dept['name'], 'quality_score' => $qualityScore, 'defect_rate' => $defectRate,
             'open_issues' => $openIssues, 'compliance' => $compliance, 'rag' => $rag,
         ];
     }

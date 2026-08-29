@@ -3,7 +3,8 @@ require_once __DIR__ . '/../includes/bootstrap.php';
 require_manager();
 $cid = require_company_id();
 
-$filters = ['severity' => get_param('severity') ?: null, 'status' => get_param('status') ?: null, 'search' => get_param('search') ?: null];
+$filters = ['severity' => get_param('severity') ?: null, 'status' => get_param('status') ?: null, 'search' => get_param('search') ?: null, 'department_id' => get_int('department_id') ?: null];
+$filterDepartment = $filters['department_id'] ? db_one("SELECT name FROM departments WHERE id=? AND company_id=?", [$filters['department_id'], $cid]) : null;
 $issues = get_issues($cid, $filters, 100);
 
 $pageTitle = 'Quality Issues';
@@ -11,7 +12,7 @@ $activeMenu = 'issues';
 include __DIR__ . '/../includes/layout_start.php';
 ?>
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <div><h4 class="fw-bold mb-0">Quality Issues</h4><p class="text-muted mb-0 small">Detected &rarr; Assigned &rarr; Investigation &rarr; Containment &rarr; Root Cause &rarr; Corrective/Preventive Action &rarr; Verification &rarr; Closed</p></div>
+  <div><h4 class="fw-bold mb-0">Quality Issues<?php if ($filterDepartment): ?> <span class="badge bg-primary-subtle text-primary fs-6">in <?= out($filterDepartment['name']) ?> <a href="<?= base_url('manager/issues.php') ?>" class="text-primary ms-1" title="Clear filter"><i class="bi bi-x-circle"></i></a></span><?php endif; ?></h4><p class="text-muted mb-0 small">Detected &rarr; Assigned &rarr; Investigation &rarr; Containment &rarr; Root Cause &rarr; Corrective/Preventive Action &rarr; Verification &rarr; Closed</p></div>
   <a href="<?= base_url('manager/issue-form.php') ?>" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Log Issue</a>
 </div>
 

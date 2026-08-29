@@ -238,6 +238,20 @@ function get_tool_submissions(int $companyId, array $filters = [], int $limit = 
     return db_fetch_all($sql, $types, $params);
 }
 
+/** Field values for one submission keyed by field_name (e.g. 'why_1' => 'Root valve failed'), for structured rendering. */
+function get_submission_values_by_field_name(int $submissionId): array
+{
+    $rows = db_fetch_all(
+        "SELECT tf.field_name, tsv.value_text, tsv.value_number FROM tool_submission_values tsv
+         JOIN tool_fields tf ON tf.id = tsv.tool_field_id WHERE tsv.submission_id = ?", 'i', [$submissionId]
+    );
+    $values = [];
+    foreach ($rows as $r) {
+        $values[$r['field_name']] = $r['value_number'] !== null ? $r['value_number'] : $r['value_text'];
+    }
+    return $values;
+}
+
 function get_submission_detail(int $submissionId): ?array
 {
     $submission = db_fetch_one(

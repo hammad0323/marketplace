@@ -1256,6 +1256,20 @@ CREATE TABLE IF NOT EXISTS `system_logs` (
   KEY `idx_syslog_created` (`created_at`)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS `department_data_shares` (
+  `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `company_id` INT UNSIGNED NOT NULL,
+  `viewer_department_id` INT UNSIGNED NOT NULL COMMENT 'this department gets read-only visibility...',
+  `source_department_id` INT UNSIGNED NOT NULL COMMENT '...into this department''s data',
+  `created_by` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `uq_dept_share` (`company_id`, `viewer_department_id`, `source_department_id`),
+  KEY `idx_share_company` (`company_id`),
+  CONSTRAINT `fk_share_company` FOREIGN KEY (`company_id`) REFERENCES `companies`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_share_viewer_dept` FOREIGN KEY (`viewer_department_id`) REFERENCES `departments`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_share_source_dept` FOREIGN KEY (`source_department_id`) REFERENCES `departments`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS `platform_settings` (
   `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   `setting_key` VARCHAR(100) NOT NULL UNIQUE,
