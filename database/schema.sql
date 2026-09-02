@@ -22,7 +22,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS users;
 CREATE TABLE users (
     id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    role              ENUM('patient','doctor','admin') NOT NULL DEFAULT 'patient',
+    role              ENUM('patient','doctor','admin','pharmacy') NOT NULL DEFAULT 'patient',
     full_name         VARCHAR(150) NOT NULL,
     email             VARCHAR(150) NOT NULL,
     phone             VARCHAR(30)  DEFAULT NULL,
@@ -154,6 +154,51 @@ CREATE TABLE doctor_certificates (
     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     KEY idx_cert_doctor (doctor_id),
     CONSTRAINT fk_cert_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ----------------------------------------------------------------------------
+-- Pharmacies (medicine stores) — a second seller type alongside doctors.
+-- Registers the same way doctors do: self-apply, upload a registration
+-- number + certificates, wait for admin verification, then sell on the
+-- shared storefront (see doctor_products.seller_type further below).
+-- ----------------------------------------------------------------------------
+
+DROP TABLE IF EXISTS pharmacies;
+CREATE TABLE pharmacies (
+    id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id             INT UNSIGNED NOT NULL,
+    slug                VARCHAR(180) NOT NULL,
+    store_name          VARCHAR(180) NOT NULL,
+    registration_number VARCHAR(100) DEFAULT NULL COMMENT 'pharmacy/drug license number',
+    license_authority   VARCHAR(180) DEFAULT NULL COMMENT 'issuing body, e.g. Punjab Pharmacy Council',
+    bio                 TEXT,
+    address             VARCHAR(255) DEFAULT NULL,
+    city                VARCHAR(100) DEFAULT NULL,
+    state               VARCHAR(100) DEFAULT NULL,
+    country             VARCHAR(100) DEFAULT NULL,
+    verification_status ENUM('pending','verified','rejected') NOT NULL DEFAULT 'pending',
+    verification_note   VARCHAR(255) DEFAULT NULL,
+    rating_avg          DECIMAL(3,2) NOT NULL DEFAULT 0.00,
+    rating_count        INT UNSIGNED NOT NULL DEFAULT 0,
+    profile_views       INT UNSIGNED NOT NULL DEFAULT 0,
+    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_pharmacies_user (user_id),
+    UNIQUE KEY uq_pharmacies_slug (slug),
+    CONSTRAINT fk_pharmacy_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+DROP TABLE IF EXISTS pharmacy_certificates;
+CREATE TABLE pharmacy_certificates (
+    id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    pharmacy_id  INT UNSIGNED NOT NULL,
+    title        VARCHAR(180) NOT NULL,
+    issued_by    VARCHAR(180) DEFAULT NULL,
+    issued_year  YEAR DEFAULT NULL,
+    file_path    VARCHAR(255) NOT NULL,
+    created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_cert_pharmacy (pharmacy_id),
+    CONSTRAINT fk_cert_pharmacy FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 DROP TABLE IF EXISTS doctor_availability;
@@ -412,8 +457,12 @@ CREATE TABLE chat_messages (
     CONSTRAINT fk_msg_conv FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Doctor products/services store. Creating listings is gated to premium
--- doctors (doctors.is_premium) at the application layer.
+-- Doctor and pharmacy products/services store. Creating listings is gated
+-- to premium doctors (doctors.is_premium) or verified pharmacies
+-- (pharmacies.verification_status) at the application layer. seller_type
+-- says which of doctor_id/pharmacy_id is populated (exactly one is set;
+-- the table kept its original "doctor_products" name for historical
+-- reasons even though it now covers both seller types).
 DROP TABLE IF EXISTS product_categories;
 CREATE TABLE product_categories (
     id   INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -425,7 +474,9 @@ CREATE TABLE product_categories (
 DROP TABLE IF EXISTS doctor_products;
 CREATE TABLE doctor_products (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    doctor_id       INT UNSIGNED NOT NULL COMMENT 'store owner',
+    doctor_id       INT UNSIGNED DEFAULT NULL COMMENT 'store owner when seller_type=doctor',
+    pharmacy_id     INT UNSIGNED DEFAULT NULL COMMENT 'store owner when seller_type=pharmacy',
+    seller_type     ENUM('doctor','pharmacy') NOT NULL DEFAULT 'doctor',
     category_id     INT UNSIGNED DEFAULT NULL,
     type            ENUM('product','service') NOT NULL DEFAULT 'product',
     name            VARCHAR(180) NOT NULL,
@@ -440,8 +491,10 @@ CREATE TABLE doctor_products (
     meta_description VARCHAR(300) DEFAULT NULL COMMENT 'blank = auto-generated from description',
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_doctor_product_slug (slug),
+    KEY idx_doctor_product_pharmacy (pharmacy_id),
     FULLTEXT KEY ft_doctor_product_search (name, description),
     CONSTRAINT fk_doctor_product_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE,
+    CONSTRAINT fk_doctor_product_pharmacy FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE,
     CONSTRAINT fk_doctor_product_cat FOREIGN KEY (category_id) REFERENCES product_categories(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
@@ -449,7 +502,9 @@ DROP TABLE IF EXISTS orders;
 CREATE TABLE orders (
     id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     patient_id    INT UNSIGNED NOT NULL,
-    doctor_id     INT UNSIGNED NOT NULL,
+    doctor_id     INT UNSIGNED DEFAULT NULL COMMENT 'seller when seller_type=doctor',
+    pharmacy_id   INT UNSIGNED DEFAULT NULL COMMENT 'seller when seller_type=pharmacy',
+    seller_type   ENUM('doctor','pharmacy') NOT NULL DEFAULT 'doctor',
     order_number  VARCHAR(40) NOT NULL,
     total_amount  DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     contact_phone VARCHAR(30) DEFAULT NULL,
@@ -458,8 +513,10 @@ CREATE TABLE orders (
     status        ENUM('pending','confirmed','completed','cancelled') NOT NULL DEFAULT 'pending',
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_order_number (order_number),
+    KEY idx_order_pharmacy (pharmacy_id),
     CONSTRAINT fk_order_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
-    CONSTRAINT fk_order_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE
+    CONSTRAINT fk_order_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE,
+    CONSTRAINT fk_order_pharmacy FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 DROP TABLE IF EXISTS order_items;

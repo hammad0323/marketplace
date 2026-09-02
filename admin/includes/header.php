@@ -3,6 +3,7 @@
 $user = current_user();
 $currentPage = basename($_SERVER['SCRIPT_NAME']);
 $pendingDoctorCount = mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM doctors WHERE verification_status='pending'"))['c'];
+$pendingPharmacyCount = mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM pharmacies WHERE verification_status='pending'"))['c'];
 $unreadCount = mysqli_fetch_assoc(mysqli_query(db(), 'SELECT COUNT(*) c FROM notifications WHERE user_id = ' . (int) $user['id'] . ' AND is_read = 0'))['c'];
 $pageTitle = ($pageTitle ?? 'Dashboard') . ' — Admin — ' . SITE_NAME;
 ?><!DOCTYPE html>
@@ -22,13 +23,17 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — Admin — ' . SITE_NAME;
 <body data-logged-in="1">
 <div class="dash-shell">
     <aside class="dash-sidebar" id="dash-sidebar">
-        <a href="/admin/dashboard" class="brand"><span class="brand-mark"><i class="ri-shield-star-fill"></i></span> <?= e(SITE_NAME) ?></a>
+        <a href="/admin/dashboard" class="brand"><span class="brand-mark"><i class="ri-shield-star-fill"></i></span> <?= brand_wordmark_html() ?></a>
         <nav class="dash-nav">
             <a href="/admin/dashboard" class="<?= $currentPage === 'dashboard.php' ? 'active' : '' ?>"><i class="ri-dashboard-3-line"></i> Dashboard</a>
             <div class="nav-section-title">People</div>
             <a href="/admin/doctors" class="<?= in_array($currentPage, ['doctors.php', 'doctor-view.php']) ? 'active' : '' ?>">
                 <i class="ri-stethoscope-line"></i> Doctors
                 <?php if ($pendingDoctorCount > 0): ?><span class="badge badge-pending" style="margin-left:auto;"><?= $pendingDoctorCount ?></span><?php endif; ?>
+            </a>
+            <a href="/admin/pharmacies" class="<?= $currentPage === 'pharmacies.php' ? 'active' : '' ?>">
+                <i class="ri-capsule-fill"></i> Pharmacies
+                <?php if ($pendingPharmacyCount > 0): ?><span class="badge badge-pending" style="margin-left:auto;"><?= $pendingPharmacyCount ?></span><?php endif; ?>
             </a>
             <a href="/admin/patients" class="<?= $currentPage === 'patients.php' ? 'active' : '' ?>"><i class="ri-group-line"></i> Patients</a>
             <div class="nav-section-title">Operations</div>

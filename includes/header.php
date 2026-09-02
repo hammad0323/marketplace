@@ -58,7 +58,7 @@ $user = current_user();
     <div class="navbar-inner glass">
         <a href="/" class="brand">
             <span class="brand-mark"><i class="ri-heart-pulse-fill"></i></span>
-            <?= e(SITE_NAME) ?>
+            <?= brand_wordmark_html() ?>
         </a>
         <nav class="nav-links">
             <a href="/" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'index.php' ? 'active' : '' ?>">Home</a>
@@ -66,6 +66,7 @@ $user = current_user();
             <a href="/specializations" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'specializations.php' ? 'active' : '' ?>">Specializations</a>
             <a href="/products" class="<?= in_array(basename($_SERVER['SCRIPT_NAME']), ['products.php', 'product-detail.php'], true) ? 'active' : '' ?>">Products</a>
             <a href="/medicines" class="<?= in_array(basename($_SERVER['SCRIPT_NAME']), ['medicines.php', 'medicine-detail.php'], true) ? 'active' : '' ?>">Medicines</a>
+            <a href="/pharmacies" class="<?= in_array(basename($_SERVER['SCRIPT_NAME']), ['pharmacies.php', 'pharmacy-profile.php'], true) ? 'active' : '' ?>">Pharmacies</a>
             <a href="/blog" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'blog.php' ? 'active' : '' ?>">Blog</a>
             <a href="/about" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'about.php' ? 'active' : '' ?>">About</a>
             <a href="/contact" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'contact.php' ? 'active' : '' ?>">Contact</a>
@@ -86,7 +87,7 @@ $user = current_user();
                         <i class="ri-arrow-down-s-line"></i>
                     </button>
                     <div class="dropdown-menu" id="user-dropdown">
-                        <?php $home = $user['role'] === 'doctor' ? '/doctor/dashboard' : ($user['role'] === 'admin' ? '/admin/dashboard' : '/patient/dashboard'); ?>
+                        <?php $home = role_home_url($user['role']); ?>
                         <a href="<?= e($home) ?>"><i class="ri-dashboard-3-line"></i> Dashboard</a>
                         <?php if ($user['role'] === 'patient'): ?>
                         <a href="/patient/appointments"><i class="ri-calendar-check-line"></i> My Appointments</a>
@@ -94,6 +95,9 @@ $user = current_user();
                         <?php elseif ($user['role'] === 'doctor'): ?>
                         <a href="/doctor/appointments"><i class="ri-calendar-check-line"></i> Appointments</a>
                         <a href="/doctor/profile"><i class="ri-user-line"></i> Profile</a>
+                        <?php elseif ($user['role'] === 'pharmacy'): ?>
+                        <a href="/pharmacy/products"><i class="ri-store-2-line"></i> My Store</a>
+                        <a href="/pharmacy/profile"><i class="ri-user-line"></i> Profile</a>
                         <?php endif; ?>
                         <div class="dropdown-divider"></div>
                         <a href="/logout"><i class="ri-logout-box-line"></i> Logout</a>

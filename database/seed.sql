@@ -147,7 +147,7 @@ INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES
 -- Site content
 -- ----------------------------------------------------------------------------
 INSERT INTO site_settings (setting_key, setting_value) VALUES
-('site_name', 'MediConnect'),
+('site_name', 'DoctorApna'),
 ('site_tagline', 'Trusted care, one click away'),
 ('contact_email', 'support@mediconnect.test'),
 ('contact_phone', '+1-555-0111'),

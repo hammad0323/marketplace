@@ -7,7 +7,7 @@ $footerSpecs = mysqli_query(db(), 'SELECT name, slug FROM specializations WHERE 
             <div>
                 <div class="brand" style="color:#fff;margin-bottom:14px;">
                     <span class="brand-mark"><i class="ri-heart-pulse-fill"></i></span>
-                    <?= e(SITE_NAME) ?>
+                    <?= brand_wordmark_html() ?>
                 </div>
                 <p style="max-width:280px;font-size:14px;margin-bottom:20px;"><?= e(get_setting('site_tagline', 'Trusted care, one click away.')) ?></p>
                 <div class="social-row">
@@ -31,9 +31,11 @@ $footerSpecs = mysqli_query(db(), 'SELECT name, slug FROM specializations WHERE 
                     <li><a href="/about">About Us</a></li>
                     <li><a href="/blog">Blog</a></li>
                     <li><a href="/medicines">Medicine Info</a></li>
+                    <li><a href="/pharmacies">Pharmacies</a></li>
                     <li><a href="/contact">Contact</a></li>
                     <li><a href="/faq">FAQs</a></li>
                     <li><a href="/doctor-register">Join as a Doctor</a></li>
+                    <li><a href="/pharmacy-register">Register Your Pharmacy</a></li>
                 </ul>
             </div>
             <div>

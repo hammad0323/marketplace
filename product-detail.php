@@ -9,12 +9,17 @@ if ($slug === '') {
 }
 
 $stmt = mysqli_prepare(db(), "
-    SELECT dp.*, d.slug AS doctor_slug, d.is_premium, d.verification_status, d.rating_avg, d.rating_count,
-        u.full_name AS doctor_name, u.avatar AS doctor_avatar,
+    SELECT dp.*,
+        d.slug AS doctor_slug, d.is_premium, d.verification_status AS doctor_verification_status, d.rating_avg AS doctor_rating_avg, d.rating_count AS doctor_rating_count,
+        du.full_name AS doctor_name, du.avatar AS doctor_avatar,
+        ph.slug AS pharmacy_slug, ph.verification_status AS pharmacy_verification_status, ph.store_name, ph.rating_avg AS pharmacy_rating_avg, ph.rating_count AS pharmacy_rating_count,
+        phu.avatar AS pharmacy_avatar,
         pc.name AS category_name
     FROM doctor_products dp
-    JOIN doctors d ON d.id = dp.doctor_id
-    JOIN users u ON u.id = d.user_id
+    LEFT JOIN doctors d ON d.id = dp.doctor_id AND dp.seller_type = 'doctor'
+    LEFT JOIN users du ON du.id = d.user_id
+    LEFT JOIN pharmacies ph ON ph.id = dp.pharmacy_id AND dp.seller_type = 'pharmacy'
+    LEFT JOIN users phu ON phu.id = ph.user_id
     LEFT JOIN product_categories pc ON pc.id = dp.category_id
     WHERE dp.slug = ? LIMIT 1
 ");
@@ -23,11 +28,22 @@ mysqli_stmt_execute($stmt);
 $product = mysqli_stmt_get_result($stmt)->fetch_assoc();
 mysqli_stmt_close($stmt);
 
-if (!$product || !$product['is_active'] || !$product['is_premium'] || $product['verification_status'] !== 'verified') {
+$sellerOk = $product && (
+    ($product['seller_type'] === 'doctor' && $product['is_premium'] && $product['doctor_verification_status'] === 'verified')
+    || ($product['seller_type'] === 'pharmacy' && $product['pharmacy_verification_status'] === 'verified')
+);
+if (!$product || !$product['is_active'] || !$sellerOk) {
     http_response_code(404);
     require __DIR__ . '/404.php';
     exit;
 }
+
+$isPharmacySeller = $product['seller_type'] === 'pharmacy';
+$sellerName = $isPharmacySeller ? $product['store_name'] : $product['doctor_name'];
+$sellerAvatar = $isPharmacySeller ? $product['pharmacy_avatar'] : $product['doctor_avatar'];
+$sellerUrl = $isPharmacySeller ? pharmacy_url($product['pharmacy_slug']) : doctor_url($product['doctor_slug']);
+$sellerRatingAvg = $isPharmacySeller ? $product['pharmacy_rating_avg'] : $product['doctor_rating_avg'];
+$sellerRatingCount = $isPharmacySeller ? $product['pharmacy_rating_count'] : $product['doctor_rating_count'];
 
 $patient = null;
 if (is_logged_in() && current_role() === 'patient') {
@@ -39,9 +55,11 @@ if (is_logged_in() && current_role() === 'patient') {
     mysqli_stmt_close($stmt);
 }
 
+$sellerColumn = $isPharmacySeller ? 'pharmacy_id' : 'doctor_id';
+$sellerId = $isPharmacySeller ? $product['pharmacy_id'] : $product['doctor_id'];
 $related = mysqli_query(db(), "
     SELECT id, slug, name, price, type, image FROM doctor_products
-    WHERE doctor_id = " . (int) $product['doctor_id'] . " AND is_active = 1 AND id != " . (int) $product['id'] . "
+    WHERE $sellerColumn = " . (int) $sellerId . " AND seller_type = '" . ($isPharmacySeller ? 'pharmacy' : 'doctor') . "' AND is_active = 1 AND id != " . (int) $product['id'] . "
     LIMIT 4
 ")->fetch_all(MYSQLI_ASSOC);
 
@@ -59,7 +77,7 @@ $extraHead = '<script type="application/ld+json">' . json_encode(array_filter([
         '@type' => 'Offer', 'price' => $product['price'], 'priceCurrency' => 'USD',
         'availability' => ($product['type'] === 'product' && (int) $product['stock'] <= 0) ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
     ],
-    'provider' => ['@type' => 'Physician', 'name' => $product['doctor_name']],
+    'provider' => ['@type' => $isPharmacySeller ? 'Pharmacy' : 'Physician', 'name' => $sellerName],
 ])) . '</script>';
 $extraScripts = '<script src="/assets/js/product-checkout.js"></script>';
 require __DIR__ . '/includes/header.php';
@@ -92,17 +110,17 @@ require __DIR__ . '/includes/header.php';
 
                     <div class="divider-fade"></div>
                     <h2 style="font-size:16px;margin-bottom:14px;">Offered by</h2>
-                    <a href="<?= e(doctor_url($product['doctor_slug'])) ?>" class="card" style="padding:16px;display:flex;align-items:center;gap:12px;">
-                        <img src="<?= e(avatar_url($product['doctor_avatar'], $product['doctor_name'])) ?>" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
+                    <a href="<?= e($sellerUrl) ?>" class="card" style="padding:16px;display:flex;align-items:center;gap:12px;">
+                        <img src="<?= e(avatar_url($sellerAvatar, $sellerName)) ?>" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
                         <div>
-                            <strong style="display:block;"><?= e($product['doctor_name']) ?></strong>
-                            <?php if ($product['rating_count'] > 0): ?><span style="font-size:12.5px;color:var(--color-text-muted);"><i class="ri-star-fill" style="color:var(--color-warning);"></i> <?= number_format($product['rating_avg'], 1) ?> (<?= (int) $product['rating_count'] ?> reviews)</span><?php endif; ?>
+                            <strong style="display:block;"><?= e($sellerName) ?></strong>
+                            <?php if ($sellerRatingCount > 0): ?><span style="font-size:12.5px;color:var(--color-text-muted);"><i class="ri-star-fill" style="color:var(--color-warning);"></i> <?= number_format($sellerRatingAvg, 1) ?> (<?= (int) $sellerRatingCount ?> reviews)</span><?php endif; ?>
                         </div>
                     </a>
                 </div>
 
                 <?php if ($related): ?>
-                <h3 style="margin:28px 0 14px;">More from this doctor</h3>
+                <h3 style="margin:28px 0 14px;">More from this <?= $isPharmacySeller ? 'pharmacy' : 'doctor' ?></h3>
                 <div class="grid grid-2 stagger">
                     <?php foreach ($related as $r): ?>
                     <a href="<?= e(product_url($r['slug'])) ?>" class="card card-hover" style="padding:14px;display:flex;gap:12px;align-items:center;" data-reveal>
@@ -170,7 +188,7 @@ require __DIR__ . '/includes/header.php';
                         <div id="checkout-success" style="display:none;text-align:center;padding:12px 0;">
                             <i class="ri-checkbox-circle-fill" style="font-size:40px;color:var(--color-success);margin-bottom:10px;display:block;"></i>
                             <strong style="display:block;margin-bottom:6px;">Order sent!</strong>
-                            <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:16px;">The doctor will confirm your order shortly.</p>
+                            <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:16px;">The seller will confirm your order shortly.</p>
                             <a href="/patient/orders" class="btn btn-outline btn-block">View My Orders</a>
                         </div>
                     <?php endif; ?>

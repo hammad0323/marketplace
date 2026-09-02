@@ -212,6 +212,34 @@ function handle_upload($fileKey, $subdir, array $allowedExt, $maxBytes = 5242880
     return [true, trim($subdir, '/') . '/' . $filename];
 }
 
+/**
+ * Same validation/storage as handle_upload(), for a <input multiple> field
+ * (e.g. name="certificates[]"). Returns a list of [bool ok, pathOrError]
+ * pairs, one per selected file, in selection order. Empty array if no
+ * files were selected at all.
+ */
+function handle_multi_upload($fileKey, $subdir, array $allowedExt, $maxBytes = 5242880)
+{
+    if (empty($_FILES[$fileKey]) || !is_array($_FILES[$fileKey]['name'] ?? null)) {
+        return [];
+    }
+    $count = count($_FILES[$fileKey]['name']);
+    $results = [];
+    $original = $_FILES[$fileKey];
+    for ($i = 0; $i < $count; $i++) {
+        if (($original['error'][$i] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            continue;
+        }
+        $_FILES[$fileKey] = [
+            'name' => $original['name'][$i], 'type' => $original['type'][$i],
+            'tmp_name' => $original['tmp_name'][$i], 'error' => $original['error'][$i], 'size' => $original['size'][$i],
+        ];
+        $results[] = handle_upload($fileKey, $subdir, $allowedExt, $maxBytes);
+    }
+    $_FILES[$fileKey] = $original;
+    return $results;
+}
+
 // ---------------------------------------------------------------------------
 // Formatting
 // ---------------------------------------------------------------------------
@@ -485,6 +513,30 @@ function doctor_url($slug) { return '/doctors/' . $slug; }
 function product_url($slug) { return '/products/' . $slug; }
 function medicine_url($slug) { return '/medicines/' . $slug; }
 function blog_url($slug) { return '/blog/' . $slug; }
+function pharmacy_url($slug) { return '/pharmacies/' . $slug; }
+
+/**
+ * The DoctorApna wordmark for the .brand logo lockup — the "R" in "Doctor"
+ * is rendered as a styled plus/medical-cross so the logo reads "Docto+Apna".
+ * Only for actual logo/brand-mark HTML; plain-text contexts (page <title>,
+ * email subjects, JSON-LD names) should keep using e(SITE_NAME) as normal
+ * text, since a "+" glyph substitution only makes sense visually.
+ */
+function brand_wordmark_html()
+{
+    return 'Docto<span class="brand-plus">+</span>Apna';
+}
+
+/** Where a logged-in user of a given role lands after login/registration. */
+function role_home_url($role)
+{
+    return match ($role) {
+        'doctor' => '/doctor/dashboard',
+        'pharmacy' => '/pharmacy/dashboard',
+        'admin' => '/admin/dashboard',
+        default => '/patient/dashboard',
+    };
+}
 
 /**
  * Canonical URL for a filterable listing page (doctors/products/medicines).
@@ -515,14 +567,19 @@ function filtered_canonical($path, array $params)
 function build_sitemap_xml()
 {
     $db = db();
-    $staticPages = ['/', '/doctors', '/specializations', '/products', '/medicines', '/blog', '/about', '/contact', '/faq', '/privacy-policy', '/terms', '/doctor-register', '/login', '/register'];
+    $staticPages = ['/', '/doctors', '/specializations', '/products', '/medicines', '/pharmacies', '/blog', '/about', '/contact', '/faq', '/privacy-policy', '/terms', '/doctor-register', '/pharmacy-register', '/login', '/register'];
 
     $doctors = mysqli_query($db, "SELECT slug, updated_at FROM doctors WHERE verification_status = 'verified'");
+    $pharmacies = mysqli_query($db, "SELECT slug, updated_at FROM pharmacies WHERE verification_status = 'verified'");
     $specs = mysqli_query($db, 'SELECT slug FROM specializations WHERE is_active = 1');
     $blogPosts = mysqli_query($db, "SELECT slug, published_at FROM blog_posts WHERE status = 'published'");
     $storeProducts = mysqli_query($db, "
-        SELECT dp.slug, dp.created_at FROM doctor_products dp JOIN doctors d ON d.id = dp.doctor_id
-        WHERE dp.is_active = 1 AND d.is_premium = 1 AND d.verification_status = 'verified'
+        SELECT dp.slug, dp.created_at FROM doctor_products dp
+        LEFT JOIN doctors d ON d.id = dp.doctor_id AND dp.seller_type = 'doctor'
+        LEFT JOIN pharmacies ph ON ph.id = dp.pharmacy_id AND dp.seller_type = 'pharmacy'
+        WHERE dp.is_active = 1
+            AND ((dp.seller_type = 'doctor' AND d.is_premium = 1 AND d.verification_status = 'verified')
+                OR (dp.seller_type = 'pharmacy' AND ph.verification_status = 'verified'))
     ");
     $medicines = mysqli_query($db, "SELECT slug, updated_at FROM medicine_info WHERE status = 'published'");
 
@@ -534,6 +591,9 @@ function build_sitemap_xml()
     }
     while ($d = mysqli_fetch_assoc($doctors)) {
         $xml .= '<url><loc>' . e(APP_URL . doctor_url($d['slug'])) . '</loc><lastmod>' . date('Y-m-d', strtotime($d['updated_at'])) . '</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>' . "\n";
+    }
+    while ($ph = mysqli_fetch_assoc($pharmacies)) {
+        $xml .= '<url><loc>' . e(APP_URL . pharmacy_url($ph['slug'])) . '</loc><lastmod>' . date('Y-m-d', strtotime($ph['updated_at'])) . '</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>' . "\n";
     }
     while ($s = mysqli_fetch_assoc($specs)) {
         $xml .= '<url><loc>' . e(APP_URL . '/doctors?specialization=' . $s['slug']) . '</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>' . "\n";

@@ -8,7 +8,10 @@ $minPrice = $_GET['min_price'] ?? '';
 $maxPrice = $_GET['max_price'] ?? '';
 $sort = $_GET['sort'] ?? ($q !== '' ? 'relevance' : 'newest');
 
-$where = ["dp.is_active = 1", "d.is_premium = 1", "d.verification_status = 'verified'"];
+$where = [
+    "dp.is_active = 1",
+    "((dp.seller_type = 'doctor' AND d.is_premium = 1 AND d.verification_status = 'verified') OR (dp.seller_type = 'pharmacy' AND ph.verification_status = 'verified'))",
+];
 $params = [];
 $types = '';
 $boolQuery = '';
@@ -53,7 +56,10 @@ $orderSql = match (true) {
     default => 'dp.created_at DESC',
 };
 
-$countSql = "SELECT COUNT(*) c FROM doctor_products dp JOIN doctors d ON d.id = dp.doctor_id LEFT JOIN product_categories pc ON pc.id = dp.category_id WHERE $whereSql";
+$countSql = "SELECT COUNT(*) c FROM doctor_products dp
+    LEFT JOIN doctors d ON d.id = dp.doctor_id AND dp.seller_type = 'doctor'
+    LEFT JOIN pharmacies ph ON ph.id = dp.pharmacy_id AND dp.seller_type = 'pharmacy'
+    LEFT JOIN product_categories pc ON pc.id = dp.category_id WHERE $whereSql";
 $stmt = mysqli_prepare(db(), $countSql);
 if ($types !== '') mysqli_stmt_bind_param($stmt, $types, ...$params);
 mysqli_stmt_execute($stmt);
@@ -62,10 +68,12 @@ mysqli_stmt_close($stmt);
 
 $pagination = paginate($total, 12);
 
-$listSql = "SELECT dp.*, u.full_name AS doctor_name, d.slug AS doctor_slug, pc.name AS category_name
+$listSql = "SELECT dp.*, u.full_name AS doctor_name, d.slug AS doctor_slug,
+        ph.store_name AS pharmacy_name, ph.slug AS pharmacy_slug, pc.name AS category_name
     FROM doctor_products dp
-    JOIN doctors d ON d.id = dp.doctor_id
-    JOIN users u ON u.id = d.user_id
+    LEFT JOIN doctors d ON d.id = dp.doctor_id AND dp.seller_type = 'doctor'
+    LEFT JOIN users u ON u.id = d.user_id
+    LEFT JOIN pharmacies ph ON ph.id = dp.pharmacy_id AND dp.seller_type = 'pharmacy'
     LEFT JOIN product_categories pc ON pc.id = dp.category_id
     WHERE $whereSql ORDER BY $orderSql LIMIT ? OFFSET ?";
 $stmt = mysqli_prepare(db(), $listSql);
@@ -163,7 +171,11 @@ require __DIR__ . '/includes/header.php';
                         </div>
                         <strong style="display:block;margin-bottom:4px;font-size:14.5px;"><?= e($p['name']) ?></strong>
                         <p style="font-size:12.5px;color:var(--color-text-muted);margin-bottom:8px;"><?= e(excerpt($p['description'] ?? '', 70)) ?></p>
+                        <?php if ($p['seller_type'] === 'pharmacy'): ?>
+                        <span style="font-size:12px;color:var(--color-text-muted);"><i class="ri-capsule-line"></i> <?= e($p['pharmacy_name']) ?></span>
+                        <?php else: ?>
                         <span style="font-size:12px;color:var(--color-text-muted);"><i class="ri-stethoscope-line"></i> <?= e($p['doctor_name']) ?></span>
+                        <?php endif; ?>
                     </div>
                 </a>
                 <?php endforeach; ?>

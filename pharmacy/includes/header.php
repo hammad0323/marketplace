@@ -1,8 +1,12 @@
 <?php
-/** Doctor dashboard shell. Call require_doctor_page() before including this. */
+/** Pharmacy dashboard shell. Call require_pharmacy_page() before including this. */
 $user = current_user();
 $currentPage = basename($_SERVER['SCRIPT_NAME']);
-$doctorSlug = mysqli_fetch_assoc(mysqli_query(db(), 'SELECT slug FROM doctors WHERE user_id = ' . (int) $user['id']))['slug'] ?? '';
+// Pages that already need the full pharmacy row (dashboard/products/profile) fetch it
+// themselves before including this file; reuse that instead of re-querying and
+// clobbering it with a narrower SELECT.
+$pharmacy = $pharmacy ?? mysqli_fetch_assoc(mysqli_query(db(), 'SELECT * FROM pharmacies WHERE user_id = ' . (int) $user['id']));
+$pharmacySlug = $pharmacy['slug'] ?? '';
 $unreadCount = mysqli_fetch_assoc(mysqli_query(db(), 'SELECT COUNT(*) c FROM notifications WHERE user_id = ' . (int) $user['id'] . ' AND is_read = 0'))['c'];
 $pageTitle = ($pageTitle ?? 'Dashboard') . ' — ' . SITE_NAME;
 ?><!DOCTYPE html>
@@ -24,14 +28,9 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — ' . SITE_NAME;
     <aside class="dash-sidebar" id="dash-sidebar">
         <a href="/" class="brand"><span class="brand-mark"><i class="ri-heart-pulse-fill"></i></span> <?= brand_wordmark_html() ?></a>
         <nav class="dash-nav">
-            <a href="/doctor/dashboard" class="<?= $currentPage === 'dashboard.php' ? 'active' : '' ?>"><i class="ri-dashboard-3-line"></i> Dashboard</a>
-            <a href="/doctor/appointments" class="<?= $currentPage === 'appointments.php' ? 'active' : '' ?>"><i class="ri-calendar-check-line"></i> Appointments</a>
-            <a href="/doctor/availability" class="<?= $currentPage === 'availability.php' ? 'active' : '' ?>"><i class="ri-calendar-2-line"></i> Availability</a>
-            <a href="/doctor/messages" class="<?= $currentPage === 'messages.php' ? 'active' : '' ?>"><i class="ri-chat-3-line"></i> Messages</a>
-            <a href="/doctor/patients" class="<?= $currentPage === 'patients.php' ? 'active' : '' ?>"><i class="ri-group-line"></i> My Patients</a>
-            <a href="/doctor/products" class="<?= $currentPage === 'products.php' ? 'active' : '' ?>"><i class="ri-store-2-line"></i> My Store</a>
-            <a href="/doctor/medicines" class="<?= $currentPage === 'medicines.php' ? 'active' : '' ?>"><i class="ri-capsule-line"></i> Medicine Info</a>
-            <a href="/doctor/profile" class="<?= $currentPage === 'profile.php' ? 'active' : '' ?>"><i class="ri-user-line"></i> Profile</a>
+            <a href="/pharmacy/dashboard" class="<?= $currentPage === 'dashboard.php' ? 'active' : '' ?>"><i class="ri-dashboard-3-line"></i> Dashboard</a>
+            <a href="/pharmacy/products" class="<?= $currentPage === 'products.php' ? 'active' : '' ?>"><i class="ri-store-2-line"></i> My Store</a>
+            <a href="/pharmacy/profile" class="<?= $currentPage === 'profile.php' ? 'active' : '' ?>"><i class="ri-user-line"></i> Profile &amp; Certificates</a>
             <div class="nav-section-title">Account</div>
             <a href="/logout"><i class="ri-logout-box-line"></i> Logout</a>
         </nav>
@@ -43,11 +42,11 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — ' . SITE_NAME;
             <div style="display:flex;align-items:center;gap:14px;">
                 <button class="theme-toggle" data-theme-toggle><i class="ri-moon-line"></i></button>
                 <div class="user-menu">
-                    <button class="btn-icon" id="notif-bell-btn" data-dropdown-trigger="doctor-dropdown" style="position:relative;">
+                    <button class="btn-icon" id="notif-bell-btn" data-dropdown-trigger="pharmacy-dropdown" style="position:relative;">
                         <i class="ri-notification-3-line"></i>
                         <span id="notif-badge-dot" style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--color-danger);<?= $unreadCount > 0 ? '' : 'display:none;' ?>"></span>
                     </button>
-                    <div class="dropdown-menu" id="doctor-dropdown" style="min-width:280px;">
+                    <div class="dropdown-menu" id="pharmacy-dropdown" style="min-width:280px;">
                         <div style="padding:8px 12px;font-weight:700;font-size:13px;">Notifications</div>
                         <div id="notif-list">
                         <?php
@@ -64,14 +63,16 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — ' . SITE_NAME;
                     </div>
                 </div>
                 <div class="user-menu">
-                    <button class="user-avatar-btn" data-dropdown-trigger="doctor-user-dropdown">
+                    <button class="user-avatar-btn" data-dropdown-trigger="pharmacy-user-dropdown">
                         <img src="<?= e(avatar_url($user['avatar'], $user['full_name'])) ?>" alt="">
                         <span style="font-size:14px;font-weight:600;"><?= e($user['full_name']) ?></span>
                         <i class="ri-arrow-down-s-line"></i>
                     </button>
-                    <div class="dropdown-menu" id="doctor-user-dropdown">
-                        <a href="<?= e(doctor_url($doctorSlug)) ?>" target="_blank"><i class="ri-external-link-line"></i> View Public Profile</a>
-                        <a href="/doctor/profile"><i class="ri-user-line"></i> Edit Profile</a>
+                    <div class="dropdown-menu" id="pharmacy-user-dropdown">
+                        <?php if (($pharmacy['verification_status'] ?? '') === 'verified' && $pharmacySlug): ?>
+                        <a href="<?= e(pharmacy_url($pharmacySlug)) ?>" target="_blank"><i class="ri-external-link-line"></i> View Public Profile</a>
+                        <?php endif; ?>
+                        <a href="/pharmacy/profile"><i class="ri-user-line"></i> Edit Profile</a>
                         <div class="dropdown-divider"></div>
                         <a href="/logout"><i class="ri-logout-box-line"></i> Logout</a>
                     </div>

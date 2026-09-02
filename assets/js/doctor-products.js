@@ -1,6 +1,10 @@
 (function ($) {
     'use strict';
 
+    var SAVE_URL = window.PRODUCT_SAVE_URL || '/ajax/doctor-product-save.php';
+    var DELETE_URL = window.PRODUCT_DELETE_URL || '/ajax/doctor-product-delete.php';
+    var ORDER_UPDATE_URL = window.ORDER_UPDATE_URL || '/ajax/doctor-order-update.php';
+
     var $modal = $('#product-modal');
     var $form = $('#product-form');
 
@@ -53,7 +57,7 @@
         if (!confirm('Remove this listing? This cannot be undone.')) return;
         var id = $(this).data('id');
         var $card = $(this).closest('[data-product-id]');
-        $.post('/ajax/doctor-product-delete.php', { csrf_token: window.APP.csrfToken, id: id }, null, 'json')
+        $.post(DELETE_URL, { csrf_token: window.APP.csrfToken, id: id }, null, 'json')
             .done(function (res) {
                 if (res.success) { $card.fadeOut(200, function () { $(this).remove(); }); showToast('success', 'Removed', res.message); }
                 else showToast('error', 'Could not remove', res.message);
@@ -64,7 +68,7 @@
         e.preventDefault();
         var formData = new FormData($form[0]);
         var $btn = $form.find('button[type="submit"]').prop('disabled', true).text('Saving…');
-        $.ajax({ url: '/ajax/doctor-product-save.php', type: 'POST', data: formData, processData: false, contentType: false, dataType: 'json' })
+        $.ajax({ url: SAVE_URL, type: 'POST', data: formData, processData: false, contentType: false, dataType: 'json' })
             .done(function (res) {
                 $btn.prop('disabled', false).text('Save Listing');
                 if (res.success) {
@@ -86,7 +90,7 @@
         var $row = $btn.closest('[data-order-id]');
         var id = $row.data('order-id');
         $btn.closest('div').find('button').prop('disabled', true);
-        $.post('/ajax/doctor-order-update.php', { csrf_token: window.APP.csrfToken, id: id, status: action }, null, 'json')
+        $.post(ORDER_UPDATE_URL, { csrf_token: window.APP.csrfToken, id: id, status: action }, null, 'json')
             .done(function (res) {
                 if (res.success) {
                     showToast('success', 'Updated', res.message);

@@ -63,14 +63,16 @@ RewriteCond %{QUERY_STRING} ^slug=([\w-]+)$
 RewriteRule ^medicine-detail$ /medicines/%1? [R=301,L]
 
 # 2) Pretty detail-page URLs: the slug lives in the path, not a query string
-#    (/doctors/{slug}, /products/{slug}, /medicines/{slug}, /blog/{slug}).
-#    These are plain files (doctors.php etc.), not directories, and
-#    /doctor/*, /product/*, /medicine/* are never used, so this can't
-#    collide with the doctor dashboard panel at /doctor/... or anything else.
+#    (/doctors/{slug}, /products/{slug}, /medicines/{slug}, /blog/{slug},
+#    /pharmacies/{slug}). These are plain files (doctors.php etc.), not
+#    directories, and /doctor/*, /product/*, /medicine/*, /pharmacy/* are
+#    never used, so this can't collide with the doctor/pharmacy dashboard
+#    panels at /doctor/... or /pharmacy/....
 RewriteRule ^doctors/([\w-]+)/?$ doctor-profile.php?slug=$1 [L,QSA]
 RewriteRule ^products/([\w-]+)/?$ product-detail.php?slug=$1 [L,QSA]
 RewriteRule ^medicines/([\w-]+)/?$ medicine-detail.php?slug=$1 [L,QSA]
 RewriteRule ^blog/([\w-]+)/?$ blog-post.php?slug=$1 [L,QSA]
+RewriteRule ^pharmacies/([\w-]+)/?$ pharmacy-profile.php?slug=$1 [L,QSA]
 
 # 3) Serve the matching .php file for a clean-URL request, transparently
 #    (no redirect, no visible change to the address bar).

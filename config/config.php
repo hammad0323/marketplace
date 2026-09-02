@@ -26,7 +26,7 @@ define('DB_USER', getenv('DB_USER') ?: 'root');
 define('DB_PASS', getenv('DB_PASS') ?: '');
 define('DB_PORT', (int) (getenv('DB_PORT') ?: 3306));
 
-define('SITE_NAME', 'MediConnect');
+define('SITE_NAME', 'DoctorApna');
 define('APP_ROOT', dirname(__DIR__));
 define('UPLOAD_PATH', APP_ROOT . '/uploads');
 define('UPLOAD_URL', '/uploads');

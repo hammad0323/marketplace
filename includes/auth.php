@@ -43,7 +43,12 @@ function current_profile_id()
     if (!$user) {
         return null;
     }
-    $table = $user['role'] === 'doctor' ? 'doctors' : ($user['role'] === 'patient' ? 'patients' : null);
+    $table = match ($user['role']) {
+        'doctor' => 'doctors',
+        'patient' => 'patients',
+        'pharmacy' => 'pharmacies',
+        default => null,
+    };
     if (!$table) {
         return null;
     }
@@ -115,6 +120,10 @@ function attempt_login($email, $password)
     if ($user['status'] === 'pending' && $user['role'] === 'doctor') {
         record_login_attempt($email, true);
         return [false, 'Your doctor application is still under review. We\'ll email you once verified.', null];
+    }
+    if ($user['status'] === 'pending' && $user['role'] === 'pharmacy') {
+        record_login_attempt($email, true);
+        return [false, 'Your pharmacy registration is still under review. We\'ll email you once verified.', null];
     }
 
     record_login_attempt($email, true);
@@ -256,6 +265,95 @@ function register_doctor_application(array $data)
     return [true, 'Application submitted! Our team will verify your credentials and email you once approved.'];
 }
 
+/** Pharmacy/chemist self-registration — creates a pending account requiring admin verification. */
+function register_pharmacy_application(array $data)
+{
+    $db = db();
+    $fullName = clean($data['full_name'] ?? '');
+    $email = strtolower(clean($data['email'] ?? ''));
+    $phone = clean($data['phone'] ?? '');
+    $password = (string) ($data['password'] ?? '');
+    $storeName = clean($data['store_name'] ?? '');
+    $registrationNumber = clean($data['registration_number'] ?? '');
+    $licenseAuthority = clean($data['license_authority'] ?? '');
+    $address = clean($data['address'] ?? '');
+    $city = clean($data['city'] ?? '');
+    $bio = clean($data['bio'] ?? '');
+
+    if ($fullName === '' || $email === '' || strlen($password) < 8 || $storeName === '' || $registrationNumber === '') {
+        return [false, 'Please fill in all required fields (owner name, email, password, store name, registration number).'];
+    }
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return [false, 'Please enter a valid email address.'];
+    }
+
+    $uploads = handle_multi_upload('certificates', 'certificates', ['jpg', 'jpeg', 'png', 'pdf'], 5 * 1024 * 1024);
+    if (!$uploads) {
+        return [false, 'Please upload at least one certificate (e.g. your drug license) to support your registration number.'];
+    }
+    foreach ($uploads as [$ok, $result]) {
+        if (!$ok) {
+            return [false, 'Certificate upload failed: ' . $result];
+        }
+    }
+
+    $stmt = mysqli_prepare($db, 'SELECT id FROM users WHERE email = ? LIMIT 1');
+    mysqli_stmt_bind_param($stmt, 's', $email);
+    mysqli_stmt_execute($stmt);
+    if (mysqli_stmt_get_result($stmt)->fetch_assoc()) {
+        mysqli_stmt_close($stmt);
+        foreach ($uploads as [, $path]) {
+            @unlink(UPLOAD_PATH . '/' . $path);
+        }
+        return [false, 'An account with this email already exists.'];
+    }
+    mysqli_stmt_close($stmt);
+
+    $hash = password_hash($password, PASSWORD_DEFAULT);
+    mysqli_begin_transaction($db);
+    try {
+        $stmt = mysqli_prepare($db, 'INSERT INTO users (role, full_name, email, phone, password_hash, status) VALUES (\'pharmacy\', ?, ?, ?, ?, \'pending\')');
+        mysqli_stmt_bind_param($stmt, 'ssss', $fullName, $email, $phone, $hash);
+        mysqli_stmt_execute($stmt);
+        $userId = mysqli_insert_id($db);
+        mysqli_stmt_close($stmt);
+
+        $slug = unique_slug($db, 'pharmacies', $storeName);
+        $stmt = mysqli_prepare($db, 'INSERT INTO pharmacies (user_id, slug, store_name, registration_number, license_authority, address, city, bio, verification_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'pending\')');
+        mysqli_stmt_bind_param($stmt, 'isssssss', $userId, $slug, $storeName, $registrationNumber, $licenseAuthority, $address, $city, $bio);
+        mysqli_stmt_execute($stmt);
+        $pharmacyId = mysqli_insert_id($db);
+        mysqli_stmt_close($stmt);
+
+        $certStmt = mysqli_prepare($db, 'INSERT INTO pharmacy_certificates (pharmacy_id, title, file_path) VALUES (?, ?, ?)');
+        foreach ($uploads as $index => [, $path]) {
+            $title = 'Certificate ' . ($index + 1);
+            mysqli_stmt_bind_param($certStmt, 'iss', $pharmacyId, $title, $path);
+            mysqli_stmt_execute($certStmt);
+        }
+        mysqli_stmt_close($certStmt);
+
+        mysqli_commit($db);
+    } catch (Exception $e) {
+        mysqli_rollback($db);
+        foreach ($uploads as [, $path]) {
+            @unlink(UPLOAD_PATH . '/' . $path);
+        }
+        error_log('register_pharmacy_application failed: ' . $e->getMessage());
+        return [false, 'Something went wrong submitting your registration. Please try again.'];
+    }
+
+    log_activity($userId, 'pharmacy', 'apply', 'Pharmacy registration submitted, pending verification');
+    notify_admins('pharmacy_application', 'New pharmacy registration', $storeName . ' applied to join as a pharmacy and is awaiting verification.', '/admin/pharmacies?status=pending');
+
+    send_email($email, $fullName, 'Registration received — ' . get_setting('site_name', SITE_NAME),
+        email_template('Thanks for registering, ' . $storeName . '!',
+            '<p>We\'ve received your pharmacy registration and our team is reviewing your license and certificates now. '
+            . 'You\'ll get an email as soon as your store is verified and can start selling.</p>'));
+
+    return [true, 'Registration submitted! Our team will verify your details and email you once approved.'];
+}
+
 function logout_user()
 {
     if (!empty($_SESSION['user_id'])) {
@@ -300,6 +398,11 @@ function require_patient_page()
 function require_doctor_page()
 {
     require_role_page('doctor');
+}
+
+function require_pharmacy_page()
+{
+    require_role_page('pharmacy');
 }
 
 /** For AJAX endpoints: same role check as require_role_page(), but responds with JSON instead of redirecting. */

@@ -12,7 +12,5 @@ if (!$success) {
     json_response(false, [], $message);
 }
 
-$redirect = get_and_clear_intended_url(
-    $userRow['role'] === 'doctor' ? '/doctor/dashboard' : ($userRow['role'] === 'admin' ? '/admin/dashboard' : '/patient/dashboard')
-);
+$redirect = get_and_clear_intended_url(role_home_url($userRow['role']));
 json_response(true, ['redirect' => $redirect], $message);

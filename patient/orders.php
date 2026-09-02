@@ -5,9 +5,14 @@ require_patient_page();
 $patientId = current_profile_id();
 
 $orders = mysqli_query(db(), "
-    SELECT o.*, u.full_name AS doctor_name, u.avatar AS doctor_avatar, d.slug AS doctor_slug,
+    SELECT o.*,
+        du.full_name AS doctor_name, du.avatar AS doctor_avatar, d.slug AS doctor_slug,
+        ph.store_name AS pharmacy_name, ph.slug AS pharmacy_slug,
         (SELECT GROUP_CONCAT(CONCAT(oi.quantity, 'x ', dp.name) SEPARATOR ', ') FROM order_items oi JOIN doctor_products dp ON dp.id = oi.product_id WHERE oi.order_id = o.id) AS items_label
-    FROM orders o JOIN doctors d ON d.id = o.doctor_id JOIN users u ON u.id = d.user_id
+    FROM orders o
+    LEFT JOIN doctors d ON d.id = o.doctor_id AND o.seller_type = 'doctor'
+    LEFT JOIN users du ON du.id = d.user_id
+    LEFT JOIN pharmacies ph ON ph.id = o.pharmacy_id AND o.seller_type = 'pharmacy'
     WHERE o.patient_id = $patientId
     ORDER BY o.created_at DESC
 ");
@@ -24,11 +29,19 @@ require __DIR__ . '/includes/header.php';
     <div class="card" style="padding:22px;" data-reveal>
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
             <div style="display:flex;gap:10px;align-items:center;">
+                <?php if ($o['seller_type'] === 'pharmacy'): ?>
+                <div style="width:38px;height:38px;border-radius:50%;background:var(--gradient-primary);color:#fff;display:flex;align-items:center;justify-content:center;"><i class="ri-capsule-fill"></i></div>
+                <div>
+                    <a href="<?= e(pharmacy_url($o['pharmacy_slug'])) ?>" style="font-weight:700;"><?= e($o['pharmacy_name']) ?></a>
+                    <div style="font-size:12px;color:var(--color-text-muted);"><?= e($o['order_number']) ?></div>
+                </div>
+                <?php else: ?>
                 <img src="<?= e(avatar_url($o['doctor_avatar'], $o['doctor_name'])) ?>" style="width:38px;height:38px;border-radius:50%;object-fit:cover;">
                 <div>
                     <a href="<?= e(doctor_url($o['doctor_slug'])) ?>" style="font-weight:700;"><?= e($o['doctor_name']) ?></a>
                     <div style="font-size:12px;color:var(--color-text-muted);"><?= e($o['order_number']) ?></div>
                 </div>
+                <?php endif; ?>
             </div>
             <span class="status-pill status-<?= e($o['status']) ?>"><?= ucfirst($o['status']) ?></span>
         </div>

@@ -3,7 +3,7 @@ require __DIR__ . '/config/config.php';
 
 if (is_logged_in()) {
     $role = current_role();
-    redirect($role === 'doctor' ? '/doctor/dashboard' : ($role === 'admin' ? '/admin/dashboard' : '/patient/dashboard'));
+    redirect(role_home_url($role));
 }
 
 $pageTitle = 'Create Account — ' . SITE_NAME;
