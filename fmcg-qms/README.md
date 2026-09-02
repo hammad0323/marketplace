@@ -72,6 +72,17 @@ fmcg-qms/
    the tool library, default email templates, default KPI weights, compliance frameworks and
    the Super Admin account), never business data.
 
+   Or, to run all four in one shot (e.g. on a shared-hosting phpMyAdmin/CLI import where
+   you can only run a single file), use the combined installer instead — it is the exact
+   concatenation of the four files above, in the same order, and creates + uses the
+   `fmcg_qms` database itself:
+   ```bash
+   mysql -u root -p < database/complete_install.sql
+   ```
+   To install this way without demo business data, open `complete_install.sql` and delete
+   everything from the `PART 4 / 4: SEED DEMO DATA` marker to the end of the file before
+   running it.
+
 2. Set the database credentials via environment variables, or edit the defaults directly in
    `includes/config.php`:
    ```
