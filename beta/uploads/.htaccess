@@ -1,0 +1,9 @@
+# Never execute PHP (or any script) uploaded into this folder.
+php_flag engine off
+
+<FilesMatch "\.(php|php[3-8]?|phtml|pl|py|cgi|asp|sh)$">
+  Require all denied
+</FilesMatch>
+
+Options -Indexes -ExecCGI
+AddHandler cgi-script .php .php3 .php4 .php5 .php7 .phtml .pl .py .cgi .asp .sh

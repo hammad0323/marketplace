@@ -1,0 +1,18 @@
+DirectoryIndex index.php
+
+# Friendly aliases for sitemap/robots (still work as .php if rewrite is unavailable)
+RewriteEngine On
+RewriteBase /beta/
+
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
+RewriteRule ^robots\.txt$ robots.php [L]
+
+# Block direct access to sensitive folders
+RewriteRule ^config/ - [F,L]
+RewriteRule ^database/ - [F,L]
+
+<FilesMatch "\.(sql|log)$">
+  Require all denied
+</FilesMatch>
+
+Options -Indexes

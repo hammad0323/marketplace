@@ -1,238 +1,132 @@
-# Marketplace — Multi Marketplace Architecture
+# Beglet — Multi-Vendor E-Commerce Marketplace
 
-Vanilla PHP (no framework, no classes). **Every page is its own real
-`.php` file sitting directly in the project root** — there are no
-subfolders to upload correctly, no router, no build step. Upload the
-whole folder, edit four lines in `config.php`, import `database.sql`,
-done.
+Beglet is a full multi-vendor marketplace platform built with **Core PHP + MySQLi**
+(no framework, no ORM, no OOP application architecture) — designed to run in a
+`/beta/` subdirectory, e.g. `https://www.beglet.com/beta/`.
 
-This build lays the **core architecture** for running two distinct
-marketplace experiences — the **Artisan Marketplace** and **Business
-Shops** — plus a single platform-owned **Official Store**, under one
-site and one admin panel.
+## What's included
 
-Out of scope (tracked as future work): the enterprise SEO module, the
-centralized email notification engine, and the full admin CRUD panel
-over every entity. See "What's deferred" below.
+- **Four roles**: Admin, Shop Owner, Shop Staff (with granular permissions), Customer
+- Category/subcategory catalog with per-category commission rates
+- Product catalog: simple/variable/digital/physical products, galleries, variations
+- Cart → Checkout → **automatic multi-vendor order splitting** (one parent order,
+  one shop-order per vendor, per-line-item commission calculated by category)
+- Commission system: invoices, due dates, paid/pending/overdue tracking, a
+  30-day-overdue shop lockout, and a manual payment-proof submission + admin
+  approval workflow
+- Shop Staff accounts with a permission matrix and a global (admin-configurable)
+  employee limit per shop
+- Shop builder: homepage-style sections per shop (featured/latest/best-selling/
+  custom product carousels) with product selection
+- Admin dashboard with Chart.js graphs (sales, orders, commission), reports with
+  CSV export, banners, homepage section builder, payment method configuration
+- SEO: per-entity meta/OG/Twitter fields, a transparent 0–100 SEO score with
+  actionable tips, FAQ (AEO) fields with FAQPage JSON-LD, GEO fields (entity
+  description/key facts), `sitemap.php`/`robots.php`, and JSON-LD on
+  homepage/product pages
+- Google OAuth sign-in for **customers only** (admin/vendor/staff always use
+  email+password)
+- CSRF protection, prepared statements everywhere, image upload validation
+  (extension + MIME + `getimagesize`), session-based role guards
 
-## Deploy in 3 steps
+## Folder structure
 
-1. **Upload everything** — the whole project as one folder, to your
-   site's document root (e.g. `public_html/`, or an addon domain's
-   folder). There is nothing to extract into a subfolder and nothing
-   to point a document root at — `index.php` is right there.
-2. **Edit `config.php`** — open it and change these four lines to your
-   real database details (get them from cPanel → MySQL Databases):
+```
+beglet/
+├── beta/                 ← point your domain/subdirectory here
+│   ├── config/            config.php, database.php, constants.php, functions.php
+│   ├── includes/          header/footer/navbar/alerts/seo + dashboard chrome
+│   ├── actions/           POST/AJAX endpoints (auth, cart, checkout, wishlist, review...)
+│   ├── admin/              admin panel (categories, products, shops, orders,
+│   │                       commissions, payments, banners, seo, settings, reports...)
+│   ├── shop/               shop owner + staff panel (products, orders, staff,
+│   │                       commissions, payments, shop design/sections)
+│   ├── employee/           thin staff-facing wrapper around shop/ pages
+│   ├── customer/           customer dashboard, orders, addresses, reviews
+│   ├── uploads/            product/shop/category/banner images (PHP execution disabled)
+│   ├── assets/             css/, js/, images/
+│   └── index.php, product.php, category.php, shop.php, cart.php, checkout.php, ...
+└── database/
+    └── beglet.sql          full schema + demo data (import this one file)
+```
+
+## Installation
+
+1. Upload the whole project (or just the `beta/` and `database/` folders) to your host.
+2. Create a MySQL database and import `database/beglet.sql` (phpMyAdmin → Import,
+   or `mysql -u youruser -p yourdb < database/beglet.sql`).
+3. Edit `beta/config/database.php` with your DB host/name/user/password.
+4. Edit `beta/config/constants.php` and set `BASE_URL` to your real domain, e.g.
    ```php
-   define('DB_HOST', 'localhost');
-   define('DB_NAME', 'your_database_name');
-   define('DB_USER', 'your_database_user');
-   define('DB_PASS', 'your_database_password');
+   define('BASE_URL', 'https://www.beglet.com/beta/');
    ```
-   That is the only file you need to edit.
-3. **Import `database.sql`** — cPanel → phpMyAdmin → select your
-   database → Import tab → choose `database.sql` → Go. One file, every
-   table and all seed data, done in one import.
+   (On `localhost`, the app auto-detects its own path so it works out of the box
+   for local testing — you only need to set `BASE_URL` for the live/production URL.)
+5. Make sure `beta/uploads/` is writable by the web server.
+6. Open `https://www.beglet.com/beta/`.
 
-Visit your domain. If something's wrong, `config.php` shows a plain-
-English error (bad DB credentials, or the import didn't run) instead
-of a blank page or PHP warning wall.
+No other file needs to be touched to change the install path — every internal
+link is built from `base_url()` / `asset_url()` / `admin_url()` / `shop_url()` /
+`employee_url()` / `customer_url()` in `config/functions.php`.
 
-### Demo logins (change before anyone else can reach the site)
+### Demo accounts (password for all: `Demo@1234`)
 
-- Admin: `admin@marketplace.test` / `admin123` at `/admin-login.php`
-- Official Store vendor: `store@marketplace.test` / `admin123`
+| Role | Email |
+|---|---|
+| Admin | `admin@beglet.com` |
+| Shop Owner (Tech Store) | `tech@beglet.com` |
+| Shop Owner (Fashion Hub) | `fashion@beglet.com` |
+| Shop Owner (Home Store) | `home@beglet.com` |
+| Shop Owner (Beauty Store — payment overdue) | `beauty@beglet.com` |
+| Shop Staff (Tech Store) | `usman.staff@beglet.com` |
+| Shop Staff (Fashion Hub) | `hina.staff@beglet.com` |
+| Customer | `ali.khan@example.com` |
 
-There's no "change password" screen yet — generate a new hash with
-`php -r "echo password_hash('yournewpassword', PASSWORD_DEFAULT);"`
-and update the `password_hash` column for that row via phpMyAdmin.
+Admin panel: `/beta/admin/login.php` · Vendor/Staff: `/beta/shop/login.php` ·
+Customer: `/beta/login.php`
 
-## Why it's flat
+**Change these passwords before deploying publicly.**
 
-Earlier versions of this project split code across `pages/`, `admin/`,
-`includes/`, `data/`, etc., with a router matching clean URLs like
-`/artisan/wooden-crafts` to files in those folders. That broke on
-upload — if even one subfolder didn't transfer completely (which is
-easy to have happen with a File Manager zip-extract or a partial FTP
-upload), the router would throw a fatal error trying to `require` a
-file that wasn't there, taking down pages that had nothing to do with
-the missing file.
+## Configuring things from the Admin panel
 
-This version trades pretty URLs for reliability: every page is
-reachable at its own literal filename
-(`/artisan.php`, `/product.php?slug=...`, `/vendor-dashboard.php`,
-...), so there's no routing layer that depends on the whole folder
-tree being intact. If a file is ever missing, only that one page 404s
-— nothing else breaks.
+- **Site name, logo, favicon, description, colors, currency, footer/copyright**:
+  Admin → Settings
+- **Employee limit per shop** and **commission due days**: Admin → Settings
+  (a per-shop override is stored in `shops.employee_limit_override`, settable
+  directly in the database if you need a one-off exception)
+- **Commission rate per category** (percentage or fixed): Admin → Categories → Edit
+- **Payment methods** (enable/disable, instructions, bank details): Admin → Payments → Manage Payment Methods
+- **Homepage sections** (enable/disable, reorder, heading, item count): Admin → SEO → *(Homepage Sections card)* or Admin sidebar → Homepage Sections
+- **SEO / AEO / GEO** per homepage/category/shop/product, with a live-computed
+  score and tips: Admin → SEO
+- **Sitemap / robots.txt**: Admin → SEO → Sitemap & Robots card (or visit
+  `/beta/sitemap.php` and `/beta/robots.php` directly)
+- **Google OAuth** (customer login only): Admin → Settings → Google OAuth —
+  set the Client ID/Secret and whitelist the redirect URI shown on that page
+- **Maintenance mode**: Admin → Settings
 
-## What's in the project
+## Notes on scope
 
-```
-index.php            → requires home.php (the front page)
-config.php            THE file you edit — DB credentials + bootstrap
-                       (starts the session, connects to the DB, loads
-                       functions.php). Refuses direct access on its own.
-functions.php          every function used site-wide, in one file:
-                       generic helpers, session/auth, the notification
-                       log seam, and all database queries (grouped by
-                       table with a comment divider) — all prefixed
-                       mp_ to avoid name collisions
-header.php, footer.php public-site chrome (nav, flash messages,
-                       footer), theme-aware (main / artisan / business)
-admin-header.php, admin-footer.php   admin panel chrome
-product-card.php       small reusable product tile, used by every
-                       listing page
-404.php                 fully self-contained — no dependency on
-                       config.php or anything else, so it can never
-                       itself be the thing that's broken
+This is a complete, working implementation of the full spec's core flows
+(auth for all 4 roles, catalog, cart/checkout with real multi-vendor order
+splitting and per-category commission math, commission payment + overdue
+shop lockout, staff permissions, shop builder, SEO/AEO/GEO with a real
+scoring algorithm, sitemap/robots, admin CSV exports, Chart.js dashboards).
+A few pieces are intentionally simple rather than exhaustive given the size
+of the spec — e.g. the SEO score uses a transparent, documented heuristic
+rather than a black-box algorithm; the shop-section builder's drag-reorder
+is a lightweight HTML5 drag/drop rather than a full library; live gateway
+integrations (Stripe/JazzCash/Easypaisa) are wired into the payment-methods
+architecture (enable/configure per method) but only Cash on Delivery, Self
+Collection and Bank Transfer are usable end-to-end out of the box, since the
+others need real merchant credentials.
 
-home.php, artisan.php, artisan-category.php, artisan-store.php,
-business.php, business-category.php, business-store.php,
-official-store.php, product.php, category.php, search.php
-                        public pages
+## Tested
 
-vendor-login.php, vendor-register.php, vendor-logout.php,
-vendor-dashboard.php, vendor-profile.php, vendor-categories.php,
-vendor-products.php, vendor-product-form.php
-                        vendor auth + the vendor's own dashboard
-
-customer-login.php, customer-register.php, customer-logout.php,
-follow.php              customer auth + following a vendor
-
-admin-login.php, admin-logout.php, admin-dashboard.php,
-admin-vendors.php, admin-vendor-approve.php, admin-vendor-reject.php,
-admin-category-requests.php, admin-category-decide.php,
-admin-category-toggle.php
-                        the admin panel
-
-database.sql            every CREATE TABLE + all seed data, one file
-assets/                 css/, js/, img/ — the only other web-facing folder
-uploads/                reserved for future file-upload features
-logs/                   mp_notify() writes notifications.log here
-```
-
-A page looks like a classic PHP script — no template layer, no
-separate "view", logic and HTML together in one file:
-
-```php
-<?php
-require __DIR__ . '/config.php';
-
-$vendor = mp_require_vendor();
-$products = mp_products_by_vendor($vendor['id']);
-
-$pageTitle = 'My Products';
-$theme = 'main';
-require __DIR__ . '/header.php';
-?>
-<h1>My Products</h1>
-<?php foreach ($products as $product): mp_render_product_card($product); endforeach; ?>
-<?php require __DIR__ . '/footer.php'; ?>
-```
-
-## What's actually web-facing
-
-Since every page is a real file, there's no "internal" folder that
-routing keeps hidden. Two things are worth knowing:
-
-- `config.php` refuses to run if it's requested directly (checked in
-  PHP itself, at the top of the file — this works even if `.htaccess`
-  isn't respected by your host, unlike relying on server config alone).
-- `.htaccess` adds an optional second layer blocking direct access to
-  `config.php`, `functions.php`, and any `.sql` file (so `database.sql`
-  isn't downloadable once imported) — but the site works correctly
-  even if `.htaccess`/`mod_rewrite` isn't honored at all, since nothing
-  here depends on URL rewriting.
-
-Verified end-to-end against a real MariaDB 10.11 instance and PHP's
-built-in server: `database.sql` imports cleanly with a single
-`mysql < database.sql` (equivalent to phpMyAdmin's Import), and the
-full flow — vendor registration → admin approval → category approval
-→ product creation (including per-category limit enforcement) → store
-pages → global search → follow → CSRF protection — all pass. Also
-caught and fixed a real encoding bug this way: emoji in the marketplace
-badges (🏺 🏪 ⭐) got corrupted on import by clients that don't default
-to `utf8mb4` (including the plain `mysql` CLI) — fixed by adding
-`SET NAMES utf8mb4;` as the first line of `database.sql`.
-
-## Design system
-
-Every page uses a shared, modern design system defined with CSS custom
-properties in `assets/css/global.css` (colors, spacing, shadows, border
-radius, easing), plus a theme file per marketplace
-(`artisan-theme.css` — warm terracotta/gold with Playfair Display serif
-headings; `business-theme.css` — blue/cyan; `admin.css` — calm, no
-animation on purpose).
-
-- **Parallax hero sections**: each landing/hero (`home.php`,
-  `artisan.php`, `business.php`, `official-store.php`) has a
-  `.parallax-hero` / `.parallax-hero-bg` layer that moves at a fraction
-  of scroll speed for a depth effect. Implemented with
-  `transform: translate3d()` driven by `requestAnimationFrame` in
-  `assets/js/main.js` — not `background-attachment: fixed`, so it's
-  smooth on mobile too.
-- **Scroll-reveal animations**: sections and cards fade/slide into
-  view via `IntersectionObserver` (`.reveal` → `.reveal-visible`).
-  This degrades safely on purpose — see below.
-- **Progressive enhancement, not a dependency**: `.reveal` is only
-  hidden by CSS once `assets/js/main.js` has confirmed it's actually
-  running (an inline script sets `class="js"` on `<html>` before first
-  paint). If JavaScript is blocked, errors, or hasn't loaded yet,
-  every `.reveal` element is simply visible with no animation — content
-  can never end up permanently hidden because of a script failure.
-  Motion also fully respects `prefers-reduced-motion`.
-- **External dependency added by this design**: Google Fonts (Inter,
-  Plus Jakarta Sans, Playfair Display), loaded via `<link>` in
-  `header.php`. Nothing else in the project calls out to an external
-  service — if you need a fully offline/self-hosted build, swap that
-  `<link>` for local font files.
-
-## Architecture decisions worth knowing
-
-- **Marketplace types are data, not code.** `marketplace_types` is a
-  lookup table (`artisan` / `business` / `official`); a new marketplace
-  type is a new row, not a new set of `if` branches.
-- **Categories are scoped per marketplace type** and share one
-  auto-increment ID space. Anywhere a category ID comes from user
-  input (vendor registration, category requests), it's filtered
-  through `mp_filter_category_ids_by_marketplace()` before being
-  trusted — otherwise a business vendor could end up with a request
-  against an artisan category.
-- **Vendor approval workflow** is enforced in the pages themselves,
-  not just the UI: `vendor-product-form.php` blocks product creation
-  server-side unless `vendor.status = approved`, and the store pages
-  show a 404 for a vendor that isn't approved — so there's no way to
-  make a pending store "go live" by hitting a URL directly.
-- **Category approval workflow**: a Business Shop vendor's submitted
-  product `category_id` is checked against
-  `mp_approved_category_ids_for_vendor()` (status = approved **and**
-  `is_enabled = 1`) and, if the admin set a `usage_limit`, against the
-  vendor's current product count in that category — enforced at
-  product-creation time, verified in testing (limit of 1 correctly
-  blocked a 2nd product).
-- **Notifier seam, not an email system**: every point the vendor
-  onboarding flow should "send an email" calls `mp_notify()`, which
-  writes to `logs/notifications.log`. It's a drop-in seam for a future
-  centralized email engine — no page will need to change when that's
-  built.
-- **Customers/follow/ratings**: a minimal `customers` table plus
-  `vendor_follows` and `vendor_ratings` back the "Follow Artist" and
-  "Artist/Store Ratings" features. Full customer commerce (orders,
-  checkout, rewards) is not part of this build.
-
-## What's deferred to future work
-
-- **Enterprise SEO module** — meta management, sitemaps, structured
-  data, vendor SEO score.
-- **Centralized email notification engine** — templates, actual
-  sending (currently stubbed via `mp_notify()`).
-- **Full admin CRUD panel** — this build ships only the two admin
-  screens the architecture depends on (vendor approval, category
-  approval). Products/orders/CMS/banners/reports admin management is
-  separate work.
-- **Vendor logo/banner file uploads** — profile forms currently take
-  text fields and (for products) pasted image URLs; a real upload
-  pipeline is future work (`uploads/` is reserved for it).
-- **Clean URLs** — traded away for deployment reliability, see "Why
-  it's flat" above. Can be reintroduced later via `.htaccess` rewrites
-  once the site is confirmed working, without changing any PHP logic.
+`database/beglet.sql` was imported into a real MariaDB 10.11 instance and the
+full app was exercised end-to-end against PHP's built-in server: admin login →
+dashboard stats/graphs; customer login → add products from two different
+shops to cart → checkout → verified the parent order was split into two
+`shop_orders` with correct per-item, per-category commission amounts and
+vendor earnings; shop owner and shop staff login with permission-gated
+access; SEO score page; sitemap/robots output.
