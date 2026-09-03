@@ -524,7 +524,7 @@ function pharmacy_url($slug) { return '/pharmacies/' . $slug; }
  */
 function brand_wordmark_html()
 {
-    return 'Docto<span class="brand-plus">+</span>Apna';
+    return '<span class="brand-text">Docto<span class="brand-plus">+</span>Apna</span>';
 }
 
 /** Where a logged-in user of a given role lands after login/registration. */

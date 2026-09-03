@@ -186,7 +186,7 @@ function register_patient($fullName, $email, $phone, $password)
             '<p>Your account is ready. Search verified doctors, compare fees and reviews, and book your first appointment in minutes.</p>',
             'Find a Doctor', APP_URL . '/doctors'));
 
-    return [true, 'Welcome to MediConnect, ' . $fullName . '!'];
+    return [true, 'Welcome to ' . SITE_NAME . ', ' . $fullName . '!'];
 }
 
 /** Doctor self-registration — creates a pending account requiring admin verification. */

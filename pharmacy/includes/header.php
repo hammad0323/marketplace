@@ -40,7 +40,6 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — ' . SITE_NAME;
             <button class="btn-icon sidebar-toggle" data-sidebar-toggle><i class="ri-menu-3-line"></i></button>
             <h2 style="font-size:19px;"><?= e($heading ?? 'Dashboard') ?></h2>
             <div style="display:flex;align-items:center;gap:14px;">
-                <button class="theme-toggle" data-theme-toggle><i class="ri-moon-line"></i></button>
                 <div class="user-menu">
                     <button class="btn-icon" id="notif-bell-btn" data-dropdown-trigger="pharmacy-dropdown" style="position:relative;">
                         <i class="ri-notification-3-line"></i>
@@ -64,7 +63,7 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — ' . SITE_NAME;
                 </div>
                 <div class="user-menu">
                     <button class="user-avatar-btn" data-dropdown-trigger="pharmacy-user-dropdown">
-                        <img src="<?= e(avatar_url($user['avatar'], $user['full_name'])) ?>" alt="">
+                        <img src="<?= e(avatar_url($user['avatar'], $pharmacy['store_name'] ?? $user['full_name'])) ?>" alt="">
                         <span style="font-size:14px;font-weight:600;"><?= e($user['full_name']) ?></span>
                         <i class="ri-arrow-down-s-line"></i>
                     </button>

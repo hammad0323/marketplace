@@ -25,7 +25,7 @@ require __DIR__ . '/includes/header.php';
 <div class="split-sidebar-left">
     <div class="card" style="padding:28px;text-align:center;" data-reveal>
         <div style="position:relative;width:100px;height:100px;margin:0 auto 16px;">
-            <img id="avatar-preview" src="<?= e(avatar_url($user['avatar'], $user['full_name'])) ?>" style="width:100px;height:100px;border-radius:50%;object-fit:cover;">
+            <img id="avatar-preview" src="<?= e(avatar_url($user['avatar'], $pharmacy['store_name'])) ?>" style="width:100px;height:100px;border-radius:50%;object-fit:cover;">
             <label for="avatar-input" style="position:absolute;bottom:0;right:0;width:32px;height:32px;border-radius:50%;background:var(--gradient-primary);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow-md);">
                 <i class="ri-camera-line" style="font-size:15px;"></i>
             </label>

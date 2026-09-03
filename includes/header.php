@@ -60,16 +60,20 @@ $user = current_user();
             <span class="brand-mark"><i class="ri-heart-pulse-fill"></i></span>
             <?= brand_wordmark_html() ?>
         </a>
+        <?php $shopActive = in_array(basename($_SERVER['SCRIPT_NAME']), ['products.php', 'product-detail.php', 'medicines.php', 'medicine-detail.php', 'specializations.php'], true); ?>
         <nav class="nav-links">
             <a href="/" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'index.php' ? 'active' : '' ?>">Home</a>
             <a href="/doctors" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'doctors.php' ? 'active' : '' ?>">Find Doctors</a>
-            <a href="/specializations" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'specializations.php' ? 'active' : '' ?>">Specializations</a>
-            <a href="/products" class="<?= in_array(basename($_SERVER['SCRIPT_NAME']), ['products.php', 'product-detail.php'], true) ? 'active' : '' ?>">Products</a>
-            <a href="/medicines" class="<?= in_array(basename($_SERVER['SCRIPT_NAME']), ['medicines.php', 'medicine-detail.php'], true) ? 'active' : '' ?>">Medicines</a>
             <a href="/pharmacies" class="<?= in_array(basename($_SERVER['SCRIPT_NAME']), ['pharmacies.php', 'pharmacy-profile.php'], true) ? 'active' : '' ?>">Pharmacies</a>
+            <div class="nav-dropdown">
+                <button type="button" class="nav-dropdown-trigger<?= $shopActive ? ' active' : '' ?>" data-dropdown-trigger="shop-dropdown">Shop <i class="ri-arrow-down-s-line"></i></button>
+                <div class="dropdown-menu" id="shop-dropdown">
+                    <a href="/products"><i class="ri-capsule-line"></i> Products &amp; Services</a>
+                    <a href="/medicines"><i class="ri-medicine-bottle-line"></i> Medicine Info</a>
+                    <a href="/specializations"><i class="ri-stethoscope-line"></i> Specializations</a>
+                </div>
+            </div>
             <a href="/blog" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'blog.php' ? 'active' : '' ?>">Blog</a>
-            <a href="/about" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'about.php' ? 'active' : '' ?>">About</a>
-            <a href="/contact" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'contact.php' ? 'active' : '' ?>">Contact</a>
             <?php if (!$user): ?>
             <div class="nav-mobile-auth">
                 <button class="btn btn-ghost btn-sm btn-block" onclick="openAuthModal('login')">Log In</button>
@@ -78,7 +82,6 @@ $user = current_user();
             <?php endif; ?>
         </nav>
         <div class="nav-actions">
-            <button class="theme-toggle" data-theme-toggle aria-label="Toggle dark mode"><i class="ri-moon-line"></i></button>
             <?php if ($user): ?>
                 <div class="user-menu">
                     <button class="user-avatar-btn" data-dropdown-trigger="user-dropdown">

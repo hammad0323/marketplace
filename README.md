@@ -63,10 +63,7 @@ what's already here.
   all-appointments view, specialization CRUD, SMTP/email settings with a
   send-test-email button, site settings, CMS content editor (About/Privacy/
   Terms), FAQ manager, contact-message inbox, activity log.
-- **Theme**: light mode is the fixed, unconditional default for every new
-  visitor — the OS/browser dark-mode preference is never read. A visitor who
-  explicitly toggles dark mode has that remembered (localStorage) for their
-  next visit only; nothing is ever pushed into dark mode automatically.
+- **Theme**: light mode only, sitewide — there is no dark mode toggle.
 - **Doctor storefront**: Premium doctors can list physical products and
   bookable service packages; each listing gets its own public detail page
   with an inline checkout for registered patients. A site-wide `/products`

@@ -84,7 +84,7 @@ require __DIR__ . '/includes/header.php';
             <div class="grid grid-3 stagger">
                 <?php foreach ($pharmacies as $p): ?>
                 <a href="<?= e(pharmacy_url($p['slug'])) ?>" class="card card-hover" style="padding:20px;display:block;" data-reveal>
-                    <div style="width:52px;height:52px;border-radius:14px;background:var(--gradient-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px;"><i class="ri-capsule-fill"></i></div>
+                    <img src="<?= e(avatar_url($p['avatar'], $p['store_name'])) ?>" alt="<?= e($p['store_name']) ?>" style="width:52px;height:52px;border-radius:14px;object-fit:cover;margin-bottom:14px;">
                     <h3 style="font-size:16px;margin-bottom:6px;"><?= e($p['store_name']) ?></h3>
                     <p style="font-size:13px;color:var(--color-text-muted);margin-bottom:10px;"><i class="ri-map-pin-line"></i> <?= e($p['city'] ?: 'Location not set') ?></p>
                     <div style="display:flex;justify-content:space-between;align-items:center;">

@@ -29,6 +29,15 @@ foreach ($featuredDoctors as &$fd) {
 }
 unset($fd);
 
+$featuredPharmacies = mysqli_query(db(), "
+    SELECT p.*, u.full_name, u.avatar,
+        (SELECT COUNT(*) FROM doctor_products dp WHERE dp.pharmacy_id = p.id AND dp.seller_type = 'pharmacy' AND dp.is_active = 1) AS product_count
+    FROM pharmacies p JOIN users u ON u.id = p.user_id
+    WHERE p.verification_status = 'verified' AND u.status = 'active'
+    ORDER BY p.rating_avg DESC, p.created_at DESC
+    LIMIT 3
+")->fetch_all(MYSQLI_ASSOC);
+
 $testimonials = mysqli_query(db(), 'SELECT * FROM testimonials WHERE is_active = 1 ORDER BY sort_order LIMIT 3');
 
 $totalDoctors = mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM doctors WHERE verification_status='verified'"))['c'];
@@ -181,6 +190,34 @@ require __DIR__ . '/includes/header.php';
     </div>
 </section>
 
+<?php if (count($featuredPharmacies) > 0): ?>
+<section class="section">
+    <div class="container">
+        <div class="section-head" data-reveal>
+            <span class="eyebrow">Medicine Stores</span>
+            <h2>Order from verified pharmacies</h2>
+            <p>Registered, license-verified pharmacies selling medicines directly to you.</p>
+        </div>
+        <div class="grid grid-3 stagger">
+            <?php foreach ($featuredPharmacies as $ph): ?>
+            <a href="<?= e(pharmacy_url($ph['slug'])) ?>" class="card card-hover" style="padding:20px;display:block;" data-reveal data-tilt>
+                <img src="<?= e(avatar_url($ph['avatar'], $ph['store_name'])) ?>" alt="<?= e($ph['store_name']) ?>" style="width:52px;height:52px;border-radius:14px;object-fit:cover;margin-bottom:14px;">
+                <h3 style="font-size:16px;margin-bottom:6px;"><?= e($ph['store_name']) ?></h3>
+                <p style="font-size:13px;color:var(--color-text-muted);margin-bottom:10px;"><i class="ri-map-pin-line"></i> <?= e($ph['city'] ?: 'Location not set') ?></p>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span class="badge badge-verified"><i class="ri-verified-badge-fill"></i> Verified</span>
+                    <span style="font-size:12.5px;color:var(--color-text-muted);"><?= (int) $ph['product_count'] ?> listing<?= $ph['product_count'] == 1 ? '' : 's' ?></span>
+                </div>
+            </a>
+            <?php endforeach; ?>
+        </div>
+        <div style="text-align:center;margin-top:44px;" data-reveal>
+            <a href="/pharmacies" class="btn btn-primary">Browse All Pharmacies <i class="ri-arrow-right-line"></i></a>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
+
 <section class="section">
     <div class="container">
         <div class="section-head" data-reveal>
@@ -232,11 +269,20 @@ require __DIR__ . '/includes/header.php';
 
 <section class="section">
     <div class="container">
-        <div class="card-gradient-border" data-reveal="zoom">
-            <div class="card-inner" style="padding:56px 40px;text-align:center;">
-                <h2 style="margin-bottom:12px;">Are you a doctor?</h2>
-                <p style="color:var(--color-text-muted);margin-bottom:28px;max-width:480px;margin-left:auto;margin-right:auto;">Join MediConnect to manage your appointments, grow your patient base, and get discovered by patients searching for your specialty.</p>
-                <a href="/doctor-register" class="btn btn-primary">Apply as a Doctor <i class="ri-arrow-right-line"></i></a>
+        <div class="grid grid-2" style="gap:24px;">
+            <div class="card-gradient-border" data-reveal="zoom">
+                <div class="card-inner" style="padding:48px 32px;text-align:center;">
+                    <h2 style="margin-bottom:12px;font-size:24px;">Are you a doctor?</h2>
+                    <p style="color:var(--color-text-muted);margin-bottom:24px;">Join <?= e(SITE_NAME) ?> to manage your appointments, grow your patient base, and get discovered by patients searching for your specialty.</p>
+                    <a href="/doctor-register" class="btn btn-primary">Apply as a Doctor <i class="ri-arrow-right-line"></i></a>
+                </div>
+            </div>
+            <div class="card-gradient-border" data-reveal="zoom">
+                <div class="card-inner" style="padding:48px 32px;text-align:center;">
+                    <h2 style="margin-bottom:12px;font-size:24px;">Have a pharmacy?</h2>
+                    <p style="color:var(--color-text-muted);margin-bottom:24px;">Register your medicine store on <?= e(SITE_NAME) ?>, upload your license, and start selling to patients online.</p>
+                    <a href="/pharmacy-register" class="btn btn-primary">Register Your Pharmacy <i class="ri-arrow-right-line"></i></a>
+                </div>
             </div>
         </div>
     </div>

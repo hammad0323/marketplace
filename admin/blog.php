@@ -82,7 +82,7 @@ window.BLOG_POST_CONTENT = <?= json_encode(array_column($posts, 'content', 'id')
                 <p style="font-size:12.5px;color:var(--color-text-muted);margin-bottom:14px;">Leave blank to auto-generate from the title/excerpt above.</p>
                 <div class="form-group">
                     <label class="form-label">Meta Title</label>
-                    <input type="text" class="form-control" name="meta_title" id="post-meta-title" maxlength="200" placeholder="Defaults to: Title — MediConnect">
+                    <input type="text" class="form-control" name="meta_title" id="post-meta-title" maxlength="200" placeholder="Defaults to: Title — <?= e(SITE_NAME) ?>">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Meta Description</label>

@@ -15,7 +15,7 @@ require __DIR__ . '/includes/header.php';
         <div class="card split-even" data-reveal>
             <div class="modal-visual" style="border-radius:0;">
                 <i class="ri-user-heart-fill" style="font-size:44px;margin-bottom:20px;"></i>
-                <h3>Join MediConnect</h3>
+                <h3>Join <?= e(SITE_NAME) ?></h3>
                 <p>Create your free patient account to book appointments with verified doctors in seconds.</p>
             </div>
             <div style="padding:44px 40px;">

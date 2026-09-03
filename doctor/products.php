@@ -44,7 +44,7 @@ require __DIR__ . '/includes/header.php';
 <div class="card" style="padding:48px 32px;text-align:center;max-width:560px;margin:0 auto;" data-reveal>
     <div style="width:64px;height:64px;border-radius:18px;background:var(--gradient-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 20px;"><i class="ri-vip-crown-fill"></i></div>
     <h3 style="margin-bottom:10px;">Premium doctors only</h3>
-    <p style="color:var(--color-text-muted);margin-bottom:20px;">Selling products and services on your public profile is a Premium feature. Contact the MediConnect team to upgrade your account and unlock your store.</p>
+    <p style="color:var(--color-text-muted);margin-bottom:20px;">Selling products and services on your public profile is a Premium feature. Contact the <?= e(SITE_NAME) ?> team to upgrade your account and unlock your store.</p>
     <a href="/contact" class="btn btn-primary">Contact Us to Upgrade</a>
 </div>
 <?php else: ?>

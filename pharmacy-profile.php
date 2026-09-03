@@ -44,7 +44,7 @@ require __DIR__ . '/includes/header.php';
         <nav class="breadcrumb"><a href="/">Home</a> <i class="ri-arrow-right-s-line"></i> <a href="/pharmacies">Pharmacies</a> <i class="ri-arrow-right-s-line"></i> <span><?= e($pharmacy['store_name']) ?></span></nav>
 
         <div class="card" style="padding:32px;margin-bottom:32px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;" data-reveal>
-            <div style="width:76px;height:76px;border-radius:18px;background:var(--gradient-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;"><i class="ri-capsule-fill"></i></div>
+            <img src="<?= e(avatar_url($pharmacy['avatar'], $pharmacy['store_name'])) ?>" alt="<?= e($pharmacy['store_name']) ?>" style="width:76px;height:76px;border-radius:18px;object-fit:cover;flex-shrink:0;">
             <div style="flex:1;min-width:220px;">
                 <h1 style="font-size:26px;margin-bottom:6px;"><?= e($pharmacy['store_name']) ?></h1>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
