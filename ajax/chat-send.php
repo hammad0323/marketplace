@@ -21,7 +21,7 @@ if ($message === '' && empty($_FILES['attachment']['name'])) {
 
 if ($role === 'patient') {
     $doctorId = (int) ($_POST['doctor_id'] ?? 0);
-    $stmt = mysqli_prepare($db, "SELECT d.id, d.chat_enabled, u.id AS user_id, u.full_name FROM doctors d JOIN users u ON u.id = d.user_id
+    $stmt = mysqli_prepare($db, "SELECT d.id, d.chat_enabled, d.chat_start_time, d.chat_end_time, u.id AS user_id, u.full_name FROM doctors d JOIN users u ON u.id = d.user_id
         WHERE d.id = ? AND d.verification_status = 'verified' AND u.status = 'active' LIMIT 1");
     mysqli_stmt_bind_param($stmt, 'i', $doctorId);
     mysqli_stmt_execute($stmt);
@@ -43,8 +43,10 @@ if ($role === 'patient') {
         }
         $conversationId = (int) $conv['id'];
     } else {
-        if (!$doctor['chat_enabled']) {
-            json_response(false, [], 'This doctor is not currently accepting messages.');
+        if (!doctor_chat_can_start($doctor)) {
+            json_response(false, [], $doctor['chat_enabled']
+                ? 'This doctor is only accepting new messages during their set hours (' . doctor_chat_hours_label($doctor) . ').'
+                : 'This doctor is not currently accepting messages.');
         }
         $stmt = mysqli_prepare($db, 'INSERT INTO chat_conversations (patient_id, doctor_id) VALUES (?, ?)');
         mysqli_stmt_bind_param($stmt, 'ii', $profileId, $doctorId);

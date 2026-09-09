@@ -28,7 +28,7 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — ' . SITE_NAME;
             <a href="/doctor/appointments" class="<?= $currentPage === 'appointments.php' ? 'active' : '' ?>"><i class="ri-calendar-check-line"></i> Appointments</a>
             <a href="/doctor/availability" class="<?= $currentPage === 'availability.php' ? 'active' : '' ?>"><i class="ri-calendar-2-line"></i> Availability</a>
             <a href="/doctor/messages" class="<?= $currentPage === 'messages.php' ? 'active' : '' ?>"><i class="ri-chat-3-line"></i> Messages</a>
-            <a href="/doctor/patients" class="<?= $currentPage === 'patients.php' ? 'active' : '' ?>"><i class="ri-group-line"></i> My Patients</a>
+            <a href="/doctor/patients" class="<?= in_array($currentPage, ['patients.php', 'patient-history.php'], true) ? 'active' : '' ?>"><i class="ri-group-line"></i> My Patients</a>
             <a href="/doctor/products" class="<?= $currentPage === 'products.php' ? 'active' : '' ?>"><i class="ri-store-2-line"></i> My Store</a>
             <a href="/doctor/medicines" class="<?= $currentPage === 'medicines.php' ? 'active' : '' ?>"><i class="ri-capsule-line"></i> Medicine Info</a>
             <a href="/doctor/profile" class="<?= $currentPage === 'profile.php' ? 'active' : '' ?>"><i class="ri-user-line"></i> Profile</a>

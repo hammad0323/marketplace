@@ -63,16 +63,7 @@
         $('#confirm-booking-btn').prop('disabled', false);
     });
 
-    $('#booking-form').on('submit', function (e) {
-        e.preventDefault();
-        if (!window.APP.loggedIn) {
-            openAuthModal('login');
-            return;
-        }
-        if (!selectedDate || !selectedSlot) {
-            showToast('warning', 'Pick a time', 'Please select a date and time slot first.');
-            return;
-        }
+    function submitBooking() {
         var $btn = $('#confirm-booking-btn').prop('disabled', true).text('Booking…');
         $.post('/ajax/book-appointment.php', {
             csrf_token: window.APP.csrfToken,
@@ -95,5 +86,22 @@
             showToast('error', 'Network error', 'Please try again.');
             $btn.prop('disabled', false).text('Confirm Booking');
         });
+    }
+
+    $('#booking-form').on('submit', function (e) {
+        e.preventDefault();
+        if (!selectedDate || !selectedSlot) {
+            showToast('warning', 'Pick a time', 'Please select a date and time slot first.');
+            return;
+        }
+        if (!window.APP.loggedIn) {
+            if (typeof window.openGuestModal === 'function') {
+                openGuestModal(function () { submitBooking(); });
+            } else {
+                openAuthModal('login');
+            }
+            return;
+        }
+        submitBooking();
     });
 })(jQuery);

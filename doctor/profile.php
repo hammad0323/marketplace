@@ -94,6 +94,11 @@ require __DIR__ . '/includes/header.php';
                         <div class="form-group"><label class="form-label">State</label><input type="text" class="form-control" name="clinic_state" value="<?= e($doctor['clinic_state']) ?>"></div>
                         <div class="form-group"><label class="form-label">Country</label><input type="text" class="form-control" name="clinic_country" value="<?= e($doctor['clinic_country']) ?>"></div>
                     </div>
+                    <div class="divider-fade"></div>
+                    <h4 style="margin-bottom:4px;">SEO <span style="font-weight:400;color:var(--color-text-muted);font-size:13px;">(optional)</span></h4>
+                    <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:14px;">Leave blank to auto-generate from your name/specialization and bio.</p>
+                    <div class="form-group"><label class="form-label">Meta Title</label><input type="text" class="form-control" name="meta_title" maxlength="200" value="<?= e($doctor['meta_title']) ?>" placeholder="Defaults to: Your Name — Specialization"></div>
+                    <div class="form-group"><label class="form-label">Meta Description</label><textarea class="form-control" name="meta_description" rows="2" maxlength="300" placeholder="Defaults to your bio"><?= e($doctor['meta_description']) ?></textarea></div>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
                 </form>
             </div>

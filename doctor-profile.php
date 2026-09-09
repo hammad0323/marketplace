@@ -63,13 +63,32 @@ if ($privacy['show_reviews']) {
     mysqli_stmt_close($stmt);
 }
 
-$pageTitle = $doctor['full_name'] . ' — ' . ($specNames ?: 'Doctor') . ' | ' . SITE_NAME;
-$metaDescription = excerpt($doctor['bio'] ?: ($doctor['full_name'] . ' is a verified ' . ($specNames ?: 'doctor') . ' on ' . SITE_NAME . '.'), 155);
+$pageTitle = ($doctor['meta_title'] ?: ($doctor['full_name'] . ' — ' . ($specNames ?: 'Doctor'))) . ' | ' . SITE_NAME;
+$metaDescription = $doctor['meta_description'] ?: excerpt($doctor['bio'] ?: ($doctor['full_name'] . ' is a verified ' . ($specNames ?: 'doctor') . ' on ' . SITE_NAME . '.'), 155);
 $canonical = APP_URL . doctor_url($doctor['slug']);
+
+// FAQPage answers only what the doctor/admin has chosen to show publicly
+// (respects the same privacy toggles as the rest of this page) — an AEO/GEO
+// structured-data win: AI answer engines can quote these Q&As directly
+// instead of having to parse the page's prose.
+$faqEntries = [];
+$faqEntries[] = ['q' => 'Is ' . $doctor['full_name'] . ' accepting new patients?', 'a' => 'Yes, ' . $doctor['full_name'] . ' is a verified provider on ' . SITE_NAME . ' currently accepting online bookings.'];
+if ($privacy['show_fees']) {
+    $faqEntries[] = ['q' => 'What are ' . $doctor['full_name'] . "'s consultation fees?", 'a' => 'Online consultations are ' . format_currency($doctor['consultation_fee_online']) . ' and in-person consultations are ' . format_currency($doctor['consultation_fee_physical']) . ($doctor['free_consultation'] ? '. Free consultation slots are also offered.' : '.')];
+}
+if ($specNames) {
+    $faqEntries[] = ['q' => 'What does ' . $doctor['full_name'] . ' specialize in?', 'a' => $doctor['full_name'] . ' specializes in ' . $specNames . ($doctor['experience_years'] ? ', with ' . (int) $doctor['experience_years'] . ' years of experience.' : '.')];
+}
+$faqEntries[] = ['q' => 'Can I book an online consultation with ' . $doctor['full_name'] . '?', 'a' => 'Yes, ' . $doctor['full_name'] . ' offers online video consultations that can be booked directly from this profile.'];
+
 $extraHead = '<script type="application/ld+json">' . json_encode([
     '@context' => 'https://schema.org', '@type' => 'Physician', 'name' => $doctor['full_name'],
     'medicalSpecialty' => array_column($doctorSpecializations, 'name'), 'url' => $canonical,
     'aggregateRating' => $doctor['rating_count'] > 0 ? ['@type' => 'AggregateRating', 'ratingValue' => $doctor['rating_avg'], 'reviewCount' => $doctor['rating_count']] : null,
+]) . '</script>';
+$extraHead .= '<script type="application/ld+json">' . json_encode([
+    '@context' => 'https://schema.org', '@type' => 'FAQPage',
+    'mainEntity' => array_map(fn($f) => ['@type' => 'Question', 'name' => $f['q'], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f['a']]], $faqEntries),
 ]) . '</script>';
 $extraScripts = '<script src="/assets/js/calendar-widget.js"></script><script src="/assets/js/booking.js"></script>';
 require __DIR__ . '/includes/header.php';
@@ -245,7 +264,7 @@ if ($viewerCanMessage && doctor_chat_visible($doctor, $viewerIsGuest)):
     $chatOnline = doctor_chat_available($doctor);
 ?>
 <div class="doctor-chat-widget" data-reveal="zoom">
-    <a href="/patient/messages?doctor_id=<?= (int)$doctor['id'] ?>" class="doctor-chat-fab" <?= $viewerIsGuest ? 'data-requires-auth' : '' ?>>
+    <a href="/patient/messages?doctor_id=<?= (int)$doctor['id'] ?>" class="doctor-chat-fab" <?= $viewerIsGuest ? 'data-guest-message data-doctor-id="' . (int)$doctor['id'] . '"' : '' ?>>
         <img src="<?= e(avatar_url($doctor['avatar'], $doctor['full_name'])) ?>" alt="">
         <span>
             Message <?= e($doctor['full_name']) ?>

@@ -26,4 +26,24 @@
                 showToast('error', 'Network error', 'Please try again.');
             });
     });
+
+    $(document).on('click', '.btn-doc-seo', function () {
+        var $row = $(this).closest('[data-doctor-id]');
+        var doctorId = $row.data('doctor-id');
+        var title = prompt('Meta title (leave blank to auto-generate):', $row.data('meta-title') || '');
+        if (title === null) return;
+        var description = prompt('Meta description (leave blank to auto-generate):', $row.data('meta-description') || '');
+        if (description === null) return;
+
+        $.post('/ajax/admin-doctor-seo-save.php', {
+            csrf_token: window.APP.csrfToken, doctor_id: doctorId, meta_title: title, meta_description: description
+        }, null, 'json').done(function (res) {
+            if (res.success) {
+                $row.attr('data-meta-title', title).attr('data-meta-description', description);
+                showToast('success', 'Saved', res.message);
+            } else {
+                showToast('error', 'Could not save', res.message);
+            }
+        }).fail(function () { showToast('error', 'Network error', 'Please try again.'); });
+    });
 })(jQuery);

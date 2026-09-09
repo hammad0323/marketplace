@@ -142,6 +142,25 @@
     $('#chat-block-btn').on('click', function () { setBlocked(!(active && active.isBlocked)); });
     $('#chat-unblock-inline-btn').on('click', function () { setBlocked(false); });
 
+    $('#chat-rename-btn').on('click', function () {
+        if (!active || role !== 'doctor') return;
+        var current = $('#chat-partner-name').text();
+        var name = prompt('Rename this patient:', current);
+        if (name == null) return;
+        name = name.trim();
+        if (!name || name === current) return;
+        $.post('/ajax/doctor-rename-patient.php', { csrf_token: window.APP.csrfToken, patient_id: active.key, name: name }, null, 'json')
+            .done(function (res) {
+                if (res.success) {
+                    $('#chat-partner-name').text(res.name);
+                    showToast('success', 'Renamed', res.message);
+                    loadConversations();
+                } else {
+                    showToast('error', 'Could not rename', res.message);
+                }
+            }).fail(function () { showToast('error', 'Network error', 'Please try again.'); });
+    });
+
     $(document).on('click', '.chat-list-item', function () {
         openConversation($(this).data('conversation-id'), $(this).data('key'));
     });

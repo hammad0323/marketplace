@@ -17,7 +17,10 @@ require __DIR__ . '/includes/header.php';
             <button class="btn-icon" id="chat-back-btn" style="display:none;"><i class="ri-arrow-left-line"></i></button>
             <img id="chat-partner-avatar" src="" alt="">
             <div style="flex:1;min-width:0;">
-                <strong id="chat-partner-name" style="display:block;font-size:14.5px;"></strong>
+                <span style="display:flex;align-items:center;gap:6px;">
+                    <strong id="chat-partner-name" style="font-size:14.5px;"></strong>
+                    <button type="button" class="btn-icon" id="chat-rename-btn" style="width:26px;height:26px;flex-shrink:0;" title="Rename patient"><i class="ri-pencil-line" style="font-size:13px;"></i></button>
+                </span>
                 <span id="chat-partner-status" style="font-size:12px;color:var(--color-text-muted);"></span>
             </div>
             <button type="button" class="btn btn-outline btn-sm" id="chat-block-btn" style="flex-shrink:0;">Block</button>

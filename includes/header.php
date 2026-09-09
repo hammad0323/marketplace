@@ -29,7 +29,7 @@ $user = current_user();
 <meta name="description" content="<?= e($metaDescription) ?>">
 <meta name="keywords" content="<?= e($metaKeywords) ?>">
 <link rel="canonical" href="<?= e($canonical) ?>">
-<meta name="robots" content="index, follow">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
 
 <meta property="og:type" content="website">
 <meta property="og:title" content="<?= e($pageTitle) ?>">

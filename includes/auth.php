@@ -189,6 +189,102 @@ function register_patient($fullName, $email, $phone, $password)
     return [true, 'Welcome to ' . SITE_NAME . ', ' . $fullName . '!'];
 }
 
+/**
+ * Guest checkout: turns a bare email or phone number into a logged-in
+ * patient session, creating the account on first contact — no name, no
+ * password screen. The account starts out named "Patient #<id>"; the
+ * patient can rename themselves later from their profile, and a doctor they
+ * message can also rename them from the chat window.
+ *
+ * If the contact already belongs to an existing account we deliberately do
+ * NOT log the caller in — that would let anyone access an account just by
+ * knowing its email or phone. They're told to log in normally instead.
+ *
+ * @return array{0:bool,1:string,2:?array,3:?string} [success, message, userRow, plaintextPassword]
+ */
+function find_or_create_guest_patient($contact)
+{
+    $db = db();
+    $contact = clean($contact);
+    if ($contact === '') {
+        return [false, 'Please enter your email or phone number.', null, null];
+    }
+
+    $isEmail = (bool) filter_var($contact, FILTER_VALIDATE_EMAIL);
+    $digits = preg_replace('/\D+/', '', $contact);
+    if (!$isEmail && strlen($digits) < 7) {
+        return [false, 'Please enter a valid email address or phone number.', null, null];
+    }
+
+    $email = $isEmail ? strtolower($contact) : null;
+    $phone = $isEmail ? null : $digits;
+
+    if ($email) {
+        $stmt = mysqli_prepare($db, 'SELECT id FROM users WHERE email = ? LIMIT 1');
+        mysqli_stmt_bind_param($stmt, 's', $email);
+    } else {
+        $stmt = mysqli_prepare($db, 'SELECT id FROM users WHERE phone = ? LIMIT 1');
+        mysqli_stmt_bind_param($stmt, 's', $phone);
+    }
+    mysqli_stmt_execute($stmt);
+    $existing = mysqli_stmt_get_result($stmt)->fetch_assoc();
+    mysqli_stmt_close($stmt);
+    if ($existing) {
+        return [false, 'An account already exists for this ' . ($isEmail ? 'email address' : 'phone number') . '. Please log in instead.', null, null];
+    }
+
+    $password = substr(bin2hex(random_bytes(5)), 0, 8);
+    $hash = password_hash($password, PASSWORD_DEFAULT);
+    // users.email is NOT NULL + UNIQUE, so a phone-only guest still needs a
+    // (non-deliverable) placeholder — the real phone number is stored in
+    // users.phone, and since we can't email this guest their password, it's
+    // shown to them once on-screen instead (see the caller).
+    $placeholderEmail = $email ?? ('guest-' . $digits . '-' . bin2hex(random_bytes(3)) . '@guest.' . preg_replace('/^www\./', '', (string) parse_url(APP_URL, PHP_URL_HOST)));
+
+    mysqli_begin_transaction($db);
+    try {
+        $stmt = mysqli_prepare($db, "INSERT INTO users (role, full_name, email, phone, password_hash, status, email_verified_at) VALUES ('patient', 'Patient', ?, ?, ?, 'active', NULL)");
+        mysqli_stmt_bind_param($stmt, 'sss', $placeholderEmail, $phone, $hash);
+        mysqli_stmt_execute($stmt);
+        $userId = mysqli_insert_id($db);
+        mysqli_stmt_close($stmt);
+
+        $stmt = mysqli_prepare($db, 'INSERT INTO patients (user_id) VALUES (?)');
+        mysqli_stmt_bind_param($stmt, 'i', $userId);
+        mysqli_stmt_execute($stmt);
+        $patientId = mysqli_insert_id($db);
+        mysqli_stmt_close($stmt);
+
+        $fullName = 'Patient ' . $patientId;
+        $stmt = mysqli_prepare($db, 'UPDATE users SET full_name = ? WHERE id = ?');
+        mysqli_stmt_bind_param($stmt, 'si', $fullName, $userId);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+
+        mysqli_commit($db);
+    } catch (Exception $e) {
+        mysqli_rollback($db);
+        error_log('find_or_create_guest_patient failed: ' . $e->getMessage());
+        return [false, 'Something went wrong creating your account. Please try again.', null, null];
+    }
+
+    $userRow = ['id' => $userId, 'role' => 'patient', 'full_name' => $fullName];
+    login_user_row($userRow);
+    log_activity($userId, 'patient', 'guest_signup', 'Guest account auto-created via ' . ($isEmail ? 'email' : 'phone') . ", now Patient #$patientId");
+
+    if ($email) {
+        send_email($email, $fullName, 'Your ' . get_setting('site_name', SITE_NAME) . ' account',
+            email_template('Welcome, ' . $fullName . '!',
+                '<p>We created an account for you so you could complete your request. Here are your login details:</p>'
+                . '<p><strong>Email:</strong> ' . e($email) . '<br><strong>Password:</strong> ' . e($password) . '<br><strong>Patient number:</strong> #' . $patientId . '</p>'
+                . '<p>Log in anytime to see your bookings and messages, and change your name and password from your profile.</p>',
+                'Log In', APP_URL . '/login'));
+        return [true, 'Account created — check your email for your login password.', $userRow, null];
+    }
+
+    return [true, "Account created! You're Patient #$patientId. Your temporary password is \"$password\" — save it, or set a new one from your profile after this.", $userRow, $password];
+}
+
 /** Doctor self-registration — creates a pending account requiring admin verification. */
 function register_doctor_application(array $data)
 {

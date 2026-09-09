@@ -33,7 +33,7 @@ require __DIR__ . '/includes/header.php';
         <thead><tr><th>Doctor</th><th>Specialization</th><th>License #</th><th>Applied</th><th>Status</th><th>Account</th><th>Actions</th></tr></thead>
         <tbody>
         <?php while ($d = mysqli_fetch_assoc($doctors)): ?>
-        <tr data-doctor-id="<?= (int)$d['id'] ?>">
+        <tr data-doctor-id="<?= (int)$d['id'] ?>" data-meta-title="<?= e($d['meta_title']) ?>" data-meta-description="<?= e($d['meta_description']) ?>">
             <td class="table-user" title="<?= e($d['qualification'] . ' · ' . $d['experience_years'] . ' yrs · ' . excerpt($d['bio'], 160)) ?>">
                 <img src="<?= e(avatar_url($d['avatar'], $d['full_name'])) ?>">
                 <div><?= e($d['full_name']) ?><br><span style="font-size:12px;color:var(--color-text-muted);"><?= e($d['email']) ?></span></div>
@@ -57,6 +57,7 @@ require __DIR__ . '/includes/header.php';
                 <button class="btn btn-primary btn-sm btn-doc-action" data-action="activate">Activate</button>
                 <?php endif; ?>
                 <?php endif; ?>
+                <button class="btn btn-ghost btn-sm btn-doc-seo" title="Edit SEO meta title/description"><i class="ri-search-eye-line"></i> SEO</button>
                 <a href="<?= e(doctor_url($d['slug'])) ?>" target="_blank" class="btn btn-ghost btn-sm">View</a>
             </td>
         </tr>

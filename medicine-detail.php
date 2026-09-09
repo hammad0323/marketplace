@@ -45,6 +45,21 @@ $extraHead = '<script type="application/ld+json">' . json_encode(array_filter([
     'description' => strip_tags($medicine['content'] ?: $medicine['uses'] ?: ''),
     'drugClass' => $medicine['category'],
 ])) . '</script>';
+
+// FAQPage from the existing uses/dosage/side-effects/precautions fields —
+// zero new admin input needed, and it lets AI answer engines quote a crisp
+// Q&A instead of parsing the full article (AEO).
+$medFaq = [];
+if ($medicine['uses']) $medFaq[] = ['q' => 'What is ' . $medicine['name'] . ' used for?', 'a' => strip_tags($medicine['uses'])];
+if ($medicine['dosage']) $medFaq[] = ['q' => 'What is the dosage for ' . $medicine['name'] . '?', 'a' => strip_tags($medicine['dosage'])];
+if ($medicine['side_effects']) $medFaq[] = ['q' => 'What are the side effects of ' . $medicine['name'] . '?', 'a' => strip_tags($medicine['side_effects'])];
+if ($medicine['precautions']) $medFaq[] = ['q' => 'What precautions should I take with ' . $medicine['name'] . '?', 'a' => strip_tags($medicine['precautions'])];
+if ($medFaq) {
+    $extraHead .= '<script type="application/ld+json">' . json_encode([
+        '@context' => 'https://schema.org', '@type' => 'FAQPage',
+        'mainEntity' => array_map(fn($f) => ['@type' => 'Question', 'name' => $f['q'], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f['a']]], $medFaq),
+    ]) . '</script>';
+}
 require __DIR__ . '/includes/header.php';
 ?>
 <article class="section" style="padding-top:calc(var(--header-height) + 48px);">

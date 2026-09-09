@@ -137,11 +137,20 @@ require __DIR__ . '/includes/header.php';
             auto-generated from the title/excerpt/description of that item.
         </p>
         <div class="divider-fade" style="margin:20px 0;"></div>
+        <h4 style="margin-bottom:8px;">AI Search (AEO / GEO)</h4>
+        <p style="color:var(--color-text-muted);font-size:13.5px;margin-bottom:20px;">
+            <code>robots.txt</code> explicitly allows the major AI crawlers (GPTBot, ClaudeBot, PerplexityBot,
+            Google-Extended, and others) so this site can be indexed and cited by AI search/chat products. Doctor
+            profiles, medicines, and the FAQ page also emit FAQPage structured data so AI answer engines can quote
+            them directly. The button below also generates <code>/llms.txt</code> — a curated, plain-text index of the
+            site aimed at AI agents, per the <a href="https://llmstxt.org" target="_blank" rel="noopener" style="color:var(--color-primary);font-weight:600;">llms.txt</a> convention.
+        </p>
+        <div class="divider-fade" style="margin:20px 0;"></div>
         <h4 style="margin-bottom:8px;">Sitemap</h4>
         <p style="color:var(--color-text-muted);font-size:13.5px;margin-bottom:16px;">
             <code>/sitemap.xml</code> is always available as a live, dynamically-generated page. Use the button below to
-            also write it out as a real static file at the project root — useful for search-console verification or to
-            serve it with zero PHP overhead.
+            also write it out as a real static file at the project root (and refresh <code>/llms.txt</code> alongside
+            it) — useful for search-console verification or to serve it with zero PHP overhead.
         </p>
         <div id="sitemap-status" style="font-size:13px;color:var(--color-text-muted);margin-bottom:16px;">
             <?php if ($sitemapExists): ?>

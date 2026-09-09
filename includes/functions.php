@@ -448,6 +448,30 @@ function doctor_chat_available(array $doctorRow)
     return true;
 }
 
+/**
+ * Whether a patient may START a brand-new conversation with this doctor
+ * right now: enabled, and (if a daily window is set) the current time falls
+ * inside it. Deliberately does NOT require recent activity like
+ * doctor_chat_available() does — a doctor who set hours 9-6 is "accepting
+ * messages" all through that window whether or not they've clicked around
+ * the site in the last 15 minutes; that check is only for the "online now"
+ * dot. An already-existing conversation is never subject to this — either
+ * side can always reply to a thread that's already open.
+ */
+function doctor_chat_can_start(array $doctorRow)
+{
+    if (empty($doctorRow['chat_enabled'])) {
+        return false;
+    }
+    if (!empty($doctorRow['chat_start_time']) && !empty($doctorRow['chat_end_time'])) {
+        $now = date('H:i:s');
+        if ($now < $doctorRow['chat_start_time'] || $now > $doctorRow['chat_end_time']) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /** Whether the chat entry point should appear at all for the current viewer (guest vs logged-in patient). */
 function doctor_chat_visible(array $doctorRow, $isGuest)
 {
@@ -610,6 +634,72 @@ function build_sitemap_xml()
 
     $xml .= '</urlset>';
     return $xml;
+}
+
+/**
+ * Builds llms.txt (https://llmstxt.org) — a plain-text, curated index of the
+ * site aimed at AI agents/crawlers that increasingly read this convention
+ * before (or instead of) rendering full HTML. This is the core "GEO"
+ * (generative engine optimization) artifact: a concise map of what the site
+ * is and where its key content lives, in a format made for LLM consumption
+ * rather than for search-engine ranking. Regenerated alongside sitemap.xml
+ * from the admin "Generate Sitemap" action.
+ */
+function build_llms_txt()
+{
+    $db = db();
+    $lines = [];
+    $lines[] = '# ' . SITE_NAME;
+    $lines[] = '';
+    $lines[] = '> ' . get_setting('site_tagline', 'Book verified doctors online or in-person, message and order medicine from verified pharmacies.');
+    $lines[] = '';
+    $lines[] = '## Site';
+    $lines[] = '- [Find Doctors](' . APP_URL . '/doctors): Search verified doctors by specialty, city, and price.';
+    $lines[] = '- [Specializations](' . APP_URL . '/specializations): Browse doctors by medical specialty.';
+    $lines[] = '- [Pharmacies](' . APP_URL . '/pharmacies): Verified medicine stores selling directly online.';
+    $lines[] = '- [Products & Services](' . APP_URL . '/products): Health products and service packages sold by doctors and pharmacies.';
+    $lines[] = '- [Medicine Info](' . APP_URL . '/medicines): Reference information on specific medicines (uses, dosage, side effects).';
+    $lines[] = '- [Blog](' . APP_URL . '/blog): Health articles and platform news.';
+    $lines[] = '- [FAQ](' . APP_URL . '/faq): Frequently asked questions about the platform.';
+    $lines[] = '- [About](' . APP_URL . '/about): What ' . SITE_NAME . ' is and who it serves.';
+
+    $doctors = mysqli_query($db, "
+        SELECT d.slug, u.full_name,
+            (SELECT GROUP_CONCAT(s.name SEPARATOR ', ') FROM doctor_specializations ds JOIN specializations s ON s.id = ds.specialization_id WHERE ds.doctor_id = d.id) AS specs
+        FROM doctors d JOIN users u ON u.id = d.user_id
+        WHERE d.verification_status = 'verified' ORDER BY d.rating_avg DESC LIMIT 40
+    ");
+    if (mysqli_num_rows($doctors) > 0) {
+        $lines[] = '';
+        $lines[] = '## Doctors';
+        while ($d = mysqli_fetch_assoc($doctors)) {
+            $lines[] = '- [' . $d['full_name'] . '](' . APP_URL . doctor_url($d['slug']) . ')' . ($d['specs'] ? ': ' . $d['specs'] : '');
+        }
+    }
+
+    $pharmacies = mysqli_query($db, "SELECT slug, store_name, city FROM pharmacies WHERE verification_status = 'verified' ORDER BY rating_avg DESC LIMIT 40");
+    if (mysqli_num_rows($pharmacies) > 0) {
+        $lines[] = '';
+        $lines[] = '## Pharmacies';
+        while ($p = mysqli_fetch_assoc($pharmacies)) {
+            $lines[] = '- [' . $p['store_name'] . '](' . APP_URL . pharmacy_url($p['slug']) . ')' . ($p['city'] ? ': ' . $p['city'] : '');
+        }
+    }
+
+    $medicines = mysqli_query($db, "SELECT slug, name, generic_name FROM medicine_info WHERE status = 'published' ORDER BY updated_at DESC LIMIT 60");
+    if (mysqli_num_rows($medicines) > 0) {
+        $lines[] = '';
+        $lines[] = '## Medicine Info';
+        while ($m = mysqli_fetch_assoc($medicines)) {
+            $lines[] = '- [' . $m['name'] . '](' . APP_URL . medicine_url($m['slug']) . ')' . ($m['generic_name'] ? ': ' . $m['generic_name'] : '');
+        }
+    }
+
+    $lines[] = '';
+    $lines[] = '## Full index';
+    $lines[] = '- [XML Sitemap](' . APP_URL . '/sitemap.xml): Complete, machine-readable list of every public URL.';
+
+    return implode("\n", $lines) . "\n";
 }
 
 /**

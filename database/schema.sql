@@ -108,6 +108,8 @@ CREATE TABLE doctors (
     chat_visible_to_guests    TINYINT(1) NOT NULL DEFAULT 0,
     chat_start_time           TIME DEFAULT NULL COMMENT 'daily window start; NULL + chat_enabled = available anytime',
     chat_end_time              TIME DEFAULT NULL,
+    meta_title                VARCHAR(200) DEFAULT NULL COMMENT 'blank = auto-generated from name/specialization',
+    meta_description          VARCHAR(300) DEFAULT NULL COMMENT 'blank = auto-generated from bio',
     created_at                DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at                DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_doctors_user (user_id),
@@ -258,6 +260,27 @@ CREATE TABLE favorite_doctors (
     UNIQUE KEY uq_fav (patient_id, doctor_id),
     CONSTRAINT fk_fav_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
     CONSTRAINT fk_fav_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- A doctor's private clinical notes on a patient they've treated — separate
+-- from appointments (one appointment can spawn several notes over time, and
+-- a doctor may want to log a status update between visits). Only the doctor
+-- who wrote an entry (not other doctors) can see/edit it; gated at the
+-- application layer to patients the doctor has an appointment with.
+DROP TABLE IF EXISTS patient_medical_history;
+CREATE TABLE patient_medical_history (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    doctor_id   INT UNSIGNED NOT NULL,
+    patient_id  INT UNSIGNED NOT NULL,
+    title       VARCHAR(180) NOT NULL,
+    description TEXT,
+    status      ENUM('ongoing','improving','stable','recovered','critical') NOT NULL DEFAULT 'ongoing',
+    visit_date  DATE DEFAULT NULL,
+    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_history_doctor_patient (doctor_id, patient_id),
+    CONSTRAINT fk_history_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE,
+    CONSTRAINT fk_history_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ----------------------------------------------------------------------------
