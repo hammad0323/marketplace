@@ -26,15 +26,15 @@ $heading = 'Site Settings';
 $extraScripts = '<script src="/assets/js/admin-settings.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
-<div class="tabs-row">
-    <button class="tab-btn active" data-tab="general">General</button>
-    <button class="tab-btn" data-tab="email">Email (SMTP)</button>
-    <button class="tab-btn" data-tab="cms">Pages (About / Privacy / Terms)</button>
-    <button class="tab-btn" data-tab="faqs">FAQs</button>
-    <button class="tab-btn" data-tab="seo">SEO &amp; Sitemap</button>
+<div class="tabs-row" role="tablist">
+    <button class="tab-btn active" id="tab-btn-general" role="tab" aria-controls="panel-general" aria-selected="true" tabindex="0">General</button>
+    <button class="tab-btn" id="tab-btn-email" role="tab" aria-controls="panel-email" aria-selected="false" tabindex="-1">Email (SMTP)</button>
+    <button class="tab-btn" id="tab-btn-cms" role="tab" aria-controls="panel-cms" aria-selected="false" tabindex="-1">Pages (About / Privacy / Terms)</button>
+    <button class="tab-btn" id="tab-btn-faqs" role="tab" aria-controls="panel-faqs" aria-selected="false" tabindex="-1">FAQs</button>
+    <button class="tab-btn" id="tab-btn-seo" role="tab" aria-controls="panel-seo" aria-selected="false" tabindex="-1">SEO &amp; Sitemap</button>
 </div>
 
-<div class="settings-panel" id="panel-general">
+<div class="settings-panel" id="panel-general" role="tabpanel" aria-labelledby="tab-btn-general" tabindex="0">
     <div class="card" style="padding:28px;max-width:640px;" data-reveal>
         <form id="settings-form">
             <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
@@ -50,7 +50,7 @@ require __DIR__ . '/includes/header.php';
     </div>
 </div>
 
-<div class="settings-panel" id="panel-email" style="display:none;">
+<div class="settings-panel" id="panel-email" role="tabpanel" aria-labelledby="tab-btn-email" tabindex="0" style="display:none;">
     <div class="card" style="padding:28px;max-width:640px;" data-reveal>
         <p style="color:var(--color-text-muted);margin-bottom:20px;">
             Configure an SMTP server to send appointment, verification, and message emails to patients, doctors, and admins.
@@ -87,7 +87,7 @@ require __DIR__ . '/includes/header.php';
     </div>
 </div>
 
-<div class="settings-panel" id="panel-cms" style="display:none;">
+<div class="settings-panel" id="panel-cms" role="tabpanel" aria-labelledby="tab-btn-cms" tabindex="0" style="display:none;">
     <?php foreach (['about' => 'About Page', 'privacy-policy' => 'Privacy Policy', 'terms-conditions' => 'Terms & Conditions'] as $slug => $label): $page = $cmsPages[$slug] ?? ['title' => $label, 'content' => '', 'meta_title' => '', 'meta_description' => '']; ?>
     <div class="card" style="padding:28px;margin-bottom:20px;" data-reveal>
         <h4 style="margin-bottom:16px;"><?= $label ?></h4>
@@ -106,7 +106,7 @@ require __DIR__ . '/includes/header.php';
     <?php endforeach; ?>
 </div>
 
-<div class="settings-panel" id="panel-faqs" style="display:none;">
+<div class="settings-panel" id="panel-faqs" role="tabpanel" aria-labelledby="tab-btn-faqs" tabindex="0" style="display:none;">
     <div class="card" style="padding:28px;margin-bottom:20px;" data-reveal>
         <h4 style="margin-bottom:16px;">Add FAQ</h4>
         <form id="faq-form">
@@ -126,7 +126,7 @@ require __DIR__ . '/includes/header.php';
     </div>
 </div>
 
-<div class="settings-panel" id="panel-seo" style="display:none;">
+<div class="settings-panel" id="panel-seo" role="tabpanel" aria-labelledby="tab-btn-seo" tabindex="0" style="display:none;">
     <div class="card" style="padding:28px;max-width:640px;" data-reveal>
         <h4 style="margin-bottom:8px;">On-page SEO</h4>
         <p style="color:var(--color-text-muted);font-size:13.5px;margin-bottom:20px;">
@@ -165,14 +165,4 @@ require __DIR__ . '/includes/header.php';
     </div>
 </div>
 
-<script>
-document.querySelectorAll('.tabs-row .tab-btn').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-        document.querySelectorAll('.tabs-row .tab-btn').forEach(function (b) { b.classList.remove('active'); });
-        document.querySelectorAll('.settings-panel').forEach(function (p) { p.style.display = 'none'; });
-        btn.classList.add('active');
-        document.getElementById('panel-' + btn.getAttribute('data-tab')).style.display = 'block';
-    });
-});
-</script>
 <?php require __DIR__ . '/includes/footer.php'; ?>

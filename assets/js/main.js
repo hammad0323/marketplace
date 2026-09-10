@@ -37,19 +37,63 @@
     });
 
     // ---- Dropdown menus ---------------------------------------------------------
+    // aria-haspopup/aria-expanded are set here in JS (not the markup) so every
+    // trigger site-wide — nav, notifications, user menu — gets correct,
+    // consistent disclosure-widget semantics without touching each template.
     document.querySelectorAll('[data-dropdown-trigger]').forEach(function (trigger) {
         var menu = document.getElementById(trigger.getAttribute('data-dropdown-trigger'));
         if (!menu) return;
+        trigger.setAttribute('aria-haspopup', 'true');
+        trigger.setAttribute('aria-expanded', 'false');
         trigger.addEventListener('click', function (e) {
             e.stopPropagation();
             document.querySelectorAll('.dropdown-menu.open').forEach(function (m) {
-                if (m !== menu) m.classList.remove('open');
+                if (m !== menu) {
+                    m.classList.remove('open');
+                    var t = document.querySelector('[data-dropdown-trigger="' + m.id + '"]');
+                    if (t) t.setAttribute('aria-expanded', 'false');
+                }
             });
-            menu.classList.toggle('open');
+            var willOpen = !menu.classList.contains('open');
+            menu.classList.toggle('open', willOpen);
+            trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
         });
     });
     document.addEventListener('click', function () {
-        document.querySelectorAll('.dropdown-menu.open').forEach(function (m) { m.classList.remove('open'); });
+        document.querySelectorAll('.dropdown-menu.open').forEach(function (m) {
+            m.classList.remove('open');
+            var t = document.querySelector('[data-dropdown-trigger="' + m.id + '"]');
+            if (t) t.setAttribute('aria-expanded', 'false');
+        });
+    });
+
+    // ---- Tab groups (role="tablist") --------------------------------------------
+    // One generic, ARIA-complete implementation shared by every tabbed panel
+    // site-wide (doctor/pharmacy profile & storefront, admin settings, public
+    // doctor profile) — driven purely by role/aria-controls markup, so the
+    // panel container's own class name doesn't matter.
+    document.querySelectorAll('[role="tablist"]').forEach(function (tablist) {
+        var tabs = Array.prototype.slice.call(tablist.querySelectorAll('[role="tab"]'));
+        function activate(tab) {
+            tabs.forEach(function (t) {
+                var selected = t === tab;
+                t.classList.toggle('active', selected);
+                t.setAttribute('aria-selected', selected ? 'true' : 'false');
+                t.setAttribute('tabindex', selected ? '0' : '-1');
+                var panel = document.getElementById(t.getAttribute('aria-controls'));
+                if (panel) panel.style.display = selected ? '' : 'none';
+            });
+        }
+        tabs.forEach(function (tab, i) {
+            tab.addEventListener('click', function () { activate(tab); });
+            tab.addEventListener('keydown', function (e) {
+                if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+                e.preventDefault();
+                var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+                next.focus();
+                activate(next);
+            });
+        });
     });
 
     // ---- Scroll reveal animations ------------------------------------------------

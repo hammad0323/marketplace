@@ -1,12 +1,12 @@
 <?php $specs = mysqli_query(db(), 'SELECT id, name FROM specializations WHERE is_active = 1 ORDER BY name'); ?>
-<div class="modal-overlay" id="auth-modal">
+<div class="modal-overlay" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
     <div class="modal-box">
         <button class="modal-close" data-modal-close aria-label="Close"><i class="ri-close-line"></i></button>
         <div class="modal-visual">
             <div class="floating-shape" style="width:120px;height:120px;background:rgba(255,255,255,0.15);top:-30px;right:-30px;"></div>
             <div class="floating-shape" style="width:80px;height:80px;background:rgba(255,255,255,0.12);bottom:20px;left:-20px;animation-delay:1s;"></div>
             <i class="ri-shield-check-fill" style="font-size:44px;margin-bottom:20px;"></i>
-            <h3>Care that comes to you</h3>
+            <h3 id="auth-modal-title">Care that comes to you</h3>
             <p>Join thousands of patients booking verified doctors online in seconds — or apply as a doctor to grow your practice.</p>
         </div>
         <div class="modal-form-side">

@@ -48,12 +48,12 @@ require __DIR__ . '/includes/header.php';
     <p style="color:var(--color-text-muted);margin-bottom:20px;">Your pharmacy must be verified before you can list products. Check your <a href="/pharmacy/dashboard">dashboard</a> for status.</p>
 </div>
 <?php else: ?>
-<div class="tabs-row">
-    <button class="tab-btn active" data-tab="catalog">My Catalog</button>
-    <button class="tab-btn" data-tab="orders">Orders <?php if ($pendingCount = count(array_filter($orders, fn($o) => $o['status'] === 'pending'))): ?><span class="badge badge-pending" style="margin-left:4px;"><?= $pendingCount ?></span><?php endif; ?></button>
+<div class="tabs-row" role="tablist">
+    <button class="tab-btn active" id="tab-btn-catalog" role="tab" aria-controls="panel-catalog" aria-selected="true" tabindex="0">My Catalog</button>
+    <button class="tab-btn" id="tab-btn-orders" role="tab" aria-controls="panel-orders" aria-selected="false" tabindex="-1">Orders <?php if ($pendingCount = count(array_filter($orders, fn($o) => $o['status'] === 'pending'))): ?><span class="badge badge-pending" style="margin-left:4px;"><?= $pendingCount ?></span><?php endif; ?></button>
 </div>
 
-<div class="doc-tab-panel" id="panel-catalog">
+<div class="doc-tab-panel" id="panel-catalog" role="tabpanel" aria-labelledby="tab-btn-catalog" tabindex="0">
     <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
         <button type="button" class="btn btn-primary btn-sm" id="add-product-btn"><i class="ri-add-line"></i> Add Product / Service</button>
     </div>
@@ -89,7 +89,7 @@ require __DIR__ . '/includes/header.php';
     <?php endif; ?>
 </div>
 
-<div class="doc-tab-panel" id="panel-orders" style="display:none;">
+<div class="doc-tab-panel" id="panel-orders" role="tabpanel" aria-labelledby="tab-btn-orders" tabindex="0" style="display:none;">
     <?php if (!$orders): ?>
     <div class="card empty-state" data-reveal><i class="ri-shopping-bag-3-line"></i><h4>No orders yet</h4><p>Requests from patients for your products will show up here.</p></div>
     <?php else: ?>
@@ -195,15 +195,5 @@ require __DIR__ . '/includes/header.php';
         </div>
     </div>
 </div>
-<script>
-document.querySelectorAll('.tabs-row .tab-btn').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-        document.querySelectorAll('.tabs-row .tab-btn').forEach(function (b) { b.classList.remove('active'); });
-        document.querySelectorAll('.doc-tab-panel').forEach(function (p) { p.style.display = 'none'; });
-        btn.classList.add('active');
-        document.getElementById('panel-' + btn.getAttribute('data-tab')).style.display = 'block';
-    });
-});
-</script>
 <?php endif; ?>
 <?php require __DIR__ . '/includes/footer.php'; ?>

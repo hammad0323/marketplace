@@ -130,14 +130,14 @@ require __DIR__ . '/includes/header.php';
                     </div>
                 </div>
 
-                <div class="tabs-row">
-                    <button class="tab-btn active" data-tab-target="overview">Overview</button>
-                    <?php if ($certificates): ?><button class="tab-btn" data-tab-target="certificates">Certificates</button><?php endif; ?>
-                    <?php if ($products): ?><button class="tab-btn" data-tab-target="store">Products &amp; Services (<?= count($products) ?>)</button><?php endif; ?>
-                    <?php if ($privacy['show_reviews']): ?><button class="tab-btn" data-tab-target="reviews">Reviews (<?= count($reviews) ?>)</button><?php endif; ?>
+                <div class="tabs-row" role="tablist">
+                    <button class="tab-btn active" id="tab-btn-overview" role="tab" aria-controls="tab-overview" aria-selected="true" tabindex="0">Overview</button>
+                    <?php if ($certificates): ?><button class="tab-btn" id="tab-btn-certificates" role="tab" aria-controls="tab-certificates" aria-selected="false" tabindex="-1">Certificates</button><?php endif; ?>
+                    <?php if ($products): ?><button class="tab-btn" id="tab-btn-store" role="tab" aria-controls="tab-store" aria-selected="false" tabindex="-1">Products &amp; Services (<?= count($products) ?>)</button><?php endif; ?>
+                    <?php if ($privacy['show_reviews']): ?><button class="tab-btn" id="tab-btn-reviews" role="tab" aria-controls="tab-reviews" aria-selected="false" tabindex="-1">Reviews (<?= count($reviews) ?>)</button><?php endif; ?>
                 </div>
 
-                <div class="tab-panel" id="tab-overview">
+                <div class="tab-panel" id="tab-overview" role="tabpanel" aria-labelledby="tab-btn-overview" tabindex="0">
                     <div class="card" style="padding:28px;margin-bottom:20px;" data-reveal>
                         <h4 style="margin-bottom:12px;">About</h4>
                         <p style="color:var(--color-text-muted);line-height:1.8;"><?= nl2br(e($doctor['bio'])) ?></p>
@@ -159,7 +159,7 @@ require __DIR__ . '/includes/header.php';
                 </div>
 
                 <?php if ($certificates): ?>
-                <div class="tab-panel" id="tab-certificates" style="display:none;">
+                <div class="tab-panel" id="tab-certificates" role="tabpanel" aria-labelledby="tab-btn-certificates" tabindex="0" style="display:none;">
                     <div class="grid grid-2">
                         <?php foreach ($certificates as $c): ?>
                         <div class="card" style="padding:20px;display:flex;gap:14px;align-items:center;">
@@ -172,7 +172,7 @@ require __DIR__ . '/includes/header.php';
                 <?php endif; ?>
 
                 <?php if ($products): ?>
-                <div class="tab-panel" id="tab-store" style="display:none;">
+                <div class="tab-panel" id="tab-store" role="tabpanel" aria-labelledby="tab-btn-store" tabindex="0" style="display:none;">
                     <div class="grid grid-2 stagger">
                         <?php foreach ($products as $p): ?>
                         <div class="card" style="padding:20px;" data-reveal>
@@ -194,7 +194,7 @@ require __DIR__ . '/includes/header.php';
                 <?php endif; ?>
 
                 <?php if ($privacy['show_reviews']): ?>
-                <div class="tab-panel" id="tab-reviews" style="display:none;">
+                <div class="tab-panel" id="tab-reviews" role="tabpanel" aria-labelledby="tab-btn-reviews" tabindex="0" style="display:none;">
                     <?php if (!$reviews): ?>
                     <div class="empty-state card"><i class="ri-chat-quote-line"></i><h4>No reviews yet</h4><p>Be the first patient to leave a review after your consultation.</p></div>
                     <?php else: foreach ($reviews as $r): ?>
@@ -247,16 +247,6 @@ require __DIR__ . '/includes/header.php';
     </div>
 </section>
 
-<script>
-document.querySelectorAll('.tab-btn').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-        document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); });
-        document.querySelectorAll('.tab-panel').forEach(function (p) { p.style.display = 'none'; });
-        btn.classList.add('active');
-        document.getElementById('tab-' + btn.getAttribute('data-tab-target')).style.display = 'block';
-    });
-});
-</script>
 <?php
 $viewerIsGuest = !is_logged_in();
 $viewerCanMessage = $viewerIsGuest || current_role() === 'patient';

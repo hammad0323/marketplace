@@ -50,15 +50,15 @@ require __DIR__ . '/includes/header.php';
     </div>
 
     <div>
-        <div class="tabs-row">
-            <button class="tab-btn active" data-tab="info">Profile Info</button>
-            <button class="tab-btn" data-tab="privacy">Privacy</button>
-            <button class="tab-btn" data-tab="messaging">Messaging</button>
-            <button class="tab-btn" data-tab="certs">Certificates</button>
-            <button class="tab-btn" data-tab="password">Password</button>
+        <div class="tabs-row" role="tablist">
+            <button class="tab-btn active" id="tab-btn-info" role="tab" aria-controls="panel-info" aria-selected="true" tabindex="0">Profile Info</button>
+            <button class="tab-btn" id="tab-btn-privacy" role="tab" aria-controls="panel-privacy" aria-selected="false" tabindex="-1">Privacy</button>
+            <button class="tab-btn" id="tab-btn-messaging" role="tab" aria-controls="panel-messaging" aria-selected="false" tabindex="-1">Messaging</button>
+            <button class="tab-btn" id="tab-btn-certs" role="tab" aria-controls="panel-certs" aria-selected="false" tabindex="-1">Certificates</button>
+            <button class="tab-btn" id="tab-btn-password" role="tab" aria-controls="panel-password" aria-selected="false" tabindex="-1">Password</button>
         </div>
 
-        <div class="doc-tab-panel" id="panel-info">
+        <div class="doc-tab-panel" id="panel-info" role="tabpanel" aria-labelledby="tab-btn-info" tabindex="0">
             <div class="card" style="padding:28px;" data-reveal>
                 <form id="profile-form" data-endpoint="/ajax/doctor-profile-update.php" novalidate>
                     <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
@@ -104,7 +104,7 @@ require __DIR__ . '/includes/header.php';
             </div>
         </div>
 
-        <div class="doc-tab-panel" id="panel-privacy" style="display:none;">
+        <div class="doc-tab-panel" id="panel-privacy" role="tabpanel" aria-labelledby="tab-btn-privacy" tabindex="0" style="display:none;">
             <div class="card" style="padding:28px;" data-reveal>
                 <p style="color:var(--color-text-muted);margin-bottom:20px;">Control which sections of your public profile patients can see.</p>
                 <form id="privacy-form">
@@ -125,7 +125,7 @@ require __DIR__ . '/includes/header.php';
             </div>
         </div>
 
-        <div class="doc-tab-panel" id="panel-messaging" style="display:none;">
+        <div class="doc-tab-panel" id="panel-messaging" role="tabpanel" aria-labelledby="tab-btn-messaging" tabindex="0" style="display:none;">
             <div class="card" style="padding:28px;" data-reveal>
                 <p style="color:var(--color-text-muted);margin-bottom:20px;">Let patients message you directly from your profile. You choose the hours it's available and whether visitors have to sign in first to see it.</p>
                 <form id="chat-settings-form">
@@ -152,7 +152,7 @@ require __DIR__ . '/includes/header.php';
             </div>
         </div>
 
-        <div class="doc-tab-panel" id="panel-certs" style="display:none;">
+        <div class="doc-tab-panel" id="panel-certs" role="tabpanel" aria-labelledby="tab-btn-certs" tabindex="0" style="display:none;">
             <div class="card" style="padding:28px;margin-bottom:20px;" data-reveal>
                 <h4 style="margin-bottom:16px;">Upload Certificate</h4>
                 <form id="cert-form" style="display:grid;grid-template-columns:1fr 1fr 100px auto;gap:10px;align-items:end;">
@@ -181,7 +181,7 @@ require __DIR__ . '/includes/header.php';
             </div>
         </div>
 
-        <div class="doc-tab-panel" id="panel-password" style="display:none;">
+        <div class="doc-tab-panel" id="panel-password" role="tabpanel" aria-labelledby="tab-btn-password" tabindex="0" style="display:none;">
             <div class="card" style="padding:28px;" data-reveal>
                 <form id="password-form" novalidate>
                     <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
@@ -196,14 +196,4 @@ require __DIR__ . '/includes/header.php';
         </div>
     </div>
 </div>
-<script>
-document.querySelectorAll('.tabs-row .tab-btn').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-        document.querySelectorAll('.tabs-row .tab-btn').forEach(function (b) { b.classList.remove('active'); });
-        document.querySelectorAll('.doc-tab-panel').forEach(function (p) { p.style.display = 'none'; });
-        btn.classList.add('active');
-        document.getElementById('panel-' + btn.getAttribute('data-tab')).style.display = 'block';
-    });
-});
-</script>
 <?php require __DIR__ . '/includes/footer.php'; ?>

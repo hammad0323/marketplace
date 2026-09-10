@@ -1,8 +1,8 @@
-<div class="modal-overlay" id="guest-contact-modal">
+<div class="modal-overlay" id="guest-contact-modal" role="dialog" aria-modal="true" aria-labelledby="guest-contact-modal-title">
     <div class="modal-box" style="grid-template-columns:1fr;max-width:440px;">
         <button class="modal-close" data-modal-close aria-label="Close"><i class="ri-close-line"></i></button>
         <div class="modal-form-side">
-            <h3 style="font-size:20px;margin-bottom:8px;">Continue without an account</h3>
+            <h3 id="guest-contact-modal-title" style="font-size:20px;margin-bottom:8px;">Continue without an account</h3>
             <p style="color:var(--color-text-muted);font-size:14px;margin-bottom:24px;">Enter your email or phone number and we'll set up an account for you automatically — no password to create right now.</p>
             <form id="guest-contact-form" novalidate>
                 <div class="form-group" data-field="contact">
