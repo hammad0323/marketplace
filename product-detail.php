@@ -189,7 +189,7 @@ require __DIR__ . '/includes/header.php';
                             <i class="ri-checkbox-circle-fill" style="font-size:40px;color:var(--color-success);margin-bottom:10px;display:block;"></i>
                             <strong style="display:block;margin-bottom:6px;">Order sent!</strong>
                             <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:16px;">The seller will confirm your order shortly.</p>
-                            <a href="/patient/orders" class="btn btn-outline btn-block">View My Orders</a>
+                            <a href="/patient/orders" rel="nofollow" class="btn btn-outline btn-block">View My Orders</a>
                         </div>
                     <?php endif; ?>
                 </div>

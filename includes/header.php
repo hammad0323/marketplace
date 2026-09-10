@@ -47,8 +47,8 @@ $user = current_user();
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"></noscript>
-<link rel="stylesheet" href="/assets/fonts/remixicon/remixicon.css">
-<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="<?= asset_url('/assets/fonts/remixicon/remixicon.css') ?>">
+<link rel="stylesheet" href="<?= asset_url('/assets/css/style.css') ?>">
 <?php if (!empty($extraHead)) echo $extraHead; ?>
 </head>
 <body data-logged-in="<?= is_logged_in() ? '1' : '0' ?>">
@@ -91,16 +91,16 @@ $user = current_user();
                     </button>
                     <div class="dropdown-menu" id="user-dropdown">
                         <?php $home = role_home_url($user['role']); ?>
-                        <a href="<?= e($home) ?>"><i class="ri-dashboard-3-line"></i> Dashboard</a>
+                        <a href="<?= e($home) ?>" rel="nofollow"><i class="ri-dashboard-3-line"></i> Dashboard</a>
                         <?php if ($user['role'] === 'patient'): ?>
-                        <a href="/patient/appointments"><i class="ri-calendar-check-line"></i> My Appointments</a>
-                        <a href="/patient/profile"><i class="ri-user-line"></i> Profile</a>
+                        <a href="/patient/appointments" rel="nofollow"><i class="ri-calendar-check-line"></i> My Appointments</a>
+                        <a href="/patient/profile" rel="nofollow"><i class="ri-user-line"></i> Profile</a>
                         <?php elseif ($user['role'] === 'doctor'): ?>
-                        <a href="/doctor/appointments"><i class="ri-calendar-check-line"></i> Appointments</a>
-                        <a href="/doctor/profile"><i class="ri-user-line"></i> Profile</a>
+                        <a href="/doctor/appointments" rel="nofollow"><i class="ri-calendar-check-line"></i> Appointments</a>
+                        <a href="/doctor/profile" rel="nofollow"><i class="ri-user-line"></i> Profile</a>
                         <?php elseif ($user['role'] === 'pharmacy'): ?>
-                        <a href="/pharmacy/products"><i class="ri-store-2-line"></i> My Store</a>
-                        <a href="/pharmacy/profile"><i class="ri-user-line"></i> Profile</a>
+                        <a href="/pharmacy/products" rel="nofollow"><i class="ri-store-2-line"></i> My Store</a>
+                        <a href="/pharmacy/profile" rel="nofollow"><i class="ri-user-line"></i> Profile</a>
                         <?php endif; ?>
                         <div class="dropdown-divider"></div>
                         <a href="/logout"><i class="ri-logout-box-line"></i> Logout</a>

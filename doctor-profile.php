@@ -264,7 +264,7 @@ if ($viewerCanMessage && doctor_chat_visible($doctor, $viewerIsGuest)):
     $chatOnline = doctor_chat_available($doctor);
 ?>
 <div class="doctor-chat-widget" data-reveal="zoom">
-    <a href="/patient/messages?doctor_id=<?= (int)$doctor['id'] ?>" class="doctor-chat-fab" <?= $viewerIsGuest ? 'data-guest-message data-doctor-id="' . (int)$doctor['id'] . '"' : '' ?>>
+    <a href="/patient/messages?doctor_id=<?= (int)$doctor['id'] ?>" class="doctor-chat-fab" rel="nofollow" <?= $viewerIsGuest ? 'data-guest-message data-doctor-id="' . (int)$doctor['id'] . '"' : '' ?>>
         <img src="<?= e(avatar_url($doctor['avatar'], $doctor['full_name'])) ?>" alt="">
         <span>
             Message <?= e($doctor['full_name']) ?>

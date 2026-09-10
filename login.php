@@ -47,7 +47,7 @@ require __DIR__ . '/includes/header.php';
                         New here? <a href="/register" style="color:var(--color-primary);font-weight:600;">Create an account</a>
                     </p>
                     <p style="text-align:center;font-size:12.5px;margin-top:8px;color:var(--color-text-muted);">
-                        <a href="/admin/login" style="color:var(--color-text-muted);">Admin Login</a>
+                        <a href="/admin/login" rel="nofollow" style="color:var(--color-text-muted);">Admin Login</a>
                     </p>
                 </form>
             </div>

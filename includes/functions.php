@@ -292,6 +292,20 @@ function day_name($index)
     return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][$index] ?? '';
 }
 
+/**
+ * Cache-busted URL for a local static asset (CSS/JS under /assets). Appends
+ * the file's own last-modified time as a query string, so a long-lived
+ * Cache-Control header (see .htaccess) can safely be set to a full year —
+ * editing the file changes its mtime, which changes this URL, which forces
+ * every browser to fetch the new copy regardless of what it had cached.
+ */
+function asset_url($path)
+{
+    $file = APP_ROOT . $path;
+    $mtime = @filemtime($file);
+    return $path . ($mtime ? '?v=' . $mtime : '');
+}
+
 function avatar_url($path, $fallbackSeed = 'U')
 {
     if ($path) {
