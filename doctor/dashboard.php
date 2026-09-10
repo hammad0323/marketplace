@@ -36,12 +36,13 @@ while ($m = mysqli_fetch_assoc($monthly)) {
 
 $pageTitle = 'Dashboard';
 $heading = 'My Dashboard';
-$extraScripts = '<script src="/assets/js/vendor/chart.umd.js"></script><script src="/assets/js/doctor-appointments.js"></script><script>'
+$extraScripts = '<script defer src="/assets/js/vendor/chart.umd.js"></script><script defer src="/assets/js/doctor-appointments.js"></script><script>'
+    . 'document.addEventListener("DOMContentLoaded", function () {'
     . 'new Chart(document.getElementById("apptChart"), {'
     . 'type: "bar",'
     . 'data: { labels: ' . json_encode($chartLabels) . ', datasets: [{ label: "Appointments", data: ' . json_encode($chartData) . ', backgroundColor: "#0C6B5D", borderRadius: 8 }] },'
     . 'options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }'
-    . '});</script>';
+    . '}); });</script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="card-gradient-border" style="margin-bottom:24px;" data-reveal>

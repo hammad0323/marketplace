@@ -4,7 +4,7 @@ require_doctor_page();
 
 $pageTitle = 'Messages';
 $heading = 'Messages';
-$extraScripts = '<script src="/assets/js/chat.js"></script>';
+$extraScripts = '<script defer src="/assets/js/chat.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="chat-shell" id="chat-shell">

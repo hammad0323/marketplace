@@ -37,7 +37,7 @@ if ($isVerified) {
     $orders = mysqli_stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC);
     mysqli_stmt_close($stmt);
 
-    $extraScripts = '<script>window.PRODUCT_SAVE_URL="/ajax/pharmacy-product-save.php";window.PRODUCT_DELETE_URL="/ajax/pharmacy-product-delete.php";window.ORDER_UPDATE_URL="/ajax/pharmacy-order-update.php";</script><script src="/assets/js/doctor-products.js"></script>';
+    $extraScripts = '<script>window.PRODUCT_SAVE_URL="/ajax/pharmacy-product-save.php";window.PRODUCT_DELETE_URL="/ajax/pharmacy-product-delete.php";window.ORDER_UPDATE_URL="/ajax/pharmacy-order-update.php";</script><script defer src="/assets/js/doctor-products.js"></script>';
 }
 require __DIR__ . '/includes/header.php';
 ?>

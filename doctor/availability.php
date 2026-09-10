@@ -22,7 +22,7 @@ mysqli_stmt_close($stmt);
 
 $pageTitle = 'Availability';
 $heading = 'Availability';
-$extraScripts = '<script src="/assets/js/doctor-availability.js"></script>';
+$extraScripts = '<script defer src="/assets/js/doctor-availability.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="card" style="padding:28px;margin-bottom:24px;" data-reveal>

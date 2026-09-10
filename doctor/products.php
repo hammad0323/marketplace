@@ -36,7 +36,7 @@ if ($isPremium) {
     $orders = mysqli_stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC);
     mysqli_stmt_close($stmt);
 
-    $extraScripts = '<script src="/assets/js/doctor-products.js"></script>';
+    $extraScripts = '<script defer src="/assets/js/doctor-products.js"></script>';
 }
 require __DIR__ . '/includes/header.php';
 ?>

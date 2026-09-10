@@ -32,7 +32,7 @@ $statusLabels = ['ongoing' => 'Ongoing', 'improving' => 'Improving', 'stable' =>
 
 $pageTitle = 'Patient History — ' . $patient['full_name'];
 $heading = 'Patient History';
-$extraScripts = '<script src="/assets/js/patient-history.js"></script>';
+$extraScripts = '<script defer src="/assets/js/patient-history.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <a href="/doctor/patients" style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;color:var(--color-text-muted);margin-bottom:16px;"><i class="ri-arrow-left-line"></i> Back to My Patients</a>

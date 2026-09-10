@@ -13,12 +13,15 @@
     })();
 
     // ---- Navbar scroll state --------------------------------------------------
+    // The initial check runs on the next frame (not synchronously here) so
+    // reading window.scrollY doesn't force a layout flush in the middle of
+    // this script's own initial execution, right after other DOM writes above.
     var navbar = document.querySelector('.navbar');
     if (navbar) {
         var onScroll = function () {
             navbar.classList.toggle('scrolled', window.scrollY > 12);
         };
-        onScroll();
+        requestAnimationFrame(onScroll);
         window.addEventListener('scroll', onScroll, { passive: true });
     }
 

@@ -21,7 +21,7 @@ $appointments = mysqli_query(db(), "
 
 $pageTitle = 'Appointments';
 $heading = 'Appointments';
-$extraScripts = '<script src="/assets/js/doctor-appointments.js"></script>';
+$extraScripts = '<script defer src="/assets/js/doctor-appointments.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="tabs-row">

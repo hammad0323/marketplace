@@ -9,7 +9,7 @@ $specs = mysqli_query(db(), "
 
 $pageTitle = 'Specializations';
 $heading = 'Specializations';
-$extraScripts = '<script src="/assets/js/admin-specializations.js"></script>';
+$extraScripts = '<script defer src="/assets/js/admin-specializations.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">

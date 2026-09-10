@@ -19,7 +19,7 @@ mysqli_stmt_close($stmt);
 
 $pageTitle = 'My Profile';
 $heading = 'My Profile';
-$extraScripts = '<script src="/assets/js/profile.js"></script><script>window.CERT_UPLOAD_URL="/ajax/pharmacy-certificate.php";</script><script src="/assets/js/certificate-upload.js"></script>';
+$extraScripts = '<script defer src="/assets/js/profile.js"></script><script>window.CERT_UPLOAD_URL="/ajax/pharmacy-certificate.php";</script><script defer src="/assets/js/certificate-upload.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="split-sidebar-left">

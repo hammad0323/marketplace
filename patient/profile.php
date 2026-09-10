@@ -12,7 +12,7 @@ mysqli_stmt_close($stmt);
 
 $pageTitle = 'My Profile';
 $heading = 'My Profile';
-$extraScripts = '<script src="/assets/js/profile.js"></script>';
+$extraScripts = '<script defer src="/assets/js/profile.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="split-sidebar-left">

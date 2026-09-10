@@ -23,7 +23,7 @@ $patients = mysqli_stmt_get_result($stmt);
 
 $pageTitle = 'Patients';
 $heading = 'Manage Patients';
-$extraScripts = '<script src="/assets/js/admin-patients.js"></script>';
+$extraScripts = '<script defer src="/assets/js/admin-patients.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <form method="get" style="margin-bottom:20px;max-width:360px;">

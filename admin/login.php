@@ -51,8 +51,8 @@ $pageTitle = 'Admin Login';
     </div>
 </div>
 <script>window.APP = { csrfToken: <?= json_encode(csrf_token()) ?> };</script>
-<script src="/assets/js/toast.js"></script>
-<script src="/assets/js/main.js"></script>
+<script defer src="/assets/js/toast.js"></script>
+<script defer src="/assets/js/main.js"></script>
 <script>
 document.getElementById('admin-login-form').addEventListener('submit', function (e) {
     e.preventDefault();

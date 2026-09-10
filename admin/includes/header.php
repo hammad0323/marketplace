@@ -17,7 +17,9 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — Admin — ' . SITE_NAME;
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"></noscript>
-<link rel="stylesheet" href="<?= asset_url('/assets/fonts/remixicon/remixicon.css') ?>">
+<link rel="preload" as="font" type="font/woff2" href="/assets/fonts/remixicon/remixicon.woff2?t=1708865856766" crossorigin>
+<link rel="preload" as="style" href="<?= asset_url('/assets/fonts/remixicon/remixicon.css') ?>" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="<?= asset_url('/assets/fonts/remixicon/remixicon.css') ?>"></noscript>
 <link rel="stylesheet" href="<?= asset_url('/assets/css/style.css') ?>">
 </head>
 <body data-logged-in="1">

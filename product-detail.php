@@ -79,7 +79,7 @@ $extraHead = '<script type="application/ld+json">' . json_encode(array_filter([
     ],
     'provider' => ['@type' => $isPharmacySeller ? 'Pharmacy' : 'Physician', 'name' => $sellerName],
 ])) . '</script>';
-$extraScripts = '<script src="/assets/js/product-checkout.js"></script>';
+$extraScripts = '<script defer src="/assets/js/product-checkout.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 40px);">

@@ -15,7 +15,7 @@ $doctors = mysqli_query(db(), "
 
 $pageTitle = 'Doctors';
 $heading = 'Manage Doctors';
-$extraScripts = '<script src="/assets/js/admin-doctors.js"></script>';
+$extraScripts = '<script defer src="/assets/js/admin-doctors.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="tabs-row">

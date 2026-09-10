@@ -39,7 +39,8 @@ $recentDoctors = mysqli_query($db, "
 
 $pageTitle = 'Dashboard';
 $heading = 'Admin Dashboard';
-$extraScripts = '<script src="/assets/js/vendor/chart.umd.js"></script><script>'
+$extraScripts = '<script defer src="/assets/js/vendor/chart.umd.js"></script><script>'
+    . 'document.addEventListener("DOMContentLoaded", function () {'
     . 'new Chart(document.getElementById("apptChart"), {'
     . 'type: "line",'
     . 'data: { labels: ' . json_encode($chartLabels) . ', datasets: [{ label: "Appointments", data: ' . json_encode($chartData) . ', borderColor: "#0C6B5D", backgroundColor: "rgba(12,107,93,0.12)", fill: true, tension: 0.4 }] },'
@@ -49,7 +50,7 @@ $extraScripts = '<script src="/assets/js/vendor/chart.umd.js"></script><script>'
     . 'type: "doughnut",'
     . 'data: { labels: ' . json_encode($statusLabels) . ', datasets: [{ data: ' . json_encode($statusData) . ', backgroundColor: ["#F59E0B","#0C6B5D","#22C55E","#EF4444","#22C3AB","#C4EEE7"] }] },'
     . 'options: { plugins: { legend: { position: "bottom" } } }'
-    . '});</script>';
+    . '}); });</script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="grid grid-4 stagger" style="margin-bottom:28px;">

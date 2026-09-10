@@ -23,7 +23,7 @@ $sitemapUrlCount = $sitemapExists ? substr_count(file_get_contents($sitemapPath)
 
 $pageTitle = 'Site Settings';
 $heading = 'Site Settings';
-$extraScripts = '<script src="/assets/js/admin-settings.js"></script>';
+$extraScripts = '<script defer src="/assets/js/admin-settings.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="tabs-row" role="tablist">

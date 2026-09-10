@@ -6,7 +6,7 @@ $messages = mysqli_query(db(), 'SELECT * FROM contact_messages ORDER BY created_
 
 $pageTitle = 'Messages';
 $heading = 'Contact Messages';
-$extraScripts = '<script src="/assets/js/admin-messages.js"></script>';
+$extraScripts = '<script defer src="/assets/js/admin-messages.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <?php if (mysqli_num_rows($messages) === 0): ?>

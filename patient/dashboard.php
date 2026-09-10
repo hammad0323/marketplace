@@ -36,7 +36,8 @@ while ($m = mysqli_fetch_assoc($monthly)) {
 
 $pageTitle = 'Dashboard';
 $heading = 'My Dashboard';
-$extraScripts = '<script src="/assets/js/vendor/chart.umd.js"></script><script>'
+$extraScripts = '<script defer src="/assets/js/vendor/chart.umd.js"></script><script>'
+    . 'document.addEventListener("DOMContentLoaded", function () {'
     . 'new Chart(document.getElementById("apptChart"), {'
     . 'type: "line",'
     . 'data: { labels: ' . json_encode($chartLabels) . ', datasets: [{'
@@ -44,7 +45,7 @@ $extraScripts = '<script src="/assets/js/vendor/chart.umd.js"></script><script>'
     . 'borderColor: "#0C6B5D", backgroundColor: "rgba(12,107,93,0.12)", fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: "#0C6B5D"'
     . '}] },'
     . 'options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }'
-    . '});</script>';
+    . '}); });</script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="card-gradient-border" style="margin-bottom:24px;" data-reveal>

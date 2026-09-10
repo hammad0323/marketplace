@@ -44,7 +44,7 @@ $totalDoctors = mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM do
 $totalAppointments = mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM appointments"))['c'];
 $totalSpecs = mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM specializations WHERE is_active=1"))['c'];
 
-$extraScripts = '<script src="/assets/js/search-suggest.js"></script>';
+$extraScripts = '<script defer src="/assets/js/search-suggest.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 

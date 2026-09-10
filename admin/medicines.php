@@ -10,9 +10,9 @@ $medicines = mysqli_query(db(), "
 $csrfToken = csrf_token();
 $pageTitle = 'Medicine Info';
 $heading = 'Medicine Info';
-$extraScripts = '<script src="/assets/js/rich-editor.js"></script><script src="/assets/js/seo-score.js"></script>'
+$extraScripts = '<script defer src="/assets/js/rich-editor.js"></script><script defer src="/assets/js/seo-score.js"></script>'
     . '<script>window.MEDICINE_SAVE_URL="/ajax/admin-medicine-save.php";window.MEDICINE_DELETE_URL="/ajax/admin-medicine-delete.php";</script>'
-    . '<script src="/assets/js/medicine-form.js"></script>';
+    . '<script defer src="/assets/js/medicine-form.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <p style="color:var(--color-text-muted);margin-bottom:20px;max-width:720px;">

@@ -15,7 +15,7 @@ $pharmacies = mysqli_query(db(), "
 
 $pageTitle = 'Pharmacies';
 $heading = 'Manage Pharmacies';
-$extraScripts = '<script src="/assets/js/admin-pharmacies.js"></script>';
+$extraScripts = '<script defer src="/assets/js/admin-pharmacies.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="tabs-row">

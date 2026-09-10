@@ -90,7 +90,7 @@ $extraHead .= '<script type="application/ld+json">' . json_encode([
     '@context' => 'https://schema.org', '@type' => 'FAQPage',
     'mainEntity' => array_map(fn($f) => ['@type' => 'Question', 'name' => $f['q'], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f['a']]], $faqEntries),
 ]) . '</script>';
-$extraScripts = '<script src="/assets/js/calendar-widget.js"></script><script src="/assets/js/booking.js"></script>';
+$extraScripts = '<script defer src="/assets/js/calendar-widget.js"></script><script defer src="/assets/js/booking.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 40px);">

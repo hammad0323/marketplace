@@ -22,7 +22,7 @@ $appointments = mysqli_query(db(), "
 
 $pageTitle = 'My Appointments';
 $heading = 'My Appointments';
-$extraScripts = '<script src="/assets/js/calendar-widget.js"></script><script src="/assets/js/patient-appointments.js"></script>';
+$extraScripts = '<script defer src="/assets/js/calendar-widget.js"></script><script defer src="/assets/js/patient-appointments.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="tabs-row">
