@@ -33,19 +33,4 @@ require __DIR__ . '/includes/header.php';
         </div>
     </div>
 </section>
-<script>
-document.querySelectorAll('.faq-q').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-        var answer = btn.nextElementSibling;
-        var icon = btn.querySelector('i');
-        var isOpen = answer.style.maxHeight && answer.style.maxHeight !== '0px';
-        document.querySelectorAll('.faq-a').forEach(function (a) { a.style.maxHeight = '0px'; });
-        document.querySelectorAll('.faq-q i').forEach(function (i) { i.style.transform = 'rotate(0deg)'; });
-        if (!isOpen) {
-            answer.style.maxHeight = answer.scrollHeight + 'px';
-            icon.style.transform = 'rotate(45deg)';
-        }
-    });
-});
-</script>
 <?php require __DIR__ . '/includes/footer.php'; ?>

@@ -99,6 +99,30 @@
         });
     });
 
+    // ---- FAQ accordions (.faq-q trigger / .faq-a panel, anywhere on the site) --
+    document.querySelectorAll('.faq-q').forEach(function (btn, i) {
+        var answer = btn.nextElementSibling;
+        var icon = btn.querySelector('i');
+        var panelId = answer.id || ('faq-panel-' + i + '-' + Math.random().toString(36).slice(2, 7));
+        answer.id = panelId;
+        btn.setAttribute('aria-expanded', 'false');
+        btn.setAttribute('aria-controls', panelId);
+        btn.addEventListener('click', function () {
+            var isOpen = answer.style.maxHeight && answer.style.maxHeight !== '0px';
+            var group = btn.closest('[data-faq-group]') || document;
+            group.querySelectorAll('.faq-a').forEach(function (a) { a.style.maxHeight = '0px'; });
+            group.querySelectorAll('.faq-q').forEach(function (b) {
+                b.querySelector('i').style.transform = 'rotate(0deg)';
+                b.setAttribute('aria-expanded', 'false');
+            });
+            if (!isOpen) {
+                answer.style.maxHeight = answer.scrollHeight + 'px';
+                icon.style.transform = 'rotate(45deg)';
+                btn.setAttribute('aria-expanded', 'true');
+            }
+        });
+    });
+
     // ---- Scroll reveal animations ------------------------------------------------
     var revealEls = document.querySelectorAll('[data-reveal]');
     if ('IntersectionObserver' in window && revealEls.length) {

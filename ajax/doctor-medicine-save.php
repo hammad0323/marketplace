@@ -67,6 +67,7 @@ if ($id > 0) {
     );
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
+    save_medicine_faqs($id, (array) ($_POST['faq_question'] ?? []), (array) ($_POST['faq_answer'] ?? []));
     log_activity($authorId, 'doctor', 'update_medicine_info', "Updated medicine info #$id: {$fields['name']}");
     json_response(true, ['id' => $id, 'seo_score' => $seoScore], 'Medicine entry updated.');
 }
@@ -83,5 +84,6 @@ mysqli_stmt_execute($stmt);
 $newId = mysqli_insert_id($db);
 mysqli_stmt_close($stmt);
 
+save_medicine_faqs($newId, (array) ($_POST['faq_question'] ?? []), (array) ($_POST['faq_answer'] ?? []));
 log_activity($authorId, 'doctor', 'create_medicine_info', "Created medicine info #$newId: {$fields['name']}");
 json_response(true, ['id' => $newId, 'seo_score' => $seoScore], 'Medicine entry created.');

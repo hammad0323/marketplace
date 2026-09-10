@@ -583,10 +583,10 @@ CREATE TABLE medicine_info (
     generic_name     VARCHAR(180) DEFAULT NULL,
     composition      VARCHAR(255) DEFAULT NULL,
     category         VARCHAR(120) DEFAULT NULL,
-    uses             TEXT,
-    dosage           TEXT,
-    side_effects     TEXT,
-    precautions      TEXT,
+    uses             MEDIUMTEXT COMMENT 'rich HTML from the admin/doctor editor',
+    dosage           MEDIUMTEXT COMMENT 'rich HTML from the admin/doctor editor',
+    side_effects     MEDIUMTEXT COMMENT 'rich HTML from the admin/doctor editor',
+    precautions      MEDIUMTEXT COMMENT 'rich HTML from the admin/doctor editor',
     content          LONGTEXT COMMENT 'full rich-text description',
     featured_image   VARCHAR(255) DEFAULT NULL,
     focus_keyword    VARCHAR(150) DEFAULT NULL COMMENT 'the search term this entry targets, e.g. the medicine name',
@@ -599,6 +599,21 @@ CREATE TABLE medicine_info (
     UNIQUE KEY uq_medicine_info_slug (slug),
     FULLTEXT KEY ft_medicine_info_search (name, generic_name, uses, content),
     CONSTRAINT fk_medicine_info_author FOREIGN KEY (author_id) REFERENCES users(id)
+) ENGINE=InnoDB;
+
+-- Per-medicine FAQ list — admin/doctor-authored Q&A pairs shown as an
+-- accordion on the public medicine page and fed into FAQPage JSON-LD for
+-- AI answer engines. Replaced wholesale on every save (delete + re-insert),
+-- same pattern as set_doctor_specializations().
+DROP TABLE IF EXISTS medicine_faqs;
+CREATE TABLE medicine_faqs (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    medicine_id INT UNSIGNED NOT NULL,
+    question    VARCHAR(255) NOT NULL,
+    answer      TEXT NOT NULL,
+    sort_order  INT NOT NULL DEFAULT 0,
+    KEY idx_medicine_faqs_medicine (medicine_id),
+    CONSTRAINT fk_medicine_faqs_medicine FOREIGN KEY (medicine_id) REFERENCES medicine_info(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 DROP TABLE IF EXISTS support_tickets;

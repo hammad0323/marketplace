@@ -370,6 +370,56 @@ function set_doctor_specializations($doctorId, array $specializationIds)
     }
 }
 
+/**
+ * Replaces a medicine's FAQ list wholesale (delete + re-insert), same
+ * pattern as set_doctor_specializations(). $questions/$answers are the raw
+ * faq_question[]/faq_answer[] POST arrays — pairs where either side is
+ * blank are skipped, so an admin can leave trailing empty rows in the form
+ * without them being saved as junk FAQs.
+ */
+function save_medicine_faqs($medicineId, array $questions, array $answers)
+{
+    $db = db();
+    mysqli_begin_transaction($db);
+    try {
+        $stmt = mysqli_prepare($db, 'DELETE FROM medicine_faqs WHERE medicine_id = ?');
+        mysqli_stmt_bind_param($stmt, 'i', $medicineId);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+
+        $stmt = mysqli_prepare($db, 'INSERT INTO medicine_faqs (medicine_id, question, answer, sort_order) VALUES (?, ?, ?, ?)');
+        $order = 0;
+        foreach ($questions as $i => $question) {
+            $question = clean($question);
+            $answer = clean($answers[$i] ?? '');
+            if ($question === '' || $answer === '') {
+                continue;
+            }
+            $question = mb_substr($question, 0, 255);
+            mysqli_stmt_bind_param($stmt, 'issi', $medicineId, $question, $answer, $order);
+            mysqli_stmt_execute($stmt);
+            $order++;
+        }
+        mysqli_stmt_close($stmt);
+        mysqli_commit($db);
+    } catch (Exception $e) {
+        mysqli_rollback($db);
+        error_log('save_medicine_faqs failed: ' . $e->getMessage());
+        throw $e;
+    }
+}
+
+/** @return array<int,array{question:string,answer:string}> */
+function get_medicine_faqs($medicineId)
+{
+    $stmt = mysqli_prepare(db(), 'SELECT question, answer FROM medicine_faqs WHERE medicine_id = ? ORDER BY sort_order');
+    mysqli_stmt_bind_param($stmt, 'i', $medicineId);
+    mysqli_stmt_execute($stmt);
+    $rows = mysqli_stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC);
+    mysqli_stmt_close($stmt);
+    return $rows;
+}
+
 // ---------------------------------------------------------------------------
 // Settings, notifications, activity log, pagination
 // ---------------------------------------------------------------------------

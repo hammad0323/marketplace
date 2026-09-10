@@ -3,6 +3,10 @@ require __DIR__ . '/config/config.php';
 
 $q = clean($_GET['q'] ?? '');
 $category = clean($_GET['category'] ?? '');
+$letter = strtoupper(clean($_GET['letter'] ?? ''));
+if (!preg_match('/^[A-Z]$/', $letter)) {
+    $letter = '';
+}
 
 $where = ["status = 'published'"];
 $params = [];
@@ -19,6 +23,11 @@ if ($q !== '') {
 if ($category !== '') {
     $where[] = 'category = ?';
     $params[] = $category;
+    $types .= 's';
+}
+if ($letter !== '') {
+    $where[] = 'name LIKE ?';
+    $params[] = $letter . '%';
     $types .= 's';
 }
 
@@ -47,9 +56,9 @@ mysqli_stmt_close($stmt);
 
 $categories = mysqli_query(db(), "SELECT DISTINCT category FROM medicine_info WHERE status = 'published' AND category IS NOT NULL AND category != '' ORDER BY category")->fetch_all(MYSQLI_ASSOC);
 
-$pageTitle = ($q !== '' ? 'Search: ' . $q . ' — ' : '') . 'Medicine Information — ' . SITE_NAME;
+$pageTitle = ($q !== '' ? 'Search: ' . $q . ' — ' : ($letter !== '' ? $letter . ' — ' : '')) . 'Medicine Information — ' . SITE_NAME;
 $metaDescription = 'Search dosage, uses, side effects, and precautions for medicines, contributed by verified doctors on ' . SITE_NAME . '.';
-$canonical = filtered_canonical('/medicines', ['q' => $q, 'category' => $category]);
+$canonical = filtered_canonical('/medicines', ['q' => $q, 'category' => $category, 'letter' => $letter]);
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);padding-bottom:0;">
@@ -58,7 +67,8 @@ require __DIR__ . '/includes/header.php';
         <h1 style="font-size:32px;margin-bottom:8px;">Medicine Information</h1>
         <p style="color:var(--color-text-muted);margin-bottom:32px;">Search dosage, uses, side effects, and precautions — contributed by our doctors.</p>
 
-        <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px;max-width:640px;">
+        <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;max-width:640px;">
+            <?php if ($letter !== ''): ?><input type="hidden" name="letter" value="<?= e($letter) ?>"><?php endif; ?>
             <input type="text" name="q" class="form-control" placeholder="Search a medicine name…" value="<?= e($q) ?>" style="flex:1;min-width:220px;">
             <?php if ($categories): ?>
             <select name="category" class="form-control" style="max-width:200px;">
@@ -70,6 +80,18 @@ require __DIR__ . '/includes/header.php';
             <?php endif; ?>
             <button type="submit" class="btn btn-primary">Search</button>
         </form>
+
+        <?php
+        $letterQs = $_GET;
+        unset($letterQs['letter'], $letterQs['page']);
+        $letterBase = '/medicines' . ($letterQs ? '?' . http_build_query($letterQs) . '&' : '?');
+        ?>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:28px;" role="navigation" aria-label="Filter by first letter">
+            <a href="/medicines<?= $letterQs ? '?' . http_build_query($letterQs) : '' ?>" class="badge <?= $letter === '' ? 'badge-verified' : 'badge-free' ?>" style="min-width:34px;text-align:center;"<?= $letter === '' ? ' aria-current="true"' : '' ?>>All</a>
+            <?php foreach (range('A', 'Z') as $L): ?>
+            <a href="<?= e($letterBase . 'letter=' . $L) ?>" class="badge <?= $letter === $L ? 'badge-verified' : 'badge-free' ?>" style="min-width:28px;text-align:center;"<?= $letter === $L ? ' aria-current="true"' : '' ?>><?= $L ?></a>
+            <?php endforeach; ?>
+        </div>
     </div>
 </section>
 
@@ -101,7 +123,10 @@ require __DIR__ . '/includes/header.php';
             </a>
             <?php endforeach; ?>
         </div>
-        <?= pagination_links($pagination, '/medicines' . ($q !== '' ? '?q=' . urlencode($q) : '')) ?>
+        <?php
+        $pageQs = $_GET; unset($pageQs['page']);
+        echo pagination_links($pagination, '/medicines' . ($pageQs ? '?' . http_build_query($pageQs) : ''));
+        ?>
         <?php endif; ?>
     </div>
 </section>

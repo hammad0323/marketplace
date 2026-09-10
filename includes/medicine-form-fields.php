@@ -26,23 +26,26 @@
     <label class="form-label">Composition / Active Ingredients</label>
     <input type="text" class="form-control" name="composition" id="medicine-composition">
 </div>
-<div class="grid grid-2">
-    <div class="form-group">
-        <label class="form-label">Dosage</label>
-        <textarea class="form-control" name="dosage" id="medicine-dosage" rows="2"></textarea>
-    </div>
-    <div class="form-group">
-        <label class="form-label">Side Effects</label>
-        <textarea class="form-control" name="side_effects" id="medicine-side-effects" rows="2"></textarea>
-    </div>
-</div>
+
 <div class="form-group">
     <label class="form-label">Uses</label>
-    <textarea class="form-control" name="uses" id="medicine-uses" rows="2" placeholder="What is this medicine used for?"></textarea>
+    <div data-rich-editor data-target="#medicine-uses" data-upload-url="/ajax/medicine-image-upload.php"></div>
+    <textarea id="medicine-uses" name="uses"></textarea>
+</div>
+<div class="form-group">
+    <label class="form-label">Dosage</label>
+    <div data-rich-editor data-target="#medicine-dosage" data-upload-url="/ajax/medicine-image-upload.php"></div>
+    <textarea id="medicine-dosage" name="dosage"></textarea>
+</div>
+<div class="form-group">
+    <label class="form-label">Side Effects</label>
+    <div data-rich-editor data-target="#medicine-side-effects" data-upload-url="/ajax/medicine-image-upload.php"></div>
+    <textarea id="medicine-side-effects" name="side_effects"></textarea>
 </div>
 <div class="form-group">
     <label class="form-label">Precautions / Warnings</label>
-    <textarea class="form-control" name="precautions" id="medicine-precautions" rows="2"></textarea>
+    <div data-rich-editor data-target="#medicine-precautions" data-upload-url="/ajax/medicine-image-upload.php"></div>
+    <textarea id="medicine-precautions" name="precautions"></textarea>
 </div>
 <div class="form-group">
     <label class="form-label">Featured Image (optional)</label>
@@ -54,6 +57,14 @@
     <textarea id="medicine-content" name="content"></textarea>
     <div class="form-error"></div>
 </div>
+
+<div class="divider-fade"></div>
+<h4 style="font-size:14.5px;margin-bottom:4px;">FAQs <span style="font-weight:400;color:var(--color-text-muted);">(optional)</span></h4>
+<p style="font-size:12.5px;color:var(--color-text-muted);margin-bottom:14px;">
+    Common questions patients ask about this medicine — shown as an FAQ section on its public page.
+</p>
+<div id="medicine-faq-list"></div>
+<button type="button" class="btn btn-outline btn-sm" id="add-faq-row-btn" style="margin-bottom:20px;"><i class="ri-add-line"></i> Add FAQ</button>
 
 <div class="divider-fade"></div>
 <h4 style="font-size:14.5px;margin-bottom:4px;">SEO</h4>

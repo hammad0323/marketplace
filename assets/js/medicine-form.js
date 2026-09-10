@@ -1,24 +1,66 @@
 /**
  * Shared add/edit/delete logic for the medicine-info form, used by both
  * admin/medicines.php and doctor/medicines.php. Each page sets
- * window.MEDICINE_SAVE_URL / window.MEDICINE_DELETE_URL before this loads.
+ * window.MEDICINE_SAVE_URL / window.MEDICINE_DELETE_URL, and provides
+ * window.MEDICINE_RICH_FIELDS[id] = {content,uses,dosage,side_effects,precautions}
+ * and window.MEDICINE_FAQS[id] = [{question,answer}, ...] before this loads.
  */
 (function ($) {
     'use strict';
 
     var $modal = $('#medicine-modal');
     var $form = $('#medicine-form');
-    var $editorHost = $('[data-rich-editor]')[0];
+    var RICH_FIELDS = ['content', 'uses', 'dosage', 'side_effects', 'precautions'];
     var updateScore = null;
+    var faqRowId = 0;
 
-    function setEditorContent(html) {
-        if ($editorHost && $editorHost.richEditorSetContent) {
-            $editorHost.richEditorSetContent(html || '<p></p>');
+    function fieldSelector(field) {
+        return '#medicine-' + field.replace(/_/g, '-');
+    }
+
+    function setEditorContent(field, html) {
+        var target = fieldSelector(field);
+        var host = document.querySelector('[data-rich-editor][data-target="' + target + '"]');
+        if (host && host.richEditorSetContent) {
+            host.richEditorSetContent(html || '<p></p>');
         } else {
-            $('#medicine-content').val(html || '');
+            $(target).val(html || '');
         }
+    }
+
+    function setAllEditors(data) {
+        RICH_FIELDS.forEach(function (field) {
+            setEditorContent(field, (data || {})[field]);
+        });
         if (updateScore) updateScore();
     }
+
+    // ---- FAQ rows ---------------------------------------------------------------
+    function addFaqRow(question, answer) {
+        var id = 'faq-row-' + (faqRowId++);
+        var $row = $(
+            '<div class="card" style="padding:14px;margin-bottom:10px;" id="' + id + '">'
+            + '<div style="display:flex;gap:10px;align-items:flex-start;">'
+            + '<div style="flex:1;">'
+            + '<input type="text" class="form-control" name="faq_question[]" placeholder="Question" style="margin-bottom:8px;">'
+            + '<textarea class="form-control" name="faq_answer[]" rows="2" placeholder="Answer"></textarea>'
+            + '</div>'
+            + '<button type="button" class="btn-icon btn-remove-faq-row" style="width:32px;height:32px;flex-shrink:0;"><i class="ri-delete-bin-line"></i></button>'
+            + '</div></div>'
+        );
+        $row.find('input[name="faq_question[]"]').val(question || '');
+        $row.find('textarea[name="faq_answer[]"]').val(answer || '');
+        $('#medicine-faq-list').append($row);
+    }
+    function clearFaqRows() {
+        $('#medicine-faq-list').empty();
+    }
+    function setFaqRows(faqs) {
+        clearFaqRows();
+        (faqs || []).forEach(function (f) { addFaqRow(f.question, f.answer); });
+    }
+    $('#add-faq-row-btn').on('click', function () { addFaqRow('', ''); });
+    $(document).on('click', '.btn-remove-faq-row', function () { $(this).closest('.card').remove(); });
 
     function openModal(title) {
         $('#medicine-modal-title').text(title);
@@ -43,7 +85,8 @@
     $('#add-medicine-btn').on('click', function () {
         $form[0].reset();
         $('#medicine-id').val('0');
-        setEditorContent('<p></p>');
+        setAllEditors({});
+        setFaqRows([]);
         openModal('Add Medicine');
     });
 
@@ -57,15 +100,12 @@
         $('#medicine-generic-name').val(d.genericName);
         $('#medicine-category').val(d.category);
         $('#medicine-composition').val(d.composition);
-        $('#medicine-dosage').val(d.dosage);
-        $('#medicine-side-effects').val(d.sideEffects);
-        $('#medicine-uses').val(d.uses);
-        $('#medicine-precautions').val(d.precautions);
         $('#medicine-keyword').val(d.focusKeyword);
         $('#medicine-meta-title').val(d.metaTitle);
         $('#medicine-meta-description').val(d.metaDescription);
         $('#medicine-status').val(d.status);
-        setEditorContent((window.MEDICINE_CONTENT || {})[id]);
+        setAllEditors((window.MEDICINE_RICH_FIELDS || {})[id]);
+        setFaqRows((window.MEDICINE_FAQS || {})[id]);
         openModal('Edit Medicine');
     });
 

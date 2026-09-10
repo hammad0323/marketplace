@@ -7,6 +7,11 @@ $medicines = mysqli_query(db(), "
     ORDER BY m.created_at DESC
 ")->fetch_all(MYSQLI_ASSOC);
 
+$medicineFaqsById = [];
+foreach ($medicines as $m) {
+    $medicineFaqsById[$m['id']] = get_medicine_faqs($m['id']);
+}
+
 $csrfToken = csrf_token();
 $pageTitle = 'Medicine Info';
 $heading = 'Medicine Info';
@@ -35,8 +40,6 @@ require __DIR__ . '/includes/header.php';
         <tr data-medicine-id="<?= (int) $m['id'] ?>"
             data-name="<?= e($m['name']) ?>" data-generic-name="<?= e($m['generic_name'] ?? '') ?>"
             data-category="<?= e($m['category'] ?? '') ?>" data-composition="<?= e($m['composition'] ?? '') ?>"
-            data-dosage="<?= e($m['dosage'] ?? '') ?>" data-side-effects="<?= e($m['side_effects'] ?? '') ?>"
-            data-uses="<?= e($m['uses'] ?? '') ?>" data-precautions="<?= e($m['precautions'] ?? '') ?>"
             data-focus-keyword="<?= e($m['focus_keyword'] ?? '') ?>"
             data-meta-title="<?= e($m['meta_title'] ?? '') ?>" data-meta-description="<?= e($m['meta_description'] ?? '') ?>"
             data-status="<?= e($m['status']) ?>">
@@ -62,7 +65,12 @@ require __DIR__ . '/includes/header.php';
 <?php endif; ?>
 
 <script>
-window.MEDICINE_CONTENT = <?= json_encode(array_column($medicines, 'content', 'id')) ?>;
+window.MEDICINE_RICH_FIELDS = <?= json_encode(array_column(array_map(fn($m) => [
+    'id' => $m['id'],
+    'content' => $m['content'], 'uses' => $m['uses'], 'dosage' => $m['dosage'],
+    'side_effects' => $m['side_effects'], 'precautions' => $m['precautions'],
+], $medicines), null, 'id')) ?>;
+window.MEDICINE_FAQS = <?= json_encode($medicineFaqsById) ?>;
 </script>
 
 <div class="modal-overlay" id="medicine-modal">
