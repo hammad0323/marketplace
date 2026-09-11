@@ -24,6 +24,14 @@ RewriteEngine On
 # inside also guards itself.
 RewriteRule ^(config|includes)/ - [F,L]
 
+# Flag private/non-content areas for the X-Robots-Tag header below.
+# robots.txt's Disallow only stops crawling — it does nothing to stop a URL
+# from being indexed (with no snippet) if a search engine finds it linked
+# elsewhere, so this closes that gap with the header engines actually key
+# noindex off. Matched by an env var (not a hardcoded header block) so it
+# keeps working through the clean-URL rewrites below instead of racing them.
+RewriteRule ^(admin|doctor|patient|pharmacy|ajax)(/|$) - [E=NOINDEX:1]
+
 # ---------------------------------------------------------------------------
 # Clean URLs
 # ajax/, assets/, uploads/, database/ keep their real paths — only the
@@ -86,6 +94,8 @@ RewriteRule ^(.+)$ $1.php [L]
     Header set X-Content-Type-Options "nosniff"
     Header set X-Frame-Options "SAMEORIGIN"
     Header set Referrer-Policy "strict-origin-when-cross-origin"
+    # Set only on the admin/doctor/patient/pharmacy/ajax paths flagged above.
+    Header set X-Robots-Tag "noindex, nofollow" env=NOINDEX
 </IfModule>
 
 # ---------------------------------------------------------------------------

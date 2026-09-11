@@ -8,3 +8,11 @@
     Require all denied
 </FilesMatch>
 Options -Indexes -ExecCGI
+
+# These are raw user-uploaded assets (avatars, certificates, product/medicine
+# images, branding), not content pages — none of them should show up as
+# standalone search/image results. A meta robots tag can't reach non-HTML
+# files (images, PDFs), so this is set as a response header instead.
+<IfModule mod_headers.c>
+    Header set X-Robots-Tag "noindex"
+</IfModule>
