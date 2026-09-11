@@ -421,6 +421,72 @@ function get_medicine_faqs($medicineId)
 }
 
 // ---------------------------------------------------------------------------
+// Doctor weekly availability — each day can carry two independent timing
+// blocks (online / physical), stored as separate doctor_availability rows.
+// ---------------------------------------------------------------------------
+
+/** @return array<int,array{online?:array,physical?:array}> keyed by day_of_week (0=Sunday..6=Saturday) */
+function get_doctor_availability_by_day($doctorId)
+{
+    $byDay = [];
+    $stmt = mysqli_prepare(db(), 'SELECT * FROM doctor_availability WHERE doctor_id = ? ORDER BY day_of_week');
+    mysqli_stmt_bind_param($stmt, 'i', $doctorId);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    while ($row = mysqli_fetch_assoc($res)) {
+        $day = (int) $row['day_of_week'];
+        if ($row['consultation_type'] === 'both') {
+            // Legacy single-schedule rows applied to both types; carry them over
+            // to each block so a doctor's existing hours aren't lost on first edit.
+            $byDay[$day]['online'] = $byDay[$day]['online'] ?? $row;
+            $byDay[$day]['physical'] = $byDay[$day]['physical'] ?? $row;
+        } else {
+            $byDay[$day][$row['consultation_type']] = $row;
+        }
+    }
+    mysqli_stmt_close($stmt);
+    return $byDay;
+}
+
+/** Replaces a doctor's whole weekly schedule with the given rows (delete + re-insert). */
+function save_doctor_availability($doctorId, array $rows)
+{
+    $db = db();
+    mysqli_begin_transaction($db);
+    try {
+        $stmt = mysqli_prepare($db, 'DELETE FROM doctor_availability WHERE doctor_id = ?');
+        mysqli_stmt_bind_param($stmt, 'i', $doctorId);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+
+        $insert = mysqli_prepare($db, 'INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, slot_duration_mins, consultation_type) VALUES (?, ?, ?, ?, ?, ?)');
+        foreach ($rows as $row) {
+            $day = (int) ($row['day_of_week'] ?? -1);
+            $start = $row['start_time'] ?? '';
+            $end = $row['end_time'] ?? '';
+            $duration = max(5, (int) ($row['slot_duration_mins'] ?? 30));
+            $type = in_array($row['consultation_type'] ?? '', ['online', 'physical', 'both'], true) ? $row['consultation_type'] : 'both';
+
+            if ($day < 0 || $day > 6 || !preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $start) || !preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $end)) {
+                continue;
+            }
+            if (strtotime($start) >= strtotime($end)) {
+                continue;
+            }
+            mysqli_stmt_bind_param($insert, 'iissis', $doctorId, $day, $start, $end, $duration, $type);
+            mysqli_stmt_execute($insert);
+        }
+        mysqli_stmt_close($insert);
+        mysqli_commit($db);
+        return true;
+    } catch (Exception $e) {
+        mysqli_rollback($db);
+        error_log('save_doctor_availability failed: ' . $e->getMessage());
+        return false;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Settings, notifications, activity log, pagination
 // ---------------------------------------------------------------------------
 

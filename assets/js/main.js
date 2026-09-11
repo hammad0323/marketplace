@@ -123,6 +123,29 @@
         });
     });
 
+    // ---- Weekly availability editor (shared by doctor self-service + admin) --
+    // Reads the day-card/avail-block markup from
+    // includes/availability-form-fields.php into the flat row array that
+    // ajax/doctor-availability-save.php and ajax/admin-doctor-save.php expect.
+    window.collectAvailabilitySchedule = function (containerSelector) {
+        var schedule = [];
+        document.querySelectorAll(containerSelector + ' .availability-day-card').forEach(function (card) {
+            var day = card.getAttribute('data-day');
+            card.querySelectorAll('.avail-block').forEach(function (block) {
+                var enabled = block.querySelector('.avail-enabled');
+                if (!enabled || !enabled.checked) return;
+                schedule.push({
+                    day_of_week: day,
+                    consultation_type: block.getAttribute('data-type'),
+                    start_time: block.querySelector('.avail-start').value,
+                    end_time: block.querySelector('.avail-end').value,
+                    slot_duration_mins: block.querySelector('.avail-duration').value
+                });
+            });
+        });
+        return schedule;
+    };
+
     // ---- Scroll reveal animations ------------------------------------------------
     var revealEls = document.querySelectorAll('[data-reveal]');
     if ('IntersectionObserver' in window && revealEls.length) {

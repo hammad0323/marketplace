@@ -4,15 +4,7 @@ require_doctor_page();
 
 $doctorId = current_profile_id();
 
-$existing = [];
-$stmt = mysqli_prepare(db(), 'SELECT * FROM doctor_availability WHERE doctor_id = ? ORDER BY day_of_week');
-mysqli_stmt_bind_param($stmt, 'i', $doctorId);
-mysqli_stmt_execute($stmt);
-$res = mysqli_stmt_get_result($stmt);
-while ($row = mysqli_fetch_assoc($res)) {
-    $existing[(int) $row['day_of_week']][] = $row;
-}
-mysqli_stmt_close($stmt);
+$availByDay = get_doctor_availability_by_day($doctorId);
 
 $stmt = mysqli_prepare(db(), 'SELECT * FROM doctor_blocked_dates WHERE doctor_id = ? AND blocked_date >= CURDATE() ORDER BY blocked_date');
 mysqli_stmt_bind_param($stmt, 'i', $doctorId);
@@ -27,38 +19,13 @@ require __DIR__ . '/includes/header.php';
 ?>
 <div class="card" style="padding:28px;margin-bottom:24px;" data-reveal>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-        <h4>Weekly Schedule</h4>
-        <button type="button" class="btn btn-primary btn-sm" id="save-availability-btn">Save Schedule</button>
+        <div>
+            <h4>Weekly Schedule</h4>
+            <p style="color:var(--color-text-muted);font-size:13px;margin-top:2px;">Set separate hours for online video consultations and your physical clinic/hospital — enable only the ones that apply on each day.</p>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" id="save-availability-btn" style="flex-shrink:0;">Save Schedule</button>
     </div>
-    <div style="overflow-x:auto;">
-    <div class="table-scroll"><table class="data-table" id="availability-table">
-        <thead><tr><th>Day</th><th>Enabled</th><th>Start</th><th>End</th><th>Slot Length</th><th>Type</th></tr></thead>
-        <tbody>
-        <?php for ($d = 0; $d <= 6; $d++): $row = $existing[$d][0] ?? null; ?>
-        <tr data-day="<?= $d ?>">
-            <td style="font-weight:600;"><?= day_name($d) ?></td>
-            <td><input type="checkbox" class="day-enabled" <?= $row ? 'checked' : '' ?>></td>
-            <td><input type="time" class="form-control day-start" value="<?= $row ? substr($row['start_time'], 0, 5) : '09:00' ?>" style="width:120px;"></td>
-            <td><input type="time" class="form-control day-end" value="<?= $row ? substr($row['end_time'], 0, 5) : '17:00' ?>" style="width:120px;"></td>
-            <td>
-                <select class="form-control day-duration" style="width:110px;">
-                    <?php foreach ([15, 20, 30, 45, 60] as $mins): ?>
-                    <option value="<?= $mins ?>" <?= ($row['slot_duration_mins'] ?? 30) == $mins ? 'selected' : '' ?>><?= $mins ?> min</option>
-                    <?php endforeach; ?>
-                </select>
-            </td>
-            <td>
-                <select class="form-control day-type" style="width:130px;">
-                    <?php foreach (['both' => 'Online + In-Person', 'online' => 'Online only', 'physical' => 'In-Person only'] as $val => $label): ?>
-                    <option value="<?= $val ?>" <?= ($row['consultation_type'] ?? 'both') === $val ? 'selected' : '' ?>><?= $label ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </td>
-        </tr>
-        <?php endfor; ?>
-        </tbody>
-    </table></div>
-    </div>
+    <?php require __DIR__ . '/../includes/availability-form-fields.php'; ?>
 </div>
 
 <div class="card" style="padding:28px;" data-reveal>

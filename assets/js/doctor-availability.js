@@ -2,18 +2,7 @@
     'use strict';
 
     $('#save-availability-btn').on('click', function () {
-        var schedule = [];
-        $('#availability-table tbody tr').each(function () {
-            var $row = $(this);
-            if (!$row.find('.day-enabled').is(':checked')) return;
-            schedule.push({
-                day_of_week: $row.data('day'),
-                start_time: $row.find('.day-start').val(),
-                end_time: $row.find('.day-end').val(),
-                slot_duration_mins: $row.find('.day-duration').val(),
-                consultation_type: $row.find('.day-type').val()
-            });
-        });
+        var schedule = window.collectAvailabilitySchedule('#availability-days');
         var $btn = $(this).prop('disabled', true).text('Saving…');
         $.post('/ajax/doctor-availability-save.php', { csrf_token: window.APP.csrfToken, schedule: JSON.stringify(schedule) }, null, 'json')
             .done(function (res) {
