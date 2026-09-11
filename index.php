@@ -48,8 +48,71 @@ $extraScripts = '<script defer src="/assets/js/search-suggest.js"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 
+<?php
+$ratingRow = mysqli_fetch_assoc(mysqli_query(db(), "
+    SELECT AVG(rating_avg) AS avg_rating, SUM(rating_count) AS total_reviews
+    FROM doctors WHERE verification_status = 'verified' AND rating_count > 0
+"));
+$logoUrl = get_setting('site_logo') ? APP_URL . '/uploads/' . get_setting('site_logo') : APP_URL . '/assets/img/favicon.svg';
+
+$organizationSchema = array_filter([
+    '@context' => 'https://schema.org',
+    '@type' => 'MedicalBusiness',
+    '@id' => APP_URL . '/#organization',
+    'name' => get_setting('site_name', SITE_NAME),
+    'alternateName' => SITE_NAME,
+    'url' => APP_URL,
+    'description' => $metaDescription,
+    'logo' => $logoUrl,
+    'image' => $logoUrl,
+    'priceRange' => '$$',
+    'medicalSpecialty' => array_values(array_filter(array_map(fn($s) => $s['name'] ?? null,
+        mysqli_query(db(), 'SELECT name FROM specializations WHERE is_active = 1 ORDER BY sort_order LIMIT 10')->fetch_all(MYSQLI_ASSOC)
+    ))),
+    'address' => array_filter([
+        '@type' => 'PostalAddress',
+        'streetAddress' => get_setting('contact_address') ?: null,
+    ]) ?: null,
+    'contactPoint' => array_filter([
+        '@type' => 'ContactPoint',
+        'contactType' => 'customer support',
+        'telephone' => get_setting('contact_phone') ?: null,
+        'email' => get_setting('contact_email') ?: null,
+        'availableLanguage' => ['English'],
+    ]) ?: null,
+    'sameAs' => array_values(array_filter([
+        get_setting('facebook_url') ?: null,
+        get_setting('twitter_url') ?: null,
+        get_setting('instagram_url') ?: null,
+        get_setting('linkedin_url') ?: null,
+    ])) ?: null,
+    'aggregateRating' => ($ratingRow && $ratingRow['avg_rating']) ? [
+        '@type' => 'AggregateRating',
+        'ratingValue' => number_format((float) $ratingRow['avg_rating'], 1),
+        'reviewCount' => (string) (int) $ratingRow['total_reviews'],
+    ] : null,
+]);
+?>
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"MedicalOrganization","name":<?= json_encode(SITE_NAME) ?>,"url":<?= json_encode(APP_URL) ?>,"description":<?= json_encode($metaDescription) ?>}
+<?= json_encode($organizationSchema) ?>
+</script>
+<script type="application/ld+json">
+<?= json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'WebSite',
+    '@id' => APP_URL . '/#website',
+    'name' => get_setting('site_name', SITE_NAME),
+    'url' => APP_URL,
+    'publisher' => ['@id' => APP_URL . '/#organization'],
+    'potentialAction' => [
+        '@type' => 'SearchAction',
+        'target' => [
+            '@type' => 'EntryPoint',
+            'urlTemplate' => APP_URL . '/doctors?q={search_term_string}',
+        ],
+        'query-input' => 'required name=search_term_string',
+    ],
+]) ?>
 </script>
 
 <section class="hero">
