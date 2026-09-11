@@ -27,9 +27,11 @@ Options -Indexes
   # 1. A request that literally still ends in ".php" gets redirected to
   #    its extension-less form (avoids the same page existing at two
   #    URLs, which search engines treat as duplicate content). Skips
-  #    /admin/ and /api/, which intentionally keep their .php URLs.
+  #    /admin/, /api/ and /crm/, which intentionally keep their .php
+  #    URLs (internal apps, not public/indexed pages).
   RewriteCond %{REQUEST_URI} !^/(.*/)?admin/ [NC]
   RewriteCond %{REQUEST_URI} !^/(.*/)?api/ [NC]
+  RewriteCond %{REQUEST_URI} !^/(.*/)?crm/ [NC]
   RewriteCond %{THE_REQUEST} \s/+(.*)\.php[\s?] [NC]
   RewriteRule ^ /%1 [R=301,L,QSA]
 

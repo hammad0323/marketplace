@@ -88,7 +88,7 @@ $navCategories = get_categories(true);
       </div>
       <a href="<?= tp_url('popular') ?>" class="tp-nav-link">Popular</a>
       <a href="<?= tp_url('trending') ?>" class="tp-nav-link">Trending</a>
-      <a href="<?= tp_url('new-tools') ?>" class="tp-nav-link">New Tools</a>
+      <a href="<?= tp_url('crm/register.php') ?>" class="tp-nav-link">Sales CRM</a>
       <a href="<?= tp_url('blog') ?>" class="tp-nav-link">Blog</a>
       <a href="<?= tp_url('about') ?>" class="tp-nav-link">About</a>
     </nav>
@@ -112,6 +112,7 @@ $navCategories = get_categories(true);
   <div class="offcanvas-header"><h5>Menu</h5><button class="btn-close" data-bs-dismiss="offcanvas"></button></div>
   <div class="offcanvas-body d-flex flex-column gap-1">
     <a href="<?= tp_url() ?>" class="tp-nav-link">Home</a>
+    <a href="<?= tp_url('crm/register.php') ?>" class="tp-nav-link" style="background:var(--tp-surface-2);color:var(--tp-indigo);font-weight:700;">Sales CRM — Free Sign Up</a>
     <a href="<?= tp_url('popular') ?>" class="tp-nav-link">Popular</a>
     <a href="<?= tp_url('trending') ?>" class="tp-nav-link">Trending</a>
     <a href="<?= tp_url('new-tools') ?>" class="tp-nav-link">New Tools</a>

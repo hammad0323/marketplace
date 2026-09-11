@@ -407,4 +407,262 @@ CREATE TABLE IF NOT EXISTS currency_rates (
     UNIQUE KEY uniq_pair (base_currency, target_currency)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- ============================================================
+-- Sales CRM — a separate, multi-tenant app living alongside the
+-- public tools platform. Every table below is scoped by
+-- business_id (one row per signed-up business/salesperson) and
+-- every query in crm/*.php filters on it — this is app-level
+-- multi-tenancy, not a separate database per tenant.
+-- ============================================================
+
+-- ------------------------------------------------------------
+-- Businesses (the CRM's own login — separate from admins)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS businesses (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    business_name VARCHAR(160) NOT NULL,
+    owner_name VARCHAR(120) NOT NULL,
+    email VARCHAR(190) NOT NULL UNIQUE,
+    phone VARCHAR(30) NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    plan ENUM('free','pro') NOT NULL DEFAULT 'free',
+    status ENUM('active','disabled') NOT NULL DEFAULT 'active',
+    reset_token VARCHAR(64) NULL,
+    reset_expires DATETIME NULL,
+    last_login_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ------------------------------------------------------------
+-- Customers (Mini CRM)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS crm_customers (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    business_id INT UNSIGNED NOT NULL,
+    name VARCHAR(160) NOT NULL,
+    phone VARCHAR(30) NULL,
+    company VARCHAR(160) NULL,
+    city VARCHAR(100) NULL,
+    business_id_number VARCHAR(60) NULL COMMENT 'CNIC/NTN or other business ID, only if the business legitimately needs it',
+    source VARCHAR(80) NULL,
+    lat DECIMAL(10,7) NULL,
+    lng DECIMAL(10,7) NULL,
+    notes TEXT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX (business_id),
+    INDEX (business_id, phone),
+    INDEX (business_id, city),
+    CONSTRAINT fk_crm_customers_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ------------------------------------------------------------
+-- Leads + Sales Pipeline
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS crm_leads (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    business_id INT UNSIGNED NOT NULL,
+    customer_id INT UNSIGNED NULL,
+    name VARCHAR(160) NOT NULL,
+    phone VARCHAR(30) NULL,
+    company VARCHAR(160) NULL,
+    source VARCHAR(80) NULL,
+    status ENUM('new','contacted','interested','quotation_sent','negotiation','won','lost') NOT NULL DEFAULT 'new',
+    expected_value DECIMAL(14,2) NOT NULL DEFAULT 0,
+    next_followup_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX (business_id, status),
+    INDEX (business_id, next_followup_at),
+    CONSTRAINT fk_crm_leads_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE,
+    CONSTRAINT fk_crm_leads_customer FOREIGN KEY (customer_id) REFERENCES crm_customers(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ------------------------------------------------------------
+-- Follow-up reminders (tied to a lead and/or a customer)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS crm_followups (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    business_id INT UNSIGNED NOT NULL,
+    lead_id INT UNSIGNED NULL,
+    customer_id INT UNSIGNED NULL,
+    note VARCHAR(500) NOT NULL,
+    channel ENUM('call','whatsapp','meeting','email') NOT NULL DEFAULT 'call',
+    due_at DATETIME NOT NULL,
+    completed_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX (business_id, due_at),
+    INDEX (business_id, completed_at),
+    CONSTRAINT fk_crm_followups_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE,
+    CONSTRAINT fk_crm_followups_lead FOREIGN KEY (lead_id) REFERENCES crm_leads(id) ON DELETE CASCADE,
+    CONSTRAINT fk_crm_followups_customer FOREIGN KEY (customer_id) REFERENCES crm_customers(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ------------------------------------------------------------
+-- Contact history / notes log (per customer)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS crm_notes (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    business_id INT UNSIGNED NOT NULL,
+    customer_id INT UNSIGNED NOT NULL,
+    note TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX (business_id, customer_id),
+    CONSTRAINT fk_crm_notes_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE,
+    CONSTRAINT fk_crm_notes_customer FOREIGN KEY (customer_id) REFERENCES crm_customers(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ------------------------------------------------------------
+-- Previous purchases (simple log — full line-item history lives
+-- in crm_documents/crm_document_items once a document is raised)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS crm_purchases (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    business_id INT UNSIGNED NOT NULL,
+    customer_id INT UNSIGNED NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+    purchase_date DATE NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX (business_id, customer_id),
+    CONSTRAINT fk_crm_purchases_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE,
+    CONSTRAINT fk_crm_purchases_customer FOREIGN KEY (customer_id) REFERENCES crm_customers(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ------------------------------------------------------------
+-- Products / price list
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS crm_products (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    business_id INT UNSIGNED NOT NULL,
+    name VARCHAR(160) NOT NULL,
+    sku VARCHAR(60) NULL,
+    unit VARCHAR(30) NOT NULL DEFAULT 'pcs',
+    cost_price DECIMAL(14,2) NOT NULL DEFAULT 0,
+    wholesale_price DECIMAL(14,2) NOT NULL DEFAULT 0,
+    retail_price DECIMAL(14,2) NOT NULL DEFAULT 0,
+    dealer_price DECIMAL(14,2) NOT NULL DEFAULT 0,
+    distributor_price DECIMAL(14,2) NOT NULL DEFAULT 0,
+    stock_qty DECIMAL(12,2) NOT NULL DEFAULT 0,
+    low_stock_threshold DECIMAL(12,2) NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX (business_id),
+    CONSTRAINT fk_crm_products_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ------------------------------------------------------------
+-- Sales documents — one flexible entity covers Quotation, Invoice,
+-- Sales Order, Delivery Challan, Receipt, Proforma Invoice, Credit
+-- Note and Debit Note, since they all share the same shape (header
+-- + line items + totals). Customer fields are snapshotted at the
+-- time the document is issued so a later edit/delete of the
+-- customer record never changes a historical document.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS crm_documents (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    business_id INT UNSIGNED NOT NULL,
+    customer_id INT UNSIGNED NULL,
+    doc_type ENUM('quotation','invoice','sales_order','delivery_challan','receipt','proforma_invoice','credit_note','debit_note') NOT NULL,
+    doc_number VARCHAR(40) NOT NULL,
+    customer_name VARCHAR(160) NOT NULL,
+    customer_phone VARCHAR(30) NULL,
+    customer_company VARCHAR(160) NULL,
+    subtotal DECIMAL(14,2) NOT NULL DEFAULT 0,
+    discount_type ENUM('percent','fixed') NOT NULL DEFAULT 'percent',
+    discount_value DECIMAL(14,2) NOT NULL DEFAULT 0,
+    tax_percent DECIMAL(6,3) NOT NULL DEFAULT 0,
+    delivery_charges DECIMAL(14,2) NOT NULL DEFAULT 0,
+    total DECIMAL(14,2) NOT NULL DEFAULT 0,
+    status ENUM('draft','sent','paid','cancelled') NOT NULL DEFAULT 'draft',
+    notes TEXT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_business_doc_number (business_id, doc_number),
+    INDEX (business_id, doc_type),
+    INDEX (business_id, customer_id),
+    CONSTRAINT fk_crm_documents_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE,
+    CONSTRAINT fk_crm_documents_customer FOREIGN KEY (customer_id) REFERENCES crm_customers(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS crm_document_items (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    document_id INT UNSIGNED NOT NULL,
+    product_id INT UNSIGNED NULL,
+    description VARCHAR(255) NOT NULL,
+    quantity DECIMAL(12,2) NOT NULL DEFAULT 1,
+    unit_price DECIMAL(14,2) NOT NULL DEFAULT 0,
+    line_total DECIMAL(14,2) NOT NULL DEFAULT 0,
+    sort_order INT UNSIGNED NOT NULL DEFAULT 0,
+    INDEX (document_id),
+    CONSTRAINT fk_crm_doc_items_document FOREIGN KEY (document_id) REFERENCES crm_documents(id) ON DELETE CASCADE,
+    CONSTRAINT fk_crm_doc_items_product FOREIGN KEY (product_id) REFERENCES crm_products(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Per-business, per-doc-type running counter — avoids the race
+-- conditions / gaps a plain COUNT(*)+1 scheme would have.
+CREATE TABLE IF NOT EXISTS crm_doc_counters (
+    business_id INT UNSIGNED NOT NULL,
+    doc_type VARCHAR(30) NOT NULL,
+    last_number INT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (business_id, doc_type),
+    CONSTRAINT fk_crm_doc_counters_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ------------------------------------------------------------
+-- Payment / recovery ledger (khata) — a simple running account
+-- per customer. Balance owed = SUM(sale) - SUM(payment).
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS crm_ledger_entries (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    business_id INT UNSIGNED NOT NULL,
+    customer_id INT UNSIGNED NOT NULL,
+    document_id INT UNSIGNED NULL,
+    entry_type ENUM('sale','payment') NOT NULL,
+    amount DECIMAL(14,2) NOT NULL,
+    entry_date DATE NOT NULL,
+    note VARCHAR(255) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX (business_id, customer_id),
+    INDEX (business_id, entry_date),
+    CONSTRAINT fk_crm_ledger_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE,
+    CONSTRAINT fk_crm_ledger_customer FOREIGN KEY (customer_id) REFERENCES crm_customers(id) ON DELETE CASCADE,
+    CONSTRAINT fk_crm_ledger_document FOREIGN KEY (document_id) REFERENCES crm_documents(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ------------------------------------------------------------
+-- Field visits (GPS check-in captured via the browser's real
+-- Geolocation API — never simulated)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS crm_visits (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    business_id INT UNSIGNED NOT NULL,
+    customer_id INT UNSIGNED NOT NULL,
+    visit_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    notes VARCHAR(500) NULL,
+    gps_lat DECIMAL(10,7) NULL,
+    gps_lng DECIMAL(10,7) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX (business_id, customer_id),
+    INDEX (business_id, visit_at),
+    CONSTRAINT fk_crm_visits_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE,
+    CONSTRAINT fk_crm_visits_customer FOREIGN KEY (customer_id) REFERENCES crm_customers(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ------------------------------------------------------------
+-- Sales targets (daily/monthly), for target-vs-achievement
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS crm_targets (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    business_id INT UNSIGNED NOT NULL,
+    period_type ENUM('daily','monthly') NOT NULL,
+    period_date DATE NOT NULL COMMENT 'the day itself for daily targets, the 1st of the month for monthly targets',
+    target_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_business_period (business_id, period_type, period_date),
+    CONSTRAINT fk_crm_targets_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 SET FOREIGN_KEY_CHECKS = 1;

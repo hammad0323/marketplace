@@ -1,0 +1,48 @@
+/* crm.css — Sales CRM app-specific components, built on top of admin.css's shell */
+
+/* ---------------- Kanban pipeline board ---------------- */
+.crm-kanban { display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 1rem; align-items: flex-start; }
+.crm-kanban-col { flex: 0 0 270px; background: #F5F3FF; border-radius: 12px; padding: .75rem; min-height: 200px; }
+.crm-kanban-col h3 { font-size: .82rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #6B7280; padding: .3rem .3rem .6rem; margin: 0; display: flex; justify-content: space-between; }
+.crm-kanban-col .count { background: #E9E5FB; border-radius: 999px; padding: .1rem .5rem; font-size: .72rem; color: #5B21B6; }
+.crm-lead-card {
+  background: #fff; border: 1px solid #E9E5FB; border-radius: 10px; padding: .75rem;
+  margin-bottom: .6rem; cursor: grab; box-shadow: 0 1px 2px rgba(91,33,182,.06);
+}
+.crm-lead-card:active { cursor: grabbing; }
+.crm-lead-card.dragging { opacity: .4; }
+.crm-lead-card h4 { font-size: .92rem; font-weight: 700; margin: 0 0 .2rem; }
+.crm-lead-card .meta { font-size: .78rem; color: #6B7280; }
+.crm-lead-card .value { font-weight: 700; color: #7C3AED; font-size: .85rem; margin-top: .3rem; }
+.crm-kanban-col.drag-over { outline: 2px dashed #7C3AED; outline-offset: -4px; }
+
+/* ---------------- Ledger / balance ---------------- */
+.crm-balance-positive { color: #DC2626; font-weight: 700; }
+.crm-balance-zero { color: #10B981; font-weight: 700; }
+
+/* ---------------- Document builder + print sheet ---------------- */
+.crm-doc-items-row .form-control, .crm-doc-items-row .form-select { font-size: .88rem; }
+.crm-doc-sheet {
+  background: #fff; max-width: 800px; margin: 0 auto; padding: 2.5rem;
+  border: 1px solid #E9E5FB; border-radius: 12px;
+}
+.crm-doc-sheet .doc-title { font-size: 1.6rem; font-weight: 800; color: #5B21B6; }
+.crm-doc-sheet table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.crm-doc-sheet th, .crm-doc-sheet td { padding: .55rem .5rem; border-bottom: 1px solid #E9E5FB; font-size: .9rem; text-align: left; }
+.crm-doc-sheet th { text-transform: uppercase; font-size: .72rem; letter-spacing: .04em; color: #6B7280; }
+.crm-doc-sheet .text-end { text-align: right; }
+.crm-doc-sheet .doc-totals { max-width: 320px; margin-left: auto; margin-top: 1rem; }
+.crm-doc-sheet .doc-totals div { display: flex; justify-content: space-between; padding: .3rem 0; font-size: .92rem; }
+.crm-doc-sheet .doc-totals .grand-total { font-weight: 800; font-size: 1.15rem; border-top: 2px solid #5B21B6; padding-top: .5rem; margin-top: .3rem; }
+
+@media print {
+  .admin-sidebar, .admin-topbar, .no-print { display: none !important; }
+  .admin-main, .admin-content { padding: 0 !important; margin: 0 !important; }
+  .crm-doc-sheet { border: none; padding: 0; }
+  body { background: #fff !important; }
+}
+
+/* ---------------- Follow-ups ---------------- */
+.crm-followup-item { display: flex; align-items: flex-start; gap: .75rem; padding: .75rem; border-bottom: 1px solid #E9E5FB; }
+.crm-followup-item.overdue { background: #FEF2F2; }
+.crm-followup-item .channel-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #F5F3FF; color: #7C3AED; flex-shrink: 0; }

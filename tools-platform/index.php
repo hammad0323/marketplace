@@ -86,6 +86,58 @@ require __DIR__ . '/includes/header.php';
   </div>
 </div>
 
+<section class="tp-section pt-5 pb-5">
+  <div class="tp-container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6 reveal">
+        <span class="tp-eyebrow">New — Free Sales CRM</span>
+        <h2 class="tp-section-title mt-2">Run Your Whole Sales Process in One Place</h2>
+        <p class="text-muted mt-3">Leads, customers, follow-up reminders, quotations &amp; invoices, khata/payment tracking, field visits and sales targets — a real CRM built for small businesses, distributors and field sales teams.</p>
+        <ul class="list-unstyled mt-3 mb-4">
+          <?php foreach ([
+              'Sales pipeline board — drag leads through New → Contacted → Won',
+              'WhatsApp-ready quotations, invoices &amp; payment reminders',
+              'Customer khata/ledger with receivables aging',
+              'GPS check-in for field visits, nearest-customer finder',
+          ] as $point): ?>
+          <li class="mb-2"><i class="bi bi-check-circle-fill" style="color:var(--tp-emerald);"></i> <?= $point ?></li>
+          <?php endforeach; ?>
+        </ul>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="<?= tp_url('crm/register.php') ?>" class="tp-btn tp-btn-primary">Start Free — No Card Needed</a>
+          <a href="<?= tp_url('crm/login.php') ?>" class="tp-btn tp-btn-outline" style="color:var(--tp-indigo);border-color:var(--tp-indigo);">Log In</a>
+        </div>
+      </div>
+      <div class="col-lg-6 d-none d-lg-block reveal">
+        <div class="position-relative" style="padding:1.5rem 1rem;">
+          <div class="tp-mockup-card mx-auto" style="max-width:400px;">
+            <div class="tp-mockup-dots mb-3">
+              <span style="background:#F87171;"></span><span style="background:#FBBF24;"></span><span style="background:#34D399;"></span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <strong class="small">Sales Pipeline</strong>
+              <span class="tp-badge tp-badge-popular">Rs 2.4M open</span>
+            </div>
+            <div class="tp-mockup-row"><span class="text-muted">🟣 Contacted</span><span class="fw-semibold">8 leads</span></div>
+            <div class="tp-mockup-row"><span class="text-muted">🟠 Quotation Sent</span><span class="fw-semibold">5 leads</span></div>
+            <div class="tp-mockup-row"><span class="text-muted">🟢 Won this month</span><span class="fw-semibold">14 leads</span></div>
+            <div class="rounded-3 p-3 mt-3" style="background:var(--tp-gradient-brand);color:#fff;">
+              <div class="small text-white-50">Next follow-up</div>
+              <div class="fw-bold">📞 Call Ahmed — tomorrow 11:00 AM</div>
+            </div>
+          </div>
+          <div class="tp-mockup-float" style="top:-6px;right:6px;">
+            <i class="bi bi-whatsapp text-success"></i> WhatsApp Ready
+          </div>
+          <div class="tp-mockup-float" style="bottom:6px;left:-6px;animation-delay:1.5s;">
+            <i class="bi bi-geo-alt" style="color:var(--tp-indigo);"></i> GPS Check-in
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="tp-section pt-4">
   <div class="tp-container">
     <div class="d-flex justify-content-between align-items-end mb-4 reveal">

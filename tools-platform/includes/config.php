@@ -80,5 +80,7 @@ require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/seo.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/crm_auth.php';
+require_once __DIR__ . '/crm_functions.php';
 
 tp_load_settings();
