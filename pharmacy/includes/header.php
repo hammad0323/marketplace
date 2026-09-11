@@ -16,7 +16,7 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — ' . SITE_NAME;
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?= e($pageTitle) ?></title>
 <meta name="robots" content="noindex, nofollow">
-<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<?= favicon_tag_html() ?>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"></noscript>
@@ -28,7 +28,7 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — ' . SITE_NAME;
 <body data-logged-in="1">
 <div class="dash-shell">
     <aside class="dash-sidebar" id="dash-sidebar">
-        <a href="/" class="brand"><span class="brand-mark"><i class="ri-heart-pulse-fill"></i></span> <?= brand_wordmark_html() ?></a>
+        <a href="/" class="brand"><?= brand_logo_html('ri-heart-pulse-fill') ?></a>
         <nav class="dash-nav">
             <a href="/pharmacy/dashboard" class="<?= $currentPage === 'dashboard.php' ? 'active' : '' ?>"><i class="ri-dashboard-3-line"></i> Dashboard</a>
             <a href="/pharmacy/products" class="<?= $currentPage === 'products.php' ? 'active' : '' ?>"><i class="ri-store-2-line"></i> My Store</a>

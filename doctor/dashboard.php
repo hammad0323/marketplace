@@ -36,7 +36,8 @@ while ($m = mysqli_fetch_assoc($monthly)) {
 
 $pageTitle = 'Dashboard';
 $heading = 'My Dashboard';
-$extraScripts = '<script defer src="/assets/js/vendor/chart.umd.js"></script><script defer src="/assets/js/doctor-appointments.js"></script><script>'
+$extraScripts = '<script defer src="/assets/js/vendor/chart.umd.js"></script><script defer src="/assets/js/doctor-appointments.js"></script>'
+    . '<script defer src="/assets/js/calendar-widget.js"></script><script defer src="/assets/js/doctor-dashboard-calendar.js"></script><script>'
     . 'document.addEventListener("DOMContentLoaded", function () {'
     . 'new Chart(document.getElementById("apptChart"), {'
     . 'type: "bar",'
@@ -71,6 +72,20 @@ require __DIR__ . '/includes/header.php';
     <div class="card card-hover stat-card" data-reveal>
         <div class="icon" style="background:#F59E0B;"><i class="ri-star-fill"></i></div>
         <div><b><?= number_format($doctorRow['rating_avg'], 1) ?></b><span><?= (int)$doctorRow['rating_count'] ?> Reviews</span></div>
+    </div>
+</div>
+
+<div class="card" style="padding:24px;margin-bottom:28px;" data-reveal>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+        <h4>Appointment Calendar</h4>
+        <a href="/doctor/appointments" style="font-size:13px;color:var(--color-primary);font-weight:600;">View all appointments</a>
+    </div>
+    <div class="grid grid-2" style="gap:28px;align-items:start;">
+        <div id="dash-calendar"></div>
+        <div>
+            <h5 id="dash-day-label" style="margin-bottom:12px;font-size:14px;color:var(--color-text-muted);">Today</h5>
+            <div id="dash-day-appointments" class="stagger"></div>
+        </div>
     </div>
 </div>
 

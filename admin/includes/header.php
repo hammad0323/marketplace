@@ -13,7 +13,7 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — Admin — ' . SITE_NAME;
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?= e($pageTitle) ?></title>
 <meta name="robots" content="noindex, nofollow">
-<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<?= favicon_tag_html() ?>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"></noscript>
@@ -25,7 +25,7 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — Admin — ' . SITE_NAME;
 <body data-logged-in="1">
 <div class="dash-shell">
     <aside class="dash-sidebar" id="dash-sidebar">
-        <a href="/admin/dashboard" class="brand"><span class="brand-mark"><i class="ri-shield-star-fill"></i></span> <?= brand_wordmark_html() ?></a>
+        <a href="/admin/dashboard" class="brand"><?= brand_logo_html('ri-shield-star-fill') ?></a>
         <nav class="dash-nav">
             <a href="/admin/dashboard" class="<?= $currentPage === 'dashboard.php' ? 'active' : '' ?>"><i class="ri-dashboard-3-line"></i> Dashboard</a>
             <div class="nav-section-title">People</div>

@@ -159,6 +159,7 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
     display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px;
     box-shadow: 0 6px 16px rgba(12,107,93,0.4);
 }
+.brand-logo-img { height: 38px; max-width: 220px; object-fit: contain; }
 .nav-links { display: flex; align-items: center; gap: 4px; }
 .nav-links a {
     padding: 10px 16px; border-radius: var(--radius-full); font-weight: 600; font-size: 14.5px;
@@ -530,6 +531,11 @@ textarea.form-control { resize: vertical; min-height: 110px; }
 .calendar-day.has-slots:hover { background: rgba(12,107,93,0.1); }
 .calendar-day.selected { background: var(--gradient-primary); color: #fff; }
 .calendar-day.blocked { color: var(--color-danger); text-decoration: line-through; opacity: 0.5; cursor: not-allowed; }
+.calendar-day.has-appointments::after {
+    content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+    width: 5px; height: 5px; border-radius: 50%; background: var(--color-primary);
+}
+.calendar-day.selected.has-appointments::after { background: #fff; }
 .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; margin-top: 18px; }
 .slot-btn { padding: 10px; border-radius: 10px; border: 1.5px solid var(--color-border); background: var(--color-surface); font-size: 13px; font-weight: 600; text-align: center; transition: var(--transition); }
 .slot-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }

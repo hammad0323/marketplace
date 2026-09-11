@@ -13,10 +13,12 @@ uploads/reports/*
 uploads/products/*
 uploads/blog/*
 uploads/medicines/*
+uploads/branding/*
 !uploads/avatars/.gitkeep
 !uploads/certificates/.gitkeep
 !uploads/reports/.gitkeep
 !uploads/products/.gitkeep
 !uploads/blog/.gitkeep
 !uploads/medicines/.gitkeep
+!uploads/branding/.gitkeep
 !uploads/.htaccess

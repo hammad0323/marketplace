@@ -14,11 +14,23 @@
         opts = opts || {};
         var onSelect = opts.onSelect || function () {};
         var maxMonthsAhead = opts.maxMonthsAhead || 3;
+        var maxMonthsBehind = opts.maxMonthsBehind || 0;
+        // Optional {iso: count} map — days present here get a ".has-appointments"
+        // dot marker and their count folded into the day's title tooltip. Used
+        // by the doctor dashboard calendar; every other caller omits it.
+        var markedDates = opts.markedDates || {};
+        // Past days are normally shown muted and unclickable (booking/reschedule
+        // flows can't pick a past slot); the dashboard calendar sets this so a
+        // doctor can still click back to review a past appointment day.
+        var selectPast = !!opts.selectPast;
+        // Fires after prev/next month navigation so a caller tracking
+        // marked dates (the dashboard calendar) can fetch that month's data.
+        var onMonthChange = opts.onMonthChange || function () {};
 
         var today = new Date();
         today.setHours(0, 0, 0, 0);
         var todayIso = isoLocal(today);
-        var minMonthIndex = today.getFullYear() * 12 + today.getMonth();
+        var minMonthIndex = today.getFullYear() * 12 + today.getMonth() - maxMonthsBehind;
 
         var viewYear = today.getFullYear();
         var viewMonth = today.getMonth();
@@ -54,16 +66,22 @@
                 var d = new Date(viewYear, viewMonth, day);
                 var iso = isoLocal(d);
                 var isPast = d.getTime() < today.getTime();
+                var title = d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
                 var $day = $('<div class="calendar-day"></div>')
                     .text(day)
-                    .attr('data-date', iso)
-                    .attr('title', d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }));
+                    .attr('data-date', iso);
                 if (isPast) {
-                    $day.addClass('muted blocked');
+                    $day.addClass(selectPast ? 'muted has-slots' : 'muted blocked');
                 } else {
                     $day.addClass('has-slots');
                 }
                 if (iso === todayIso) $day.addClass('today');
+                var count = markedDates[iso];
+                if (count) {
+                    $day.addClass('has-appointments');
+                    title += ' — ' + count + ' appointment' + (count === 1 ? '' : 's');
+                }
+                $day.attr('title', title);
                 $grid.append($day);
             }
             $container.append($grid);
@@ -79,6 +97,7 @@
             if (viewMonth < 0) { viewMonth = 11; viewYear--; }
             if (viewMonth > 11) { viewMonth = 0; viewYear++; }
             render();
+            onMonthChange(viewYear, viewMonth);
         }
 
         $container.off('click.monthCalendar').on('click.monthCalendar', '.calendar-day.has-slots', function () {
@@ -93,6 +112,10 @@
         return {
             selectToday: function () {
                 $container.find('.calendar-day[data-date="' + todayIso + '"]').trigger('click');
+            },
+            setMarkedDates: function (newMarked) {
+                markedDates = newMarked || {};
+                render();
             }
         };
     };

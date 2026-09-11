@@ -42,7 +42,7 @@ $user = current_user();
 <meta name="twitter:description" content="<?= e($metaDescription) ?>">
 <meta name="twitter:image" content="<?= e($ogImage) ?>">
 
-<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<?= favicon_tag_html() ?>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -58,10 +58,7 @@ $user = current_user();
 
 <header class="navbar">
     <div class="navbar-inner glass">
-        <a href="/" class="brand">
-            <span class="brand-mark"><i class="ri-heart-pulse-fill"></i></span>
-            <?= brand_wordmark_html() ?>
-        </a>
+        <a href="/" class="brand"><?= brand_logo_html('ri-heart-pulse-fill') ?></a>
         <?php $shopActive = in_array(basename($_SERVER['SCRIPT_NAME']), ['products.php', 'product-detail.php', 'medicines.php', 'medicine-detail.php', 'specializations.php'], true); ?>
         <nav class="nav-links">
             <a href="/" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'index.php' ? 'active' : '' ?>">Home</a>

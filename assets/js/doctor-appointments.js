@@ -32,4 +32,18 @@
         if (!confirm('Mark this patient as a no-show?')) return;
         doAction(id, 'no_show');
     });
+
+    $(document).on('click', '.btn-send-reminder', function () {
+        var $btn = $(this).prop('disabled', true);
+        var id = $btn.closest('[data-appt-id]').data('appt-id');
+        $.post('/ajax/doctor-send-reminder.php', { csrf_token: window.APP.csrfToken, appointment_id: id }, null, 'json')
+            .done(function (res) {
+                $btn.prop('disabled', false);
+                if (res.success) showToast('success', 'Sent', res.message);
+                else showToast('error', 'Could not send', res.message);
+            }).fail(function () {
+                $btn.prop('disabled', false);
+                showToast('error', 'Network error', 'Please try again.');
+            });
+    });
 })(jQuery);

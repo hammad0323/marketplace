@@ -681,6 +681,35 @@ function brand_wordmark_html()
     return '<span class="brand-text">Docto<span class="brand-plus">+</span>Apna</span>';
 }
 
+/**
+ * Brand mark shown inside the .brand link in every header partial (site,
+ * admin, doctor, patient, pharmacy). An admin-uploaded logo (Site Settings →
+ * Branding) replaces the icon+wordmark everywhere from this one place; with
+ * none uploaded it falls back to the existing icon glyph + text wordmark.
+ * $iconClass lets each panel keep its own fallback icon (e.g. admin uses a
+ * shield instead of the heart-pulse glyph) when no logo is set.
+ */
+function brand_logo_html($iconClass = 'ri-heart-pulse-fill')
+{
+    $logo = get_setting('site_logo', '');
+    if ($logo) {
+        return '<img src="' . e(UPLOAD_URL . '/' . $logo) . '" alt="' . e(get_setting('site_name', SITE_NAME)) . '" class="brand-logo-img">';
+    }
+    return '<span class="brand-mark"><i class="' . e($iconClass) . '"></i></span>' . brand_wordmark_html();
+}
+
+/** <link rel="icon"> tag — an admin-uploaded favicon (Site Settings → Branding) if set, else the default SVG. */
+function favicon_tag_html()
+{
+    $favicon = get_setting('site_favicon', '');
+    if ($favicon === '') {
+        return '<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">';
+    }
+    $ext = strtolower(pathinfo($favicon, PATHINFO_EXTENSION));
+    $mime = ['ico' => 'image/x-icon', 'png' => 'image/png', 'svg' => 'image/svg+xml'][$ext] ?? 'image/png';
+    return '<link rel="icon" type="' . e($mime) . '" href="' . e(UPLOAD_URL . '/' . $favicon) . '">';
+}
+
 /** Where a logged-in user of a given role lands after login/registration. */
 function role_home_url($role)
 {

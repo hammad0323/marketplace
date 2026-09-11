@@ -285,6 +285,90 @@ function find_or_create_guest_patient($contact)
     return [true, "Account created! You're Patient #$patientId. Your temporary password is \"$password\" — save it, or set a new one from your profile after this.", $userRow, $password];
 }
 
+/**
+ * Finds an existing patient by email/phone, or creates one with the given
+ * name — for a doctor (or admin) adding a walk-in/phone-booking patient on
+ * their behalf. Unlike find_or_create_guest_patient(), this never touches
+ * the current session (the caller stays logged in as themselves).
+ * @return array{0:bool,1:string,2:?int} [success, message, patientId]
+ */
+function find_or_create_patient_record($fullName, $contact)
+{
+    $db = db();
+    $fullName = clean($fullName) ?: 'Patient';
+    $contact = clean($contact);
+    if ($contact === '') {
+        return [false, 'Please enter the patient\'s email or phone number.', null];
+    }
+
+    $isEmail = (bool) filter_var($contact, FILTER_VALIDATE_EMAIL);
+    $digits = preg_replace('/\D+/', '', $contact);
+    if (!$isEmail && strlen($digits) < 7) {
+        return [false, 'Please enter a valid email address or phone number.', null];
+    }
+
+    $email = $isEmail ? strtolower($contact) : null;
+    $phone = $isEmail ? null : $digits;
+    $lookupValue = $email ?? $phone;
+    $lookupColumn = $email ? 'email' : 'phone';
+
+    $stmt = mysqli_prepare($db, "SELECT p.id FROM users u JOIN patients p ON p.user_id = u.id WHERE u.$lookupColumn = ? LIMIT 1");
+    mysqli_stmt_bind_param($stmt, 's', $lookupValue);
+    mysqli_stmt_execute($stmt);
+    $existing = mysqli_stmt_get_result($stmt)->fetch_assoc();
+    mysqli_stmt_close($stmt);
+    if ($existing) {
+        return [true, 'Using existing patient account.', (int) $existing['id']];
+    }
+
+    $stmt = mysqli_prepare($db, "SELECT id FROM users WHERE $lookupColumn = ? LIMIT 1");
+    mysqli_stmt_bind_param($stmt, 's', $lookupValue);
+    mysqli_stmt_execute($stmt);
+    if (mysqli_stmt_get_result($stmt)->fetch_assoc()) {
+        mysqli_stmt_close($stmt);
+        return [false, 'An account with this ' . ($isEmail ? 'email' : 'phone number') . ' already exists under a different role.', null];
+    }
+    mysqli_stmt_close($stmt);
+
+    $password = substr(bin2hex(random_bytes(5)), 0, 8);
+    $hash = password_hash($password, PASSWORD_DEFAULT);
+    $placeholderEmail = $email ?? ('guest-' . $digits . '-' . bin2hex(random_bytes(3)) . '@guest.' . preg_replace('/^www\./', '', (string) parse_url(APP_URL, PHP_URL_HOST)));
+
+    mysqli_begin_transaction($db);
+    try {
+        $stmt = mysqli_prepare($db, "INSERT INTO users (role, full_name, email, phone, password_hash, status) VALUES ('patient', ?, ?, ?, ?, 'active')");
+        mysqli_stmt_bind_param($stmt, 'ssss', $fullName, $placeholderEmail, $phone, $hash);
+        mysqli_stmt_execute($stmt);
+        $userId = mysqli_insert_id($db);
+        mysqli_stmt_close($stmt);
+
+        $stmt = mysqli_prepare($db, 'INSERT INTO patients (user_id) VALUES (?)');
+        mysqli_stmt_bind_param($stmt, 'i', $userId);
+        mysqli_stmt_execute($stmt);
+        $patientId = mysqli_insert_id($db);
+        mysqli_stmt_close($stmt);
+
+        mysqli_commit($db);
+    } catch (Exception $e) {
+        mysqli_rollback($db);
+        error_log('find_or_create_patient_record failed: ' . $e->getMessage());
+        return [false, 'Something went wrong creating the patient account. Please try again.', null];
+    }
+
+    log_activity($userId, 'patient', 'created_by_provider', 'Patient account created on their behalf by a doctor/admin');
+
+    if ($email) {
+        send_email($email, $fullName, 'Your ' . get_setting('site_name', SITE_NAME) . ' account',
+            email_template('Welcome, ' . $fullName . '!',
+                '<p>An account was created for you so your appointment could be scheduled. Here are your login details:</p>'
+                . '<p><strong>Email:</strong> ' . e($email) . '<br><strong>Password:</strong> ' . e($password) . '</p>'
+                . '<p>Log in anytime to see your appointments and messages, and change your password from your profile.</p>',
+                'Log In', APP_URL . '/login'));
+    }
+
+    return [true, 'Patient account created.', $patientId];
+}
+
 /** Doctor self-registration — creates a pending account requiring admin verification. */
 function register_doctor_application(array $data)
 {

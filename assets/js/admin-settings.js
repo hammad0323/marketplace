@@ -4,12 +4,18 @@
     $('#settings-form').on('submit', function (e) {
         e.preventDefault();
         var $form = $(this);
+        var formData = new FormData($form[0]);
         var $btn = $form.find('button[type="submit"]').prop('disabled', true).text('Saving…');
-        $.post('/ajax/admin-settings-save.php', $form.serialize(), null, 'json').done(function (res) {
-            $btn.prop('disabled', false).text('Save Settings');
-            if (res.success) showToast('success', 'Saved', res.message);
-            else showToast('error', 'Could not save', res.message);
-        }).fail(function () { $btn.prop('disabled', false).text('Save Settings'); showToast('error', 'Network error', 'Please try again.'); });
+        $.ajax({ url: '/ajax/admin-settings-save.php', type: 'POST', data: formData, processData: false, contentType: false, dataType: 'json' })
+            .done(function (res) {
+                $btn.prop('disabled', false).text('Save Settings');
+                if (res.success) {
+                    showToast('success', 'Saved', res.message);
+                    setTimeout(function () { window.location.reload(); }, 600);
+                } else {
+                    showToast('error', 'Could not save', res.message);
+                }
+            }).fail(function () { $btn.prop('disabled', false).text('Save Settings'); showToast('error', 'Network error', 'Please try again.'); });
     });
 
     $('#email-settings-form').on('submit', function (e) {

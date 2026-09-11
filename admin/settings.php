@@ -36,7 +36,7 @@ require __DIR__ . '/includes/header.php';
 
 <div class="settings-panel" id="panel-general" role="tabpanel" aria-labelledby="tab-btn-general" tabindex="0">
     <div class="card" style="padding:28px;max-width:640px;" data-reveal>
-        <form id="settings-form">
+        <form id="settings-form" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
             <div class="form-group"><label class="form-label">Site Name</label><input type="text" class="form-control" name="site_name" value="<?= e($settings['site_name'] ?? '') ?>"></div>
             <div class="form-group"><label class="form-label">Tagline</label><input type="text" class="form-control" name="site_tagline" value="<?= e($settings['site_tagline'] ?? '') ?>"></div>
@@ -45,6 +45,29 @@ require __DIR__ . '/includes/header.php';
             <div class="form-group"><label class="form-label">Contact Address</label><input type="text" class="form-control" name="contact_address" value="<?= e($settings['contact_address'] ?? '') ?>"></div>
             <div class="form-group"><label class="form-label">Currency Symbol</label><input type="text" class="form-control" name="currency_symbol" value="<?= e($settings['currency_symbol'] ?? '$') ?>" style="max-width:100px;"></div>
             <label class="checkbox-row" style="margin-bottom:20px;"><input type="checkbox" name="maintenance_mode" value="1" <?= ($settings['maintenance_mode'] ?? '0') === '1' ? 'checked' : '' ?>> Maintenance mode</label>
+
+            <div class="divider-fade" style="margin:20px 0;"></div>
+            <h4 style="margin-bottom:4px;">Branding</h4>
+            <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:16px;">Replaces the icon + text logo and browser tab icon everywhere — the main site, and the admin, doctor, patient, and pharmacy panels.</p>
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">Site Logo</label>
+                    <?php if ($settings['site_logo'] ?? ''): ?>
+                    <div style="margin-bottom:8px;"><img src="<?= e(UPLOAD_URL . '/' . $settings['site_logo']) ?>" alt="Current logo" style="height:40px;max-width:200px;object-fit:contain;background:var(--color-bg);border-radius:8px;padding:6px;"></div>
+                    <label class="checkbox-row" style="margin-bottom:8px;"><input type="checkbox" name="remove_logo" value="1"> Remove current logo (use text logo instead)</label>
+                    <?php endif; ?>
+                    <input type="file" class="form-control" name="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Site Icon (Favicon)</label>
+                    <?php if ($settings['site_favicon'] ?? ''): ?>
+                    <div style="margin-bottom:8px;"><img src="<?= e(UPLOAD_URL . '/' . $settings['site_favicon']) ?>" alt="Current favicon" style="height:32px;width:32px;object-fit:contain;background:var(--color-bg);border-radius:8px;padding:4px;"></div>
+                    <label class="checkbox-row" style="margin-bottom:8px;"><input type="checkbox" name="remove_favicon" value="1"> Remove current icon (use default instead)</label>
+                    <?php endif; ?>
+                    <input type="file" class="form-control" name="favicon" accept="image/png,image/svg+xml,.ico">
+                </div>
+            </div>
+
             <button type="submit" class="btn btn-primary">Save Settings</button>
         </form>
     </div>
