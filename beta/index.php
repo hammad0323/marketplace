@@ -12,8 +12,10 @@ echo render_schema([
 ]);
 echo render_schema([
     '@context' => 'https://schema.org', '@type' => 'Organization', 'name' => site_name(),
-    'url' => base_url(), 'logo' => upload_url(get_setting('site_logo')) ?: asset_url('images/logo.png'),
+    'url' => base_url(), 'logo' => get_setting('site_logo') ? upload_url(get_setting('site_logo')) : asset_url('images/logo.png'),
 ]);
+
+$categoryPalette = ['#dcf2e3', '#ffe3e3', '#e4e9f7', '#fff3d6', '#e8dcf5', '#dcf0f5', '#fde3ef', '#e6f2d9', '#ffe8d6', '#dde8ff'];
 
 foreach ($sections as $section):
     $type = $section['section_type'];
@@ -23,12 +25,21 @@ foreach ($sections as $section):
         if ($banners): ?>
         <section class="hero-slider" id="hero-slider">
           <?php foreach ($banners as $i => $b): ?>
-            <div class="hero-slide<?= $i === 0 ? ' active' : '' ?>" style="background:<?= clean($b['bg_color']) ?>;<?php if ($b['image']): ?>background-image:url('<?= upload_url($b['image']) ?>');<?php endif; ?>">
-              <div class="container hero-slide-inner text-<?= clean($b['text_align']) ?>">
-                <?php if ($b['sub_heading']): ?><span class="hero-sub"><?= clean($b['sub_heading']) ?></span><?php endif; ?>
-                <h1><?= clean($b['heading']) ?></h1>
-                <?php if ($b['description']): ?><p><?= clean($b['description']) ?></p><?php endif; ?>
-                <?php if ($b['button_text']): ?><a class="btn btn-accent" href="<?= base_url($b['button_url']) ?>"><?= clean($b['button_text']) ?></a><?php endif; ?>
+            <div class="hero-slide<?= $i === 0 ? ' active' : '' ?>" style="background:<?= clean($b['bg_color']) ?>">
+              <div class="container hero-slide-flex">
+                <div class="hero-text text-<?= clean($b['text_align']) ?>">
+                  <?php if ($b['sub_heading']): ?><span class="hero-badge"><?= clean($b['sub_heading']) ?></span><?php endif; ?>
+                  <h1><?= clean($b['heading']) ?></h1>
+                  <?php if ($b['description']): ?><p><?= clean($b['description']) ?></p><?php endif; ?>
+                  <?php if ($b['button_text']): ?><a class="btn btn-primary btn-pill btn-lg" href="<?= base_url($b['button_url']) ?>"><?= clean($b['button_text']) ?></a><?php endif; ?>
+                </div>
+                <div class="hero-image">
+                  <?php if ($b['image']): ?>
+                    <img src="<?= upload_url($b['image']) ?>" alt="<?= clean($b['heading']) ?>">
+                  <?php else: ?>
+                    <?php require __DIR__ . '/includes/hero-illustration.php'; ?>
+                  <?php endif; ?>
+                </div>
               </div>
             </div>
           <?php endforeach; ?>
@@ -39,19 +50,42 @@ foreach ($sections as $section):
     <?php endif; endif;
 
     if ($type === 'featured_categories'):
-        $cats = db_fetch_all("SELECT * FROM categories WHERE status='active' ORDER BY sort_order LIMIT ?", 'i', [(int)$section['item_count']]); ?>
+        $cats = db_fetch_all("SELECT c.*, (SELECT COUNT(*) FROM products p WHERE p.category_id=c.id AND p.status='active') product_count
+                               FROM categories c WHERE c.status='active' ORDER BY c.sort_order LIMIT ?", 'i', [(int)$section['item_count']]); ?>
         <section class="section container">
           <div class="section-head"><h2><?= clean($section['heading']) ?></h2><p><?= clean($section['description']) ?></p></div>
-          <div class="category-grid">
-            <?php foreach ($cats as $cat): ?>
-              <a class="category-card" href="<?= base_url('category.php?slug=' . $cat['slug']) ?>">
-                <img src="<?= category_image_or_default($cat['image']) ?>" alt="<?= clean($cat['name']) ?>">
-                <span><?= clean($cat['name']) ?></span>
+          <div class="category-circle-grid">
+            <?php foreach ($cats as $i => $cat): ?>
+              <a class="category-circle" href="<?= base_url('category.php?slug=' . $cat['slug']) ?>">
+                <span class="category-circle-icon" style="background:<?= $categoryPalette[$i % count($categoryPalette)] ?>">
+                  <i class="<?= clean($cat['icon']) ?>"></i>
+                </span>
+                <span class="category-circle-label"><?= clean($cat['name']) ?></span>
+                <span class="category-circle-count"><?= (int)$cat['product_count'] ?> items</span>
               </a>
             <?php endforeach; ?>
           </div>
         </section>
     <?php endif;
+
+    if ($type === 'promo_grid'):
+        $heroCount = 3;
+        $promoBanners = db_fetch_all("SELECT * FROM banners WHERE status='active' ORDER BY sort_order LIMIT ? OFFSET ?", 'ii', [(int)$section['item_count'], $heroCount]);
+        if ($promoBanners): ?>
+        <section class="section container">
+          <div class="promo-grid">
+            <?php foreach ($promoBanners as $b): ?>
+              <div class="promo-card" style="background:<?= clean($b['bg_color']) ?>">
+                <div class="promo-card-text">
+                  <h3><?= clean($b['heading']) ?></h3>
+                  <?php if ($b['button_text']): ?><a class="btn btn-primary btn-pill btn-sm" href="<?= base_url($b['button_url']) ?>"><?= clean($b['button_text']) ?></a><?php endif; ?>
+                </div>
+                <div class="promo-card-icon"><i class="fa-solid fa-basket-shopping"></i></div>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        </section>
+    <?php endif; endif;
 
     if ($type === 'featured_shops'):
         $shops = db_fetch_all("SELECT * FROM shops WHERE status='active' ORDER BY rating_avg DESC LIMIT ?", 'i', [(int)$section['item_count']]); ?>
@@ -83,16 +117,22 @@ foreach ($sections as $section):
         </section>
     <?php endif;
 
-    if ($type === 'promotional_banner'):
-        $promo = db_fetch_one("SELECT * FROM banners WHERE status='active' ORDER BY sort_order DESC LIMIT 1");
-        if ($promo): ?>
-        <section class="container">
-          <div class="promo-banner" style="background:<?= clean($promo['bg_color']) ?>">
-            <div>
-              <h2><?= clean($promo['heading']) ?></h2>
-              <p><?= clean($promo['description']) ?></p>
-              <?php if ($promo['button_text']): ?><a class="btn btn-light" href="<?= base_url($promo['button_url']) ?>"><?= clean($promo['button_text']) ?></a><?php endif; ?>
+    if ($type === 'flash_sale'):
+        $deals = db_fetch_all("SELECT p.*, s.shop_name, s.slug as shop_slug FROM products p JOIN shops s ON s.id=p.shop_id
+                                WHERE p.status='active' AND s.status='active' AND p.sale_price IS NOT NULL
+                                ORDER BY (p.regular_price - p.sale_price) / p.regular_price DESC LIMIT ?", 'i', [(int)$section['item_count']]);
+        if ($deals): ?>
+        <section class="section container">
+          <div class="section-head flash-sale-head">
+            <div><h2><i class="fa-solid fa-bolt"></i> <?= clean($section['heading']) ?></h2><p><?= clean($section['description']) ?></p></div>
+            <div class="flash-countdown" id="flash-countdown" data-deadline="<?= date('c', strtotime('tomorrow')) ?>">
+              <div class="countdown-box"><span id="cd-hours">00</span><small>Hrs</small></div>
+              <div class="countdown-box"><span id="cd-mins">00</span><small>Min</small></div>
+              <div class="countdown-box"><span id="cd-secs">00</span><small>Sec</small></div>
             </div>
+          </div>
+          <div class="deal-grid">
+            <?php foreach ($deals as $p) render_deal_card($p); ?>
           </div>
         </section>
     <?php endif; endif;

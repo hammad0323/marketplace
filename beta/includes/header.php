@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <?php require __DIR__ . '/seo.php'; ?>
-<link rel="icon" href="<?= upload_url(get_setting('site_favicon')) ?: asset_url('images/favicon.png') ?>">
+<link rel="icon" href="<?= get_setting('site_favicon') ? upload_url(get_setting('site_favicon')) : asset_url('images/favicon.png') ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link rel="stylesheet" href="<?= asset_url('css/style.css') ?>">
 <style>

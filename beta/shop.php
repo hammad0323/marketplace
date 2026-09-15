@@ -33,7 +33,12 @@ $reviews = db_fetch_all("SELECT r.*, c.first_name, c.last_name, p.name as produc
 $seoEntityType = 'shop'; $seoEntityId = $shop['id']; $pageTitle = $shop['shop_name'];
 require __DIR__ . '/includes/header.php';
 require __DIR__ . '/includes/product-card.php';
+// Scope the shop's own brand colors to just its storefront content (not the
+// platform header/footer) via inline CSS custom properties on the wrapper.
+$shopBrandStyle = 'style="--primary-color:' . clean($shop['primary_color'] ?: '#27ae60')
+    . ';--secondary-color:' . clean($shop['secondary_color'] ?: '#14532d') . '"';
 ?>
+<div class="shop-page-scope" <?= $shopBrandStyle ?>>
 <div class="shop-cover" style="background-image:url('<?= shop_cover_or_default($shop['cover_image']) ?>')"></div>
 <div class="container">
   <div class="shop-header">
@@ -119,5 +124,6 @@ require __DIR__ . '/includes/product-card.php';
       </div>
     <?php endforeach; else: ?><p class="text-muted">No reviews yet.</p><?php endif; ?>
   <?php endif; ?>
+</div>
 </div>
 <?php require __DIR__ . '/includes/footer.php'; ?>

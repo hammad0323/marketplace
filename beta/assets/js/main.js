@@ -25,7 +25,32 @@ document.addEventListener('DOMContentLoaded', function () {
   const menuToggle = document.getElementById('mobile-menu-toggle');
   const categoryNav = document.getElementById('category-nav');
   if (menuToggle && categoryNav) {
-    menuToggle.addEventListener('click', () => categoryNav.querySelector('.category-nav-inner').classList.toggle('open'));
+    menuToggle.addEventListener('click', () => categoryNav.querySelector('.category-nav-links').classList.toggle('open'));
+  }
+
+  // Browse-all-categories dropdown
+  const browseBtn = document.getElementById('browse-categories-btn');
+  const browseDropdown = document.getElementById('category-dropdown');
+  if (browseBtn && browseDropdown) {
+    browseBtn.addEventListener('click', () => browseDropdown.classList.toggle('open'));
+    document.addEventListener('click', e => {
+      if (!browseBtn.contains(e.target) && !browseDropdown.contains(e.target)) browseDropdown.classList.remove('open');
+    });
+  }
+
+  // Flash-sale countdown (resets daily at midnight)
+  const countdown = document.getElementById('flash-countdown');
+  if (countdown) {
+    const deadline = new Date(countdown.dataset.deadline).getTime();
+    const hoursEl = document.getElementById('cd-hours'), minsEl = document.getElementById('cd-mins'), secsEl = document.getElementById('cd-secs');
+    const pad = n => String(n).padStart(2, '0');
+    const tick = () => {
+      const diff = Math.max(0, deadline - Date.now());
+      const h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000), s = Math.floor((diff % 60000) / 1000);
+      hoursEl.textContent = pad(h); minsEl.textContent = pad(m); secsEl.textContent = pad(s);
+    };
+    tick();
+    setInterval(tick, 1000);
   }
 
   // Hero slider
@@ -61,7 +86,7 @@ document.addEventListener('DOMContentLoaded', function () {
           showToast(res.message, res.success ? 'success' : 'error');
           if (res.success) {
             const badge = document.getElementById('cart-badge');
-            if (badge) badge.textContent = res.cart_count;
+            if (badge) { badge.textContent = res.cart_count; badge.style.display = res.cart_count > 0 ? '' : 'none'; }
           }
         });
     });
@@ -105,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const subtotalEl = document.getElementById('cart-subtotal');
         if (subtotalEl) subtotalEl.textContent = res.subtotal;
         const badge = document.getElementById('cart-badge');
-        if (badge) badge.textContent = res.cart_count;
+        if (badge) { badge.textContent = res.cart_count; badge.style.display = res.cart_count > 0 ? '' : 'none'; }
       }
     });
   }
@@ -117,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (res.success) {
           document.querySelector(`.cart-item[data-item-id="${itemId}"]`)?.remove();
           const badge = document.getElementById('cart-badge');
-          if (badge) badge.textContent = res.cart_count;
+          if (badge) { badge.textContent = res.cart_count; badge.style.display = res.cart_count > 0 ? '' : 'none'; }
           if (res.cart_count == 0) location.reload();
         }
       });

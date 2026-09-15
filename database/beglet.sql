@@ -18,8 +18,8 @@ CREATE TABLE settings (
 
 INSERT INTO settings (setting_key, setting_value) VALUES
 ('site_name', 'Beglet'),
-('site_logo', 'assets/images/logo.png'),
-('site_favicon', 'assets/images/favicon.png'),
+('site_logo', ''),
+('site_favicon', ''),
 ('site_description', 'Beglet — a modern multi-vendor marketplace'),
 ('site_phone', '+92 300 0000000'),
 ('site_email', 'support@beglet.com'),
@@ -29,13 +29,13 @@ INSERT INTO settings (setting_key, setting_value) VALUES
 ('timezone', 'Asia/Karachi'),
 ('footer_text', 'Beglet — your one-stop multi-vendor marketplace.'),
 ('copyright_text', '&copy; 2026 Beglet. All rights reserved.'),
-('primary_color', '#2f6fed'),
-('secondary_color', '#0b1f3a'),
-('accent_color', '#ff7a1a'),
-('button_color', '#2f6fed'),
+('primary_color', '#27ae60'),
+('secondary_color', '#14532d'),
+('accent_color', '#ff6b35'),
+('button_color', '#27ae60'),
 ('header_color', '#ffffff'),
-('footer_color', '#0b1f3a'),
-('background_color', '#f5f7fb'),
+('footer_color', '#0d2818'),
+('background_color', '#f7f9f7'),
 ('text_color', '#222222'),
 ('employee_limit', '3'),
 ('commission_due_days', '30'),
@@ -145,8 +145,8 @@ CREATE TABLE shops (
     rejection_reason VARCHAR(255) DEFAULT NULL,
     status_reason VARCHAR(255) DEFAULT NULL,
     employee_limit_override INT DEFAULT NULL,
-    primary_color VARCHAR(20) DEFAULT '#2f6fed',
-    secondary_color VARCHAR(20) DEFAULT '#0b1f3a',
+    primary_color VARCHAR(20) DEFAULT '#27ae60',
+    secondary_color VARCHAR(20) DEFAULT '#14532d',
     rating_avg DECIMAL(3,2) DEFAULT 0.00,
     rating_count INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -557,9 +557,12 @@ CREATE TABLE banners (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO banners (heading,sub_heading,description,button_text,button_url,image,bg_color,sort_order) VALUES
-('Big Ramzan Sale','Up to 50% off','Shop the biggest sale of the season across all categories.','Shop Now','category/electronics','','#2f6fed',1),
-('New Arrivals','Fresh styles every week','Discover the latest products from top vendors.','Explore','search','','#ff7a1a',2),
-('Sell on Beglet','Grow your business','Join thousands of vendors selling on Beglet.','Become a Seller','shop-register.php','','#0b1f3a',3);
+('Big Ramzan Sale','UP TO 50% OFF','Shop the biggest sale of the season across all categories.','Shop Now','category.php?slug=electronics','','#dcf2e3',1),
+('New Arrivals','FRESH EVERY WEEK','Discover the latest products from top vendors.','Explore','search.php','','#ffe8d6',2),
+('Sell on Beglet','GROW YOUR BUSINESS','Join thousands of vendors selling on Beglet.','Become a Seller','shop/register.php','','#e4e9f7',3),
+('Everyday Fresh Meat','','Premium quality, delivered fresh.','Shop Now','category.php?slug=electronics','','#ffe3e3',4),
+('Daily Fresh Vegetables','','Farm-picked, always fresh.','Shop Now','category.php?slug=home-living','','#dcf2e3',5),
+('Everyday Fresh Deals','','New offers added every day.','Shop Now','category.php?slug=beauty','','#fff3d6',6);
 
 CREATE TABLE homepage_sections (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -578,7 +581,8 @@ INSERT INTO homepage_sections (section_type,heading,description,item_count,sort_
 ('featured_products','Featured Products','Hand-picked for you',8,4),
 ('latest_products','Latest Products','Freshly added products',8,5),
 ('best_selling','Best Selling Products','Customer favorites',8,6),
-('promotional_banner','','',1,7);
+('promo_grid','','',3,7),
+('flash_sale','Deals of the Day','Grab them before they are gone',4,8);
 
 CREATE TABLE shop_sections (
     id INT AUTO_INCREMENT PRIMARY KEY,

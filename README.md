@@ -4,6 +4,15 @@ Beglet is a full multi-vendor marketplace platform built with **Core PHP + MySQL
 (no framework, no ORM, no OOP application architecture) — designed to run in a
 `/beta/` subdirectory, e.g. `https://www.beglet.com/beta/`.
 
+The storefront uses a modern SaaS/grocery-marketplace visual style: a green
+brand theme (fully admin-configurable from Settings — colors are CSS
+variables, not hardcoded), a top utility bar + "Browse All Categories"
+mega-dropdown header, pastel circular category icons, floating add-to-cart
+buttons on product cards, a 3-card promo grid, and a "Deals of the Day"
+flash-sale section with a live countdown timer and per-product stock
+progress bars. Admin/shop/customer dashboards share the same design tokens
+(rounded cards, soft shadows, pill buttons) for a consistent look end to end.
+
 ## What's included
 
 - **Four roles**: Admin, Shop Owner, Shop Staff (with granular permissions), Customer

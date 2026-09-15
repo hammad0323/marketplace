@@ -35,11 +35,11 @@ define('UPLOAD_DIR', __DIR__ . '/../uploads/');
 define('MAX_UPLOAD_SIZE', 2 * 1024 * 1024); // 2MB
 define('ALLOWED_IMAGE_TYPES', ['jpg', 'jpeg', 'png', 'webp']);
 
-define('DEFAULT_CATEGORY_IMAGE', 'assets/images/default-category.png');
-define('DEFAULT_PRODUCT_IMAGE', 'assets/images/default-product.png');
-define('DEFAULT_SHOP_LOGO', 'assets/images/default-shop-logo.png');
-define('DEFAULT_SHOP_COVER', 'assets/images/default-shop-cover.png');
-define('DEFAULT_AVATAR', 'assets/images/default-avatar.png');
+define('DEFAULT_CATEGORY_IMAGE', 'images/default-category.png');
+define('DEFAULT_PRODUCT_IMAGE', 'images/default-product.png');
+define('DEFAULT_SHOP_LOGO', 'images/default-shop-logo.png');
+define('DEFAULT_SHOP_COVER', 'images/default-shop-cover.png');
+define('DEFAULT_AVATAR', 'images/default-avatar.png');
 
 define('ALL_STAFF_PERMISSIONS', [
     'view_dashboard'      => 'View Dashboard',
