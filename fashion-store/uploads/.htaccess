@@ -1,0 +1,10 @@
+# Uploaded files are user-supplied images only — never execute scripts from here.
+<IfModule mod_php7.c>
+  php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+  php_flag engine off
+</IfModule>
+<FilesMatch "\.(php|phtml|php\d?|phar)$">
+  Require all denied
+</FilesMatch>
