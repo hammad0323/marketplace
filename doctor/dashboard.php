@@ -36,8 +36,8 @@ while ($m = mysqli_fetch_assoc($monthly)) {
 
 $pageTitle = 'Dashboard';
 $heading = 'My Dashboard';
-$extraScripts = '<script defer src="/assets/js/vendor/chart.umd.js"></script><script defer src="/assets/js/doctor-appointments.js"></script>'
-    . '<script defer src="/assets/js/calendar-widget.js"></script><script defer src="/assets/js/doctor-dashboard-calendar.js"></script><script>'
+$extraScripts = '<script defer src="' . asset_url('/assets/js/vendor/chart.umd.js') . '"></script><script defer src="' . asset_url('/assets/js/doctor-appointments.js') . '"></script>'
+    . '<script defer src="' . asset_url('/assets/js/calendar-widget.js') . '"></script><script defer src="' . asset_url('/assets/js/doctor-dashboard-calendar.js') . '"></script><script>'
     . 'document.addEventListener("DOMContentLoaded", function () {'
     . 'new Chart(document.getElementById("apptChart"), {'
     . 'type: "bar",'

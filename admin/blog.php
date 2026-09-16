@@ -9,7 +9,7 @@ $posts = mysqli_query(db(), "
 
 $pageTitle = 'Blog';
 $heading = 'Blog';
-$extraScripts = '<script defer src="/assets/js/rich-editor.js"></script><script defer src="/assets/js/admin-blog.js"></script>';
+$extraScripts = '<script defer src="' . asset_url('/assets/js/rich-editor.js') . '"></script><script defer src="' . asset_url('/assets/js/admin-blog.js') . '"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">

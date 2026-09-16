@@ -21,10 +21,10 @@ $appointments = mysqli_query(db(), "
 
 $pageTitle = 'Appointments';
 $heading = 'Appointments';
-$extraScripts = '<script defer src="/assets/js/doctor-appointments.js"></script>'
-    . '<script defer src="/assets/js/calendar-widget.js"></script>'
+$extraScripts = '<script defer src="' . asset_url('/assets/js/doctor-appointments.js') . '"></script>'
+    . '<script defer src="' . asset_url('/assets/js/calendar-widget.js') . '"></script>'
     . '<script>window.NA_DOCTOR_ID=' . (int) $doctorId . ';</script>'
-    . '<script defer src="/assets/js/doctor-new-appointment.js"></script>';
+    . '<script defer src="' . asset_url('/assets/js/doctor-new-appointment.js') . '"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:4px;">

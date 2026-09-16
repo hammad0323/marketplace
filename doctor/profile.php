@@ -29,7 +29,7 @@ mysqli_stmt_close($stmt);
 
 $pageTitle = 'My Profile';
 $heading = 'My Profile';
-$extraScripts = '<script defer src="/assets/js/profile.js"></script><script defer src="/assets/js/certificate-upload.js"></script><script defer src="/assets/js/doctor-profile-extra.js"></script>';
+$extraScripts = '<script defer src="' . asset_url('/assets/js/profile.js') . '"></script><script defer src="' . asset_url('/assets/js/certificate-upload.js') . '"></script><script defer src="' . asset_url('/assets/js/doctor-profile-extra.js') . '"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="split-sidebar-left">

@@ -18,7 +18,7 @@ $availByDay = []; // blank defaults for the modal; edit mode fetches + populates
 
 $pageTitle = 'Doctors';
 $heading = 'Manage Doctors';
-$extraScripts = '<script defer src="/assets/js/admin-doctors.js"></script><script defer src="/assets/js/admin-doctor-form.js"></script>';
+$extraScripts = '<script defer src="' . asset_url('/assets/js/admin-doctors.js') . '"></script><script defer src="' . asset_url('/assets/js/admin-doctor-form.js') . '"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:4px;">
