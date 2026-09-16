@@ -4,7 +4,7 @@ require_customer_login();
 $customer = current_customer();
 $id = (int)($_GET['id'] ?? 0);
 $order = mysqli_fetch_assoc(mysqli_query($mysqli, "SELECT * FROM orders WHERE id = $id AND customer_id = {$customer['id']}"));
-if (!$order) redirect(BASE_URL . '/account/orders.php');
+if (!$order) redirect(url('account/orders'));
 $items = mysqli_query($mysqli, "SELECT * FROM order_items WHERE order_id = $id");
 $history = mysqli_query($mysqli, "SELECT * FROM order_status_history WHERE order_id = $id ORDER BY created_at DESC");
 
@@ -17,10 +17,11 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="col-lg-9">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h4 font-serif mb-0">Order <?= e($order['order_number']) ?></h1>
-        <a href="<?= BASE_URL ?>/invoice.php?id=<?= $id ?>" target="_blank" class="btn-outline-brand">View Invoice</a>
+        <a href="<?= url('invoice/' . $id) ?>" target="_blank" class="btn-outline-brand">View Invoice</a>
       </div>
       <div class="summary-box mb-4">
         <span class="badge status-badge status-<?= e($order['order_status']) ?> mb-3"><?= e(ucwords(str_replace('_',' ',$order['order_status']))) ?></span>
+        <div class="table-responsive">
         <table class="table align-middle">
           <thead><tr><th>Product</th><th>Price</th><th>Qty</th><th>Subtotal</th></tr></thead>
           <tbody>
@@ -34,6 +35,7 @@ require_once __DIR__ . '/../includes/header.php';
           <?php endwhile; ?>
           </tbody>
         </table>
+        </div>
         <table class="table w-auto ms-auto">
           <tr><td class="text-muted">Subtotal</td><td><?= format_price($order['subtotal']) ?></td></tr>
           <tr><td class="text-muted">Discount</td><td>- <?= format_price($order['discount']) ?></td></tr>

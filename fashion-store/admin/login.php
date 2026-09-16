@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../includes/functions.php';
 
 if (admin_logged_in()) {
-    redirect(BASE_URL . '/admin/index.php');
+    redirect(url('admin'));
 }
 
 $error = '';
@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $upd = mysqli_prepare($mysqli, "UPDATE admins SET last_login = NOW() WHERE id = ?");
         mysqli_stmt_bind_param($upd, 'i', $admin['id']);
         mysqli_stmt_execute($upd);
-        redirect(BASE_URL . '/admin/index.php');
+        redirect(url('admin'));
     } else {
         $error = 'Invalid email or password.';
     }

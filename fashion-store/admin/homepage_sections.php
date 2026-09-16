@@ -2,14 +2,14 @@
 $pageTitle = 'Homepage Sections';
 require_once __DIR__ . '/includes/admin_header.php';
 
-$homepage = max(1, min(4, (int)($_GET['homepage'] ?? 1)));
+$homepage = max(1, min(10, (int)($_GET['homepage'] ?? 1)));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
     $action = $_POST['action'] ?? '';
     if ($action === 'save') {
         $id = (int)($_POST['id'] ?? 0);
-        $hp = max(1, min(4, (int)$_POST['homepage']));
+        $hp = max(1, min(10, (int)$_POST['homepage']));
         $sectionType = $_POST['section_type'] ?? 'products';
         $title = trim($_POST['title'] ?? '');
         $subtitle = trim($_POST['subtitle'] ?? '');
@@ -71,6 +71,11 @@ $sectionTypeLabels = [
     'promo_banner' => 'Promotional Banner',
     'image_text' => 'Image + Text Split',
     'brand_story' => 'Brand Story',
+    'text_banner' => 'Text Banner',
+    'two_column' => 'Two Column',
+    'brands' => 'Brand Strip',
+    'features' => 'Features / Overview',
+    'counters' => 'Stats / Counters',
     'newsletter' => 'Newsletter Signup',
     'testimonials' => 'Testimonials',
     'instagram' => 'Instagram / Social Feed',
@@ -83,7 +88,7 @@ $sectionTypeLabels = [
 </div>
 
 <ul class="nav nav-pills mb-4">
-  <?php for ($i = 1; $i <= 4; $i++): ?>
+  <?php for ($i = 1; $i <= 10; $i++): ?>
     <li class="nav-item"><a class="nav-link <?= $homepage == $i ? 'active' : '' ?>" href="?homepage=<?= $i ?>">Home <?= $i ?></a></li>
   <?php endfor; ?>
 </ul>

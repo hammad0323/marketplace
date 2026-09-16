@@ -1,9 +1,9 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
 
-if (customer_logged_in()) redirect(BASE_URL . '/account/dashboard.php');
+if (customer_logged_in()) redirect(url('account/dashboard'));
 
-$redirect = $_GET['redirect'] ?? 'account/dashboard.php';
+$redirect = $_GET['redirect'] ?? 'account/dashboard';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         session_regenerate_id(true);
         $_SESSION['customer_id'] = $customer['id'];
         merge_guest_cart_into_customer($mysqli, $customer['id']);
-        redirect(BASE_URL . '/' . ltrim($redirect, '/'));
+        redirect(url(ltrim($redirect, '/')));
     } else {
         $error = 'Invalid email or password.';
     }
@@ -40,9 +40,9 @@ $googleEnabled = get_setting('google_login_enabled') === '1';
       <button class="btn-brand w-100 mb-3">Login</button>
     </form>
     <?php if ($googleEnabled): ?>
-      <a href="<?= BASE_URL ?>/google_login.php?redirect=<?= urlencode($redirect) ?>" class="btn btn-outline-dark w-100 mb-3"><i class="bi bi-google"></i> Continue with Google</a>
+      <a href="<?= e(url('google-login', ['redirect' => $redirect])) ?>" class="btn btn-outline-dark w-100 mb-3"><i class="bi bi-google"></i> Continue with Google</a>
     <?php endif; ?>
-    <p class="text-center small text-muted mb-0">Don't have an account? <a href="<?= BASE_URL ?>/register.php">Create one</a></p>
+    <p class="text-center small text-muted mb-0">Don't have an account? <a href="<?= url('register') ?>">Create one</a></p>
   </div>
 </div>
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

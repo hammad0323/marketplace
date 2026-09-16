@@ -67,7 +67,7 @@ function nav_active($page, $files) {
     <header class="admin-topbar">
       <button class="admin-burger d-lg-none" id="adminBurger"><i class="bi bi-list"></i></button>
       <div class="ms-auto d-flex align-items-center gap-3">
-        <a href="<?= BASE_URL ?>/index.php" target="_blank" class="small text-muted"><i class="bi bi-box-arrow-up-right"></i> View site</a>
+        <a href="<?= url() ?>" target="_blank" class="small text-muted"><i class="bi bi-box-arrow-up-right"></i> View site</a>
         <div class="dropdown">
           <button class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown">
             <i class="bi bi-person-circle"></i> <?= e($__admin['name'] ?? 'Admin') ?>

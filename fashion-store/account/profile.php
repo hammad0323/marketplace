@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash_set('success', 'Password changed successfully.');
         }
     }
-    redirect(BASE_URL . '/account/profile.php');
+    redirect(url('account/profile'));
 }
 
 $pageTitle = 'Profile | ' . get_setting('store_name');

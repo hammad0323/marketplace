@@ -1,7 +1,8 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/email_templates.php';
 
-if (customer_logged_in()) redirect(BASE_URL . '/account/dashboard.php');
+if (customer_logged_in()) redirect(url('account/dashboard'));
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -23,10 +24,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_bind_param($stmt, 'ssss', $name, $email, $phone, $hash);
             mysqli_stmt_execute($stmt);
             $customerId = mysqli_insert_id($mysqli);
+            send_welcome_email(['name' => $name, 'email' => $email]);
             session_regenerate_id(true);
             $_SESSION['customer_id'] = $customerId;
             merge_guest_cart_into_customer($mysqli, $customerId);
-            redirect(BASE_URL . '/account/dashboard.php');
+            redirect(url('account/dashboard'));
         }
     }
 }
@@ -46,7 +48,7 @@ require_once __DIR__ . '/includes/header.php';
       <div class="mb-3"><label class="form-label">Password</label><input type="password" name="password" class="form-control" required minlength="6"></div>
       <button class="btn-brand w-100 mb-3">Create Account</button>
     </form>
-    <p class="text-center small text-muted mb-0">Already have an account? <a href="<?= BASE_URL ?>/login.php">Login</a></p>
+    <p class="text-center small text-muted mb-0">Already have an account? <a href="<?= url('login') ?>">Login</a></p>
   </div>
 </div>
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

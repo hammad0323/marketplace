@@ -2,14 +2,14 @@
 $pageTitle = 'Banners';
 require_once __DIR__ . '/includes/admin_header.php';
 
-$homepage = max(1, min(4, (int)($_GET['homepage'] ?? 1)));
+$homepage = max(1, min(10, (int)($_GET['homepage'] ?? 1)));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
     $action = $_POST['action'] ?? '';
     if ($action === 'save') {
         $id = (int)($_POST['id'] ?? 0);
-        $hp = max(1, min(4, (int)$_POST['homepage']));
+        $hp = max(1, min(10, (int)$_POST['homepage']));
         $title = trim($_POST['title'] ?? '');
         $subtitle = trim($_POST['subtitle'] ?? '');
         $buttonText = trim($_POST['button_text'] ?? '');
@@ -62,7 +62,7 @@ $banners = mysqli_stmt_get_result($stmt);
 </div>
 
 <ul class="nav nav-pills mb-4">
-  <?php for ($i = 1; $i <= 4; $i++): ?>
+  <?php for ($i = 1; $i <= 10; $i++): ?>
     <li class="nav-item"><a class="nav-link <?= $homepage == $i ? 'active' : '' ?>" href="?homepage=<?= $i ?>">Home <?= $i ?></a></li>
   <?php endfor; ?>
 </ul>
@@ -99,7 +99,7 @@ $banners = mysqli_stmt_get_result($stmt);
             <div class="col-md-6"><label class="form-label">Heading</label><input type="text" name="title" id="b_title" class="form-control"></div>
             <div class="col-md-6"><label class="form-label">Subheading</label><input type="text" name="subtitle" id="b_subtitle" class="form-control"></div>
             <div class="col-md-6"><label class="form-label">Button Text</label><input type="text" name="button_text" id="b_button_text" class="form-control"></div>
-            <div class="col-md-6"><label class="form-label">Button URL</label><input type="text" name="button_url" id="b_button_url" class="form-control" placeholder="/shop.php"></div>
+            <div class="col-md-6"><label class="form-label">Button URL</label><input type="text" name="button_url" id="b_button_url" class="form-control" placeholder="shop or https://..."></div>
             <div class="col-md-6"><label class="form-label">Desktop Image</label><input type="file" name="image_desktop" class="form-control"></div>
             <div class="col-md-6"><label class="form-label">Mobile Image</label><input type="file" name="image_mobile" class="form-control"></div>
             <div class="col-md-6"><label class="form-label">Sort Order</label><input type="number" name="sort_order" id="b_sort" class="form-control" value="0"></div>

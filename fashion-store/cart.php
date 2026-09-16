@@ -19,11 +19,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['apply_coupon'])) {
         $_SESSION['coupon_code'] = $code;
         flash_set('success', 'Coupon applied successfully.');
     }
-    redirect(BASE_URL . '/cart.php');
+    redirect(url('cart'));
 }
 if (isset($_GET['remove_coupon'])) {
     unset($_SESSION['coupon_code']);
-    redirect(BASE_URL . '/cart.php');
+    redirect(url('cart'));
 }
 
 $items = get_cart_items();
@@ -50,7 +50,7 @@ require_once __DIR__ . '/includes/header.php';
     <div class="text-center py-5">
       <i class="bi bi-bag display-3 text-muted"></i>
       <p class="text-muted mt-3">Your cart is empty.</p>
-      <a href="<?= BASE_URL ?>/shop.php" class="btn-brand">Continue Shopping</a>
+      <a href="<?= url('shop') ?>" class="btn-brand">Continue Shopping</a>
     </div>
   <?php else: ?>
   <div class="row g-4">
@@ -65,7 +65,7 @@ require_once __DIR__ . '/includes/header.php';
               <div class="d-flex gap-3 align-items-center">
                 <img src="<?= e(BASE_URL . '/' . $it['image']) ?>" class="cart-thumb">
                 <div>
-                  <a href="<?= BASE_URL ?>/product.php?slug=<?= e($it['slug']) ?>" class="fw-medium"><?= e($it['name']) ?></a>
+                  <a href="<?= e(product_url($it['slug'])) ?>" class="fw-medium"><?= e($it['name']) ?></a>
                 </div>
               </div>
             </td>
@@ -100,7 +100,7 @@ require_once __DIR__ . '/includes/header.php';
           <button class="btn btn-outline-dark btn-sm">Apply</button>
         </form>
 
-        <a href="<?= BASE_URL ?>/checkout.php" class="btn-brand w-100 text-center d-block">Proceed to Checkout</a>
+        <a href="<?= url('checkout') ?>" class="btn-brand w-100 text-center d-block">Proceed to Checkout</a>
       </div>
     </div>
   </div>

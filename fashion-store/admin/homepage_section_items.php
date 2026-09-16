@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $title = trim($_POST['title'] ?? '');
         $subtitle = trim($_POST['subtitle'] ?? '');
         $link = trim($_POST['link'] ?? '');
+        $iconClass = trim($_POST['icon_class'] ?? '');
         $productId = !empty($_POST['product_id']) ? (int)$_POST['product_id'] : null;
         $sortOrder = (int)($_POST['sort_order'] ?? 0);
         $status = $_POST['status'] === 'active' ? 'active' : 'inactive';
@@ -21,17 +22,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($id) {
             if ($image) {
-                $stmt = mysqli_prepare($mysqli, "UPDATE homepage_section_items SET title=?, subtitle=?, link=?, product_id=?, image=?, sort_order=?, status=? WHERE id=?");
-                mysqli_stmt_bind_param($stmt, 'sssisisi', $title, $subtitle, $link, $productId, $image, $sortOrder, $status, $id);
+                $stmt = mysqli_prepare($mysqli, "UPDATE homepage_section_items SET title=?, subtitle=?, link=?, product_id=?, image=?, icon_class=?, sort_order=?, status=? WHERE id=?");
+                mysqli_stmt_bind_param($stmt, 'sssissisi', $title, $subtitle, $link, $productId, $image, $iconClass, $sortOrder, $status, $id);
             } else {
-                $stmt = mysqli_prepare($mysqli, "UPDATE homepage_section_items SET title=?, subtitle=?, link=?, product_id=?, sort_order=?, status=? WHERE id=?");
-                mysqli_stmt_bind_param($stmt, 'sssiisi', $title, $subtitle, $link, $productId, $sortOrder, $status, $id);
+                $stmt = mysqli_prepare($mysqli, "UPDATE homepage_section_items SET title=?, subtitle=?, link=?, product_id=?, icon_class=?, sort_order=?, status=? WHERE id=?");
+                mysqli_stmt_bind_param($stmt, 'sssisisi', $title, $subtitle, $link, $productId, $iconClass, $sortOrder, $status, $id);
             }
             mysqli_stmt_execute($stmt);
             flash_set('success', 'Item updated.');
         } else {
-            $stmt = mysqli_prepare($mysqli, "INSERT INTO homepage_section_items (section_id, title, subtitle, link, product_id, image, sort_order, status) VALUES (?,?,?,?,?,?,?,?)");
-            mysqli_stmt_bind_param($stmt, 'isssisis', $sectionId, $title, $subtitle, $link, $productId, $image, $sortOrder, $status);
+            $stmt = mysqli_prepare($mysqli, "INSERT INTO homepage_section_items (section_id, title, subtitle, link, product_id, image, icon_class, sort_order, status) VALUES (?,?,?,?,?,?,?,?,?)");
+            mysqli_stmt_bind_param($stmt, 'isssissis', $sectionId, $title, $subtitle, $link, $productId, $image, $iconClass, $sortOrder, $status);
             mysqli_stmt_execute($stmt);
             flash_set('success', 'Item added.');
         }
@@ -85,6 +86,7 @@ while ($p = mysqli_fetch_assoc($products)) $productList[] = $p;
           <label class="form-label">Subtitle</label><input type="text" name="subtitle" id="it_subtitle" class="form-control mb-3">
           <label class="form-label">Image</label><input type="file" name="image" class="form-control mb-3">
           <label class="form-label">Link URL</label><input type="text" name="link" id="it_link" class="form-control mb-3">
+          <label class="form-label">Icon Class (for Features / Counters sections, e.g. bi-truck)</label><input type="text" name="icon_class" id="it_icon" class="form-control mb-3" placeholder="bi-truck">
           <label class="form-label">Link to Product (optional)</label>
           <select name="product_id" id="it_product" class="form-select select2 mb-3">
             <option value="">— None —</option>
@@ -100,13 +102,14 @@ while ($p = mysqli_fetch_assoc($products)) $productList[] = $p;
   </div>
 </div>
 <script>
-function resetItemForm(){document.getElementById('itemModalTitle').textContent='Add Item';document.getElementById('it_id').value='';document.getElementById('it_title').value='';document.getElementById('it_subtitle').value='';document.getElementById('it_link').value='';document.getElementById('it_product').value='';document.getElementById('it_sort').value=0;document.getElementById('it_status').value='active';}
+function resetItemForm(){document.getElementById('itemModalTitle').textContent='Add Item';document.getElementById('it_id').value='';document.getElementById('it_title').value='';document.getElementById('it_subtitle').value='';document.getElementById('it_link').value='';document.getElementById('it_icon').value='';document.getElementById('it_product').value='';document.getElementById('it_sort').value=0;document.getElementById('it_status').value='active';}
 function editItem(it){
   document.getElementById('itemModalTitle').textContent='Edit Item';
   document.getElementById('it_id').value=it.id;
   document.getElementById('it_title').value=it.title||'';
   document.getElementById('it_subtitle').value=it.subtitle||'';
   document.getElementById('it_link').value=it.link||'';
+  document.getElementById('it_icon').value=it.icon_class||'';
   document.getElementById('it_product').value=it.product_id||'';
   document.getElementById('it_sort').value=it.sort_order;
   document.getElementById('it_status').value=it.status;

@@ -14,8 +14,9 @@ require_once __DIR__ . '/../includes/header.php';
       <h1 class="h4 font-serif mb-4">My Orders</h1>
       <div class="summary-box">
         <?php if (mysqli_num_rows($orders) === 0): ?>
-          <p class="text-muted mb-0">You haven't placed any orders yet. <a href="<?= BASE_URL ?>/shop.php">Start shopping</a>.</p>
+          <p class="text-muted mb-0">You haven't placed any orders yet. <a href="<?= url('shop') ?>">Start shopping</a>.</p>
         <?php else: ?>
+        <div class="table-responsive">
         <table class="table align-middle">
           <thead><tr><th>Order #</th><th>Date</th><th>Total</th><th>Payment</th><th>Status</th><th></th></tr></thead>
           <tbody>
@@ -26,11 +27,12 @@ require_once __DIR__ . '/../includes/header.php';
               <td><?= format_price($o['total']) ?></td>
               <td><?= e(strtoupper($o['payment_method'])) ?></td>
               <td><span class="badge status-badge status-<?= e($o['order_status']) ?>"><?= e(ucwords(str_replace('_',' ',$o['order_status']))) ?></span></td>
-              <td><a href="order_detail.php?id=<?= (int)$o['id'] ?>" class="small">View</a></td>
+              <td><a href="<?= e(url('account/order/' . $o['id'])) ?>" class="small">View</a></td>
             </tr>
           <?php endwhile; ?>
           </tbody>
         </table>
+        </div>
         <?php endif; ?>
       </div>
     </div>

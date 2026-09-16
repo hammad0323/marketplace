@@ -335,12 +335,19 @@ CREATE TABLE reviews (
 -- ---------------------------------------------------------------------
 CREATE TABLE homepage_settings (
     id TINYINT UNSIGNED PRIMARY KEY DEFAULT 1,
-    active_home TINYINT UNSIGNED NOT NULL DEFAULT 1 COMMENT '1-4'
+    active_home TINYINT UNSIGNED NOT NULL DEFAULT 1 COMMENT '1-10'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE homepage_configs (
+    homepage TINYINT UNSIGNED PRIMARY KEY,
+    name VARCHAR(80) NOT NULL,
+    description VARCHAR(255) NULL,
+    hero_style ENUM('slider','split','centered','collage') NOT NULL DEFAULT 'slider'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE banners (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    homepage TINYINT UNSIGNED NOT NULL COMMENT '1-4',
+    homepage TINYINT UNSIGNED NOT NULL COMMENT '1-10',
     title VARCHAR(180) NULL,
     subtitle VARCHAR(255) NULL,
     button_text VARCHAR(60) NULL,
@@ -354,8 +361,8 @@ CREATE TABLE banners (
 
 CREATE TABLE homepage_sections (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    homepage TINYINT UNSIGNED NOT NULL COMMENT '1-4',
-    section_type ENUM('categories','products','promo_banner','image_text','brand_story','newsletter','testimonials','instagram','custom_html') NOT NULL,
+    homepage TINYINT UNSIGNED NOT NULL COMMENT '1-10',
+    section_type ENUM('categories','products','promo_banner','image_text','brand_story','newsletter','testimonials','instagram','custom_html','text_banner','two_column','brands','features','counters') NOT NULL,
     title VARCHAR(180) NULL,
     subtitle VARCHAR(255) NULL,
     product_filter ENUM('featured','new_arrival','best_seller','trending','sale','category','manual') NULL,
@@ -375,6 +382,7 @@ CREATE TABLE homepage_section_items (
     title VARCHAR(180) NULL,
     subtitle VARCHAR(255) NULL,
     image VARCHAR(255) NULL,
+    icon_class VARCHAR(60) NULL COMMENT 'Bootstrap Icon class, used by features/counters sections',
     link VARCHAR(255) NULL,
     product_id INT UNSIGNED NULL,
     sort_order INT NOT NULL DEFAULT 0,
@@ -471,6 +479,12 @@ INSERT INTO categories (id, parent_id, name, slug, sort_order) VALUES
 (10, 2, 'Kurta', 'men-kurta', 2),
 (11, 2, 'Waistcoat', 'men-waistcoat', 3);
 
+INSERT INTO brands (id, name, slug, logo, status) VALUES
+(1, 'Noor Studio', 'noor-studio', NULL, 'active'),
+(2, 'Aïna Label', 'aina-label', NULL, 'active'),
+(3, 'Zar Textiles', 'zar-textiles', NULL, 'active'),
+(4, 'Rivaayat', 'rivaayat', NULL, 'active');
+
 INSERT INTO attributes (id, name) VALUES (1, 'Size'), (2, 'Color');
 INSERT INTO attribute_values (attribute_id, value) VALUES
 (1,'XS'),(1,'S'),(1,'M'),(1,'L'),(1,'XL'),(1,'XXL'),
@@ -524,9 +538,22 @@ INSERT INTO settings (setting_key, setting_value) VALUES
 ('smtp_username', ''),
 ('smtp_password', ''),
 ('smtp_from_email', ''),
+('smtp_from_name', 'Noor Couture'),
+('smtp_encryption', 'tls'),
+('order_emails_enabled', '1'),
 ('reviews_enabled', '1'),
 ('seo_default_title', 'Noor Couture | Premium Pakistani Fashion'),
-('seo_default_description', 'Shop premium Pakistani unstitched, ready-to-wear and festive fashion online.');
+('seo_default_description', 'Shop premium Pakistani unstitched, ready-to-wear and festive fashion online.'),
+('google_site_verification', ''),
+('bing_site_verification', ''),
+('social_twitter_handle', ''),
+('site_logo', ''),
+('site_favicon', ''),
+('site_og_image', ''),
+('theme_accent_color', '#a5763f'),
+('theme_dark_color', '#211d17'),
+('ads_txt_content', ''),
+('robots_extra_rules', '');
 
 INSERT INTO social_links (platform, url, icon_class, sort_order) VALUES
 ('Facebook', 'https://facebook.com', 'bi-facebook', 1),
@@ -573,3 +600,79 @@ INSERT INTO homepage_sections (homepage, section_type, title, subtitle, product_
 (4, 'promo_banner', NULL, NULL, NULL, 'full-width', 3),
 (4, 'products', 'Best Sellers', 'Customer favourites', 'best_seller', 'grid-4', 4),
 (4, 'newsletter', 'Join The Noor Circle', 'Be the first to know about new drops.', NULL, NULL, 5);
+
+-- ---------------------------------------------------------------------
+-- Ten selectable homepage designs: names + hero style per homepage
+-- ---------------------------------------------------------------------
+INSERT INTO homepage_configs (homepage, name, description, hero_style) VALUES
+(1, 'Al Imran Edit', 'Category grid, new arrivals, editorial split, best sellers.', 'slider'),
+(2, 'Gul Ahmed Edit', 'Trending slider, promo banners, brand story, testimonials.', 'slider'),
+(3, 'Alkaram Studio Edit', 'Minimal full-width hero, featured edit, editorial split, Instagram feed.', 'centered'),
+(4, 'Zeen Edit', 'Category tiles, festive edit, full-width promo, best sellers.', 'split'),
+(5, 'Editorial Luxe', 'Statement text banner, featured edit, two-column philosophy, counters.', 'split'),
+(6, 'Boutique Minimal', 'Clean category grid, featured pieces, brand strip, testimonials.', 'centered'),
+(7, 'Festive Grand', 'Bold text banner, sale edit, full-width promo, feature icons.', 'collage'),
+(8, 'Modern Grid', 'Category grid, new arrivals, two-column story, brand strip, counters.', 'collage'),
+(9, 'Heritage Weave', 'Brand story, featured slider, text banner, testimonials, Instagram feed.', 'split'),
+(10, 'Studio Mono', 'Text banner, trending edit, feature icons, two-column, best sellers.', 'centered');
+
+-- Homepage 5 sections (Editorial Luxe)
+INSERT INTO homepage_sections (homepage, section_type, title, subtitle, product_filter, layout, sort_order) VALUES
+(5, 'text_banner', 'The Autumn/Winter Edit', 'Considered pieces for a considered wardrobe.', NULL, NULL, 1),
+(5, 'products', 'Featured', 'Handpicked essentials', 'featured', 'grid-3', 2),
+(5, 'two_column', 'Our Philosophy', NULL, NULL, NULL, 3),
+(5, 'products', 'New Arrivals', 'Fresh drops weekly', 'new_arrival', 'slider', 4),
+(5, 'counters', NULL, NULL, NULL, NULL, 5),
+(5, 'newsletter', 'Join Our List', 'First access to new editions and private sales.', NULL, NULL, 6);
+
+-- Homepage 6 sections (Boutique Minimal)
+INSERT INTO homepage_sections (homepage, section_type, title, subtitle, product_filter, layout, sort_order) VALUES
+(6, 'categories', 'Shop The Edit', NULL, NULL, 'grid-3', 1),
+(6, 'products', 'Featured Pieces', 'Considered essentials', 'featured', 'grid-3', 2),
+(6, 'brands', 'Our Brands', NULL, NULL, NULL, 3),
+(6, 'testimonials', 'Loved By Our Customers', NULL, NULL, NULL, 4),
+(6, 'newsletter', 'Stay Updated', 'Subscribe for new arrivals.', NULL, NULL, 5);
+
+-- Homepage 7 sections (Festive Grand)
+INSERT INTO homepage_sections (homepage, section_type, title, subtitle, product_filter, layout, sort_order) VALUES
+(7, 'text_banner', 'Festive Season Sale', 'Up to 40% off on select styles', NULL, NULL, 1),
+(7, 'products', 'On Sale', 'Limited time only', 'sale', 'grid-4', 2),
+(7, 'promo_banner', NULL, NULL, NULL, 'full-width', 3),
+(7, 'features', 'Why Shop With Us', NULL, NULL, NULL, 4),
+(7, 'products', 'Best Sellers', 'Customer favourites', 'best_seller', 'grid-4', 5),
+(7, 'newsletter', 'Never Miss a Sale', 'Get notified about upcoming offers.', NULL, NULL, 6);
+
+-- Homepage 8 sections (Modern Grid)
+INSERT INTO homepage_sections (homepage, section_type, title, subtitle, product_filter, layout, sort_order) VALUES
+(8, 'categories', 'Browse Categories', NULL, NULL, 'grid-4', 1),
+(8, 'products', 'New Arrivals', 'Just landed', 'new_arrival', 'grid-4', 2),
+(8, 'two_column', 'Design Story', NULL, NULL, NULL, 3),
+(8, 'brands', 'Featured Brands', NULL, NULL, NULL, 4),
+(8, 'counters', NULL, NULL, NULL, NULL, 5),
+(8, 'newsletter', 'Stay In The Loop', 'Sign up for updates.', NULL, NULL, 6);
+
+-- Homepage 9 sections (Heritage Weave)
+INSERT INTO homepage_sections (homepage, section_type, title, subtitle, product_filter, layout, sort_order) VALUES
+(9, 'brand_story', 'A Legacy of Craft', 'Handwoven traditions reimagined for the modern wardrobe.', NULL, 'split-left', 1),
+(9, 'products', 'Featured', 'Curated for you', 'featured', 'slider', 2),
+(9, 'text_banner', 'Every Thread Has a Story', 'Discover our heritage collections', NULL, NULL, 3),
+(9, 'testimonials', 'Customer Love', NULL, NULL, NULL, 4),
+(9, 'instagram', 'Follow Our Journey', '@fashionstore', NULL, NULL, 5);
+
+-- Homepage 10 sections (Studio Mono)
+INSERT INTO homepage_sections (homepage, section_type, title, subtitle, product_filter, layout, sort_order) VALUES
+(10, 'text_banner', 'Studio Mono', 'Monochrome essentials, timeless design.', NULL, NULL, 1),
+(10, 'products', 'Trending', 'What everyone is wearing', 'trending', 'grid-3', 2),
+(10, 'features', 'The Studio Promise', NULL, NULL, NULL, 3),
+(10, 'two_column', 'Behind The Design', NULL, NULL, NULL, 4),
+(10, 'products', 'Best Sellers', NULL, 'best_seller', 'grid-3', 5),
+(10, 'newsletter', 'Join Studio Mono', 'Subscribe for exclusive drops.', NULL, NULL, 6);
+
+-- Text content for the two-column sections seeded above
+INSERT INTO homepage_section_items (section_id, title, subtitle, sort_order) VALUES
+((SELECT id FROM homepage_sections WHERE homepage=5 AND section_type='two_column' LIMIT 1), 'Timeless Design', 'We believe in pieces that outlast trends, crafted with intention and worn for years to come.', 1),
+((SELECT id FROM homepage_sections WHERE homepage=5 AND section_type='two_column' LIMIT 1), 'Sustainable Craft', 'Every fabric is sourced responsibly, and every stitch is made by skilled artisans across Pakistan.', 2),
+((SELECT id FROM homepage_sections WHERE homepage=8 AND section_type='two_column' LIMIT 1), 'Our Design Story', 'Modern silhouettes inspired by traditional Pakistani craftsmanship, reimagined for today.', 1),
+((SELECT id FROM homepage_sections WHERE homepage=8 AND section_type='two_column' LIMIT 1), 'Ethically Made', 'Fair wages, safe workshops, and a supply chain we are proud to stand behind.', 2),
+((SELECT id FROM homepage_sections WHERE homepage=10 AND section_type='two_column' LIMIT 1), 'The Studio Process', 'From sketch to sample to final piece, every step is refined for quality and fit.', 1),
+((SELECT id FROM homepage_sections WHERE homepage=10 AND section_type='two_column' LIMIT 1), 'Considered Details', 'Hand-finished seams, premium trims, and fabric chosen for how it feels, not just how it looks.', 2);

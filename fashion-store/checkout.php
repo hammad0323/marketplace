@@ -1,13 +1,14 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/email_templates.php';
 
 $items = get_cart_items();
-if (!$items) redirect(BASE_URL . '/cart.php');
+if (!$items) redirect(url('cart'));
 
 $guestCheckoutEnabled = get_setting('guest_checkout_enabled', '1') === '1';
 if (!$guestCheckoutEnabled && !customer_logged_in()) {
     flash_set('danger', 'Please login to continue with checkout.');
-    redirect(BASE_URL . '/login.php?redirect=checkout.php');
+    redirect(url('login', ['redirect' => 'checkout']));
 }
 
 $customer = current_customer();
@@ -125,8 +126,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_execute($stmt);
             unset($_SESSION['coupon_code']);
 
+            $newOrder = mysqli_fetch_assoc(mysqli_query($mysqli, "SELECT * FROM orders WHERE id = $orderId"));
+            $newOrderItems = [];
+            $itemsRes = mysqli_query($mysqli, "SELECT * FROM order_items WHERE order_id = $orderId");
+            while ($row = mysqli_fetch_assoc($itemsRes)) $newOrderItems[] = $row;
+            send_order_confirmation_email($mysqli, $newOrder, $newOrderItems);
+            send_admin_new_order_email($newOrder);
+
             $_SESSION['last_order_id'] = $orderId;
-            redirect(BASE_URL . '/order_success.php?id=' . $orderId);
+            redirect(url('order-success/' . $orderId));
         }
     }
 }
@@ -151,7 +159,7 @@ require_once __DIR__ . '/includes/header.php';
   <h1 class="h3 font-serif mb-4">Checkout</h1>
   <?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
   <?php if (!customer_logged_in()): ?>
-    <div class="alert alert-light border">Already have an account? <a href="<?= BASE_URL ?>/login.php?redirect=checkout.php">Login</a> for faster checkout, or continue as guest below.</div>
+    <div class="alert alert-light border">Already have an account? <a href="<?= e(url('login', ['redirect' => 'checkout'])) ?>">Login</a> for faster checkout, or continue as guest below.</div>
   <?php endif; ?>
   <form method="post" class="row g-4">
     <?= csrf_field() ?>

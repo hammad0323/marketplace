@@ -1,13 +1,13 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
 
-if (get_setting('google_login_enabled') !== '1') redirect(BASE_URL . '/login.php');
+if (get_setting('google_login_enabled') !== '1') redirect(url('login'));
 
 $code = $_GET['code'] ?? '';
 $state = $_GET['state'] ?? '';
 if (!$code || empty($_SESSION['google_oauth_state']) || !hash_equals($_SESSION['google_oauth_state'], $state)) {
     flash_set('danger', 'Google login failed. Please try again.');
-    redirect(BASE_URL . '/login.php');
+    redirect(url('login'));
 }
 unset($_SESSION['google_oauth_state']);
 
@@ -19,7 +19,7 @@ curl_setopt_array($ch, [
         'code' => $code,
         'client_id' => get_setting('google_client_id'),
         'client_secret' => get_setting('google_client_secret'),
-        'redirect_uri' => BASE_URL . '/google_callback.php',
+        'redirect_uri' => url('google-callback'),
         'grant_type' => 'authorization_code',
     ]),
 ]);
@@ -28,7 +28,7 @@ curl_close($ch);
 
 if (empty($tokenResponse['access_token'])) {
     flash_set('danger', 'Could not verify your Google account. Please try again.');
-    redirect(BASE_URL . '/login.php');
+    redirect(url('login'));
 }
 
 $ch = curl_init('https://www.googleapis.com/oauth2/v3/userinfo');
@@ -41,7 +41,7 @@ curl_close($ch);
 
 if (empty($userInfo['email'])) {
     flash_set('danger', 'Could not retrieve your Google account details.');
-    redirect(BASE_URL . '/login.php');
+    redirect(url('login'));
 }
 
 $email = $userInfo['email'];
@@ -69,6 +69,6 @@ session_regenerate_id(true);
 $_SESSION['customer_id'] = $customerId;
 merge_guest_cart_into_customer($mysqli, $customerId);
 
-$redirect = $_SESSION['google_redirect'] ?? 'account/dashboard.php';
+$redirect = $_SESSION['google_redirect'] ?? 'account/dashboard';
 unset($_SESSION['google_redirect']);
-redirect(BASE_URL . '/' . ltrim($redirect, '/'));
+redirect(url(ltrim($redirect, '/')));

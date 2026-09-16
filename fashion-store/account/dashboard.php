@@ -17,8 +17,9 @@ require_once __DIR__ . '/../includes/header.php';
       <div class="summary-box">
         <h2 class="h6 mb-3">Recent Orders</h2>
         <?php if (mysqli_num_rows($recentOrders) === 0): ?>
-          <p class="text-muted mb-0">You haven't placed any orders yet. <a href="<?= BASE_URL ?>/shop.php">Start shopping</a>.</p>
+          <p class="text-muted mb-0">You haven't placed any orders yet. <a href="<?= url('shop') ?>">Start shopping</a>.</p>
         <?php else: ?>
+        <div class="table-responsive">
         <table class="table align-middle">
           <thead><tr><th>Order #</th><th>Date</th><th>Total</th><th>Status</th><th></th></tr></thead>
           <tbody>
@@ -28,11 +29,12 @@ require_once __DIR__ . '/../includes/header.php';
               <td><?= e(date('d M Y', strtotime($o['created_at']))) ?></td>
               <td><?= format_price($o['total']) ?></td>
               <td><span class="badge status-badge status-<?= e($o['order_status']) ?>"><?= e(ucwords(str_replace('_',' ',$o['order_status']))) ?></span></td>
-              <td><a href="order_detail.php?id=<?= (int)$o['id'] ?>" class="small">View</a></td>
+              <td><a href="<?= e(url('account/order/' . $o['id'])) ?>" class="small">View</a></td>
             </tr>
           <?php endwhile; ?>
           </tbody>
         </table>
+        </div>
         <?php endif; ?>
       </div>
     </div>

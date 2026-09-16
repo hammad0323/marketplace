@@ -71,10 +71,17 @@ $sizes = mysqli_query($mysqli, "SELECT DISTINCT value FROM attribute_values WHER
 $colors = mysqli_query($mysqli, "SELECT DISTINCT value FROM attribute_values WHERE attribute_id = (SELECT id FROM attributes WHERE name='Color' LIMIT 1)");
 
 $pageTitle = ($category ? $category['seo_title'] ?: $category['name'] : 'Shop All') . ' | ' . get_setting('store_name');
+$pageDescription = $category ? ($category['seo_description'] ?: strip_tags((string)$category['description'])) : null;
+$seoKeywords = $category['seo_keywords'] ?? null;
+$seoImage = $category && $category['image'] ? BASE_URL . '/' . $category['image'] : null;
+$structuredData = [breadcrumb_schema(array_filter([
+    ['name' => 'Home', 'url' => url()],
+    $category ? ['name' => $category['name'], 'url' => category_url($category['slug'])] : null,
+]))];
 require_once __DIR__ . '/includes/header.php';
 ?>
 <div class="container section-tight">
-  <nav class="small text-muted mb-3"><a href="<?= BASE_URL ?>/index.php">Home</a> / <span><?= e($category['name'] ?? 'Shop') ?></span></nav>
+  <nav class="small text-muted mb-3"><a href="<?= url() ?>">Home</a> / <span><?= e($category['name'] ?? 'Shop') ?></span></nav>
   <div class="row g-4">
     <div class="col-lg-3">
       <form class="filter-sidebar" method="get" id="filterForm">
@@ -112,7 +119,7 @@ require_once __DIR__ . '/includes/header.php';
           <div class="form-check"><input type="checkbox" class="form-check-input" name="sale" value="1" id="saleOnly" <?= $saleOnly?'checked':'' ?> onchange="this.form.submit()"><label class="form-check-label" for="saleOnly">On Sale</label></div>
         </div>
         <button class="btn btn-outline-brand btn-sm w-100">Apply Filters</button>
-        <a href="<?= BASE_URL ?>/shop.php<?= $categorySlug ? '?category='.e($categorySlug) : '' ?>" class="btn btn-link btn-sm w-100 mt-1">Clear Filters</a>
+        <a href="<?= $categorySlug ? e(category_url($categorySlug)) : url('shop') ?>" class="btn btn-link btn-sm w-100 mt-1">Clear Filters</a>
       </form>
     </div>
     <div class="col-lg-9">

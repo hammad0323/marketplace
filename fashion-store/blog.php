@@ -16,7 +16,7 @@ require_once __DIR__ . '/includes/header.php';
   <div class="row row-cols-1 row-cols-md-3 g-4">
     <?php while ($p = mysqli_fetch_assoc($posts)): ?>
       <div class="col" data-aos="fade-up">
-        <a href="<?= BASE_URL ?>/blog_post.php?slug=<?= e($p['slug']) ?>" class="text-decoration-none">
+        <a href="<?= e(blog_url($p['slug'])) ?>" class="text-decoration-none">
           <div class="promo-banner-img mb-3" style="height:220px">
             <img src="<?= e(BASE_URL . '/' . ($p['featured_image'] ?: 'assets/img/banner-placeholder.svg')) ?>">
           </div>

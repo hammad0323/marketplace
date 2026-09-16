@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/seo_head.php';
 
 /* ---------------------------------------------------------------------
  * Generic helpers
@@ -12,6 +13,43 @@ function e($value) {
 function redirect($url) {
     header('Location: ' . $url);
     exit;
+}
+
+/* ---------------------------------------------------------------------
+ * Clean URL helpers — every internal link should be built with these so
+ * the site never exposes a .php extension in the address bar.
+ * ------------------------------------------------------------------- */
+
+function url($path = '', $params = []) {
+    $path = ltrim((string)$path, '/');
+    $url = $path === '' ? BASE_URL . '/' : BASE_URL . '/' . $path;
+    if ($params) {
+        $url .= (strpos($url, '?') === false ? '?' : '&') . http_build_query($params);
+    }
+    return $url;
+}
+
+function resolve_link($link, $fallback = 'shop') {
+    $link = trim((string)$link);
+    if ($link === '') return url($fallback);
+    if (preg_match('~^(https?:)?//~i', $link) || str_starts_with($link, '#')) return $link;
+    return url($link);
+}
+
+function product_url($slug) {
+    return url('product/' . rawurlencode($slug));
+}
+
+function category_url($slug) {
+    return url('category/' . rawurlencode($slug));
+}
+
+function blog_url($slug) {
+    return url('blog/' . rawurlencode($slug));
+}
+
+function page_url($slug) {
+    return url('page/' . rawurlencode($slug));
 }
 
 function slugify($text) {
@@ -148,7 +186,7 @@ function admin_logged_in() {
 
 function require_admin_login() {
     if (!admin_logged_in()) {
-        redirect(BASE_URL . '/admin/login.php');
+        redirect(url('admin/login'));
     }
 }
 
@@ -171,7 +209,7 @@ function customer_logged_in() {
 
 function require_customer_login() {
     if (!customer_logged_in()) {
-        redirect(BASE_URL . '/login.php');
+        redirect(url('login'));
     }
 }
 
@@ -318,7 +356,7 @@ function render_product_card($mysqli, $product) {
     ?>
     <div class="product-card" data-aos="fade-up">
       <div class="product-thumb">
-        <a href="<?= BASE_URL ?>/product.php?slug=<?= e($product['slug']) ?>">
+        <a href="<?= e(product_url($product['slug'])) ?>">
           <img src="<?= e(BASE_URL . '/' . $imgs[0]) ?>" class="img-main" alt="<?= e($product['name']) ?>">
           <img src="<?= e(BASE_URL . '/' . $imgs[1]) ?>" class="img-hover" alt="">
         </a>
@@ -328,11 +366,11 @@ function render_product_card($mysqli, $product) {
         </div>
         <div class="product-quick-actions">
           <button class="qa-btn js-wishlist-toggle" data-product-id="<?= (int)$product['id'] ?>" title="Add to wishlist"><i class="bi bi-heart"></i></button>
-          <a href="<?= BASE_URL ?>/product.php?slug=<?= e($product['slug']) ?>" class="qa-btn" title="Quick view"><i class="bi bi-eye"></i></a>
+          <a href="<?= e(product_url($product['slug'])) ?>" class="qa-btn" title="Quick view"><i class="bi bi-eye"></i></a>
         </div>
       </div>
       <div class="product-info">
-        <a href="<?= BASE_URL ?>/product.php?slug=<?= e($product['slug']) ?>" class="p-name"><?= e($product['name']) ?></a>
+        <a href="<?= e(product_url($product['slug'])) ?>" class="p-name"><?= e($product['name']) ?></a>
         <div class="product-price">
           <?php if ($onSale): ?>
             <span class="old"><?= format_price($product['regular_price']) ?></span><span class="new"><?= format_price($product['sale_price']) ?></span>

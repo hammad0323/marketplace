@@ -1,7 +1,41 @@
 Options -Indexes
+DirectoryIndex index.php
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  RewriteBase /
+
+  # ---- 1. Canonicalise: redirect literal *.php URLs to their clean
+  #         equivalent (301), except AJAX endpoints which are never
+  #         linked in the address bar and must keep working as-is. ----
+  RewriteCond %{THE_REQUEST} ^[A-Z]{3,9}\ /index\.php[?\s] [NC]
+  RewriteRule ^ / [R=301,L]
+
+  RewriteCond %{REQUEST_URI} !^/ajax/
+  RewriteCond %{THE_REQUEST} ^[A-Z]{3,9}\ /([^?\s]+)\.php[?\s] [NC]
+  RewriteRule ^ /%1 [R=301,L]
+
+  # ---- 2. Dynamic robots.txt / ads.txt / sitemap.xml ----
+  RewriteRule ^robots\.txt$ robots.php [L,QSA]
+  RewriteRule ^ads\.txt$ ads.php [L,QSA]
+  RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]
+
+  # ---- 3. Pretty routes for slug/id-based pages ----
+  RewriteRule ^product/([^/]+)/?$ product.php?slug=$1 [L,QSA]
+  RewriteRule ^category/([^/]+)/?$ shop.php?category=$1 [L,QSA]
+  RewriteRule ^shop/([^/]+)/?$ shop.php?category=$1 [L,QSA]
+  RewriteRule ^blog/([^/]+)/?$ blog_post.php?slug=$1 [L,QSA]
+  RewriteRule ^page/([^/]+)/?$ page.php?slug=$1 [L,QSA]
+  RewriteRule ^order-success/([0-9]+)/?$ order_success.php?id=$1 [L,QSA]
+  RewriteRule ^invoice/([0-9]+)/?$ invoice.php?id=$1 [L,QSA]
+  RewriteRule ^account/order/([0-9]+)/?$ account/order_detail.php?id=$1 [L,QSA]
+  RewriteRule ^google-login/?$ google_login.php [L,QSA]
+  RewriteRule ^google-callback/?$ google_callback.php [L,QSA]
+
+  # ---- 4. Generic: /foo -> foo.php for any remaining plain route ----
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI}.php -f
+  RewriteRule ^([a-zA-Z0-9_\-/]+)$ $1.php [L,QSA]
 </IfModule>
 
 # Block direct access to sensitive files
@@ -16,7 +50,7 @@ Options -Indexes
   </FilesMatch>
 </IfModule>
 
-ErrorDocument 404 /404.php
+ErrorDocument 404 /404
 
 <IfModule mod_expires.c>
   ExpiresActive On

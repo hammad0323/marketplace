@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_query($mysqli, "DELETE FROM customer_addresses WHERE id = " . (int)$_POST['id'] . " AND customer_id = {$customer['id']}");
         flash_set('success', 'Address removed.');
     }
-    redirect(BASE_URL . '/account/addresses.php');
+    redirect(url('account/addresses'));
 }
 
 $addresses = mysqli_query($mysqli, "SELECT * FROM customer_addresses WHERE customer_id = {$customer['id']} ORDER BY is_default DESC, id DESC");

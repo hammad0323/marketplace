@@ -1,6 +1,7 @@
 <?php
 $pageTitle = 'Order Details';
 require_once __DIR__ . '/includes/admin_header.php';
+require_once __DIR__ . '/../includes/email_templates.php';
 
 $id = (int)($_GET['id'] ?? 0);
 $order = mysqli_fetch_assoc(mysqli_query($mysqli, "SELECT o.*, c.name AS customer_name, c.email AS customer_email FROM orders o LEFT JOIN customers c ON c.id = o.customer_id WHERE o.id = $id"));
@@ -14,12 +15,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $paymentStatus = $_POST['payment_status'];
         $note = trim($_POST['note'] ?? '');
         $adminNote = trim($_POST['admin_note'] ?? '');
+        $notifyCustomer = isset($_POST['notify_customer']);
+        $statusChanged = $newStatus !== $order['order_status'];
         $stmt = mysqli_prepare($mysqli, "UPDATE orders SET order_status=?, payment_status=?, admin_note=? WHERE id=?");
         mysqli_stmt_bind_param($stmt, 'sssi', $newStatus, $paymentStatus, $adminNote, $id);
         mysqli_stmt_execute($stmt);
         $stmt2 = mysqli_prepare($mysqli, "INSERT INTO order_status_history (order_id, status, note) VALUES (?,?,?)");
         mysqli_stmt_bind_param($stmt2, 'iss', $id, $newStatus, $note);
         mysqli_stmt_execute($stmt2);
+        if ($statusChanged && $notifyCustomer) {
+            $order['order_status'] = $newStatus;
+            send_order_status_email($order, $newStatus, $note);
+        }
         flash_set('success', 'Order updated.');
         redirect('order_view.php?id=' . $id);
     }
@@ -79,6 +86,7 @@ $statuses = ['pending','confirmed','processing','packed','shipped','out_for_deli
         </div>
         <div class="col-12"><label class="form-label">Status Note (visible in history)</label><input type="text" name="note" class="form-control"></div>
         <div class="col-12"><label class="form-label">Internal Admin Note</label><textarea name="admin_note" class="form-control" rows="2"><?= e($order['admin_note']) ?></textarea></div>
+        <div class="col-12 form-check"><input type="checkbox" class="form-check-input" name="notify_customer" id="notifyCustomer" checked><label class="form-check-label" for="notifyCustomer">Email the customer about this status change</label></div>
         <div class="col-12"><button class="btn btn-primary text-white">Update Order</button></div>
       </form>
 

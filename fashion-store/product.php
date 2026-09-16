@@ -48,18 +48,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_review'])) {
             mysqli_stmt_bind_param($stmt, 'iisis', $product['id'], $custId, $name, $rating, $comment);
             mysqli_stmt_execute($stmt);
             flash_set('success', 'Thank you! Your review has been submitted and is pending approval.');
-            redirect(BASE_URL . '/product.php?slug=' . $slug . '#reviews');
+            redirect(product_url($slug) . '#reviews');
         }
     }
 }
 
 $pageTitle = ($product['seo_title'] ?: $product['name']) . ' | ' . get_setting('store_name');
 $pageDescription = $product['seo_description'] ?: $product['short_description'];
+$seoKeywords = $product['seo_keywords'] ?: $product['tags'];
+$seoType = 'product';
+$seoImage = BASE_URL . '/' . $images[0];
+$seoNoindex = $product['status'] !== 'active';
+$structuredData = [
+    product_schema($product, $images, $avgRating),
+    breadcrumb_schema([
+        ['name' => 'Home', 'url' => url()],
+        ['name' => $product['category_name'], 'url' => category_url($product['category_slug'])],
+        ['name' => $product['name'], 'url' => product_url($product['slug'])],
+    ]),
+];
 require_once __DIR__ . '/includes/header.php';
 $onSale = !empty($product['sale_price']) && $product['sale_price'] < $product['regular_price'];
 ?>
 <div class="container section-tight">
-  <nav class="small text-muted mb-4"><a href="<?= BASE_URL ?>/index.php">Home</a> / <a href="<?= BASE_URL ?>/shop.php?category=<?= e($product['category_slug']) ?>"><?= e($product['category_name']) ?></a> / <?= e($product['name']) ?></nav>
+  <nav class="small text-muted mb-4"><a href="<?= url() ?>">Home</a> / <a href="<?= e(category_url($product['category_slug'])) ?>"><?= e($product['category_name']) ?></a> / <?= e($product['name']) ?></nav>
 
   <div class="row g-5">
     <div class="col-lg-6">
@@ -214,7 +226,7 @@ $onSale = !empty($product['sale_price']) && $product['sale_price'] < $product['r
       .then(function(data){
         if (data.success) {
           document.querySelectorAll('.cart-count').forEach(function(el){ el.textContent = data.cart_count; });
-          if (redirect) { window.location.href = BASE_URL + '/checkout.php'; }
+          if (redirect) { window.location.href = BASE_URL + '/checkout'; }
           else toast('Added to cart', 'success');
         } else { toast(data.message || 'Could not add to cart', 'error'); }
       });

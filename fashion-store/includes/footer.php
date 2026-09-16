@@ -19,27 +19,27 @@ $__footerCats = mysqli_query($mysqli, "SELECT * FROM categories WHERE parent_id 
         <h4 class="footer-heading">Shop</h4>
         <ul class="footer-links">
           <?php while ($c = mysqli_fetch_assoc($__footerCats)): ?>
-            <li><a href="<?= BASE_URL ?>/shop.php?category=<?= e($c['slug']) ?>"><?= e($c['name']) ?></a></li>
+            <li><a href="<?= e(category_url($c['slug'])) ?>"><?= e($c['name']) ?></a></li>
           <?php endwhile; ?>
         </ul>
       </div>
       <div class="col-lg-2 col-6">
         <h4 class="footer-heading">Customer Service</h4>
         <ul class="footer-links">
-          <li><a href="<?= BASE_URL ?>/page.php?slug=faq">FAQ</a></li>
-          <li><a href="<?= BASE_URL ?>/page.php?slug=shipping-policy">Shipping Policy</a></li>
-          <li><a href="<?= BASE_URL ?>/page.php?slug=return-policy">Return Policy</a></li>
-          <li><a href="<?= BASE_URL ?>/page.php?slug=size-guide">Size Guide</a></li>
-          <li><a href="<?= BASE_URL ?>/page.php?slug=terms-conditions">Terms &amp; Conditions</a></li>
-          <li><a href="<?= BASE_URL ?>/page.php?slug=privacy-policy">Privacy Policy</a></li>
+          <li><a href="<?= e(page_url('faq')) ?>">FAQ</a></li>
+          <li><a href="<?= e(page_url('shipping-policy')) ?>">Shipping Policy</a></li>
+          <li><a href="<?= e(page_url('return-policy')) ?>">Return Policy</a></li>
+          <li><a href="<?= e(page_url('size-guide')) ?>">Size Guide</a></li>
+          <li><a href="<?= e(page_url('terms-conditions')) ?>">Terms &amp; Conditions</a></li>
+          <li><a href="<?= e(page_url('privacy-policy')) ?>">Privacy Policy</a></li>
         </ul>
       </div>
       <div class="col-lg-2 col-6">
         <h4 class="footer-heading">Company</h4>
         <ul class="footer-links">
-          <li><a href="<?= BASE_URL ?>/page.php?slug=about-us">About Us</a></li>
-          <li><a href="<?= BASE_URL ?>/blog.php">Journal</a></li>
-          <li><a href="<?= BASE_URL ?>/contact.php">Contact Us</a></li>
+          <li><a href="<?= e(page_url('about-us')) ?>">About Us</a></li>
+          <li><a href="<?= url('blog') ?>">Journal</a></li>
+          <li><a href="<?= url('contact') ?>">Contact Us</a></li>
         </ul>
       </div>
       <div class="col-lg-2 col-6">
@@ -62,7 +62,7 @@ $__footerCats = mysqli_query($mysqli, "SELECT * FROM categories WHERE parent_id 
   </div>
 </footer>
 
-<a href="<?= BASE_URL ?>/cart.php" class="mobile-cart-fab d-lg-none"><i class="bi bi-bag"></i> <span class="cart-count"><?= (int)cart_count() ?></span></a>
+<a href="<?= url('cart') ?>" class="mobile-cart-fab d-lg-none"><i class="bi bi-bag"></i> <span class="cart-count"><?= (int)cart_count() ?></span></a>
 
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

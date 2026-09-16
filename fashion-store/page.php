@@ -10,6 +10,10 @@ if (!$page) { http_response_code(404); require __DIR__ . '/404.php'; exit; }
 
 $pageTitle = ($page['seo_title'] ?: $page['title']) . ' | ' . get_setting('store_name');
 $pageDescription = $page['seo_description'];
+$structuredData = [breadcrumb_schema([
+    ['name' => 'Home', 'url' => url()],
+    ['name' => $page['title'], 'url' => page_url($page['slug'])],
+])];
 require_once __DIR__ . '/includes/header.php';
 ?>
 <div class="container section-tight" style="max-width:820px">

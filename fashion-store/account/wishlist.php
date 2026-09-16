@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'move_
         mysqli_stmt_execute($stmt);
     }
     flash_set('success', 'Moved to cart.');
-    redirect(BASE_URL . '/account/wishlist.php');
+    redirect(url('account/wishlist'));
 }
 
 $wishlist = mysqli_fetch_assoc(mysqli_query($mysqli, "SELECT id FROM wishlists WHERE customer_id = {$customer['id']}"));
@@ -35,7 +35,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="col-lg-9">
       <h1 class="h4 font-serif mb-4">My Wishlist</h1>
       <?php if (!$items): ?>
-        <p class="text-muted">Your wishlist is empty. <a href="<?= BASE_URL ?>/shop.php">Browse products</a>.</p>
+        <p class="text-muted">Your wishlist is empty. <a href="<?= url('shop') ?>">Browse products</a>.</p>
       <?php else: ?>
       <div class="row row-cols-2 row-cols-md-3 g-4">
         <?php foreach ($items as $p): ?>
