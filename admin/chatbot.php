@@ -58,7 +58,7 @@ function askQuestion(q) {
   var fd = new FormData();
   fd.append('csrf_token', '<?= e(wh_csrf_token()) ?>');
   fd.append('question', q);
-  fetch('/ajax/chatbot-query.php', { method: 'POST', body: fd }).then(function (r) { return r.json(); }).then(function (data) {
+  fetch('<?= e(BASE_URL) ?>/ajax/chatbot-query.php', { method: 'POST', body: fd }).then(function (r) { return r.json(); }).then(function (data) {
     addBubble(data.success ? data.answer : (data.message || 'Something went wrong.'), 'bot');
   });
 }

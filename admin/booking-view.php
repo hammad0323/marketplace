@@ -138,7 +138,7 @@ document.querySelectorAll('.status-btn').forEach(function (btn) {
     fd.append('csrf_token', '<?= e(wh_csrf_token()) ?>');
     fd.append('booking_id', '<?= (int) $booking['id'] ?>');
     fd.append('status', btn.getAttribute('data-status'));
-    fetch('/ajax/booking-status.php', { method: 'POST', body: fd }).then(function (r) { return r.json(); }).then(function (data) {
+    fetch('<?= e(BASE_URL) ?>/ajax/booking-status.php', { method: 'POST', body: fd }).then(function (r) { return r.json(); }).then(function (data) {
       if (data.success) { location.reload(); }
       else { document.getElementById('statusMsg').innerHTML = '<div class="alert alert-error">' + data.message + '</div>'; }
     });
@@ -147,7 +147,7 @@ document.querySelectorAll('.status-btn').forEach(function (btn) {
 document.getElementById('paymentForm').addEventListener('submit', function (e) {
   e.preventDefault();
   var fd = new FormData(this);
-  fetch('/ajax/add-payment.php', { method: 'POST', body: fd }).then(function (r) { return r.json(); }).then(function (data) {
+  fetch('<?= e(BASE_URL) ?>/ajax/add-payment.php', { method: 'POST', body: fd }).then(function (r) { return r.json(); }).then(function (data) {
     if (data.success) { location.reload(); }
     else { document.getElementById('paymentFormMsg').innerHTML = '<div class="alert alert-error">' + data.message + '</div>'; }
   });

@@ -29,13 +29,30 @@ define('DB_PASS', 'whtest_pass');
 define('DEFAULT_BUSINESS_ID', 1);
 
 // ---------------------------------------------------------------------
-// Base URL (auto-detected; override if your host needs it hard-coded)
+// Base URL — auto-detected, including the subfolder the app is
+// installed in (e.g. https://example.com/beta). This lets the exact
+// same code run unmodified at a domain root OR in any subfolder: every
+// link/asset/AJAX call in the app is built from BASE_URL, so moving the
+// install just works. Override APP_PATH manually below only if your
+// host's DOCUMENT_ROOT is a symlink that confuses the auto-detection.
 // ---------------------------------------------------------------------
 $wh_scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
     || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
     ? 'https://' : 'http://';
 $wh_host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-define('BASE_URL', $wh_scheme . $wh_host);
+
+$wh_doc_root = isset($_SERVER['DOCUMENT_ROOT']) && $_SERVER['DOCUMENT_ROOT'] !== ''
+    ? rtrim(str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT']) ?: $_SERVER['DOCUMENT_ROOT']), '/')
+    : '';
+$wh_project_root = rtrim(str_replace('\\', '/', __DIR__), '/');
+$wh_install_path = '';
+if ($wh_doc_root !== '' && strpos($wh_project_root, $wh_doc_root) === 0) {
+    $wh_install_path = substr($wh_project_root, strlen($wh_doc_root));
+}
+// define('APP_PATH', '/beta'); // uncomment + hard-code instead of the line below if auto-detection ever guesses wrong
+define('APP_PATH', $wh_install_path);
+define('SITE_ORIGIN', $wh_scheme . $wh_host); // scheme+host only, no path — for combining with $_SERVER['REQUEST_URI']
+define('BASE_URL', $wh_scheme . $wh_host . APP_PATH);
 define('UPLOAD_DIR', __DIR__ . '/uploads');
 define('UPLOAD_URL', BASE_URL . '/uploads');
 define('MAX_UPLOAD_BYTES', 3 * 1024 * 1024); // 3MB

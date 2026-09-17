@@ -1,4 +1,15 @@
-<?php http_response_code(403); ?>
+<?php
+http_response_code(403);
+// Self-contained subfolder detection (this file must keep working even if
+// config.php is broken, so it doesn't require() it — see README).
+if (!defined('BASE_URL')) {
+    $wh_root = isset($_SERVER['DOCUMENT_ROOT']) && $_SERVER['DOCUMENT_ROOT'] !== ''
+        ? rtrim(str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT']) ?: $_SERVER['DOCUMENT_ROOT']), '/')
+        : '';
+    $wh_dir = rtrim(str_replace('\\', '/', __DIR__), '/');
+    define('BASE_URL', ($wh_root !== '' && strpos($wh_dir, $wh_root) === 0) ? substr($wh_dir, strlen($wh_root)) : '');
+}
+?>
 <!doctype html>
 <html lang="en">
 <head>
@@ -18,7 +29,7 @@
   <div class="wrap">
     <h1>403</h1>
     <p>You don't have permission to access this page.</p>
-    <a href="/">Back to Home</a>
+    <a href="<?= htmlspecialchars(BASE_URL, ENT_QUOTES, 'UTF-8') ?>/">Back to Home</a>
   </div>
 </body>
 </html>

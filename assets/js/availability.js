@@ -5,7 +5,8 @@
 window.WH = window.WH || {};
 
 WH.fetchAvailability = function (date, hallId) {
-  var url = '/ajax/check-availability.php?date=' + encodeURIComponent(date);
+  var base = window.WH_BASE || '';
+  var url = base + '/ajax/check-availability.php?date=' + encodeURIComponent(date);
   if (hallId) {
     url += '&hall_id=' + encodeURIComponent(hallId);
   }

@@ -16,7 +16,7 @@
       e.stopPropagation();
       notifDropdown.classList.toggle('open');
       if (notifDropdown.classList.contains('open')) {
-        fetch('/ajax/notifications.php?action=mark_read', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        fetch((window.WH_BASE || '') + '/ajax/notifications.php?action=mark_read', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
           .then(function () {
             var badge = notifBtn.querySelector('.notif-badge');
             if (badge) badge.remove();

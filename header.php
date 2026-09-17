@@ -26,7 +26,7 @@ $secondaryColor = $settings['secondary_color'] ?? '#c79a4b';
 <title><?= e($title) ?></title>
 <meta name="description" content="<?= e($description) ?>">
 <meta name="robots" content="<?= e($seo['robots'] ?? 'index,follow') ?>">
-<link rel="canonical" href="<?= e(BASE_URL . $_SERVER['REQUEST_URI']) ?>">
+<link rel="canonical" href="<?= e(SITE_ORIGIN . $_SERVER['REQUEST_URI']) ?>">
 <meta property="og:title" content="<?= e($title) ?>">
 <meta property="og:description" content="<?= e($description) ?>">
 <meta property="og:type" content="website">
@@ -36,7 +36,7 @@ $secondaryColor = $settings['secondary_color'] ?? '#c79a4b';
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= e(BASE_URL) ?>/assets/css/global.css">
-<script>document.documentElement.classList.add('js');</script>
+<script>document.documentElement.classList.add('js');window.WH_BASE=<?= json_encode(BASE_URL) ?>;</script>
 <style>:root{--primary:<?= e($primaryColor) ?>;--secondary:<?= e($secondaryColor) ?>;}</style>
 <?php if (!empty($settings['ga_id'])): ?>
 <script async src="https://www.googletagmanager.com/gtag/js?id=<?= e($settings['ga_id']) ?>"></script>

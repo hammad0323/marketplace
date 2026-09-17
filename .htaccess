@@ -47,11 +47,15 @@ ServerSignature Off
     # RewriteCond %{HTTPS} off
     # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-    RewriteBase /
+    # No RewriteBase here on purpose: every substitution below is a
+    # relative path (e.g. "hall.php?slug=$1"), so Apache resolves it
+    # against whatever folder this .htaccess lives in. That means this
+    # exact file works unmodified whether the app is installed at the
+    # domain root or in a subfolder (e.g. https://example.com/beta/).
 
-    # Canonical: strip a trailing index.php
-    RewriteCond %{THE_REQUEST} /index\.php[?\s] [NC]
-    RewriteRule ^index\.php$ / [L,R=301]
+    # Canonical: strip a trailing index.php, staying inside the current subfolder
+    RewriteCond %{THE_REQUEST} ^[A-Z]+\s([^?\s]*)index\.php[?\s] [NC]
+    RewriteRule ^index\.php$ %1 [L,R=301]
 
     # Dynamic robots.txt / sitemap.xml
     RewriteRule ^robots\.txt$ robots.php [L]
@@ -64,22 +68,40 @@ ServerSignature Off
     # /booking-confirmation/{code}
     RewriteRule ^booking-confirmation/([A-Za-z0-9-]+)/?$ booking-confirmation.php?code=$1 [L,QSA]
 
-    # /admin/{page} -> admin/{page}.php (only if that file really exists)
+    # /admin/{page} -> admin/{page}.php (only if that file really exists).
+    # %{REQUEST_FILENAME} is Apache's own fully-resolved absolute path for
+    # the current request (DOCUMENT_ROOT + the full URL, subfolder
+    # included), so appending ".php" to it — instead of hand-building the
+    # path from %{DOCUMENT_ROOT} — keeps this correct at any install depth.
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{DOCUMENT_ROOT}/admin/$1.php -f
+    RewriteCond %{REQUEST_FILENAME}.php -f
     RewriteRule ^admin/([a-zA-Z0-9_-]+)/?$ admin/$1.php [L,QSA]
     RewriteRule ^admin/?$ admin/index.php [L,QSA]
 
     # Generic clean URL for every root-level page: /about -> about.php
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{DOCUMENT_ROOT}/$1.php -f
+    RewriteCond %{REQUEST_FILENAME}.php -f
     RewriteRule ^([a-zA-Z0-9_-]+)/?$ $1.php [L,QSA]
+
+    # Catch-all 404: anything left unmatched (no real file/dir, and no
+    # *.php it could be rewritten to above) gets our styled 404 page
+    # internally, via the same relative-path mechanism as every rule
+    # above — so, like the rest of this file, it needs no editing at any
+    # install depth. 404.php itself sets the real "404 Not Found" status.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ 404.php [L]
 </IfModule>
 
 DirectoryIndex index.php
 
+# Fallback only for requests mod_rewrite never saw (e.g. a direct hit on
+# a .php file that errors, or mod_rewrite disabled). If this app is
+# installed in a subfolder, prefix these three with that subfolder
+# (e.g. /beta/404.php) — ErrorDocument paths are always resolved from
+# the server root, unlike everything else in this file.
 ErrorDocument 404 /404.php
 ErrorDocument 403 /403.php
 ErrorDocument 500 /500.php

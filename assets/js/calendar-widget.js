@@ -14,7 +14,8 @@ WH.initCalendar = function (root, opts) {
 
   function fetchMonth() {
     var hallId = opts.hallSelect ? opts.hallSelect.value : '';
-    var url = '/ajax/calendar-data.php?year=' + state.year + '&month=' + state.month + (hallId ? '&hall_id=' + hallId : '');
+    var base = window.WH_BASE || '';
+    var url = base + '/ajax/calendar-data.php?year=' + state.year + '&month=' + state.month + (hallId ? '&hall_id=' + hallId : '');
     return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } }).then(function (r) { return r.json(); });
   }
 
