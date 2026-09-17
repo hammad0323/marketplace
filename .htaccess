@@ -1,17 +1,90 @@
-# Optional hardening — the site works without this file (every page is
-# a real .php file, no URL rewriting is needed). This just adds a
-# couple of extra safety nets.
+# =====================================================================
+# Wedding Hall SaaS — Apache configuration
+# Clean URLs, security hardening. Works even if mod_rewrite is
+# unavailable on the host — every page also has its own literal
+# filename (e.g. hall.php?slug=...), so nothing breaks if these rules
+# are ignored, only the pretty URLs won't apply.
+# =====================================================================
 
+# ---- Block sensitive files ----
+<FilesMatch "\.(sql|log|md|env|ini|bak|sh)$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "^(config|functions|auth)\.php$">
+    Require all denied
+</FilesMatch>
+
+# ---- No directory listing / no MultiViews guessing ----
 Options -Indexes
+Options -MultiViews
+ServerSignature Off
 
-# config.php already refuses direct access on its own (see the guard
-# at the top of the file), this is just a second layer.
-<FilesMatch "^(config|functions)\.php$">
-    Require all denied
+# ---- Never execute PHP inside the uploads folder ----
+<IfModule mod_php.c>
+    <Directory "uploads">
+        php_admin_flag engine off
+    </Directory>
+</IfModule>
+<FilesMatch "\.(?:php|phtml|php\d)$">
+    <If "%{REQUEST_URI} =~ m#^/uploads/#">
+        Require all denied
+    </If>
 </FilesMatch>
 
-# database.sql contains your schema and demo data (including a
-# password hash) — no reason for it to be downloadable once imported.
-<FilesMatch "\.sql$">
-    Require all denied
-</FilesMatch>
+# ---- Security headers ----
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Permissions-Policy "geolocation=(self), microphone=(), camera=()"
+</IfModule>
+
+# ---- HTTPS redirect (enable once SSL is active on your domain) ----
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    RewriteBase /
+
+    # Canonical: strip a trailing index.php
+    RewriteCond %{THE_REQUEST} /index\.php[?\s] [NC]
+    RewriteRule ^index\.php$ / [L,R=301]
+
+    # Dynamic robots.txt / sitemap.xml
+    RewriteRule ^robots\.txt$ robots.php [L]
+    RewriteRule ^sitemap\.xml$ sitemap.php [L]
+
+    # /hall/{slug}
+    RewriteRule ^hall/([a-zA-Z0-9-]+)/?$ hall.php?slug=$1 [L,QSA]
+    # /blog/{slug}
+    RewriteRule ^blog/([a-zA-Z0-9-]+)/?$ blog-post.php?slug=$1 [L,QSA]
+    # /booking-confirmation/{code}
+    RewriteRule ^booking-confirmation/([A-Za-z0-9-]+)/?$ booking-confirmation.php?code=$1 [L,QSA]
+
+    # /admin/{page} -> admin/{page}.php (only if that file really exists)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{DOCUMENT_ROOT}/admin/$1.php -f
+    RewriteRule ^admin/([a-zA-Z0-9_-]+)/?$ admin/$1.php [L,QSA]
+    RewriteRule ^admin/?$ admin/index.php [L,QSA]
+
+    # Generic clean URL for every root-level page: /about -> about.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{DOCUMENT_ROOT}/$1.php -f
+    RewriteRule ^([a-zA-Z0-9_-]+)/?$ $1.php [L,QSA]
+</IfModule>
+
+DirectoryIndex index.php
+
+ErrorDocument 404 /404.php
+ErrorDocument 403 /403.php
+ErrorDocument 500 /500.php
+
+# ---- Sensible defaults ----
+<IfModule mod_mime.c>
+    AddType image/webp .webp
+</IfModule>

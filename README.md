@@ -1,238 +1,257 @@
-# Marketplace — Multi Marketplace Architecture
+# Wedding Hall Management & Online Booking SaaS
 
-Vanilla PHP (no framework, no classes). **Every page is its own real
-`.php` file sitting directly in the project root** — there are no
-subfolders to upload correctly, no router, no build step. Upload the
-whole folder, edit four lines in `config.php`, import `database.sql`,
-done.
+A complete, production-ready Wedding Hall / Marriage Hall / Banquet Hall
+management and online booking platform for Pakistan, built with **Core PHP
+(procedural, no framework, no OOP)**, **MySQLi with prepared statements**,
+plain **HTML5/CSS3/JavaScript/jQuery-free vanilla JS**, and **Bootstrap-free
+custom design**. Runs on any shared-hosting PHP/MySQL stack (cPanel,
+Hostinger, etc.) — no Composer, no Node.js, no build step.
 
-This build lays the **core architecture** for running two distinct
-marketplace experiences — the **Artisan Marketplace** and **Business
-Shops** — plus a single platform-owned **Official Store**, under one
-site and one admin panel.
+## What's included
 
-Out of scope (tracked as future work): the enterprise SEO module, the
-centralized email notification engine, and the full admin CRUD panel
-over every entity. See "What's deferred" below.
+- Public marketing + booking website (premium, non-Bootstrap-template look)
+- Multi-hall management with facilities, images, packages, pricing
+- Admin-customizable time slots (Morning/Evening/Night or anything else)
+- **Database-level conflict-proof booking** — a hall can never be
+  double-booked for the same date + time slot, even under a simultaneous
+  double-submit (enforced by a `UNIQUE KEY` in `slot_locks`, not just
+  application logic)
+- Full admin dashboard with an interactive booking calendar
+- Booking management: statuses, payments, invoices, printable reports
+- Customer database with booking history
+- Gallery, blog, FAQ, static pages (About/Privacy/Terms/Contact) — all
+  editable from the admin panel
+- SEO: per-page meta tags, Open Graph, sitemap.xml, robots.txt, clean URLs
+- Rule-based Database Assistant chatbot — answers booking/availability/
+  payment questions in **English, Urdu and Roman Urdu**, strictly from
+  real database queries (never invents data, and never requires an
+  external AI API)
+- Role-based admin access: Super Admin, Admin, Manager, Staff
+- Lightweight multi-business (SaaS) layer: a Super Admin can add more
+  wedding-hall businesses, each fully data-isolated
 
-## Deploy in 3 steps
+## Tech stack
 
-1. **Upload everything** — the whole project as one folder, to your
-   site's document root (e.g. `public_html/`, or an addon domain's
-   folder). There is nothing to extract into a subfolder and nothing
-   to point a document root at — `index.php` is right there.
-2. **Edit `config.php`** — open it and change these four lines to your
-   real database details (get them from cPanel → MySQL Databases):
+Core PHP 8+ (procedural), MySQLi (prepared statements throughout,
+`$conn` connection variable), HTML5, CSS3, vanilla JavaScript (`fetch`
+for AJAX), Font Awesome, Google Fonts. No Laravel/CodeIgniter/WordPress/
+React/Vue/Node — everything here is plain files you can upload as-is.
+
+## 1. Installation (shared hosting / cPanel)
+
+1. **Upload the whole project** to your hosting's document root (e.g.
+   `public_html/`), keeping the folder structure intact (`admin/`, `ajax/`,
+   `assets/`, `uploads/` must stay where they are).
+2. **Create a MySQL database** in cPanel → MySQL Databases (or your
+   host's equivalent), and a database user with full privileges on it.
+3. **Import `database.sql`** via phpMyAdmin → Import (or
+   `mysql -u USER -p DBNAME < database.sql` if you have CLI access). This
+   creates all 23 tables and loads demo data (one business, 3 halls in
+   Karachi/Lahore/Islamabad, time slots, event types, sample bookings,
+   settings, pages, FAQs, one blog post).
+4. **Edit `config.php`** — the only file you must change:
    ```php
    define('DB_HOST', 'localhost');
    define('DB_NAME', 'your_database_name');
    define('DB_USER', 'your_database_user');
    define('DB_PASS', 'your_database_password');
    ```
-   That is the only file you need to edit.
-3. **Import `database.sql`** — cPanel → phpMyAdmin → select your
-   database → Import tab → choose `database.sql` → Go. One file, every
-   table and all seed data, done in one import.
+   `BASE_URL` is auto-detected from the request; you don't need to hard-code it.
+5. **Enable `mod_rewrite`** (on by default on virtually all shared
+   hosting). The included `.htaccess` gives you clean URLs (`/halls`,
+   `/hall/royal-banquet-hall-karachi`, `/booking`, `/admin/bookings`,
+   etc.), blocks direct access to `config.php`/`functions.php`/`.sql`
+   files, disables directory listing, and adds security headers. If
+   `mod_rewrite` isn't available, the site still works at the literal
+   `.php` filenames — nothing is hard-dependent on rewriting.
+6. **Set folder permissions** so PHP can write to `uploads/halls`,
+   `uploads/gallery`, `uploads/logos`, `uploads/blog` and `logs/`
+   (usually `755`/`775` is enough on shared hosting; avoid `777`).
+7. **Log in to the admin panel** at `/admin/login.php` (see credentials
+   below) — you'll be forced to set a new password on first login.
+8. **Configure your business**: Settings → site identity, contact
+   details, social links, booking rules, payment settings. Then add your
+   real Halls, Time Slots, and Event Types (the demo ones are safe to
+   edit or delete).
+9. **Configure SEO**: Admin → SEO for per-page meta titles/descriptions,
+   or just rely on the sensible defaults already seeded.
+10. **Test an online booking end-to-end** on the public site
+    (`/availability`, then `/booking`) before going live.
 
-Visit your domain. If something's wrong, `config.php` shows a plain-
-English error (bad DB credentials, or the import didn't run) instead
-of a blank page or PHP warning wall.
+### Demo admin logins (change immediately — forced on first login)
 
-### Demo logins (change before anyone else can reach the site)
+| Role | Email | Password |
+|---|---|---|
+| Super Admin (platform) | `superadmin@weddinghallsaas.test` | `Admin@12345` |
+| Business Admin | `admin@royalbanquet.test` | `Admin@12345` |
+| Manager | `manager@royalbanquet.test` | `Manager@12345` |
 
-- Admin: `admin@marketplace.test` / `admin123` at `/admin-login.php`
-- Official Store vendor: `store@marketplace.test` / `admin123`
+All demo accounts have `must_change_password` set — the first login
+redirects straight to **Change Password**. There is no email service
+wired up in this build, so **Forgot Password** (`/admin/forgot-password.php`)
+displays the one-time reset link directly on screen instead of emailing
+it (clearly labelled as a stand-in for a real mailer — swap in your SMTP/
+transactional email provider by editing `admin/forgot-password.php`).
 
-There's no "change password" screen yet — generate a new hash with
-`php -r "echo password_hash('yournewpassword', PASSWORD_DEFAULT);"`
-and update the `password_hash` column for that row via phpMyAdmin.
+### Default URL structure
 
-## Why it's flat
-
-Earlier versions of this project split code across `pages/`, `admin/`,
-`includes/`, `data/`, etc., with a router matching clean URLs like
-`/artisan/wooden-crafts` to files in those folders. That broke on
-upload — if even one subfolder didn't transfer completely (which is
-easy to have happen with a File Manager zip-extract or a partial FTP
-upload), the router would throw a fatal error trying to `require` a
-file that wasn't there, taking down pages that had nothing to do with
-the missing file.
-
-This version trades pretty URLs for reliability: every page is
-reachable at its own literal filename
-(`/artisan.php`, `/product.php?slug=...`, `/vendor-dashboard.php`,
-...), so there's no routing layer that depends on the whole folder
-tree being intact. If a file is ever missing, only that one page 404s
-— nothing else breaks.
-
-## What's in the project
-
+Public site:
 ```
-index.php            → requires home.php (the front page)
-config.php            THE file you edit — DB credentials + bootstrap
-                       (starts the session, connects to the DB, loads
-                       functions.php). Refuses direct access on its own.
-functions.php          every function used site-wide, in one file:
-                       generic helpers, session/auth, the notification
-                       log seam, and all database queries (grouped by
-                       table with a comment divider) — all prefixed
-                       mp_ to avoid name collisions
-header.php, footer.php public-site chrome (nav, flash messages,
-                       footer), theme-aware (main / artisan / business)
-admin-header.php, admin-footer.php   admin panel chrome
-product-card.php       small reusable product tile, used by every
-                       listing page
-404.php                 fully self-contained — no dependency on
-                       config.php or anything else, so it can never
-                       itself be the thing that's broken
-
-home.php, artisan.php, artisan-category.php, artisan-store.php,
-business.php, business-category.php, business-store.php,
-official-store.php, product.php, category.php, search.php
-                        public pages
-
-vendor-login.php, vendor-register.php, vendor-logout.php,
-vendor-dashboard.php, vendor-profile.php, vendor-categories.php,
-vendor-products.php, vendor-product-form.php
-                        vendor auth + the vendor's own dashboard
-
-customer-login.php, customer-register.php, customer-logout.php,
-follow.php              customer auth + following a vendor
-
-admin-login.php, admin-logout.php, admin-dashboard.php,
-admin-vendors.php, admin-vendor-approve.php, admin-vendor-reject.php,
-admin-category-requests.php, admin-category-decide.php,
-admin-category-toggle.php
-                        the admin panel
-
-database.sql            every CREATE TABLE + all seed data, one file
-assets/                 css/, js/, img/ — the only other web-facing folder
-uploads/                reserved for future file-upload features
-logs/                   mp_notify() writes notifications.log here
+/                              Home
+/about  /contact  /faq  /privacy  /terms
+/halls                         Hall listing
+/hall/{slug}                   Hall detail
+/gallery
+/availability                  Public availability checker (togglable)
+/booking                       Online booking form
+/booking-confirmation/{code}   Booking confirmation
+/blog   /blog/{slug}
+/sitemap.xml   /robots.txt
+```
+Admin panel:
+```
+/admin/login.php
+/admin/                        Dashboard
+/admin/bookings  /admin/booking-form.php  /admin/booking-view.php?id=
+/admin/calendar  /admin/date-search
+/admin/halls  /admin/hall-form.php  /admin/time-slots  /admin/event-types
+/admin/customers  /admin/customer-view.php?id=
+/admin/payments  /admin/reports
+/admin/gallery  /admin/pages  /admin/blog  /admin/seo  /admin/settings
+/admin/chatbot                 Database Assistant
+/admin/users                   Admin users & roles
+/admin/businesses.php          Super Admin only — manage tenants
 ```
 
-A page looks like a classic PHP script — no template layer, no
-separate "view", logic and HTML together in one file:
+## 2. Architecture notes
 
-```php
-<?php
-require __DIR__ . '/config.php';
+- **`$conn`** is the single mysqli connection created in `config.php`
+  and used everywhere via prepared statements (`functions.php`'s
+  `wh_stmt()`/`wh_fetch_all()`/`wh_execute()`, plus the generic
+  `wh_insert()`/`wh_update()` helpers that infer bind types from PHP
+  value types so no call site hand-counts a `'iissd...'` string).
+- **Booking conflict prevention is enforced at the database level.**
+  `slot_locks` has `UNIQUE KEY (business_id, hall_id, booking_date,
+  time_slot_id)`. `wh_create_booking()` inserts the booking row and the
+  lock row inside one transaction; a duplicate slot causes the lock
+  insert to fail on the unique key, the transaction rolls back, and the
+  caller gets a `conflict` error — this is safe even if two people
+  submit at the exact same instant, which a prior `SELECT`-then-`INSERT`
+  check alone would not guarantee. Cancelling a booking deletes its lock
+  row, immediately freeing the slot; confirming a `pending` booking (or
+  reactivating a cancelled one) re-acquires the lock and can itself be
+  rejected if another booking grabbed it first.
+- **Multi-tenant by design, single-tenant by default.** Every table
+  carries `business_id`. The public website always serves
+  `DEFAULT_BUSINESS_ID` (1) from `config.php`; the admin panel scopes
+  every query to the logged-in admin's `business_id`. A Super Admin
+  (`business_id IS NULL`) can create additional businesses from
+  `/admin/businesses.php`, which auto-seeds sensible time slots, event
+  types and settings for the new tenant and can create its first Admin
+  login in one step.
+- **Roles**: `super_admin` (platform), `admin` (full access within their
+  business), `manager` (bookings/halls/payments/customers/gallery/
+  reports/calendar — no settings/users), `staff` (bookings/customers/
+  calendar only). Enforced server-side per page via
+  `wh_require_page_access()` in `auth.php`, not just hidden in the UI.
+- **Security**: `password_hash()`/`password_verify()`, CSRF tokens on
+  every state-changing form (`wh_csrf_field()`/`wh_csrf_verify()`),
+  login-attempt lockout (5 failed attempts / 15 minutes), session
+  regeneration on login, `HttpOnly`/`SameSite=Lax` session cookies with
+  a 30-minute idle timeout, MIME-sniffed image upload validation
+  (JPEG/PNG/WEBP only, 3MB max), and output escaping via `e()`
+  everywhere user-influenced data is printed.
+- **Chatbot**: `chatbot-functions.php` is a self-contained, rule-based
+  (keyword/intent + regex date parsing) natural-language layer over
+  real SQL queries — it recognizes dates, halls, time slots and a
+  handful of intents (availability, which-hall, bookings-on-a-date,
+  booking counts, revenue/advance, pending payments, next booking) in
+  English/Urdu/Roman Urdu, and always answers from an actual query
+  result. If nothing is recognized, it says so explicitly rather than
+  guessing. No external AI API is called or required; one could be added
+  later as a clearly separate, optional fallback without touching this
+  file's contract.
+- **Availability toggle**: `ajax/check-availability.php` — used by both
+  the public site and the admin panel — checks
+  `show_public_availability` in Settings for anonymous visitors (admins
+  always see live data). When off, the public endpoint returns
+  `{"public_visible": false}` with no hall/slot data at all, so nothing
+  about the calendar leaks even via direct API calls.
+- **Privacy**: the public booking confirmation page
+  (`/booking-confirmation/{code}`) only shows customer name/amount to
+  the browser session that just created that booking; anyone else
+  opening the same (sequential, guessable) URL sees booking code, hall,
+  date, time and status only — never phone/CNIC/amount.
 
-$vendor = mp_require_vendor();
-$products = mp_products_by_vendor($vendor['id']);
+## 3. What's simplified vs. the full spec (documented, not hidden)
 
-$pageTitle = 'My Products';
-$theme = 'main';
-require __DIR__ . '/header.php';
-?>
-<h1>My Products</h1>
-<?php foreach ($products as $product): mp_render_product_card($product); endforeach; ?>
-<?php require __DIR__ . '/footer.php'; ?>
+This build prioritizes a fully working core over shallow coverage of
+every listed feature. Real, functional, but intentionally lighter-touch
+than a mature SaaS product:
+
+- **Super Admin / multi-business layer** is real (isolated data per
+  business, tenant creation with auto-seeding, plan/status/expiry
+  fields) but has no subscription billing/payment-gateway integration —
+  exactly as the spec allows ("can be added later").
+- **Blog** supports title/slug/excerpt/content/category/status/SEO and a
+  featured image; there's no rich-text WYSIWYG editor (content is HTML
+  in a textarea) and no comments/tags system.
+- **Email** is not wired to a real SMTP/transactional provider anywhere
+  (password reset, booking notifications) — everything that would be an
+  email is either shown on-screen (password reset link) or logged to
+  the in-app Notifications bell + `chatbot_logs`/`login_attempts`
+  tables. Swapping in a real mailer only touches a few call sites.
+- **Structured data (schema.org)** is not emitted as JSON-LD on every
+  page; canonical URLs, Open Graph, Twitter cards, per-page meta
+  title/description/robots and the auto-generated `sitemap.xml`/
+  `robots.txt` are fully implemented.
+- **Testimonials module** from the spec's admin nav list was left out
+  entirely to keep scope focused on the booking/payment/availability
+  core — everything else in the spec's admin sidebar exists as a real,
+  working page.
+
+Nothing above is a stub or a dead button — every included feature reads
+and writes real data through MySQLi prepared statements.
+
+## 4. Verified test scenarios
+
+The following were run against a **freshly imported** `database.sql` on
+a real MariaDB instance (not just eyeballed):
+
+1. Create Hall A, Create Hall B — both persist correctly.
+2. Time slots (Morning/Evening/Night) come seeded and are fully editable.
+3. Book Hall A · 25 Dec 2026 · Night → succeeds.
+4. Book Hall A · 25 Dec 2026 · Night again → **rejected**
+   ("this hall is already booked...").
+5. Book Hall A · 25 Dec 2026 · Morning → succeeds (different slot).
+6. Book Hall B · 25 Dec 2026 · Night → succeeds (different hall).
+7. Turn OFF "Show Availability on Website" → public
+   `/ajax/check-availability.php` returns `public_visible:false` and no
+   booking data.
+8. Turn it back ON → availability data returns correctly.
+9. Chatbot: "25 dec ko Hall A ki night booking hai?" → correctly answers
+   "Night: Booked ❌", read live from `slot_locks`.
+10. Add a PKR 100,000 payment to a PKR 200,000 booking → balance becomes
+    exactly PKR 100,000, `payment_status` becomes `partial`.
+11. Cancel that booking → the Hall A / 25 Dec / Night slot immediately
+    shows `available` again, and a new booking for the exact same
+    hall+date+slot is then accepted.
+
+## 5. File structure
+
 ```
-
-## What's actually web-facing
-
-Since every page is a real file, there's no "internal" folder that
-routing keeps hidden. Two things are worth knowing:
-
-- `config.php` refuses to run if it's requested directly (checked in
-  PHP itself, at the top of the file — this works even if `.htaccess`
-  isn't respected by your host, unlike relying on server config alone).
-- `.htaccess` adds an optional second layer blocking direct access to
-  `config.php`, `functions.php`, and any `.sql` file (so `database.sql`
-  isn't downloadable once imported) — but the site works correctly
-  even if `.htaccess`/`mod_rewrite` isn't honored at all, since nothing
-  here depends on URL rewriting.
-
-Verified end-to-end against a real MariaDB 10.11 instance and PHP's
-built-in server: `database.sql` imports cleanly with a single
-`mysql < database.sql` (equivalent to phpMyAdmin's Import), and the
-full flow — vendor registration → admin approval → category approval
-→ product creation (including per-category limit enforcement) → store
-pages → global search → follow → CSRF protection — all pass. Also
-caught and fixed a real encoding bug this way: emoji in the marketplace
-badges (🏺 🏪 ⭐) got corrupted on import by clients that don't default
-to `utf8mb4` (including the plain `mysql` CLI) — fixed by adding
-`SET NAMES utf8mb4;` as the first line of `database.sql`.
-
-## Design system
-
-Every page uses a shared, modern design system defined with CSS custom
-properties in `assets/css/global.css` (colors, spacing, shadows, border
-radius, easing), plus a theme file per marketplace
-(`artisan-theme.css` — warm terracotta/gold with Playfair Display serif
-headings; `business-theme.css` — blue/cyan; `admin.css` — calm, no
-animation on purpose).
-
-- **Parallax hero sections**: each landing/hero (`home.php`,
-  `artisan.php`, `business.php`, `official-store.php`) has a
-  `.parallax-hero` / `.parallax-hero-bg` layer that moves at a fraction
-  of scroll speed for a depth effect. Implemented with
-  `transform: translate3d()` driven by `requestAnimationFrame` in
-  `assets/js/main.js` — not `background-attachment: fixed`, so it's
-  smooth on mobile too.
-- **Scroll-reveal animations**: sections and cards fade/slide into
-  view via `IntersectionObserver` (`.reveal` → `.reveal-visible`).
-  This degrades safely on purpose — see below.
-- **Progressive enhancement, not a dependency**: `.reveal` is only
-  hidden by CSS once `assets/js/main.js` has confirmed it's actually
-  running (an inline script sets `class="js"` on `<html>` before first
-  paint). If JavaScript is blocked, errors, or hasn't loaded yet,
-  every `.reveal` element is simply visible with no animation — content
-  can never end up permanently hidden because of a script failure.
-  Motion also fully respects `prefers-reduced-motion`.
-- **External dependency added by this design**: Google Fonts (Inter,
-  Plus Jakarta Sans, Playfair Display), loaded via `<link>` in
-  `header.php`. Nothing else in the project calls out to an external
-  service — if you need a fully offline/self-hosted build, swap that
-  `<link>` for local font files.
-
-## Architecture decisions worth knowing
-
-- **Marketplace types are data, not code.** `marketplace_types` is a
-  lookup table (`artisan` / `business` / `official`); a new marketplace
-  type is a new row, not a new set of `if` branches.
-- **Categories are scoped per marketplace type** and share one
-  auto-increment ID space. Anywhere a category ID comes from user
-  input (vendor registration, category requests), it's filtered
-  through `mp_filter_category_ids_by_marketplace()` before being
-  trusted — otherwise a business vendor could end up with a request
-  against an artisan category.
-- **Vendor approval workflow** is enforced in the pages themselves,
-  not just the UI: `vendor-product-form.php` blocks product creation
-  server-side unless `vendor.status = approved`, and the store pages
-  show a 404 for a vendor that isn't approved — so there's no way to
-  make a pending store "go live" by hitting a URL directly.
-- **Category approval workflow**: a Business Shop vendor's submitted
-  product `category_id` is checked against
-  `mp_approved_category_ids_for_vendor()` (status = approved **and**
-  `is_enabled = 1`) and, if the admin set a `usage_limit`, against the
-  vendor's current product count in that category — enforced at
-  product-creation time, verified in testing (limit of 1 correctly
-  blocked a 2nd product).
-- **Notifier seam, not an email system**: every point the vendor
-  onboarding flow should "send an email" calls `mp_notify()`, which
-  writes to `logs/notifications.log`. It's a drop-in seam for a future
-  centralized email engine — no page will need to change when that's
-  built.
-- **Customers/follow/ratings**: a minimal `customers` table plus
-  `vendor_follows` and `vendor_ratings` back the "Follow Artist" and
-  "Artist/Store Ratings" features. Full customer commerce (orders,
-  checkout, rewards) is not part of this build.
-
-## What's deferred to future work
-
-- **Enterprise SEO module** — meta management, sitemaps, structured
-  data, vendor SEO score.
-- **Centralized email notification engine** — templates, actual
-  sending (currently stubbed via `mp_notify()`).
-- **Full admin CRUD panel** — this build ships only the two admin
-  screens the architecture depends on (vendor approval, category
-  approval). Products/orders/CMS/banners/reports admin management is
-  separate work.
-- **Vendor logo/banner file uploads** — profile forms currently take
-  text fields and (for products) pasted image URLs; a real upload
-  pipeline is future work (`uploads/` is reserved for it).
-- **Clean URLs** — traded away for deployment reliability, see "Why
-  it's flat" above. Can be reintroduced later via `.htaccess` rewrites
-  once the site is confirmed working, without changing any PHP logic.
+config.php, functions.php, auth.php, chatbot-functions.php   core includes (procedural, wh_ prefixed)
+header.php, footer.php                                        public site chrome
+index.php, about.php, halls.php, hall.php, gallery.php,
+availability.php, booking.php, booking-confirmation.php,
+contact.php, faq.php, privacy.php, terms.php, blog.php,
+blog-post.php                                                  public pages
+admin/                                                          full admin panel (30 pages)
+ajax/                                                           JSON endpoints (availability, calendar, payments,
+                                                                 booking status, chatbot, notifications)
+assets/css/global.css, admin.css                                design systems (public / admin)
+assets/js/main.js, availability.js, calendar-widget.js, admin.js
+uploads/halls, uploads/gallery, uploads/logos, uploads/blog     writable upload targets
+database.sql                                                    full schema + seed data
+.htaccess, robots.php, sitemap.php, 404.php, 403.php, 500.php   routing, SEO, error pages
+```

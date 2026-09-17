@@ -1,10 +1,10 @@
-<?php http_response_code(404); ?>
+<?php http_response_code(500); ?>
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Page Not Found</title>
+<title>Something Went Wrong</title>
 <style>
   body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f0b14;color:#f4eee8;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;text-align:center;padding:24px}
   .wrap{max-width:480px}
@@ -16,8 +16,8 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>404</h1>
-    <p>The page you're looking for doesn't exist or may have moved.</p>
+    <h1>500</h1>
+    <p>Something went wrong on our end. Please try again shortly.</p>
     <a href="/">Back to Home</a>
   </div>
 </body>

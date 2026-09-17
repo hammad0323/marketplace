@@ -1,2 +1,10 @@
 logs/*.log
 .DS_Store
+uploads/halls/*
+!uploads/halls/.gitkeep
+uploads/gallery/*
+!uploads/gallery/.gitkeep
+uploads/logos/*
+!uploads/logos/.gitkeep
+uploads/blog/*
+!uploads/blog/.gitkeep

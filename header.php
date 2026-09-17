@@ -1,66 +1,77 @@
 <?php
 /**
- * Shared page header for the public site. Each page sets $pageTitle
- * and $theme ('main' | 'artisan' | 'business') before requiring this
- * file. Includes the site nav and flash messages inline.
+ * header.php — shared public-site chrome.
+ * Expects (all optional): $pageTitle, $metaDescription, $activeNav, $seoPageKey, $bodyClass
  */
-$theme = $theme ?? 'main';
-$pageTitle = $pageTitle ?? SITE_NAME;
+$businessId = wh_current_business_id();
+$settings = wh_get_settings($businessId);
+$seo = $seoPageKey ?? null ? wh_fetch_one('SELECT * FROM seo_settings WHERE business_id=? AND page_key=?', 'is', [$businessId, $seoPageKey]) : null;
+
+$siteName = $settings['site_name'] ?? 'Wedding Hall';
+$title = $seo['seo_title'] ?? ($pageTitle ?? $siteName) . ' | ' . $siteName;
+if (!empty($pageTitle) && empty($seo['seo_title'])) {
+    $title = $pageTitle . ' | ' . $siteName;
+} elseif (empty($pageTitle) && empty($seo['seo_title'])) {
+    $title = $siteName . ' — ' . ($settings['tagline'] ?? '');
+}
+$description = $seo['meta_description'] ?? ($metaDescription ?? $settings['tagline'] ?? '');
+$primaryColor = $settings['primary_color'] ?? '#7a1f3d';
+$secondaryColor = $settings['secondary_color'] ?? '#c79a4b';
 ?>
 <!doctype html>
-<html lang="en" class="no-js">
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script>document.documentElement.className = 'js';</script>
-    <title><?= mp_e($pageTitle) ?></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/global.css">
-    <?php if ($theme === 'artisan'): ?>
-        <link rel="stylesheet" href="/assets/css/artisan-theme.css">
-    <?php elseif ($theme === 'business'): ?>
-        <link rel="stylesheet" href="/assets/css/business-theme.css">
-    <?php endif; ?>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><?= e($title) ?></title>
+<meta name="description" content="<?= e($description) ?>">
+<meta name="robots" content="<?= e($seo['robots'] ?? 'index,follow') ?>">
+<link rel="canonical" href="<?= e(BASE_URL . $_SERVER['REQUEST_URI']) ?>">
+<meta property="og:title" content="<?= e($title) ?>">
+<meta property="og:description" content="<?= e($description) ?>">
+<meta property="og:type" content="website">
+<?php if (!empty($seo['og_image'])): ?><meta property="og:image" content="<?= e(BASE_URL . '/' . $seo['og_image']) ?>"><?php endif; ?>
+<meta name="twitter:card" content="summary_large_image">
+<?php if (!empty($settings['favicon'])): ?><link rel="icon" href="<?= e(BASE_URL . '/' . $settings['favicon']) ?>"><?php endif; ?>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="<?= e(BASE_URL) ?>/assets/css/global.css">
+<script>document.documentElement.classList.add('js');</script>
+<style>:root{--primary:<?= e($primaryColor) ?>;--secondary:<?= e($secondaryColor) ?>;}</style>
+<?php if (!empty($settings['ga_id'])): ?>
+<script async src="https://www.googletagmanager.com/gtag/js?id=<?= e($settings['ga_id']) ?>"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','<?= e($settings['ga_id']) ?>');</script>
+<?php endif; ?>
+<?php if (!empty($settings['gsc_verification'])): ?><meta name="google-site-verification" content="<?= e($settings['gsc_verification']) ?>"><?php endif; ?>
+<?php if (!empty($settings['bing_verification'])): ?><meta name="msvalidate.01" content="<?= e($settings['bing_verification']) ?>"><?php endif; ?>
 </head>
-<body class="theme-<?= mp_e($theme) ?>">
-
-<header class="site-nav">
-    <div class="site-nav-inner">
-        <a href="/" class="site-brand"><?= mp_e(SITE_NAME) ?></a>
-
-        <nav class="marketplace-nav">
-            <a href="/artisan.php">Artisan Marketplace</a>
-            <a href="/business.php">Business Shops</a>
-            <a href="/official-store.php">Official Store</a>
-        </nav>
-
-        <form method="get" action="/search.php" class="site-search">
-            <input type="search" name="q" placeholder="Search all marketplaces&hellip;" value="<?= mp_e($_GET['q'] ?? '') ?>">
-            <button type="submit">Search</button>
-        </form>
-
-        <nav class="account-nav">
-            <?php if (mp_current_vendor()): ?>
-                <a href="/vendor-dashboard.php">My Store</a>
-            <?php else: ?>
-                <a href="/vendor-login.php">Vendor Login</a>
-                <a href="/vendor-register.php" class="cta-link">Sell With Us</a>
-            <?php endif; ?>
-        </nav>
+<body class="<?= e($bodyClass ?? '') ?>">
+<header class="site-header">
+  <nav class="nav">
+    <a href="<?= e(BASE_URL) ?>/" class="nav-brand">
+      <?php if (!empty($settings['logo'])): ?><img src="<?= e(BASE_URL . '/' . $settings['logo']) ?>" alt="<?= e($siteName) ?>">
+      <?php else: ?><?= e($siteName) ?><?php endif; ?>
+    </a>
+    <ul class="nav-links">
+      <li><a href="<?= e(BASE_URL) ?>/" class="<?= ($activeNav ?? '') === 'home' ? 'active' : '' ?>">Home</a></li>
+      <li><a href="<?= e(BASE_URL) ?>/halls" class="<?= ($activeNav ?? '') === 'halls' ? 'active' : '' ?>">Halls</a></li>
+      <li><a href="<?= e(BASE_URL) ?>/gallery" class="<?= ($activeNav ?? '') === 'gallery' ? 'active' : '' ?>">Gallery</a></li>
+      <li><a href="<?= e(BASE_URL) ?>/availability" class="<?= ($activeNav ?? '') === 'availability' ? 'active' : '' ?>">Availability</a></li>
+      <li><a href="<?= e(BASE_URL) ?>/about" class="<?= ($activeNav ?? '') === 'about' ? 'active' : '' ?>">About</a></li>
+      <li><a href="<?= e(BASE_URL) ?>/blog" class="<?= ($activeNav ?? '') === 'blog' ? 'active' : '' ?>">Blog</a></li>
+      <li><a href="<?= e(BASE_URL) ?>/contact" class="<?= ($activeNav ?? '') === 'contact' ? 'active' : '' ?>">Contact</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="<?= e(BASE_URL) ?>/booking" class="btn btn-primary btn-sm">Book Now</a>
+      <button class="nav-toggle" aria-label="Menu" aria-expanded="false">&#9776;</button>
     </div>
+  </nav>
 </header>
-
-<?php
-$flashSuccess = mp_flash('success');
-$flashError = mp_flash('error');
-?>
-<?php if ($flashSuccess): ?>
-    <div class="flash flash-success"><?= mp_e($flashSuccess) ?></div>
+<main>
+<?php $wh_flashes = wh_flash_get(); if ($wh_flashes): ?>
+  <div class="container" style="padding-top:20px;">
+    <?php foreach ($wh_flashes as $wh_flash): ?>
+      <div class="alert alert-<?= e($wh_flash['type']) ?>" data-autodismiss><?= e($wh_flash['message']) ?></div>
+    <?php endforeach; ?>
+  </div>
 <?php endif; ?>
-<?php if ($flashError): ?>
-    <div class="flash flash-error"><?= mp_e($flashError) ?></div>
-<?php endif; ?>
-
-<main class="site-main <?= $theme !== 'main' ? mp_e($theme) . '-main' : '' ?>">
