@@ -12,49 +12,58 @@ require __DIR__ . '/header.php';
 <section class="page-hero">
   <div class="container">
     <h1>Check Availability</h1>
-    <p>Pick a date to see which halls and time slots are free before you book.</p>
+    <p>Browse the calendar to see which dates are open, or pick a date to see hall-by-hall, slot-by-slot detail.</p>
   </div>
 </section>
 <section class="section">
-  <div class="container" style="max-width:760px;">
+  <div class="container" style="max-width:900px;">
     <?php if (!$showAvailability): ?>
       <div class="alert alert-info">Live availability display is currently turned off for this website. Please <a href="<?= e(BASE_URL) ?>/contact">contact us</a> to check availability, or submit an <a href="<?= e(BASE_URL) ?>/booking">online booking request</a> and we'll confirm it for you.</div>
     <?php else: ?>
-    <div class="form-card reveal">
-      <div class="form-row">
-        <div class="form-group">
-          <label for="availDate">Event Date</label>
-          <input type="date" id="availDate" min="<?= e(date('Y-m-d')) ?>" value="<?= e(wh_input_get('date', date('Y-m-d'))) ?>">
-        </div>
-        <div class="form-group">
-          <label for="availHall">Hall (optional)</label>
-          <select id="availHall">
-            <option value="">All Halls</option>
-            <?php foreach ($halls as $hall): ?><option value="<?= (int) $hall['id'] ?>"><?= e($hall['name']) ?></option><?php endforeach; ?>
-          </select>
-        </div>
+    <div class="wh-calendar-card reveal">
+      <div class="form-group" style="max-width:280px;margin-bottom:20px;">
+        <label for="availHall">Filter by Hall</label>
+        <select id="availHall">
+          <option value="">All Halls</option>
+          <?php foreach ($halls as $hall): ?><option value="<?= (int) $hall['id'] ?>"><?= e($hall['name']) ?></option><?php endforeach; ?>
+        </select>
       </div>
-      <button type="button" class="btn btn-primary" id="availCheckBtn"><i class="fa-solid fa-magnifying-glass"></i> Check Availability</button>
+      <div class="cal-legend">
+        <span><span class="dot" style="background:var(--success);"></span> Available</span>
+        <span><span class="dot" style="background:var(--warning);"></span> Partially Booked</span>
+        <span><span class="dot" style="background:var(--danger);"></span> Fully Booked</span>
+      </div>
+      <div id="publicCalendar"></div>
     </div>
-    <div id="availResult" style="margin-top:32px;"></div>
+    <div id="availResult" style="margin-top:28px;"></div>
     <?php endif; ?>
   </div>
 </section>
 <?php if ($showAvailability): ?>
 <script src="<?= e(BASE_URL) ?>/assets/js/availability.js"></script>
+<script src="<?= e(BASE_URL) ?>/assets/js/calendar-widget.js"></script>
 <script>
-function runAvailCheck() {
-  var date = document.getElementById('availDate').value;
-  var hall = document.getElementById('availHall').value;
-  var box = document.getElementById('availResult');
-  if (!date) { return; }
-  box.innerHTML = '<p class="hint">Checking…</p>';
-  WH.fetchAvailability(date, hall).then(function (data) { WH.renderAvailabilityTable(box, data); });
+var availHallSelect = document.getElementById('availHall');
+var availResultBox = document.getElementById('availResult');
+
+function showDateDetail(dateStr) {
+  availResultBox.innerHTML = '<p class="hint">Checking ' + dateStr + '…</p>';
+  WH.fetchAvailability(dateStr, availHallSelect.value).then(function (data) {
+    availResultBox.innerHTML = '<h3 style="margin-bottom:14px;">' + dateStr + '</h3>';
+    var wrap = document.createElement('div');
+    WH.renderAvailabilityTable(wrap, data);
+    availResultBox.appendChild(wrap);
+    availResultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
 }
-document.getElementById('availCheckBtn').addEventListener('click', runAvailCheck);
-document.getElementById('availDate').addEventListener('change', runAvailCheck);
-document.getElementById('availHall').addEventListener('change', runAvailCheck);
-runAvailCheck();
+
+WH.initCalendar(document.getElementById('publicCalendar'), {
+  hallSelect: availHallSelect,
+  onDateClick: showDateDetail
+});
+
+var preselectedDate = <?= json_encode(wh_input_get('date', '')) ?>;
+if (preselectedDate) { showDateDetail(preselectedDate); }
 </script>
 <?php endif; ?>
 <?php require __DIR__ . '/footer.php'; ?>

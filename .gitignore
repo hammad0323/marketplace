@@ -8,3 +8,5 @@ uploads/logos/*
 !uploads/logos/.gitkeep
 uploads/blog/*
 !uploads/blog/.gitkeep
+uploads/banners/*
+!uploads/banners/.gitkeep

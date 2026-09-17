@@ -297,6 +297,25 @@ CREATE TABLE IF NOT EXISTS gallery (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
+-- banners (homepage hero carousel, admin-managed)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS banners (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  business_id INT UNSIGNED NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  subheading VARCHAR(300) DEFAULT NULL,
+  background_image VARCHAR(255) DEFAULT NULL,
+  cta_text VARCHAR(80) DEFAULT NULL,
+  cta_link VARCHAR(255) DEFAULT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  status ENUM('active','inactive') NOT NULL DEFAULT 'active',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_banner_business (business_id),
+  CONSTRAINT fk_banner_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
 -- pages (About / Contact / FAQ / Privacy / Terms editable content)
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS pages (
@@ -461,6 +480,11 @@ INSERT INTO halls (id, business_id, name, slug, description, capacity_min, capac
 (1, 1, 'Royal Banquet Hall', 'royal-banquet-hall-karachi', 'Our flagship air-conditioned banquet hall with a grand entrance, crystal chandeliers and a dedicated bridal room — built for weddings of every scale.', 200, 800, 'per_person', 0.00, 3500.00, 'Shahrah-e-Faisal', 'Karachi', 'Shahrah-e-Faisal', 'https://maps.google.com/?q=Royal+Banquet+Hall+Karachi', 24.8600000, 67.0100000, 'uploads/halls/royal-banquet-hall.jpg', 'active', 1, 1, 'Royal Banquet Hall Karachi | Wedding & Walima Venue', 'Premium banquet hall in Karachi for weddings, walima and corporate events. Capacity up to 800 guests. Book online.', 1),
 (2, 1, 'Pearl Marriage Hall', 'pearl-marriage-hall-lahore', 'An elegant marriage hall in the heart of Lahore, known for its spacious lawn and modern catering kitchen.', 150, 500, 'per_person', 0.00, 3000.00, 'Gulberg', 'Lahore', 'Gulberg', 'https://maps.google.com/?q=Pearl+Marriage+Hall+Lahore', 31.5200000, 74.3587000, 'uploads/halls/pearl-marriage-hall.jpg', 'active', 1, 1, 'Pearl Marriage Hall Lahore | Banquet & Event Venue', 'Book Pearl Marriage Hall in Gulberg, Lahore for wedding, mehndi and corporate functions.', 2),
 (3, 1, 'Grand Event Hall', 'grand-event-hall-islamabad', 'A premium rooftop and indoor event hall in Islamabad with panoramic city views, ideal for intimate to mid-size events.', 80, 300, 'fixed', 450000.00, 0.00, 'Blue Area', 'Islamabad', 'Blue Area', 'https://maps.google.com/?q=Grand+Event+Hall+Islamabad', 33.7180000, 73.0620000, 'uploads/halls/grand-event-hall.jpg', 'active', 1, 1, 'Grand Event Hall Islamabad | Rooftop Wedding Venue', 'Grand Event Hall in Blue Area Islamabad — rooftop and indoor venue for weddings and corporate events.', 3);
+
+INSERT INTO banners (business_id, title, subheading, background_image, cta_text, cta_link, sort_order, status) VALUES
+(1, 'Unforgettable Weddings Start Here', 'Pakistan''s trusted wedding and event venues in Karachi, Lahore and Islamabad — book your date online in minutes.', '', 'Book a Hall', '/booking', 1, 'active'),
+(1, 'Check Live Availability Instantly', 'See which hall, date and time slot is free before you commit — no phone calls needed.', '', 'Check Availability', '/availability', 2, 'active'),
+(1, 'Premium Halls for Every Celebration', 'From intimate nikkah ceremonies to grand walima receptions with 800+ guests.', '', 'Explore Our Halls', '/halls', 3, 'active');
 
 INSERT INTO hall_facilities (hall_id, facility_name, icon, sort_order) VALUES
 (1, 'Air Conditioned Hall', 'fa-snowflake', 1),

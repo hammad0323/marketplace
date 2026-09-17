@@ -97,6 +97,7 @@ function wh_nav_link($href, $icon, $label, $key, $activePage)
     <?php if ($role === 'admin' || $role === 'super_admin'): ?>
     <div class="admin-nav-group">
       <h6>Website</h6>
+      <?php wh_nav_link(BASE_URL . '/admin/banners.php', 'fa-images', 'Homepage Banners', 'banners', $activePage); ?>
       <?php wh_nav_link(BASE_URL . '/admin/pages.php', 'fa-file-lines', 'Pages &amp; FAQ', 'pages', $activePage); ?>
       <?php wh_nav_link(BASE_URL . '/admin/blog.php', 'fa-newspaper', 'Blog', 'blog', $activePage); ?>
       <?php wh_nav_link(BASE_URL . '/admin/seo.php', 'fa-magnifying-glass-chart', 'SEO', 'seo', $activePage); ?>

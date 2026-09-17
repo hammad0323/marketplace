@@ -10,6 +10,19 @@ Hostinger, etc.) — no Composer, no Node.js, no build step.
 ## What's included
 
 - Public marketing + booking website (premium, non-Bootstrap-template look)
+  with a homepage built from 10 sections: an admin-managed hero banner
+  carousel, a stats bar, featured halls, a "why choose us" feature grid,
+  a live availability calendar, how-it-works steps, event types, latest
+  blog posts, FAQ and a closing call-to-action
+- Admin-managed homepage banner carousel (Admin → Website → Homepage
+  Banners): unlimited slides, each with its own background image,
+  heading, sub-heading and call-to-action button + link — autoplays with
+  dots/arrows, falls back to a working default slide if none are added
+- A real availability **calendar with color- and text-highlighted dates**
+  (green/amber/red = available/partially booked/fully booked), embedded
+  both on the homepage and the full `/availability` page — reads live
+  from the same booking data as the admin panel, and honors the public
+  availability on/off setting
 - Multi-hall management with facilities, images, packages, pricing
 - Admin-customizable time slots (Morning/Evening/Night or anything else)
 - **Database-level conflict-proof booking** — a hall can never be
@@ -246,12 +259,14 @@ index.php, about.php, halls.php, hall.php, gallery.php,
 availability.php, booking.php, booking-confirmation.php,
 contact.php, faq.php, privacy.php, terms.php, blog.php,
 blog-post.php                                                  public pages
-admin/                                                          full admin panel (30 pages)
+admin/                                                          full admin panel (31 pages, incl. banners.php)
 ajax/                                                           JSON endpoints (availability, calendar, payments,
                                                                  booking status, chatbot, notifications)
 assets/css/global.css, admin.css                                design systems (public / admin)
-assets/js/main.js, availability.js, calendar-widget.js, admin.js
-uploads/halls, uploads/gallery, uploads/logos, uploads/blog     writable upload targets
+assets/js/main.js, availability.js, calendar-widget.js,
+           hero-carousel.js, admin.js
+uploads/halls, uploads/gallery, uploads/logos, uploads/blog,
+uploads/banners                                                 writable upload targets
 database.sql                                                    full schema + seed data
 .htaccess, robots.php, sitemap.php, 404.php, 403.php, 500.php   routing, SEO, error pages
 ```

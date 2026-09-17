@@ -58,6 +58,10 @@ WH.initCalendar = function (root, opts) {
     var grid = root.querySelector('#calGridDays');
     grid.innerHTML = '<div class="hint" style="grid-column:1/-1;padding:20px 0;text-align:center;">Loading…</div>';
     fetchMonth().then(function (data) {
+      if (data.public_visible === false) {
+        grid.innerHTML = '<div class="alert alert-info" style="grid-column:1/-1;">Live availability display is currently turned off. Please contact us directly, or submit an online booking request and we\'ll confirm it for you.</div>';
+        return;
+      }
       grid.innerHTML = '';
       var firstDay = new Date(state.year, state.month - 1, 1).getDay();
       var daysInMonth = new Date(state.year, state.month, 0).getDate();
@@ -72,8 +76,9 @@ WH.initCalendar = function (root, opts) {
         var label = state_ === 'full' ? 'Fully Booked' : (state_ === 'partial' ? 'Partially Booked' : 'Available');
         var dotClass = 'state-' + state_;
         var isToday = dateStr === todayStr ? ' today' : '';
+        var isPast = dateStr < todayStr ? ' past' : '';
         var cell = document.createElement('div');
-        cell.className = 'cal-cell' + isToday;
+        cell.className = 'cal-cell' + isToday + isPast;
         cell.setAttribute('data-date', dateStr);
         cell.innerHTML = '<div class="date-num">' + d + '</div><div class="state-dot ' + dotClass + '">' + label + '</div>';
         cell.addEventListener('click', function () {

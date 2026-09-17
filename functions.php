@@ -280,6 +280,27 @@ function wh_set_setting($key, $value, $businessId = null)
 }
 
 // =======================================================================
+// Banners (homepage hero carousel)
+// =======================================================================
+
+function wh_get_banners($businessId = null, $activeOnly = true)
+{
+    $businessId = $businessId ?: wh_current_business_id();
+    $sql = 'SELECT * FROM banners WHERE business_id = ?';
+    if ($activeOnly) {
+        $sql .= " AND status = 'active'";
+    }
+    $sql .= ' ORDER BY sort_order ASC, id ASC';
+    return wh_fetch_all($sql, 'i', [$businessId]);
+}
+
+function wh_get_banner($id, $businessId = null)
+{
+    $businessId = $businessId ?: wh_current_business_id();
+    return wh_fetch_one('SELECT * FROM banners WHERE id = ? AND business_id = ?', 'ii', [$id, $businessId]);
+}
+
+// =======================================================================
 // Halls
 // =======================================================================
 
