@@ -33,6 +33,7 @@ mysqli_stmt_close($stmt);
 $pageTitle = $pharmacy['store_name'] . ' — Pharmacy | ' . SITE_NAME;
 $metaDescription = excerpt($pharmacy['bio'] ?: ($pharmacy['store_name'] . ' is a verified pharmacy on ' . SITE_NAME . '.'), 155);
 $canonical = APP_URL . pharmacy_url($pharmacy['slug']);
+$breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Find Pharmacies', 'url' => APP_URL . '/pharmacies'], ['name' => $pharmacy['store_name']]];
 $extraHead = '<script type="application/ld+json">' . json_encode(array_filter([
     '@context' => 'https://schema.org', '@type' => 'Pharmacy', 'name' => $pharmacy['store_name'],
     'address' => $pharmacy['address'] ?: null, 'url' => $canonical,

@@ -48,73 +48,6 @@ $extraScripts = '<script defer src="' . asset_url('/assets/js/search-suggest.js'
 require __DIR__ . '/includes/header.php';
 ?>
 
-<?php
-$ratingRow = mysqli_fetch_assoc(mysqli_query(db(), "
-    SELECT AVG(rating_avg) AS avg_rating, SUM(rating_count) AS total_reviews
-    FROM doctors WHERE verification_status = 'verified' AND rating_count > 0
-"));
-$logoUrl = get_setting('site_logo') ? APP_URL . '/uploads/' . get_setting('site_logo') : APP_URL . '/assets/img/favicon.svg';
-
-$organizationSchema = array_filter([
-    '@context' => 'https://schema.org',
-    '@type' => 'MedicalBusiness',
-    '@id' => APP_URL . '/#organization',
-    'name' => get_setting('site_name', SITE_NAME),
-    'alternateName' => SITE_NAME,
-    'url' => APP_URL,
-    'description' => $metaDescription,
-    'logo' => $logoUrl,
-    'image' => $logoUrl,
-    'priceRange' => '$$',
-    'medicalSpecialty' => array_values(array_filter(array_map(fn($s) => $s['name'] ?? null,
-        mysqli_query(db(), 'SELECT name FROM specializations WHERE is_active = 1 ORDER BY sort_order LIMIT 10')->fetch_all(MYSQLI_ASSOC)
-    ))),
-    'address' => array_filter([
-        '@type' => 'PostalAddress',
-        'streetAddress' => get_setting('contact_address') ?: null,
-    ]) ?: null,
-    'contactPoint' => array_filter([
-        '@type' => 'ContactPoint',
-        'contactType' => 'customer support',
-        'telephone' => get_setting('contact_phone') ?: null,
-        'email' => get_setting('contact_email') ?: null,
-        'availableLanguage' => ['English'],
-    ]) ?: null,
-    'sameAs' => array_values(array_filter([
-        get_setting('facebook_url') ?: null,
-        get_setting('twitter_url') ?: null,
-        get_setting('instagram_url') ?: null,
-        get_setting('linkedin_url') ?: null,
-    ])) ?: null,
-    'aggregateRating' => ($ratingRow && $ratingRow['avg_rating']) ? [
-        '@type' => 'AggregateRating',
-        'ratingValue' => number_format((float) $ratingRow['avg_rating'], 1),
-        'reviewCount' => (string) (int) $ratingRow['total_reviews'],
-    ] : null,
-]);
-?>
-<script type="application/ld+json">
-<?= json_encode($organizationSchema) ?>
-</script>
-<script type="application/ld+json">
-<?= json_encode([
-    '@context' => 'https://schema.org',
-    '@type' => 'WebSite',
-    '@id' => APP_URL . '/#website',
-    'name' => get_setting('site_name', SITE_NAME),
-    'url' => APP_URL,
-    'publisher' => ['@id' => APP_URL . '/#organization'],
-    'potentialAction' => [
-        '@type' => 'SearchAction',
-        'target' => [
-            '@type' => 'EntryPoint',
-            'urlTemplate' => APP_URL . '/doctors?q={search_term_string}',
-        ],
-        'query-input' => 'required name=search_term_string',
-    ],
-]) ?>
-</script>
-
 <section class="hero">
     <div class="floating-shape" style="width:70px;height:70px;background:var(--color-accent);opacity:0.5;top:140px;left:6%;"></div>
     <div class="floating-shape" style="width:40px;height:40px;background:var(--color-primary);opacity:0.4;top:280px;left:14%;animation-delay:1.2s;"></div>
@@ -221,31 +154,7 @@ $organizationSchema = array_filter([
             <p>Highly rated, premium-verified specialists accepting new patients this week.</p>
         </div>
         <div class="grid grid-3 stagger">
-            <?php foreach ($featuredDoctors as $d): ?>
-            <div class="card card-hover doctor-card" data-reveal data-tilt>
-                <div class="doctor-card-top">
-                    <img src="<?= e(avatar_url($d['avatar'], $d['full_name'])) ?>" alt="<?= e($d['full_name']) ?>">
-                    <div>
-                        <h3><?= e($d['full_name']) ?></h3>
-                        <div class="spec"><?= e(specialization_names($d['specializations']) ?: 'General') ?></div>
-                        <div class="rating"><i class="ri-star-fill"></i> <?= number_format($d['rating_avg'], 1) ?> (<?= (int)$d['rating_count'] ?>)</div>
-                    </div>
-                </div>
-                <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                    <span class="badge badge-verified"><i class="ri-verified-badge-fill"></i> Verified</span>
-                    <?php if ($d['is_premium']): ?><span class="badge badge-premium"><i class="ri-vip-crown-fill"></i> Premium</span><?php endif; ?>
-                    <?php if ($d['free_consultation']): ?><span class="badge badge-free">Free Consult</span><?php endif; ?>
-                </div>
-                <div class="doctor-card-meta">
-                    <span><i class="ri-briefcase-line"></i> <?= (int)$d['experience_years'] ?> yrs exp</span>
-                    <span><i class="ri-map-pin-line"></i> <?= e($d['clinic_city'] ?: 'Online') ?></span>
-                </div>
-                <div class="doctor-card-footer">
-                    <div class="fee"><?= format_currency($d['consultation_fee_online']) ?> <small>/ online</small></div>
-                    <a href="<?= e(doctor_url($d['slug'])) ?>" class="btn btn-outline btn-sm">View Profile</a>
-                </div>
-            </div>
-            <?php endforeach; ?>
+            <?php foreach ($featuredDoctors as $d): require __DIR__ . '/includes/doctor-card.php'; endforeach; ?>
         </div>
         <div style="text-align:center;margin-top:44px;" data-reveal>
             <a href="/doctors" class="btn btn-primary">Browse All Doctors <i class="ri-arrow-right-line"></i></a>

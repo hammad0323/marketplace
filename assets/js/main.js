@@ -146,6 +146,25 @@
         return schedule;
     };
 
+    // ---- Doctor SEO meta title/description builder (shared by doctor --------
+    // self-service profile + admin Add/Edit Doctor) — mirrors
+    // doctor_meta_title()/doctor_meta_description() in includes/functions.php
+    // so the suggestion shown while editing matches what the live page would
+    // fall back to if the field is left blank.
+    window.buildDoctorSeoText = function (fullName, designation, qualification, specNames, siteName) {
+        fullName = (fullName || '').trim();
+        designation = (designation || '').trim();
+        qualification = (qualification || '').trim();
+        specNames = (specNames || '').trim();
+        siteName = siteName || 'DoctorApna';
+        if (!fullName) return { title: '', description: '' };
+        var role = designation || qualification;
+        var title = [fullName, role, specNames].filter(Boolean).join(' — ');
+        var description = fullName + ' is a ' + (role || 'doctor') + ' specializing in ' + (specNames || 'multiple specialties')
+            + '. View profile, qualifications, specialization and professional details on ' + siteName + '.';
+        return { title: title, description: description };
+    };
+
     // ---- Scroll reveal animations ------------------------------------------------
     var revealEls = document.querySelectorAll('[data-reveal]');
     if ('IntersectionObserver' in window && revealEls.length) {

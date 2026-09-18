@@ -1,7 +1,7 @@
         </div>
     </main>
 </div>
-<script>window.APP = { loggedIn: true, role: <?= json_encode(current_role()) ?>, csrfToken: <?= json_encode(csrf_token()) ?>, currencySymbol: <?= json_encode(get_setting('currency_symbol', '$')) ?> };</script>
+<script>window.APP = { loggedIn: true, role: <?= json_encode(current_role()) ?>, csrfToken: <?= json_encode(csrf_token()) ?>, currencySymbol: <?= json_encode(get_setting('currency_symbol', '$')) ?>, siteName: <?= json_encode(get_setting('site_name', SITE_NAME)) ?> };</script>
 <script defer src="<?= asset_url('/assets/js/vendor/jquery.min.js') ?>"></script>
 <script defer src="<?= asset_url('/assets/js/toast.js') ?>"></script>
 <script defer src="<?= asset_url('/assets/js/main.js') ?>"></script>

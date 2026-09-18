@@ -304,11 +304,22 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
 .badge-pending { background: rgba(245,158,11,0.12); color: #B45309; }
 .rating { display: flex; align-items: center; gap: 4px; font-size: 13.5px; color: var(--color-text-muted); }
 .rating i { color: #F59E0B; }
+.rating-new { color: var(--color-primary); font-weight: 600; font-size: 12.5px; }
 .doctor-card-meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12.5px; color: var(--color-text-muted); }
 .doctor-card-meta span { display: flex; align-items: center; gap: 4px; }
 .doctor-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--color-border); }
 .fee { font-weight: 800; font-size: 17px; }
 .fee small { font-weight: 500; font-size: 12px; color: var(--color-text-muted); }
+
+.pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 36px; }
+.page-link {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 40px; height: 40px; padding: 0 8px; border-radius: var(--radius-full);
+    border: 1.5px solid var(--color-border); background: var(--color-surface);
+    color: var(--color-text); font-size: 14px; font-weight: 600; transition: var(--transition);
+}
+.page-link:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.page-link.active { background: var(--gradient-primary); border-color: transparent; color: #fff; }
 
 /* ---- Forms ------------------------------------------------------------------ */
 .form-group { margin-bottom: 20px; position: relative; }
@@ -353,7 +364,7 @@ textarea.form-control { resize: vertical; min-height: 110px; }
    overflow its column and get visually cut off by a sibling (e.g. the
    sticky booking sidebar) instead of wrapping normally. */
 .rich-content { max-width: 100%; overflow-wrap: break-word; word-break: break-word; }
-.rich-content * { max-width: 100% !important; white-space: normal !important; }
+.rich-content * { max-width: 100% !important; white-space: normal !important; position: static !important; float: none !important; }
 .rich-content h2 { font-size: 24px; margin: 28px 0 12px; }
 .rich-content h3 { font-size: 20px; margin: 22px 0 10px; }
 .rich-content p { margin: 0 0 16px; line-height: 1.8; }

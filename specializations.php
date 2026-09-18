@@ -8,6 +8,7 @@ $specs = mysqli_query(db(), "
 
 $pageTitle = 'Medical Specializations — ' . SITE_NAME;
 $metaDescription = 'Browse all medical specializations available on ' . SITE_NAME . ' and find the right doctor for your needs.';
+$breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Specializations']];
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);">

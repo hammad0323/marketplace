@@ -34,6 +34,7 @@ $pageTitle = $post['meta_title'] ?: ($post['title'] . ' — ' . SITE_NAME);
 $metaDescription = $post['meta_description'] ?: excerpt($post['excerpt'] ?: strip_tags($post['content']), 155);
 $ogImage = $post['featured_image'] ? APP_URL . '/uploads/' . $post['featured_image'] : null;
 $canonical = APP_URL . blog_url($post['slug']);
+$breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Blog', 'url' => APP_URL . '/blog'], ['name' => $post['title']]];
 $extraHead = '<script type="application/ld+json">' . json_encode([
     '@context' => 'https://schema.org', '@type' => 'BlogPosting', 'headline' => $post['title'],
     'datePublished' => $post['published_at'], 'author' => ['@type' => 'Person', 'name' => $post['author_name']],
@@ -61,7 +62,7 @@ require __DIR__ . '/includes/header.php';
         <img src="/uploads/<?= e($post['featured_image']) ?>" alt="<?= e($post['title']) ?>" style="width:100%;max-height:420px;object-fit:cover;border-radius:var(--radius-md);margin-bottom:28px;" data-reveal>
         <?php endif; ?>
 
-        <div class="rich-content" data-reveal><?= $post['content'] ?></div>
+        <div class="rich-content" data-reveal><?= render_rich_html($post['content']) ?></div>
 
         <?php if ($related): ?>
         <div class="divider-fade"></div>

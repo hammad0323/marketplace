@@ -59,6 +59,7 @@ $categories = mysqli_query(db(), "SELECT DISTINCT category FROM medicine_info WH
 $pageTitle = ($q !== '' ? 'Search: ' . $q . ' — ' : ($letter !== '' ? $letter . ' — ' : '')) . 'Medicine Information — ' . SITE_NAME;
 $metaDescription = 'Search dosage, uses, side effects, and precautions for medicines, contributed by verified doctors on ' . SITE_NAME . '.';
 $canonical = filtered_canonical('/medicines', ['q' => $q, 'category' => $category, 'letter' => $letter]);
+$breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Medicine Information']];
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);padding-bottom:0;">

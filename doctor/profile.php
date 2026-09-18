@@ -63,17 +63,17 @@ require __DIR__ . '/includes/header.php';
                 <form id="profile-form" data-endpoint="/ajax/doctor-profile-update.php" novalidate>
                     <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
                     <div class="grid grid-2">
-                        <div class="form-group" data-field="full_name"><label class="form-label">Full Name</label><input type="text" class="form-control" name="full_name" value="<?= e($user['full_name']) ?>" required><div class="form-error"></div></div>
+                        <div class="form-group" data-field="full_name"><label class="form-label">Full Name</label><input type="text" class="form-control" name="full_name" id="doctor-full-name-field" value="<?= e($user['full_name']) ?>" required><div class="form-error"></div></div>
                         <div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-control" name="phone" value="<?= e($user['phone']) ?>"></div>
                     </div>
                     <div class="grid grid-2">
-                        <div class="form-group"><label class="form-label">Designation</label><input type="text" class="form-control" name="designation" placeholder="e.g. Consultant Cardiologist" value="<?= e($doctor['designation']) ?>"></div>
-                        <div class="form-group"><label class="form-label">Qualification</label><input type="text" class="form-control" name="qualification" value="<?= e($doctor['qualification']) ?>"></div>
+                        <div class="form-group"><label class="form-label">Designation</label><input type="text" class="form-control" name="designation" id="doctor-designation-field" placeholder="e.g. Consultant Cardiologist" value="<?= e($doctor['designation']) ?>"></div>
+                        <div class="form-group"><label class="form-label">Qualification</label><input type="text" class="form-control" name="qualification" id="doctor-qualification-field" value="<?= e($doctor['qualification']) ?>"></div>
                     </div>
                     <div class="form-group"><label class="form-label">Years of Experience</label><input type="number" min="0" class="form-control" name="experience_years" value="<?= (int)$doctor['experience_years'] ?>" style="max-width:200px;"></div>
                     <div class="form-group">
                         <label class="form-label">Specializations <span style="font-weight:400;color:var(--color-text-muted);">(select one or more)</span></label>
-                        <div class="grid grid-3" style="gap:8px;">
+                        <div class="grid grid-3" style="gap:8px;" id="doctor-specializations-field">
                             <?php while ($s = mysqli_fetch_assoc($allSpecializations)): ?>
                             <label class="checkbox-row" style="border:1.5px solid var(--color-border);border-radius:var(--radius-sm);padding:10px 12px;">
                                 <input type="checkbox" name="specialization_ids[]" value="<?= (int)$s['id'] ?>" <?= in_array((int)$s['id'], $doctorSpecIds, true) ? 'checked' : '' ?>> <?= e($s['name']) ?>
@@ -101,9 +101,9 @@ require __DIR__ . '/includes/header.php';
                     </div>
                     <div class="divider-fade"></div>
                     <h4 style="margin-bottom:4px;">SEO <span style="font-weight:400;color:var(--color-text-muted);font-size:13px;">(optional)</span></h4>
-                    <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:14px;">Leave blank to auto-generate from your name/specialization and bio.</p>
-                    <div class="form-group"><label class="form-label">Meta Title</label><input type="text" class="form-control" name="meta_title" maxlength="200" value="<?= e($doctor['meta_title']) ?>" placeholder="Defaults to: Your Name — Specialization"></div>
-                    <div class="form-group"><label class="form-label">Meta Description</label><textarea class="form-control" name="meta_description" rows="2" maxlength="300" placeholder="Defaults to your bio"><?= e($doctor['meta_description']) ?></textarea></div>
+                    <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:14px;">Auto-filled from your name, designation, and specialization below — edit freely, or clear it to let the suggestion take over again.</p>
+                    <div class="form-group"><label class="form-label">Meta Title</label><input type="text" class="form-control" name="meta_title" id="doctor-meta-title-field" maxlength="200" value="<?= e($doctor['meta_title']) ?>"></div>
+                    <div class="form-group"><label class="form-label">Meta Description</label><textarea class="form-control" name="meta_description" id="doctor-meta-description-field" rows="2" maxlength="300"><?= e($doctor['meta_description']) ?></textarea></div>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
                 </form>
             </div>

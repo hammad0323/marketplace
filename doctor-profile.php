@@ -64,9 +64,10 @@ if ($privacy['show_reviews']) {
     mysqli_stmt_close($stmt);
 }
 
-$pageTitle = ($doctor['meta_title'] ?: ($doctor['full_name'] . ' — ' . ($specNames ?: 'Doctor'))) . ' | ' . SITE_NAME;
-$metaDescription = $doctor['meta_description'] ?: excerpt($doctor['bio'] ?: ($doctor['full_name'] . ' is a verified ' . ($specNames ?: 'doctor') . ' on ' . SITE_NAME . '.'), 155);
+$pageTitle = ($doctor['meta_title'] ?: doctor_meta_title($doctor['full_name'], $doctor['designation'], $doctor['qualification'], $specNames)) . ' | ' . get_setting('site_name', SITE_NAME);
+$metaDescription = $doctor['meta_description'] ?: doctor_meta_description($doctor['full_name'], $doctor['designation'], $doctor['qualification'], $specNames);
 $canonical = APP_URL . doctor_url($doctor['slug']);
+$breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Find Doctors', 'url' => APP_URL . '/doctors'], ['name' => $doctor['full_name']]];
 
 // FAQPage answers only what the doctor/admin has chosen to show publicly
 // (respects the same privacy toggles as the rest of this page) — an AEO/GEO
@@ -150,7 +151,7 @@ require __DIR__ . '/includes/header.php';
                     <?php if ($hasBio): ?>
                     <div class="card" style="padding:28px;margin-bottom:20px;" data-reveal>
                         <h4 style="margin-bottom:12px;">About</h4>
-                        <div class="rich-content" style="color:var(--color-text-muted);"><?= $doctor['bio'] ?></div>
+                        <div class="rich-content" style="color:var(--color-text-muted);"><?= render_rich_html($doctor['bio']) ?></div>
                     </div>
                     <?php endif; ?>
                     <?php if ($privacy['show_clinic_address'] && $doctor['clinic_name']): ?>

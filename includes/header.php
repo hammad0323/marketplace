@@ -19,6 +19,7 @@ $metaDescription = $metaDescription ?? get_setting('site_tagline', 'Book verifie
 $metaKeywords = $metaKeywords ?? 'telemedicine, doctors, online consultation, book appointment, healthcare';
 $canonical = $canonical ?? (APP_URL . strtok($_SERVER['REQUEST_URI'], '?'));
 $ogImage = $ogImage ?? APP_URL . '/assets/img/og-default.svg';
+$breadcrumbs = $breadcrumbs ?? null;
 $user = current_user();
 ?><!DOCTYPE html>
 <html lang="en">
@@ -41,6 +42,7 @@ $user = current_user();
 <meta name="twitter:title" content="<?= e($pageTitle) ?>">
 <meta name="twitter:description" content="<?= e($metaDescription) ?>">
 <meta name="twitter:image" content="<?= e($ogImage) ?>">
+<?php render_page_schema($pageTitle, $metaDescription, $canonical, $breadcrumbs); ?>
 
 <?= favicon_tag_html() ?>
 <link rel="preconnect" href="https://fonts.googleapis.com">

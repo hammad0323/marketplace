@@ -57,7 +57,7 @@ $footerSpecs = mysqli_query(db(), 'SELECT name, slug FROM specializations WHERE 
 <?php require __DIR__ . '/guest-contact-modal.php'; ?>
 
 <script>
-window.APP = { loggedIn: <?= is_logged_in() ? 'true' : 'false' ?>, role: <?= json_encode(current_role()) ?>, csrfToken: <?= json_encode(csrf_token()) ?>, currencySymbol: <?= json_encode(get_setting('currency_symbol', '$')) ?> };
+window.APP = { loggedIn: <?= is_logged_in() ? 'true' : 'false' ?>, role: <?= json_encode(current_role()) ?>, csrfToken: <?= json_encode(csrf_token()) ?>, currencySymbol: <?= json_encode(get_setting('currency_symbol', '$')) ?>, siteName: <?= json_encode(get_setting('site_name', SITE_NAME)) ?> };
 </script>
 <script defer src="<?= asset_url('/assets/js/vendor/jquery.min.js') ?>"></script>
 <script defer src="<?= asset_url('/assets/js/toast.js') ?>"></script>

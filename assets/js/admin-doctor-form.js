@@ -40,6 +40,36 @@
         }
     }
 
+    // SEO meta title/description auto-fill. Dirty tracking (not just "is it
+    // empty") matters here: an emptiness check alone freezes after the very
+    // first keystroke in Full Name, since that already makes the title
+    // non-empty. Instead each SEO field only stops updating once the admin
+    // actually types into *that* field themselves — programmatic .val()
+    // writes don't fire 'input', so this cleanly tells the two apart.
+    var $seoTitle = $('#doctor-meta-title');
+    var $seoDesc = $('#doctor-meta-description');
+    var titleDirty = false;
+    var descDirty = false;
+    $seoTitle.on('input', function () { titleDirty = true; });
+    $seoDesc.on('input', function () { descDirty = true; });
+
+    function refreshDoctorSeo() {
+        var specNames = $('#doctor-specializations input:checked').map(function () {
+            return $(this).closest('label').text().trim();
+        }).get().join(', ');
+        var seo = window.buildDoctorSeoText(
+            $('#doctor-full-name').val(),
+            $('#doctor-designation').val(),
+            $('#doctor-qualification').val(),
+            specNames,
+            window.APP.siteName
+        );
+        if (!titleDirty) $seoTitle.val(seo.title);
+        if (!descDirty) $seoDesc.val(seo.description);
+    }
+    $('#doctor-full-name, #doctor-designation, #doctor-qualification').on('input', refreshDoctorSeo);
+    $('#doctor-specializations').on('change', 'input[type="checkbox"]', refreshDoctorSeo);
+
     function resetAvailability() {
         $('#admin-availability-days .avail-enabled').prop('checked', false);
     }
@@ -61,6 +91,8 @@
         $('#doctor-password-label').text('Password');
         $('#doctor-password').attr('placeholder', 'Leave blank to auto-generate');
         setBioContent('');
+        titleDirty = false;
+        descDirty = false;
         openModal('Add Doctor');
     });
 
@@ -92,11 +124,14 @@
             $('#doctor-clinic-country').val(d.clinic_country);
             $('#doctor-meta-title').val(d.meta_title);
             $('#doctor-meta-description').val(d.meta_description);
+            titleDirty = !!(d.meta_title && d.meta_title.trim());
+            descDirty = !!(d.meta_description && d.meta_description.trim());
 
             $('#doctor-specializations input[type="checkbox"]').prop('checked', false);
             (res.specialization_ids || []).forEach(function (sid) {
                 $('#doctor-specializations input[value="' + sid + '"]').prop('checked', true);
             });
+            refreshDoctorSeo();
 
             setAvailabilitySchedule(res.schedule);
             openModal('Edit Doctor');

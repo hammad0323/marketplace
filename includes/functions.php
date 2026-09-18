@@ -287,6 +287,154 @@ function excerpt($text, $length = 140)
     return mb_strlen($text) > $length ? mb_substr($text, 0, $length) . '…' : $text;
 }
 
+/**
+ * Renders rich-editor HTML (bio/description/etc.) safely inside its wrapping
+ * card. Content saved before the editor's paste-as-plain-text fix (or any
+ * other source of hand-pasted HTML) can carry an unbalanced tag — a stray
+ * closing tag closes the real ".rich-content"/".card" wrapper early in the
+ * browser, so the rest of the content renders outside it on the page
+ * background. Parsing as an HTML fragment and re-serializing repairs
+ * unbalanced/unclosed tags before they ever reach the page's HTML string.
+ */
+function render_rich_html($html)
+{
+    $html = trim((string) $html);
+    if ($html === '') {
+        return '';
+    }
+    libxml_use_internal_errors(true);
+    $dom = new DOMDocument();
+    $dom->loadHTML('<?xml encoding="utf-8"?><html><body>' . $html . '</body></html>', LIBXML_NOERROR | LIBXML_NOWARNING);
+    libxml_clear_errors();
+    $body = $dom->getElementsByTagName('body')->item(0);
+    if (!$body) {
+        return $html;
+    }
+    $out = '';
+    foreach ($body->childNodes as $child) {
+        $out .= $dom->saveHTML($child);
+    }
+    return $out;
+}
+
+// ---------------------------------------------------------------------------
+// Sitewide structured data (JSON-LD). organization_schema()/website_schema()
+// are the site-level nodes shared by every page; render_page_schema() combines
+// them with a per-page WebPage node (and an optional BreadcrumbList) into one
+// @graph, and is called once from includes/header.php so every page — static
+// or dynamic — gets it without repeating the boilerplate itself.
+// ---------------------------------------------------------------------------
+function organization_schema()
+{
+    $ratingRow = mysqli_fetch_assoc(mysqli_query(db(), "
+        SELECT AVG(rating_avg) AS avg_rating, SUM(rating_count) AS total_reviews
+        FROM doctors WHERE verification_status = 'verified' AND rating_count > 0
+    "));
+    $logoUrl = get_setting('site_logo') ? APP_URL . '/uploads/' . get_setting('site_logo') : APP_URL . '/assets/img/favicon.svg';
+    return array_filter([
+        '@type' => 'MedicalBusiness',
+        '@id' => APP_URL . '/#organization',
+        'name' => get_setting('site_name', SITE_NAME),
+        'alternateName' => SITE_NAME,
+        'url' => APP_URL,
+        'description' => get_setting('site_tagline') ?: null,
+        'logo' => $logoUrl,
+        'image' => $logoUrl,
+        'priceRange' => '$$',
+        'medicalSpecialty' => array_values(array_filter(array_map(fn($s) => $s['name'] ?? null,
+            mysqli_query(db(), 'SELECT name FROM specializations WHERE is_active = 1 ORDER BY sort_order LIMIT 10')->fetch_all(MYSQLI_ASSOC)
+        ))),
+        'address' => array_filter([
+            '@type' => 'PostalAddress',
+            'streetAddress' => get_setting('contact_address') ?: null,
+        ]) ?: null,
+        'contactPoint' => array_filter([
+            '@type' => 'ContactPoint',
+            'contactType' => 'customer support',
+            'telephone' => get_setting('contact_phone') ?: null,
+            'email' => get_setting('contact_email') ?: null,
+            'availableLanguage' => ['English'],
+        ]) ?: null,
+        'sameAs' => array_values(array_filter([
+            get_setting('facebook_url') ?: null,
+            get_setting('twitter_url') ?: null,
+            get_setting('instagram_url') ?: null,
+            get_setting('linkedin_url') ?: null,
+        ])) ?: null,
+        'aggregateRating' => ($ratingRow && $ratingRow['avg_rating']) ? [
+            '@type' => 'AggregateRating',
+            'ratingValue' => number_format((float) $ratingRow['avg_rating'], 1),
+            'reviewCount' => (string) (int) $ratingRow['total_reviews'],
+        ] : null,
+    ]);
+}
+
+function website_schema()
+{
+    return array_filter([
+        '@type' => 'WebSite',
+        '@id' => APP_URL . '/#website',
+        'name' => get_setting('site_name', SITE_NAME),
+        'url' => APP_URL,
+        'description' => get_setting('site_tagline') ?: null,
+        'publisher' => ['@id' => APP_URL . '/#organization'],
+        'potentialAction' => [
+            '@type' => 'SearchAction',
+            'target' => ['@type' => 'EntryPoint', 'urlTemplate' => APP_URL . '/doctors?q={search_term_string}'],
+            'query-input' => 'required name=search_term_string',
+        ],
+    ]);
+}
+
+/**
+ * @param array $items List of ['name' => ..., 'url' => ...] in trail order
+ *   (Home first). 'url' is optional on the last/current item.
+ */
+function breadcrumb_schema($items, $pageUrl)
+{
+    if (!$items) {
+        return null;
+    }
+    $position = 0;
+    return [
+        '@type' => 'BreadcrumbList',
+        '@id' => $pageUrl . '#breadcrumb',
+        'itemListElement' => array_map(function ($item) use (&$position) {
+            $position++;
+            return array_filter([
+                '@type' => 'ListItem',
+                'position' => $position,
+                'name' => $item['name'],
+                'item' => $item['url'] ?? null,
+            ]);
+        }, $items),
+    ];
+}
+
+/**
+ * Echoes the sitewide JSON-LD graph for the current page. $breadcrumbs is
+ * optional — pages that don't set one (before requiring header.php) simply
+ * get Organization + WebSite + WebPage, no BreadcrumbList.
+ */
+function render_page_schema($pageTitle, $metaDescription, $pageUrl, $breadcrumbs = null)
+{
+    $graph = [organization_schema(), website_schema()];
+    $graph[] = array_filter([
+        '@type' => 'WebPage',
+        '@id' => $pageUrl . '#webpage',
+        'url' => $pageUrl,
+        'name' => $pageTitle,
+        'description' => $metaDescription,
+        'isPartOf' => ['@id' => APP_URL . '/#website'],
+        'breadcrumb' => $breadcrumbs ? ['@id' => $pageUrl . '#breadcrumb'] : null,
+    ]);
+    $crumbSchema = breadcrumb_schema($breadcrumbs, $pageUrl);
+    if ($crumbSchema) {
+        $graph[] = $crumbSchema;
+    }
+    echo '<script type="application/ld+json">' . json_encode(['@context' => 'https://schema.org', '@graph' => $graph]) . '</script>' . "\n";
+}
+
 function day_name($index)
 {
     return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][$index] ?? '';
@@ -339,6 +487,36 @@ function get_doctor_specializations($doctorId)
 function specialization_names($specializations)
 {
     return implode(', ', array_column($specializations, 'name'));
+}
+
+/**
+ * SEO-optimized fallback <title> for a doctor's public profile — used when
+ * the doctor/admin hasn't set a custom meta title, and to pre-fill the SEO
+ * form field so they can see and tweak the suggestion before saving.
+ */
+function doctor_meta_title($fullName, $designation, $qualification, $specNames)
+{
+    $role = $designation ?: $qualification;
+    return implode(' — ', array_filter([$fullName, $role ?: null, $specNames ?: null]));
+}
+
+/**
+ * SEO-optimized fallback meta description for a doctor's public profile —
+ * same "pre-fill the form, fall back on the live page" role as
+ * doctor_meta_title() above. Deliberately built from name/designation/
+ * specialization rather than the bio, so it stays a consistent length and
+ * keyword-focused regardless of how (or whether) the doctor writes their bio.
+ */
+function doctor_meta_description($fullName, $designation, $qualification, $specNames)
+{
+    if (!$fullName) {
+        return '';
+    }
+    $role = $designation ?: ($qualification ?: 'doctor');
+    $spec = $specNames ?: 'multiple specialties';
+    return $fullName . ' is a ' . $role . ' specializing in ' . $spec
+        . '. View profile, qualifications, specialization and professional details on '
+        . get_setting('site_name', SITE_NAME) . '.';
 }
 
 /** Replaces a doctor's specialization set with the given ids (validated against the specializations table). */

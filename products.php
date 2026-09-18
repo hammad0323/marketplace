@@ -92,6 +92,7 @@ $metaDescription = 'Browse health products and service packages offered directly
 $canonical = filtered_canonical('/products', [
     'q' => $q, 'category' => $categorySlug, 'type' => $type, 'min_price' => $minPrice, 'max_price' => $maxPrice,
 ]);
+$breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Products & Services']];
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);padding-bottom:0;">

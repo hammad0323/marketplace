@@ -67,6 +67,7 @@ $pageTitle = ($product['meta_title'] ?: ($product['name'] . ' — ' . SITE_NAME)
 $metaDescription = $product['meta_description'] ?: excerpt($product['description'] ?: $product['name'], 155);
 $ogImage = $product['image'] ? APP_URL . '/uploads/' . $product['image'] : null;
 $canonical = APP_URL . product_url($product['slug']);
+$breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Products & Services', 'url' => APP_URL . '/products'], ['name' => $product['name']]];
 $extraHead = '<script type="application/ld+json">' . json_encode(array_filter([
     '@context' => 'https://schema.org',
     '@type' => $product['type'] === 'service' ? 'Service' : 'Product',

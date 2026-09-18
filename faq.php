@@ -9,6 +9,7 @@ $extraHead = '<script type="application/ld+json">' . json_encode(['@context' => 
     return ['@type' => 'Question', 'name' => $f['question'], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => strip_tags($f['answer'])]];
 }, mysqli_fetch_all($faqs, MYSQLI_ASSOC))]) . '</script>';
 mysqli_data_seek($faqs, 0);
+$breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'FAQ']];
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);">

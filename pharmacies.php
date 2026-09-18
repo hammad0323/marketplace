@@ -46,6 +46,7 @@ mysqli_stmt_close($stmt);
 $pageTitle = 'Find Pharmacies — ' . SITE_NAME;
 $metaDescription = 'Browse verified pharmacies and medicine stores. Order medicines directly from registered, verified sellers.';
 $canonical = filtered_canonical('/pharmacies', ['q' => $q, 'city' => $city]);
+$breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Find Pharmacies']];
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);padding-bottom:0;">

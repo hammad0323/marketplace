@@ -3,6 +3,7 @@ require __DIR__ . '/config/config.php';
 
 $pageTitle = 'Contact Us — ' . SITE_NAME;
 $metaDescription = 'Get in touch with the ' . SITE_NAME . ' team for support, partnerships, or general questions.';
+$breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Contact Us']];
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);">

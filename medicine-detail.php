@@ -48,6 +48,7 @@ $pageTitle = $medicine['meta_title'] ?: ($medicine['name'] . ' — Uses, Dosage 
 $metaDescription = $medicine['meta_description'] ?: excerpt($medicine['uses'] ?: strip_tags($medicine['content']), 155);
 $ogImage = $medicine['featured_image'] ? APP_URL . '/uploads/' . $medicine['featured_image'] : null;
 $canonical = APP_URL . medicine_url($medicine['slug']);
+$breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Medicine Information', 'url' => APP_URL . '/medicines'], ['name' => $medicine['name']]];
 $extraHead = '<script type="application/ld+json">' . json_encode(array_filter([
     '@context' => 'https://schema.org', '@type' => 'Drug', 'name' => $medicine['name'],
     'nonProprietaryName' => $medicine['generic_name'],
@@ -138,29 +139,29 @@ function med_section_heading($id, $icon, $color, $title)
 
         <?php if ($medicine['content']): ?>
         <?php med_section_heading('about', 'ri-information-line', 'var(--color-primary)', 'About ' . $medicine['name']); ?>
-        <div class="rich-content" style="margin-bottom:36px;" data-reveal><?= $medicine['content'] ?></div>
+        <div class="rich-content" style="margin-bottom:36px;" data-reveal><?= render_rich_html($medicine['content']) ?></div>
         <?php endif; ?>
 
         <?php if ($medicine['uses']): ?>
         <?php med_section_heading('uses', 'ri-time-line', '#0EA5E9', $medicine['name'] . ' Uses'); ?>
-        <div class="rich-content" style="margin-bottom:36px;" data-reveal><?= $medicine['uses'] ?></div>
+        <div class="rich-content" style="margin-bottom:36px;" data-reveal><?= render_rich_html($medicine['uses']) ?></div>
         <?php endif; ?>
 
         <?php if ($medicine['dosage']): ?>
         <?php med_section_heading('dosage', 'ri-capsule-line', 'var(--color-primary)', $medicine['name'] . ' Dosage &amp; Administration'); ?>
-        <div class="rich-content" style="margin-bottom:36px;" data-reveal><?= $medicine['dosage'] ?></div>
+        <div class="rich-content" style="margin-bottom:36px;" data-reveal><?= render_rich_html($medicine['dosage']) ?></div>
         <?php endif; ?>
 
         <?php if ($medicine['precautions']): ?>
         <?php med_section_heading('precautions', 'ri-shield-flash-line', '#F59E0B', $medicine['name'] . ' Precautions &amp; Warnings'); ?>
         <div class="card" style="padding:20px 24px;margin-bottom:36px;border-left:3px solid #F59E0B;" data-reveal>
-            <div class="rich-content" style="margin-bottom:0;"><?= $medicine['precautions'] ?></div>
+            <div class="rich-content" style="margin-bottom:0;"><?= render_rich_html($medicine['precautions']) ?></div>
         </div>
         <?php endif; ?>
 
         <?php if ($medicine['side_effects']): ?>
         <?php med_section_heading('side-effects', 'ri-alert-line', '#A855F7', $medicine['name'] . ' Side Effects'); ?>
-        <div class="rich-content" style="margin-bottom:36px;" data-reveal><?= $medicine['side_effects'] ?></div>
+        <div class="rich-content" style="margin-bottom:36px;" data-reveal><?= render_rich_html($medicine['side_effects']) ?></div>
         <?php endif; ?>
 
         <?php if ($displayFaqs): ?>
