@@ -18,7 +18,7 @@ $availByDay = []; // blank defaults for the modal; edit mode fetches + populates
 
 $pageTitle = 'Doctors';
 $heading = 'Manage Doctors';
-$extraScripts = '<script defer src="' . asset_url('/assets/js/admin-doctors.js') . '"></script><script defer src="' . asset_url('/assets/js/admin-doctor-form.js') . '"></script>';
+$extraScripts = '<script defer src="' . asset_url('/assets/js/rich-editor.js') . '"></script><script defer src="' . asset_url('/assets/js/admin-doctors.js') . '"></script><script defer src="' . asset_url('/assets/js/admin-doctor-form.js') . '"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:4px;">
@@ -115,7 +115,11 @@ require __DIR__ . '/includes/header.php';
                     </div>
                     <div class="form-error"></div>
                 </div>
-                <div class="form-group"><label class="form-label">Bio</label><textarea class="form-control" name="bio" id="doctor-bio" rows="4"></textarea></div>
+                <div class="form-group">
+                    <label class="form-label">Bio</label>
+                    <div data-rich-editor data-target="#doctor-bio" data-upload-url="/ajax/medicine-image-upload.php"></div>
+                    <textarea id="doctor-bio" name="bio"></textarea>
+                </div>
 
                 <div class="divider-fade"></div>
                 <h4 style="margin-bottom:14px;">Consultation & Clinic</h4>

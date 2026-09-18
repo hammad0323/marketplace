@@ -25,6 +25,7 @@ if (!$doctor || $doctor['verification_status'] !== 'verified') {
 mysqli_query(db(), 'UPDATE doctors SET profile_views = profile_views + 1 WHERE id = ' . (int) $doctor['id']);
 $doctorSpecializations = get_doctor_specializations($doctor['id']);
 $specNames = specialization_names($doctorSpecializations);
+$hasBio = trim(strip_tags($doctor['bio'] ?? '')) !== '';
 
 $stmt = mysqli_prepare(db(), 'SELECT * FROM doctor_privacy_settings WHERE doctor_id = ? LIMIT 1');
 mysqli_stmt_bind_param($stmt, 'i', $doctor['id']);
@@ -73,8 +74,15 @@ $canonical = APP_URL . doctor_url($doctor['slug']);
 // instead of having to parse the page's prose.
 $faqEntries = [];
 $faqEntries[] = ['q' => 'Is ' . $doctor['full_name'] . ' accepting new patients?', 'a' => 'Yes, ' . $doctor['full_name'] . ' is a verified provider on ' . SITE_NAME . ' currently accepting online bookings.'];
-if ($privacy['show_fees']) {
-    $faqEntries[] = ['q' => 'What are ' . $doctor['full_name'] . "'s consultation fees?", 'a' => 'Online consultations are ' . format_currency($doctor['consultation_fee_online']) . ' and in-person consultations are ' . format_currency($doctor['consultation_fee_physical']) . ($doctor['free_consultation'] ? '. Free consultation slots are also offered.' : '.')];
+$feeOnline = (float) $doctor['consultation_fee_online'];
+$feePhysical = (float) $doctor['consultation_fee_physical'];
+if ($privacy['show_fees'] && ($feeOnline > 0 || $feePhysical > 0 || $doctor['free_consultation'])) {
+    $feeParts = [];
+    if ($feeOnline > 0) $feeParts[] = 'online consultations are ' . format_currency($feeOnline);
+    if ($feePhysical > 0) $feeParts[] = 'in-person consultations are ' . format_currency($feePhysical);
+    $feeAnswer = $feeParts ? ucfirst(implode(' and ', $feeParts)) . '.' : '';
+    if ($doctor['free_consultation']) $feeAnswer .= ' Free consultation slots are also offered.';
+    $faqEntries[] = ['q' => 'What are ' . $doctor['full_name'] . "'s consultation fees?", 'a' => trim($feeAnswer)];
 }
 if ($specNames) {
     $faqEntries[] = ['q' => 'What does ' . $doctor['full_name'] . ' specialize in?', 'a' => $doctor['full_name'] . ' specializes in ' . $specNames . ($doctor['experience_years'] ? ', with ' . (int) $doctor['experience_years'] . ' years of experience.' : '.')];
@@ -101,7 +109,7 @@ require __DIR__ . '/includes/header.php';
             <span><?= e($doctor['full_name']) ?></span>
         </nav>
 
-        <div class="split-sidebar-right" style="gap:32px;">
+        <div class="split-sidebar-right doctor-profile-layout" style="gap:32px;">
             <div>
                 <div class="card" style="padding:32px;margin-bottom:24px;" data-reveal>
                     <div style="display:flex;gap:20px;flex-wrap:wrap;">
@@ -122,8 +130,8 @@ require __DIR__ . '/includes/header.php';
                                 <?php if ($privacy['show_free_consultation'] && $doctor['free_consultation']): ?><span class="badge badge-free">Free Consultation</span><?php endif; ?>
                             </div>
                             <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:13.5px;color:var(--color-text-muted);">
-                                <span class="rating"><i class="ri-star-fill"></i> <?= number_format($doctor['rating_avg'], 1) ?> (<?= (int)$doctor['rating_count'] ?> reviews)</span>
-                                <span><i class="ri-briefcase-line"></i> <?= (int)$doctor['experience_years'] ?> years experience</span>
+                                <?php if ((int)$doctor['rating_count'] > 0): ?><span class="rating"><i class="ri-star-fill"></i> <?= number_format($doctor['rating_avg'], 1) ?> (<?= (int)$doctor['rating_count'] ?> reviews)</span><?php endif; ?>
+                                <?php if ((int)$doctor['experience_years'] > 0): ?><span><i class="ri-briefcase-line"></i> <?= (int)$doctor['experience_years'] ?> years experience</span><?php endif; ?>
                                 <?php if ($privacy['show_clinic_address'] && $doctor['clinic_city']): ?><span><i class="ri-map-pin-line"></i> <?= e($doctor['clinic_city']) ?>, <?= e($doctor['clinic_state']) ?></span><?php endif; ?>
                             </div>
                         </div>
@@ -138,10 +146,12 @@ require __DIR__ . '/includes/header.php';
                 </div>
 
                 <div class="tab-panel" id="tab-overview" role="tabpanel" aria-labelledby="tab-btn-overview" tabindex="0">
+                    <?php if ($hasBio): ?>
                     <div class="card" style="padding:28px;margin-bottom:20px;" data-reveal>
                         <h4 style="margin-bottom:12px;">About</h4>
-                        <p style="color:var(--color-text-muted);line-height:1.8;"><?= nl2br(e($doctor['bio'])) ?></p>
+                        <div class="rich-content" style="color:var(--color-text-muted);"><?= $doctor['bio'] ?></div>
                     </div>
+                    <?php endif; ?>
                     <?php if ($privacy['show_clinic_address'] && $doctor['clinic_name']): ?>
                     <div class="card" style="padding:28px;margin-bottom:20px;" data-reveal>
                         <h4 style="margin-bottom:12px;"><i class="ri-hospital-line"></i> Clinic</h4>
@@ -149,11 +159,11 @@ require __DIR__ . '/includes/header.php';
                         <p style="color:var(--color-text-muted);"><?= e($doctor['clinic_address']) ?>, <?= e($doctor['clinic_city']) ?>, <?= e($doctor['clinic_state']) ?>, <?= e($doctor['clinic_country']) ?></p>
                     </div>
                     <?php endif; ?>
-                    <?php if ($privacy['show_phone'] || $privacy['show_email']): ?>
+                    <?php if (($privacy['show_phone'] && $doctor['phone']) || ($privacy['show_email'] && $doctor['email'])): ?>
                     <div class="card" style="padding:28px;" data-reveal>
                         <h4 style="margin-bottom:12px;">Contact</h4>
-                        <?php if ($privacy['show_phone']): ?><p style="margin-bottom:6px;"><i class="ri-phone-line"></i> <?= e($doctor['phone']) ?></p><?php endif; ?>
-                        <?php if ($privacy['show_email']): ?><p><i class="ri-mail-line"></i> <?= e($doctor['email']) ?></p><?php endif; ?>
+                        <?php if ($privacy['show_phone'] && $doctor['phone']): ?><p style="margin-bottom:6px;"><i class="ri-phone-line"></i> <?= e($doctor['phone']) ?></p><?php endif; ?>
+                        <?php if ($privacy['show_email'] && $doctor['email']): ?><p><i class="ri-mail-line"></i> <?= e($doctor['email']) ?></p><?php endif; ?>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -217,10 +227,10 @@ require __DIR__ . '/includes/header.php';
             <div style="position:sticky;top:calc(var(--header-height) + 20px);">
                 <div class="card" style="padding:24px;" id="booking-widget" data-doctor-id="<?= (int)$doctor['id'] ?>" data-reveal="right">
                     <h4 style="margin-bottom:16px;">Book an Appointment</h4>
-                    <?php if ($privacy['show_fees']): ?>
+                    <?php if ($privacy['show_fees'] && ($feeOnline > 0 || $feePhysical > 0)): ?>
                     <div style="display:flex;gap:10px;margin-bottom:18px;">
-                        <div class="card" style="flex:1;padding:12px;text-align:center;"><i class="ri-video-chat-line" style="color:var(--color-primary);"></i><div style="font-weight:700;"><?= format_currency($doctor['consultation_fee_online']) ?></div><span style="font-size:11.5px;color:var(--color-text-muted);">Online</span></div>
-                        <div class="card" style="flex:1;padding:12px;text-align:center;"><i class="ri-hospital-line" style="color:var(--color-primary);"></i><div style="font-weight:700;"><?= format_currency($doctor['consultation_fee_physical']) ?></div><span style="font-size:11.5px;color:var(--color-text-muted);">In-Person</span></div>
+                        <?php if ($feeOnline > 0): ?><div class="card" style="flex:1;padding:12px;text-align:center;"><i class="ri-video-chat-line" style="color:var(--color-primary);"></i><div style="font-weight:700;"><?= format_currency($feeOnline) ?></div><span style="font-size:11.5px;color:var(--color-text-muted);">Online</span></div><?php endif; ?>
+                        <?php if ($feePhysical > 0): ?><div class="card" style="flex:1;padding:12px;text-align:center;"><i class="ri-hospital-line" style="color:var(--color-primary);"></i><div style="font-weight:700;"><?= format_currency($feePhysical) ?></div><span style="font-size:11.5px;color:var(--color-text-muted);">In-Person</span></div><?php endif; ?>
                     </div>
                     <?php endif; ?>
 

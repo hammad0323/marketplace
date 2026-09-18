@@ -27,6 +27,19 @@
         $form.find('.form-error').text('');
     }
 
+    // Bio is a rich editor over a hidden #doctor-bio textarea -- setting
+    // .val() alone (like every other field here) only updates the hidden
+    // textarea, not the visible contenteditable area, so it must go through
+    // richEditorSetContent() instead.
+    function setBioContent(html) {
+        var host = document.querySelector('[data-rich-editor][data-target="#doctor-bio"]');
+        if (host && host.richEditorSetContent) {
+            host.richEditorSetContent(html || '<p></p>');
+        } else {
+            $('#doctor-bio').val(html || '');
+        }
+    }
+
     function resetAvailability() {
         $('#admin-availability-days .avail-enabled').prop('checked', false);
     }
@@ -47,6 +60,7 @@
         $('#doctor-id').val('0');
         $('#doctor-password-label').text('Password');
         $('#doctor-password').attr('placeholder', 'Leave blank to auto-generate');
+        setBioContent('');
         openModal('Add Doctor');
     });
 
@@ -66,7 +80,7 @@
             $('#doctor-qualification').val(d.qualification);
             $('#doctor-registration-number').val(d.registration_number);
             $('#doctor-experience-years').val(d.experience_years);
-            $('#doctor-bio').val(d.bio);
+            setBioContent(d.bio);
             $('#doctor-fee-online').val(d.consultation_fee_online);
             $('#doctor-fee-physical').val(d.consultation_fee_physical);
             $('#doctor-free-consultation').prop('checked', !!parseInt(d.free_consultation, 10));

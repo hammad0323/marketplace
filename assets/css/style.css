@@ -588,6 +588,9 @@ textarea.form-control { resize: vertical; min-height: 110px; }
     .footer-grid { grid-template-columns: 1fr 1fr; }
     .split-sidebar-right { grid-template-columns: 1fr; }
     .split-sidebar-right > aside, .split-sidebar-right > :last-child { order: -1; }
+    /* Doctor profile: keep the profile info first and the booking widget
+       below it on mobile, unlike product-detail.php's buy-box-first order. */
+    .doctor-profile-layout > :last-child { order: 0; }
 }
 .nav-mobile-auth { display: none; }
 @media (max-width: 1000px) {

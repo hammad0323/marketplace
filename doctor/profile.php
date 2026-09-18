@@ -29,7 +29,7 @@ mysqli_stmt_close($stmt);
 
 $pageTitle = 'My Profile';
 $heading = 'My Profile';
-$extraScripts = '<script defer src="' . asset_url('/assets/js/profile.js') . '"></script><script defer src="' . asset_url('/assets/js/certificate-upload.js') . '"></script><script defer src="' . asset_url('/assets/js/doctor-profile-extra.js') . '"></script>';
+$extraScripts = '<script defer src="' . asset_url('/assets/js/rich-editor.js') . '"></script><script defer src="' . asset_url('/assets/js/profile.js') . '"></script><script defer src="' . asset_url('/assets/js/certificate-upload.js') . '"></script><script defer src="' . asset_url('/assets/js/doctor-profile-extra.js') . '"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="split-sidebar-left">
@@ -80,7 +80,11 @@ require __DIR__ . '/includes/header.php';
                             <?php endwhile; ?>
                         </div>
                     </div>
-                    <div class="form-group"><label class="form-label">Bio</label><textarea class="form-control" name="bio" rows="4"><?= e($doctor['bio']) ?></textarea></div>
+                    <div class="form-group">
+                        <label class="form-label">Bio</label>
+                        <div data-rich-editor data-target="#doctor-bio-field" data-upload-url="/ajax/medicine-image-upload.php"></div>
+                        <textarea id="doctor-bio-field" name="bio"><?= e($doctor['bio']) ?></textarea>
+                    </div>
                     <div class="grid grid-2">
                         <div class="form-group"><label class="form-label">Online Consultation Fee ($)</label><input type="number" min="0" step="0.01" class="form-control" name="consultation_fee_online" value="<?= e($doctor['consultation_fee_online']) ?>"></div>
                         <div class="form-group"><label class="form-label">In-Person Consultation Fee ($)</label><input type="number" min="0" step="0.01" class="form-control" name="consultation_fee_physical" value="<?= e($doctor['consultation_fee_physical']) ?>"></div>

@@ -88,7 +88,7 @@ CREATE TABLE doctors (
     qualification             VARCHAR(255) DEFAULT NULL,
     registration_number       VARCHAR(100) DEFAULT NULL,
     experience_years          SMALLINT UNSIGNED NOT NULL DEFAULT 0,
-    bio                       TEXT,
+    bio                       MEDIUMTEXT COMMENT 'rich HTML from the bio text editor',
     consultation_fee_online   DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     consultation_fee_physical DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     free_consultation         TINYINT(1) NOT NULL DEFAULT 0,
