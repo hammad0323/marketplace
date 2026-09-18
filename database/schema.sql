@@ -86,6 +86,7 @@ CREATE TABLE doctors (
     user_id                   INT UNSIGNED NOT NULL,
     slug                      VARCHAR(180) NOT NULL,
     qualification             VARCHAR(255) DEFAULT NULL,
+    designation               VARCHAR(150) DEFAULT NULL COMMENT 'job title, e.g. Consultant Cardiologist',
     registration_number       VARCHAR(100) DEFAULT NULL,
     experience_years          SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     bio                       MEDIUMTEXT COMMENT 'rich HTML from the bio text editor',

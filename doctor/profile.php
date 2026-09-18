@@ -67,9 +67,10 @@ require __DIR__ . '/includes/header.php';
                         <div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-control" name="phone" value="<?= e($user['phone']) ?>"></div>
                     </div>
                     <div class="grid grid-2">
+                        <div class="form-group"><label class="form-label">Designation</label><input type="text" class="form-control" name="designation" placeholder="e.g. Consultant Cardiologist" value="<?= e($doctor['designation']) ?>"></div>
                         <div class="form-group"><label class="form-label">Qualification</label><input type="text" class="form-control" name="qualification" value="<?= e($doctor['qualification']) ?>"></div>
-                        <div class="form-group"><label class="form-label">Years of Experience</label><input type="number" min="0" class="form-control" name="experience_years" value="<?= (int)$doctor['experience_years'] ?>"></div>
                     </div>
+                    <div class="form-group"><label class="form-label">Years of Experience</label><input type="number" min="0" class="form-control" name="experience_years" value="<?= (int)$doctor['experience_years'] ?>" style="max-width:200px;"></div>
                     <div class="form-group">
                         <label class="form-label">Specializations <span style="font-weight:400;color:var(--color-text-muted);">(select one or more)</span></label>
                         <div class="grid grid-3" style="gap:8px;">

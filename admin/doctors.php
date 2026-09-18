@@ -100,10 +100,13 @@ require __DIR__ . '/includes/header.php';
                 <div class="divider-fade"></div>
                 <h4 style="margin-bottom:14px;">Professional Details</h4>
                 <div class="grid grid-2">
+                    <div class="form-group"><label class="form-label">Designation</label><input type="text" class="form-control" name="designation" id="doctor-designation" placeholder="e.g. Consultant Cardiologist"></div>
                     <div class="form-group"><label class="form-label">Qualification</label><input type="text" class="form-control" name="qualification" id="doctor-qualification"></div>
-                    <div class="form-group"><label class="form-label">License / Registration #</label><input type="text" class="form-control" name="registration_number" id="doctor-registration-number"></div>
                 </div>
-                <div class="form-group"><label class="form-label">Years of Experience</label><input type="number" min="0" class="form-control" name="experience_years" id="doctor-experience-years" style="max-width:200px;"></div>
+                <div class="grid grid-2">
+                    <div class="form-group"><label class="form-label">License / Registration #</label><input type="text" class="form-control" name="registration_number" id="doctor-registration-number"></div>
+                    <div class="form-group"><label class="form-label">Years of Experience</label><input type="number" min="0" class="form-control" name="experience_years" id="doctor-experience-years"></div>
+                </div>
                 <div class="form-group" data-field="specialization_ids">
                     <label class="form-label">Specializations <span style="font-weight:400;color:var(--color-text-muted);">(select one or more)</span></label>
                     <div class="grid grid-3" id="doctor-specializations" style="gap:8px;">

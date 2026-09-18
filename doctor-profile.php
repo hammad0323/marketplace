@@ -116,6 +116,7 @@ require __DIR__ . '/includes/header.php';
                         <img src="<?= e(avatar_url($doctor['avatar'], $doctor['full_name'])) ?>" alt="<?= e($doctor['full_name']) ?>" style="width:110px;height:110px;border-radius:24px;object-fit:cover;">
                         <div style="flex:1;min-width:220px;">
                             <h1 style="font-size:26px;margin-bottom:4px;"><?= e($doctor['full_name']) ?></h1>
+                            <?php if ($doctor['designation']): ?><p style="font-weight:600;margin-bottom:2px;"><?= e($doctor['designation']) ?></p><?php endif; ?>
                             <p style="color:var(--color-primary);font-weight:600;margin-bottom:6px;"><?= e($doctor['qualification'] ?: $specNames) ?></p>
                             <?php if ($doctorSpecializations): ?>
                             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">

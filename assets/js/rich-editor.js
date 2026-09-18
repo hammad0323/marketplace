@@ -97,6 +97,18 @@
         area.addEventListener('input', sync);
         area.addEventListener('blur', sync);
 
+        // Paste as plain text only. The browser's default rich paste (e.g.
+        // from Word/Google Docs) carries over inline styles like a fixed
+        // width or white-space:nowrap, which broke the page layout for
+        // pasted bios/descriptions — this avoids that class of bug entirely.
+        // Formatting can still be re-applied afterward with the toolbar.
+        area.addEventListener('paste', function (e) {
+            e.preventDefault();
+            var text = (e.clipboardData || window.clipboardData).getData('text/plain');
+            document.execCommand('insertText', false, text);
+            sync();
+        });
+
         function triggerImageUpload() {
             fileInput.value = '';
             fileInput.click();

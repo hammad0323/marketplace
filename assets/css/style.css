@@ -346,7 +346,14 @@ textarea.form-control { resize: vertical; min-height: 110px; }
 .seo-score-bar { height: 100%; width: 0%; border-radius: 999px; transition: width 0.3s ease, background 0.3s ease; }
 .seo-score-label { font-size: 12.5px; font-weight: 600; color: var(--color-text-muted); }
 
-/* Read-only rendering of rich-editor content on public pages (blog posts, CMS). */
+/* Read-only rendering of rich-editor content on public pages (blog posts, CMS).
+   The !important overrides below matter here: pasting text from Word/Docs
+   into the contenteditable area commonly carries over inline styles like
+   white-space:nowrap or a fixed width, which otherwise force this block to
+   overflow its column and get visually cut off by a sibling (e.g. the
+   sticky booking sidebar) instead of wrapping normally. */
+.rich-content { max-width: 100%; overflow-wrap: break-word; word-break: break-word; }
+.rich-content * { max-width: 100% !important; white-space: normal !important; }
 .rich-content h2 { font-size: 24px; margin: 28px 0 12px; }
 .rich-content h3 { font-size: 20px; margin: 22px 0 10px; }
 .rich-content p { margin: 0 0 16px; line-height: 1.8; }

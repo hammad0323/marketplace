@@ -77,6 +77,7 @@
             $('#doctor-phone').val(d.phone);
             $('#doctor-password').val('').attr('placeholder', 'Leave blank to keep current password');
             $('#doctor-password-label').text('Reset Password');
+            $('#doctor-designation').val(d.designation);
             $('#doctor-qualification').val(d.qualification);
             $('#doctor-registration-number').val(d.registration_number);
             $('#doctor-experience-years').val(d.experience_years);

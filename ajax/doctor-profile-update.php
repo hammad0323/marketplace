@@ -13,6 +13,7 @@ $doctorId = current_profile_id();
 
 $fullName = clean($_POST['full_name'] ?? '');
 $phone = clean($_POST['phone'] ?? '');
+$designation = clean($_POST['designation'] ?? '') ?: null;
 $qualification = clean($_POST['qualification'] ?? '');
 $experienceYears = max(0, (int) ($_POST['experience_years'] ?? 0));
 $bio = clean($_POST['bio'] ?? '');
@@ -40,8 +41,8 @@ mysqli_stmt_bind_param($stmt, 'ssi', $fullName, $phone, $userId);
 mysqli_stmt_execute($stmt);
 mysqli_stmt_close($stmt);
 
-$stmt = mysqli_prepare($db, 'UPDATE doctors SET qualification = ?, experience_years = ?, bio = ?, consultation_fee_online = ?, consultation_fee_physical = ?, free_consultation = ?, clinic_name = ?, clinic_address = ?, clinic_city = ?, clinic_state = ?, clinic_country = ?, meta_title = ?, meta_description = ? WHERE id = ?');
-mysqli_stmt_bind_param($stmt, 'sisddisssssssi', $qualification, $experienceYears, $bio, $feeOnline, $feePhysical, $freeConsultation, $clinicName, $clinicAddress, $clinicCity, $clinicState, $clinicCountry, $metaTitle, $metaDescription, $doctorId);
+$stmt = mysqli_prepare($db, 'UPDATE doctors SET designation = ?, qualification = ?, experience_years = ?, bio = ?, consultation_fee_online = ?, consultation_fee_physical = ?, free_consultation = ?, clinic_name = ?, clinic_address = ?, clinic_city = ?, clinic_state = ?, clinic_country = ?, meta_title = ?, meta_description = ? WHERE id = ?');
+mysqli_stmt_bind_param($stmt, 'ssisddisssssssi', $designation, $qualification, $experienceYears, $bio, $feeOnline, $feePhysical, $freeConsultation, $clinicName, $clinicAddress, $clinicCity, $clinicState, $clinicCountry, $metaTitle, $metaDescription, $doctorId);
 mysqli_stmt_execute($stmt);
 mysqli_stmt_close($stmt);
 
