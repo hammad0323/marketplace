@@ -30,6 +30,58 @@
         { action: 'clear', icon: 'ri-format-clear', title: 'Clear formatting' },
     ];
 
+    // Tags kept on paste (formatting only — no style/class/width/etc. on any
+    // of them). Everything else is "unwrapped": its children are kept but
+    // the wrapping tag itself (span, div, font, table cells, mso <o:p>...)
+    // is dropped, so the underlying bold/italic/text still comes through.
+    var PASTE_KEEP_TAGS = {
+        B: true, STRONG: true, I: true, EM: true, U: true, S: true, STRIKE: true,
+        P: true, UL: true, OL: true, LI: true, H2: true, H3: true, H4: true, BLOCKQUOTE: true,
+    };
+    // Dropped entirely, content included — never unwrapped.
+    var PASTE_DROP_TAGS = {
+        SCRIPT: true, STYLE: true, IFRAME: true, OBJECT: true, EMBED: true,
+        NOSCRIPT: true, HEAD: true, TITLE: true, META: true, LINK: true, SVG: true, IMG: true,
+    };
+
+    function sanitizePastedNode(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            return (node.textContent || '').replace(/ /g, ' ');
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+            return '';
+        }
+        var tag = node.tagName;
+        if (PASTE_DROP_TAGS[tag]) {
+            return '';
+        }
+        var inner = Array.prototype.map.call(node.childNodes, sanitizePastedNode).join('');
+        if (tag === 'BR') {
+            return '<br>';
+        }
+        if (tag === 'H1') {
+            tag = 'H2'; // the editor's own toolbar never produces an H1
+        }
+        if (tag === 'A') {
+            var href = node.getAttribute('href') || '';
+            if (!/^(https?:|mailto:)/i.test(href)) {
+                return inner;
+            }
+            return '<a href="' + href.replace(/"/g, '&quot;') + '">' + inner + '</a>';
+        }
+        if (PASTE_KEEP_TAGS[tag]) {
+            var t = tag.toLowerCase();
+            return '<' + t + '>' + inner + '</' + t + '>';
+        }
+        return inner; // unwrap
+    }
+
+    function sanitizePastedHtml(html) {
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var out = Array.prototype.map.call(doc.body.childNodes, sanitizePastedNode).join('');
+        return out.replace(/<p>(\s|&nbsp;)*<\/p>/gi, '').trim();
+    }
+
     function initEditor(host) {
         var targetSel = host.getAttribute('data-target');
         var target = document.querySelector(targetSel);
@@ -97,15 +149,25 @@
         area.addEventListener('input', sync);
         area.addEventListener('blur', sync);
 
-        // Paste as plain text only. The browser's default rich paste (e.g.
-        // from Word/Google Docs) carries over inline styles like a fixed
-        // width or white-space:nowrap, which broke the page layout for
-        // pasted bios/descriptions — this avoids that class of bug entirely.
-        // Formatting can still be re-applied afterward with the toolbar.
+        // Paste keeps basic formatting (bold/italic/underline/lists/
+        // headings/links/quotes) but strips everything else the source
+        // carries along — inline styles, classes, spans/divs/tables/fonts,
+        // Word's mso-* junk. A straight passthrough of Word/Google Docs
+        // paste is what broke the page layout before (fixed widths,
+        // white-space:nowrap, absolute positioning riding along on a
+        // <span style="...">), so instead of forwarding the source markup
+        // as-is, only a fixed allowlist of tags survives and every
+        // attribute except a sanitized <a href> is dropped.
         area.addEventListener('paste', function (e) {
             e.preventDefault();
-            var text = (e.clipboardData || window.clipboardData).getData('text/plain');
-            document.execCommand('insertText', false, text);
+            var cd = e.clipboardData || window.clipboardData;
+            var html = cd.getData('text/html');
+            var sanitized = html ? sanitizePastedHtml(html) : '';
+            if (sanitized) {
+                document.execCommand('insertHTML', false, sanitized);
+            } else {
+                document.execCommand('insertText', false, cd.getData('text/plain'));
+            }
             sync();
         });
 
