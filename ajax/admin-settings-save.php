@@ -14,9 +14,9 @@ require_role_page_or_json('admin');
  * outside that list, so this closes the gap for these two admin-only fields
  * without a general-purpose SVG sanitizer.
  */
-function upload_branding_asset($fileKey, array $allowedExt, $maxBytes)
+function upload_branding_asset($fileKey, array $allowedExt, $maxBytes, $imageMaxSize = null)
 {
-    [$ok, $result] = handle_upload($fileKey, 'branding', $allowedExt, $maxBytes);
+    [$ok, $result] = handle_upload($fileKey, 'branding', $allowedExt, $maxBytes, $imageMaxSize);
     if (!$ok) {
         return [false, $result];
     }
@@ -41,7 +41,7 @@ foreach ($allowedKeys as $key) {
 }
 
 if (!empty($_FILES['logo']['name'])) {
-    [$ok, $result] = upload_branding_asset('logo', ['png', 'jpg', 'jpeg', 'webp', 'svg'], 2 * 1024 * 1024);
+    [$ok, $result] = upload_branding_asset('logo', ['png', 'jpg', 'jpeg', 'webp', 'svg'], 2 * 1024 * 1024, [480, 480]);
     if (!$ok) {
         json_response(false, [], $result);
     }

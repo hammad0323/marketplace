@@ -9,7 +9,7 @@ if (!is_logged_in()) {
     json_response(false, [], 'Please log in.');
 }
 
-[$ok, $result] = handle_upload('avatar', 'avatars', ['jpg', 'jpeg', 'png', 'webp'], 2 * 1024 * 1024);
+[$ok, $result] = handle_upload('avatar', 'avatars', ['jpg', 'jpeg', 'png', 'webp'], 2 * 1024 * 1024, [320, 320]);
 if (!$ok) {
     json_response(false, [], $result);
 }

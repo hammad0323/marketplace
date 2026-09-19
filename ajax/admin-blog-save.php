@@ -29,7 +29,7 @@ if ($errors) {
 
 $featuredImage = null;
 if (!empty($_FILES['featured_image']['name'])) {
-    [$ok, $result] = handle_upload('featured_image', 'blog', ['jpg', 'jpeg', 'png', 'webp'], 5 * 1024 * 1024);
+    [$ok, $result] = handle_upload('featured_image', 'blog', ['jpg', 'jpeg', 'png', 'webp'], 5 * 1024 * 1024, [1200, 1200]);
     if (!$ok) {
         json_response(false, [], $result);
     }

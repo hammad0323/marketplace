@@ -45,7 +45,7 @@ if ($errors) {
 
 $imagePath = null;
 if (!empty($_FILES['image']['name'])) {
-    [$ok, $result] = handle_upload('image', 'products', ['jpg', 'jpeg', 'png', 'webp'], 4 * 1024 * 1024);
+    [$ok, $result] = handle_upload('image', 'products', ['jpg', 'jpeg', 'png', 'webp'], 4 * 1024 * 1024, [1200, 1200]);
     if (!$ok) {
         json_response(false, [], $result);
     }

@@ -170,10 +170,78 @@ function is_rate_limited($identifier, $maxAttempts = 5, $windowMinutes = 15)
 // ---------------------------------------------------------------------------
 
 /**
- * Validates and moves an uploaded file into UPLOAD_PATH/$subdir.
+ * Downscales a just-uploaded raster image to fit within $maxWidth x
+ * $maxHeight (aspect-ratio preserved, never upscaled) and re-encodes it as
+ * WebP, replacing the original file in place. This is what actually fixes
+ * "oversized image" / "use a modern format" audit warnings — uploads land
+ * at whatever the source camera/screenshot size was (often 2000px+), while
+ * every on-page use here is a small fixed box, so serving the original is
+ * pure waste; WebP then shrinks it further at equivalent visual quality.
+ * Non-raster uploads (SVG, ICO, PDF) or anything GD can't decode are left
+ * untouched — this only ever narrows what a file *is*, never breaks it.
+ * Returns the (possibly .webp) relative path to store/use.
+ */
+function optimize_uploaded_image($relativePath, $maxWidth, $maxHeight, $quality = 82)
+{
+    if (!function_exists('imagewebp')) {
+        return $relativePath;
+    }
+    $absPath = UPLOAD_PATH . '/' . $relativePath;
+    $info = @getimagesize($absPath);
+    if (!$info) {
+        return $relativePath;
+    }
+    [$width, $height, $type] = $info;
+    if ($type === IMAGETYPE_GIF) {
+        return $relativePath; // could be animated — flattening to WebP would lose that
+    }
+    $src = match ($type) {
+        IMAGETYPE_JPEG => @imagecreatefromjpeg($absPath),
+        IMAGETYPE_PNG => @imagecreatefrompng($absPath),
+        IMAGETYPE_WEBP => @imagecreatefromwebp($absPath),
+        default => null,
+    };
+    if (!$src) {
+        return $relativePath;
+    }
+
+    $scale = min(1, $maxWidth / $width, $maxHeight / $height);
+    if ($scale < 1) {
+        $newWidth = max(1, (int) round($width * $scale));
+        $newHeight = max(1, (int) round($height * $scale));
+        $resized = imagecreatetruecolor($newWidth, $newHeight);
+        imagealphablending($resized, false);
+        imagesavealpha($resized, true);
+        imagecopyresampled($resized, $src, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+        imagedestroy($src);
+        $src = $resized;
+    } else {
+        imagepalettetotruecolor($src);
+        imagealphablending($src, true);
+        imagesavealpha($src, true);
+    }
+
+    $webpAbsPath = preg_replace('/\.[a-zA-Z0-9]+$/', '', $absPath) . '.webp';
+    $ok = imagewebp($src, $webpAbsPath, $quality);
+    imagedestroy($src);
+    if (!$ok) {
+        return $relativePath;
+    }
+    if ($webpAbsPath !== $absPath) {
+        @unlink($absPath);
+    }
+    return preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath) . '.webp';
+}
+
+/**
+ * Validates and moves an uploaded file into UPLOAD_PATH/$subdir. When
+ * $imageMaxSize is given as [maxWidth, maxHeight], the saved file is also
+ * run through optimize_uploaded_image() — appropriate for photos (avatars,
+ * logos, featured images) but left null for documents (certificates,
+ * chat attachments) where exact fidelity/format matters.
  * Returns the relative path (for UPLOAD_URL) on success, or [false, error].
  */
-function handle_upload($fileKey, $subdir, array $allowedExt, $maxBytes = 5242880)
+function handle_upload($fileKey, $subdir, array $allowedExt, $maxBytes = 5242880, $imageMaxSize = null)
 {
     if (empty($_FILES[$fileKey]) || $_FILES[$fileKey]['error'] === UPLOAD_ERR_NO_FILE) {
         return [false, 'No file uploaded.'];
@@ -209,7 +277,11 @@ function handle_upload($fileKey, $subdir, array $allowedExt, $maxBytes = 5242880
     if (!move_uploaded_file($file['tmp_name'], $dir . '/' . $filename)) {
         return [false, 'Could not save the uploaded file.'];
     }
-    return [true, trim($subdir, '/') . '/' . $filename];
+    $relativePath = trim($subdir, '/') . '/' . $filename;
+    if ($imageMaxSize !== null) {
+        $relativePath = optimize_uploaded_image($relativePath, $imageMaxSize[0], $imageMaxSize[1]);
+    }
+    return [true, $relativePath];
 }
 
 /**

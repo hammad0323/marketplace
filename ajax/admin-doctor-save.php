@@ -78,7 +78,7 @@ mysqli_stmt_close($stmt);
 
 $avatar = null;
 if (!empty($_FILES['avatar']['name'])) {
-    [$ok, $result] = handle_upload('avatar', 'avatars', ['jpg', 'jpeg', 'png', 'webp'], 3 * 1024 * 1024);
+    [$ok, $result] = handle_upload('avatar', 'avatars', ['jpg', 'jpeg', 'png', 'webp'], 3 * 1024 * 1024, [320, 320]);
     if (!$ok) {
         json_response(false, [], $result);
     }
