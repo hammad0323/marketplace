@@ -6,12 +6,20 @@ $filter = $_GET['status'] ?? 'pending';
 $statusMap = ['pending' => "d.verification_status = 'pending'", 'verified' => "d.verification_status = 'verified'", 'rejected' => "d.verification_status = 'rejected'", 'all' => '1=1'];
 $condition = $statusMap[$filter] ?? $statusMap['pending'];
 
-$doctors = mysqli_query(db(), "
+$total = (int) mysqli_fetch_assoc(mysqli_query(db(), "
+    SELECT COUNT(*) c FROM doctors d JOIN users u ON u.id = d.user_id WHERE $condition
+"))['c'];
+$pagination = paginate($total, 20);
+
+$stmt = mysqli_prepare(db(), "
     SELECT d.*, u.full_name, u.avatar, u.email, u.phone, u.status AS user_status,
         (SELECT GROUP_CONCAT(s.name ORDER BY s.name SEPARATOR ', ') FROM doctor_specializations ds JOIN specializations s ON s.id = ds.specialization_id WHERE ds.doctor_id = d.id) AS spec_names
     FROM doctors d JOIN users u ON u.id = d.user_id
-    WHERE $condition ORDER BY d.created_at DESC
-")->fetch_all(MYSQLI_ASSOC);
+    WHERE $condition ORDER BY d.created_at DESC LIMIT ? OFFSET ?
+");
+mysqli_stmt_bind_param($stmt, 'ii', $pagination['per_page'], $pagination['offset']);
+mysqli_stmt_execute($stmt);
+$doctors = mysqli_stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC);
 
 $allSpecializations = mysqli_query(db(), 'SELECT id, name FROM specializations WHERE is_active = 1 ORDER BY name')->fetch_all(MYSQLI_ASSOC);
 $availByDay = []; // blank defaults for the modal; edit mode fetches + populates via JS
@@ -71,6 +79,7 @@ require __DIR__ . '/includes/header.php';
         </tbody>
     </table></div>
 </div>
+<?= pagination_links($pagination, '/admin/doctors?status=' . e($filter)) ?>
 <?php endif; ?>
 
 <div class="modal-overlay" id="doctor-modal">

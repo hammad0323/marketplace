@@ -14,6 +14,7 @@ $posts = mysqli_query(db(), "
 
 $pageTitle = 'Blog — ' . SITE_NAME;
 $metaDescription = 'Health tips, platform updates, and articles from the ' . SITE_NAME . ' team and our verified doctors.';
+$canonical = filtered_canonical('/blog', [], $pagination['page']);
 $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Blog']];
 require __DIR__ . '/includes/header.php';
 ?>

@@ -976,16 +976,26 @@ function role_home_url($role)
  * Each distinct combination of content-defining filters (specialization,
  * city, search term, price range...) is real, differently-ranking-worthy
  * content and gets its own self-referencing canonical — but $params must
- * NOT include `page` or `sort`: paginating or re-sorting the same filter
- * combination doesn't change what the page is "about", so every page/sort
- * variant of one filter combination shares that combination's single
- * canonical (collapsing to page 1, unsorted), instead of each being treated
- * as separate content.
+ * NOT include `sort`: re-sorting the same filter combination doesn't change
+ * what the page is "about", so every sort variant of one filter combination
+ * shares that combination's single canonical (collapsing to unsorted).
+ *
+ * $page DOES get included (when > 1): each page of results shows different
+ * doctors/products, i.e. genuinely different content, so per Google's
+ * current pagination guidance every page number gets its own
+ * self-referencing canonical. Collapsing every page to page 1's canonical
+ * — the previous behavior here — told Google to ignore pages 2+ entirely,
+ * which both stops those doctors/products from ever being indexed under
+ * this path AND surfaces as a "duplicate, Google chose different canonical"
+ * warning in Search Console for a listing with more than one page.
  */
-function filtered_canonical($path, array $params)
+function filtered_canonical($path, array $params, $page = 1)
 {
     $params = array_filter($params, fn($v) => $v !== '' && $v !== null && $v !== false);
     ksort($params);
+    if ((int) $page > 1) {
+        $params['page'] = (int) $page;
+    }
     $qs = http_build_query($params);
     return APP_URL . $path . ($qs !== '' ? '?' . $qs : '');
 }

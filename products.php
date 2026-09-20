@@ -91,7 +91,7 @@ $pageTitle = ($q !== '' ? 'Search: ' . $q . ' — ' : '') . 'Products & Services
 $metaDescription = 'Browse health products and service packages offered directly by verified, premium doctors on ' . SITE_NAME . '.';
 $canonical = filtered_canonical('/products', [
     'q' => $q, 'category' => $categorySlug, 'type' => $type, 'min_price' => $minPrice, 'max_price' => $maxPrice,
-]);
+], $pagination['page']);
 $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Products & Services']];
 if ($q !== '') {
     $metaRobots = 'noindex, follow'; // free-text search results are thin/duplicate content

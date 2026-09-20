@@ -45,7 +45,7 @@ mysqli_stmt_close($stmt);
 
 $pageTitle = 'Find Pharmacies — ' . SITE_NAME;
 $metaDescription = 'Browse verified pharmacies and medicine stores. Order medicines directly from registered, verified sellers.';
-$canonical = filtered_canonical('/pharmacies', ['q' => $q, 'city' => $city]);
+$canonical = filtered_canonical('/pharmacies', ['q' => $q, 'city' => $city], $pagination['page']);
 $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Find Pharmacies']];
 if ($q !== '') {
     $metaRobots = 'noindex, follow'; // free-text search results are thin/duplicate content
@@ -101,7 +101,7 @@ require __DIR__ . '/includes/header.php';
             </div>
             <?php
             $qs = $_GET; unset($qs['page']);
-            echo pagination_links($pagination, '/pharmacies?' . http_build_query($qs));
+            echo pagination_links($pagination, '/pharmacies' . ($qs ? '?' . http_build_query($qs) : ''));
             ?>
             <?php endif; ?>
         </div>

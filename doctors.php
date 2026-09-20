@@ -99,7 +99,7 @@ $metaDescription = 'Search and compare verified doctors by specialty, fee, and r
 $canonical = filtered_canonical('/doctors', [
     'q' => $q, 'specialization' => $specSlug, 'city' => $city,
     'min_fee' => $minFee, 'max_fee' => $maxFee, 'free' => $freeOnly ? 1 : '', 'premium' => $premiumOnly ? 1 : '',
-]);
+], $pagination['page']);
 $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Find Doctors']];
 if ($q !== '') {
     $metaRobots = 'noindex, follow'; // free-text search results are thin/duplicate content
@@ -181,7 +181,7 @@ require __DIR__ . '/includes/header.php';
             </div>
             <?php
             $qs = $_GET; unset($qs['page']);
-            echo pagination_links($pagination, '/doctors?' . http_build_query($qs));
+            echo pagination_links($pagination, '/doctors' . ($qs ? '?' . http_build_query($qs) : ''));
             ?>
             <?php endif; ?>
         </div>
