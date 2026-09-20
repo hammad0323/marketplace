@@ -101,6 +101,9 @@ $canonical = filtered_canonical('/doctors', [
     'min_fee' => $minFee, 'max_fee' => $maxFee, 'free' => $freeOnly ? 1 : '', 'premium' => $premiumOnly ? 1 : '',
 ]);
 $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Find Doctors']];
+if ($q !== '') {
+    $metaRobots = 'noindex, follow'; // free-text search results are thin/duplicate content
+}
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);padding-bottom:0;">
@@ -165,10 +168,11 @@ require __DIR__ . '/includes/header.php';
         </aside>
 
         <div>
+            <h2 class="sr-only"><?= (int) $total ?> doctor<?= $total == 1 ? '' : 's' ?> found</h2>
             <?php if ($total === 0): ?>
             <div class="empty-state card">
                 <i class="ri-user-search-line"></i>
-                <h4>No doctors match your filters</h4>
+                <p style="font-weight:700;font-size:17px;margin-bottom:6px;color:var(--color-text);">No doctors match your filters</p>
                 <p>Try broadening your search or clearing filters.</p>
             </div>
             <?php else: ?>

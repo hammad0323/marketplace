@@ -1000,7 +1000,7 @@ function filtered_canonical($path, array $params)
 function build_sitemap_xml()
 {
     $db = db();
-    $staticPages = ['/', '/doctors', '/specializations', '/products', '/medicines', '/pharmacies', '/blog', '/about', '/contact', '/faq', '/privacy-policy', '/terms', '/doctor-register', '/pharmacy-register', '/login', '/register'];
+    $staticPages = ['/', '/doctors', '/specializations', '/products', '/medicines', '/pharmacies', '/blog', '/about', '/contact', '/faq', '/privacy-policy', '/terms', '/doctor-register', '/pharmacy-register'];
 
     $doctors = mysqli_query($db, "SELECT slug, updated_at FROM doctors WHERE verification_status = 'verified'");
     $pharmacies = mysqli_query($db, "SELECT slug, updated_at FROM pharmacies WHERE verification_status = 'verified'");
@@ -1029,7 +1029,7 @@ function build_sitemap_xml()
         $xml .= '<url><loc>' . e(APP_URL . pharmacy_url($ph['slug'])) . '</loc><lastmod>' . date('Y-m-d', strtotime($ph['updated_at'])) . '</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>' . "\n";
     }
     while ($s = mysqli_fetch_assoc($specs)) {
-        $xml .= '<url><loc>' . e(APP_URL . '/doctors?specialization=' . $s['slug']) . '</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>' . "\n";
+        $xml .= '<url><loc>' . e(APP_URL . '/specializations/' . $s['slug']) . '</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>' . "\n";
     }
     while ($b = mysqli_fetch_assoc($blogPosts)) {
         $xml .= '<url><loc>' . e(APP_URL . blog_url($b['slug'])) . '</loc><lastmod>' . date('Y-m-d', strtotime($b['published_at'])) . '</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>' . "\n";

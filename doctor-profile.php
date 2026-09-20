@@ -114,7 +114,7 @@ require __DIR__ . '/includes/header.php';
             <div>
                 <div class="card" style="padding:32px;margin-bottom:24px;" data-reveal>
                     <div style="display:flex;gap:20px;flex-wrap:wrap;">
-                        <img src="<?= e(avatar_url($doctor['avatar'], $doctor['full_name'])) ?>" alt="<?= e($doctor['full_name']) ?>" style="width:110px;height:110px;border-radius:24px;object-fit:cover;">
+                        <img src="<?= e(avatar_url($doctor['avatar'], $doctor['full_name'])) ?>" alt="<?= e($doctor['full_name']) ?>, <?= e($specNames ?: 'Doctor') ?>" width="110" height="110" style="width:110px;height:110px;border-radius:24px;object-fit:cover;">
                         <div style="flex:1;min-width:220px;">
                             <h1 style="font-size:26px;margin-bottom:4px;"><?= e($doctor['full_name']) ?></h1>
                             <?php if ($doctor['designation']): ?><p style="font-weight:600;margin-bottom:2px;"><?= e($doctor['designation']) ?></p><?php endif; ?>
@@ -148,22 +148,23 @@ require __DIR__ . '/includes/header.php';
                 </div>
 
                 <div class="tab-panel" id="tab-overview" role="tabpanel" aria-labelledby="tab-btn-overview" tabindex="0">
+                    <h2 class="sr-only">Overview</h2>
                     <?php if ($hasBio): ?>
                     <div class="card" style="padding:28px;margin-bottom:20px;" data-reveal>
-                        <h4 style="margin-bottom:12px;">About</h4>
+                        <h3 style="margin-bottom:12px;font-size:16px;">About</h3>
                         <div class="rich-content" style="color:var(--color-text-muted);"><?= render_rich_html($doctor['bio']) ?></div>
                     </div>
                     <?php endif; ?>
                     <?php if ($privacy['show_clinic_address'] && $doctor['clinic_name']): ?>
                     <div class="card" style="padding:28px;margin-bottom:20px;" data-reveal>
-                        <h4 style="margin-bottom:12px;"><i class="ri-hospital-line"></i> Clinic</h4>
+                        <h3 style="margin-bottom:12px;font-size:16px;"><i class="ri-hospital-line"></i> Clinic</h3>
                         <p style="font-weight:600;margin-bottom:4px;"><?= e($doctor['clinic_name']) ?></p>
                         <p style="color:var(--color-text-muted);"><?= e($doctor['clinic_address']) ?>, <?= e($doctor['clinic_city']) ?>, <?= e($doctor['clinic_state']) ?>, <?= e($doctor['clinic_country']) ?></p>
                     </div>
                     <?php endif; ?>
                     <?php if (($privacy['show_phone'] && $doctor['phone']) || ($privacy['show_email'] && $doctor['email'])): ?>
                     <div class="card" style="padding:28px;" data-reveal>
-                        <h4 style="margin-bottom:12px;">Contact</h4>
+                        <h3 style="margin-bottom:12px;font-size:16px;">Contact</h3>
                         <?php if ($privacy['show_phone'] && $doctor['phone']): ?><p style="margin-bottom:6px;"><i class="ri-phone-line"></i> <?= e($doctor['phone']) ?></p><?php endif; ?>
                         <?php if ($privacy['show_email'] && $doctor['email']): ?><p><i class="ri-mail-line"></i> <?= e($doctor['email']) ?></p><?php endif; ?>
                     </div>
@@ -207,13 +208,14 @@ require __DIR__ . '/includes/header.php';
 
                 <?php if ($privacy['show_reviews']): ?>
                 <div class="tab-panel" id="tab-reviews" role="tabpanel" aria-labelledby="tab-btn-reviews" tabindex="0" style="display:none;">
+                    <h2 class="sr-only">Reviews</h2>
                     <?php if (!$reviews): ?>
-                    <div class="empty-state card"><i class="ri-chat-quote-line"></i><h4>No reviews yet</h4><p>Be the first patient to leave a review after your consultation.</p></div>
+                    <div class="empty-state card"><i class="ri-chat-quote-line"></i><p style="font-weight:700;font-size:17px;margin-bottom:6px;color:var(--color-text);">No reviews yet</p><p>Be the first patient to leave a review after your consultation.</p></div>
                     <?php else: foreach ($reviews as $r): ?>
                     <div class="card" style="padding:22px;margin-bottom:14px;">
                         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
                             <div style="display:flex;gap:10px;align-items:center;">
-                                <img src="<?= e(avatar_url($r['avatar'], $r['full_name'])) ?>" style="width:36px;height:36px;border-radius:50%;">
+                                <img src="<?= e(avatar_url($r['avatar'], $r['full_name'])) ?>" alt="<?= e($r['full_name']) ?>" width="36" height="36" loading="lazy" style="width:36px;height:36px;border-radius:50%;">
                                 <strong><?= e($r['full_name']) ?></strong>
                             </div>
                             <span style="font-size:12px;color:var(--color-text-muted);"><?= time_ago($r['created_at']) ?></span>
@@ -228,7 +230,7 @@ require __DIR__ . '/includes/header.php';
 
             <div style="position:sticky;top:calc(var(--header-height) + 20px);">
                 <div class="card" style="padding:24px;" id="booking-widget" data-doctor-id="<?= (int)$doctor['id'] ?>" data-reveal="right">
-                    <h4 style="margin-bottom:16px;">Book an Appointment</h4>
+                    <h2 style="margin-bottom:16px;font-size:16px;">Book an Appointment</h2>
                     <?php if ($privacy['show_fees'] && ($feeOnline > 0 || $feePhysical > 0)): ?>
                     <div style="display:flex;gap:10px;margin-bottom:18px;">
                         <?php if ($feeOnline > 0): ?><div class="card" style="flex:1;padding:12px;text-align:center;"><i class="ri-video-chat-line" style="color:var(--color-primary);"></i><div style="font-weight:700;"><?= format_currency($feeOnline) ?></div><span style="font-size:11.5px;color:var(--color-text-muted);">Online</span></div><?php endif; ?>

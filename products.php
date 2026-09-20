@@ -93,6 +93,9 @@ $canonical = filtered_canonical('/products', [
     'q' => $q, 'category' => $categorySlug, 'type' => $type, 'min_price' => $minPrice, 'max_price' => $maxPrice,
 ]);
 $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Products & Services']];
+if ($q !== '') {
+    $metaRobots = 'noindex, follow'; // free-text search results are thin/duplicate content
+}
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);padding-bottom:0;">
@@ -153,7 +156,7 @@ require __DIR__ . '/includes/header.php';
             <?php if ($total === 0): ?>
             <div class="empty-state card">
                 <i class="ri-search-line"></i>
-                <h4>No listings match your search</h4>
+                <p style="font-weight:700;font-size:17px;margin-bottom:6px;color:var(--color-text);">No listings match your search</p>
                 <p>Try a different keyword or clear your filters.</p>
             </div>
             <?php else: ?>
@@ -161,7 +164,7 @@ require __DIR__ . '/includes/header.php';
                 <?php foreach ($products as $p): ?>
                 <a href="<?= e(product_url($p['slug'])) ?>" class="card card-hover" style="overflow:hidden;display:block;" data-reveal>
                     <?php if ($p['image']): ?>
-                    <img src="/uploads/<?= e($p['image']) ?>" alt="<?= e($p['name']) ?>" style="width:100%;height:160px;object-fit:cover;">
+                    <img src="/uploads/<?= e($p['image']) ?>" alt="<?= e($p['name']) ?>" width="360" height="160" loading="lazy" style="width:100%;height:160px;object-fit:cover;">
                     <?php else: ?>
                     <div style="width:100%;height:160px;background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:36px;"><i class="<?= $p['type'] === 'service' ? 'ri-heart-pulse-line' : 'ri-capsule-line' ?>"></i></div>
                     <?php endif; ?>

@@ -44,7 +44,7 @@ $topDoctors = mysqli_query(db(), "
 
 $customFaqs = get_medicine_faqs($medicine['id']);
 
-$pageTitle = $medicine['meta_title'] ?: ($medicine['name'] . ' — Uses, Dosage &amp; Side Effects | ' . SITE_NAME);
+$pageTitle = $medicine['meta_title'] ?: ($medicine['name'] . ' — Uses, Dosage & Side Effects | ' . SITE_NAME);
 $metaDescription = $medicine['meta_description'] ?: excerpt($medicine['uses'] ?: strip_tags($medicine['content']), 155);
 $ogImage = $medicine['featured_image'] ? APP_URL . '/uploads/' . $medicine['featured_image'] : null;
 $canonical = APP_URL . medicine_url($medicine['slug']);

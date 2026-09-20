@@ -1,19 +1,15 @@
 (function () {
     'use strict';
 
-    var overlay = document.getElementById('auth-modal');
-    if (!overlay) return;
+    // The modal markup isn't in the page's initial DOM (it's fetched from
+    // /ajax/auth-modal.php the first time it's needed) so pages that don't
+    // touch it never pay for its weight or ship a second, duplicate
+    // login/register form. `overlay` is null until ensureModal() resolves.
+    var overlay = null;
+    var loadingPromise = null;
     var pendingRedirect = null;
+    var pendingTab = 'login';
 
-    function openModal(tab) {
-        setTab(tab || 'login');
-        overlay.classList.add('open');
-        document.body.style.overflow = 'hidden';
-    }
-    function closeModal() {
-        overlay.classList.remove('open');
-        document.body.style.overflow = '';
-    }
     function setTab(tab) {
         overlay.querySelectorAll('.auth-tab').forEach(function (t) {
             t.classList.toggle('active', t.getAttribute('data-tab') === tab);
@@ -22,16 +18,51 @@
             p.classList.toggle('active', p.getAttribute('data-panel') === tab);
         });
     }
+    function closeModal() {
+        if (!overlay) return;
+        overlay.classList.remove('open');
+        document.body.style.overflow = '';
+    }
 
-    overlay.querySelectorAll('.auth-tab').forEach(function (t) {
-        t.addEventListener('click', function () { setTab(t.getAttribute('data-tab')); });
-    });
-    overlay.querySelectorAll('[data-modal-close]').forEach(function (btn) {
-        btn.addEventListener('click', closeModal);
-    });
-    overlay.addEventListener('click', function (e) {
-        if (e.target === overlay) closeModal();
-    });
+    function wireModal() {
+        overlay.querySelectorAll('.auth-tab').forEach(function (t) {
+            t.addEventListener('click', function () { setTab(t.getAttribute('data-tab')); });
+        });
+        overlay.querySelectorAll('[data-modal-close]').forEach(function (btn) {
+            btn.addEventListener('click', closeModal);
+        });
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) closeModal();
+        });
+        handleAuthForm('login-form-modal', '/ajax/login.php');
+        handleAuthForm('register-form-modal', '/ajax/register.php');
+    }
+
+    function ensureModal() {
+        if (overlay) return Promise.resolve(overlay);
+        if (loadingPromise) return loadingPromise;
+        loadingPromise = fetch('/ajax/auth-modal.php')
+            .then(function (r) { return r.text(); })
+            .then(function (html) {
+                var wrap = document.createElement('div');
+                wrap.innerHTML = html.trim();
+                overlay = wrap.firstElementChild;
+                document.body.appendChild(overlay);
+                wireModal();
+                return overlay;
+            });
+        return loadingPromise;
+    }
+
+    function openModal(tab) {
+        pendingTab = tab || 'login';
+        ensureModal().then(function () {
+            setTab(pendingTab);
+            overlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        });
+    }
+
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') closeModal();
     });
@@ -97,8 +128,8 @@
         });
     }
 
+    // Standalone login.php/register.php page forms — independent of the
+    // lazy-loaded modal, so these are wired immediately.
     handleAuthForm('login-form', '/ajax/login.php');
     handleAuthForm('register-form', '/ajax/register.php');
-    handleAuthForm('login-form-modal', '/ajax/login.php');
-    handleAuthForm('register-form-modal', '/ajax/register.php');
 })();

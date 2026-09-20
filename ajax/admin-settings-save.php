@@ -31,11 +31,22 @@ function upload_branding_asset($fileKey, array $allowedExt, $maxBytes, $imageMax
 }
 
 $db = db();
-$allowedKeys = ['site_name', 'site_tagline', 'contact_email', 'contact_phone', 'contact_address', 'currency_symbol', 'maintenance_mode'];
+$allowedKeys = ['site_name', 'site_tagline', 'contact_email', 'contact_phone', 'contact_address', 'currency_symbol', 'maintenance_mode', 'facebook_url', 'twitter_url', 'instagram_url', 'linkedin_url'];
+$socialKeys = ['facebook_url', 'twitter_url', 'instagram_url', 'linkedin_url'];
 
 $stmt = mysqli_prepare($db, 'INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)');
 foreach ($allowedKeys as $key) {
-    $value = $key === 'maintenance_mode' ? (!empty($_POST[$key]) ? '1' : '0') : clean($_POST[$key] ?? '');
+    if ($key === 'maintenance_mode') {
+        $value = !empty($_POST[$key]) ? '1' : '0';
+    } else {
+        $value = clean($_POST[$key] ?? '');
+        // Social links become an <a href> in the footer, so a non-empty
+        // value must be a real http(s) URL — closes off javascript:/data:
+        // pseudo-protocol XSS on click.
+        if (in_array($key, $socialKeys, true) && $value !== '' && !preg_match('~^https?://~i', $value)) {
+            $value = '';
+        }
+    }
     mysqli_stmt_bind_param($stmt, 'ss', $key, $value);
     mysqli_stmt_execute($stmt);
 }

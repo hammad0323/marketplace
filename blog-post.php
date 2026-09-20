@@ -66,7 +66,7 @@ require __DIR__ . '/includes/header.php';
 
         <?php if ($related): ?>
         <div class="divider-fade"></div>
-        <h4 style="margin-bottom:16px;">More from the blog</h4>
+        <h2 style="margin-bottom:16px;font-size:16px;">More from the blog</h2>
         <div class="grid grid-3 stagger">
             <?php foreach ($related as $r): ?>
             <a href="<?= e(blog_url($r['slug'])) ?>" class="card card-hover" style="overflow:hidden;display:block;" data-reveal>

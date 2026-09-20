@@ -60,6 +60,9 @@ $pageTitle = ($q !== '' ? 'Search: ' . $q . ' — ' : ($letter !== '' ? $letter 
 $metaDescription = 'Search dosage, uses, side effects, and precautions for medicines, contributed by verified doctors on ' . SITE_NAME . '.';
 $canonical = filtered_canonical('/medicines', ['q' => $q, 'category' => $category, 'letter' => $letter]);
 $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Medicine Information']];
+if ($q !== '') {
+    $metaRobots = 'noindex, follow'; // free-text search results are thin/duplicate content
+}
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);padding-bottom:0;">
@@ -101,7 +104,7 @@ require __DIR__ . '/includes/header.php';
         <?php if ($total === 0): ?>
         <div class="empty-state card">
             <i class="ri-capsule-line"></i>
-            <h4>No medicine information found</h4>
+            <p style="font-weight:700;font-size:17px;margin-bottom:6px;color:var(--color-text);">No medicine information found</p>
             <p>Try a different search term or clear the category filter.</p>
         </div>
         <?php else: ?>

@@ -19,11 +19,12 @@ require __DIR__ . '/includes/header.php';
             <h1>All Specializations</h1>
             <p>Choose a specialty to see verified, board-certified doctors accepting new patients.</p>
         </div>
+        <h2 class="sr-only">All Specializations</h2>
         <div class="grid grid-4 stagger">
             <?php while ($s = mysqli_fetch_assoc($specs)): ?>
-            <a href="/doctors?specialization=<?= e($s['slug']) ?>" class="card card-hover spec-card" data-reveal data-tilt>
+            <a href="/specializations/<?= e($s['slug']) ?>" class="card card-hover spec-card" data-reveal data-tilt>
                 <div class="icon"><i class="<?= e($s['icon']) ?>"></i></div>
-                <h4><?= e($s['name']) ?></h4>
+                <h3><?= e($s['name']) ?></h3>
                 <p><?= (int)$s['doctor_count'] ?> doctor<?= $s['doctor_count'] == 1 ? '' : 's' ?></p>
             </a>
             <?php endwhile; ?>

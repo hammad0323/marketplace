@@ -61,14 +61,14 @@ require __DIR__ . '/includes/header.php';
 
         <?php if ($pharmacy['bio']): ?>
         <div class="card" style="padding:28px;margin-bottom:32px;" data-reveal>
-            <h3 style="font-size:16px;margin-bottom:10px;">About This Store</h3>
+            <h2 style="font-size:16px;margin-bottom:10px;">About This Store</h2>
             <p style="color:var(--color-text-muted);line-height:1.8;white-space:pre-line;"><?= e($pharmacy['bio']) ?></p>
         </div>
         <?php endif; ?>
 
         <h2 style="font-size:20px;margin-bottom:18px;">Products &amp; Medicines</h2>
         <?php if (!$products): ?>
-        <div class="empty-state card"><i class="ri-store-2-line"></i><h4>No listings yet</h4><p>This pharmacy hasn't added any products yet. Check back soon.</p></div>
+        <div class="empty-state card"><i class="ri-store-2-line"></i><p style="font-weight:700;font-size:17px;margin-bottom:6px;color:var(--color-text);">No listings yet</p><p>This pharmacy hasn't added any products yet. Check back soon.</p></div>
         <?php else: ?>
         <div class="grid grid-3 stagger">
             <?php foreach ($products as $p): ?>
@@ -77,7 +77,7 @@ require __DIR__ . '/includes/header.php';
                     <span class="badge badge-<?= $p['type'] === 'service' ? 'pending' : 'verified' ?>"><?= $p['type'] === 'service' ? 'Service' : 'Product' ?></span>
                     <strong style="color:var(--color-primary);font-size:17px;"><?= format_currency($p['price']) ?></strong>
                 </div>
-                <?php if ($p['image']): ?><img src="/uploads/<?= e($p['image']) ?>" alt="" style="width:100%;height:140px;object-fit:cover;border-radius:12px;margin-bottom:10px;"><?php endif; ?>
+                <?php if ($p['image']): ?><img src="/uploads/<?= e($p['image']) ?>" alt="<?= e($p['name']) ?>" width="360" height="140" loading="lazy" style="width:100%;height:140px;object-fit:cover;border-radius:12px;margin-bottom:10px;"><?php endif; ?>
                 <strong style="display:block;margin-bottom:4px;"><?= e($p['name']) ?></strong>
                 <p style="font-size:13.5px;color:var(--color-text-muted);margin-bottom:10px;"><?= e(excerpt($p['description'] ?? '', 90)) ?></p>
                 <a href="<?= e(product_url($p['slug'])) ?>" class="btn btn-primary btn-block">View Details &amp; Order</a>

@@ -8,6 +8,7 @@ if (is_logged_in()) {
 
 $pageTitle = 'Create Account — ' . SITE_NAME;
 $metaDescription = 'Create a free patient account on ' . SITE_NAME . ' to book appointments and chat with verified doctors.';
+$metaRobots = 'noindex, follow';
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 40px);min-height:80vh;display:flex;align-items:center;">

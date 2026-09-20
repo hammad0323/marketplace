@@ -81,6 +81,7 @@ RewriteRule ^products/([\w-]+)/?$ product-detail.php?slug=$1 [L,QSA]
 RewriteRule ^medicines/([\w-]+)/?$ medicine-detail.php?slug=$1 [L,QSA]
 RewriteRule ^blog/([\w-]+)/?$ blog-post.php?slug=$1 [L,QSA]
 RewriteRule ^pharmacies/([\w-]+)/?$ pharmacy-profile.php?slug=$1 [L,QSA]
+RewriteRule ^specializations/([\w-]+)/?$ specialization-detail.php?slug=$1 [L,QSA]
 
 # 3) Serve the matching .php file for a clean-URL request, transparently
 #    (no redirect, no visible change to the address bar).

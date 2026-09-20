@@ -25,23 +25,24 @@ require __DIR__ . '/includes/header.php';
             <h1>Health tips &amp; platform news</h1>
         </div>
 
+        <h2 class="sr-only">Latest Posts</h2>
         <?php if (!$posts): ?>
-        <div class="card empty-state" data-reveal><i class="ri-quill-pen-line"></i><h4>No posts yet</h4><p>Check back soon for health tips and platform updates.</p></div>
+        <div class="card empty-state" data-reveal><i class="ri-quill-pen-line"></i><p style="font-weight:700;font-size:17px;margin-bottom:6px;color:var(--color-text);">No posts yet</p><p>Check back soon for health tips and platform updates.</p></div>
         <?php else: ?>
         <div class="grid grid-3 stagger">
             <?php foreach ($posts as $p): ?>
             <a href="<?= e(blog_url($p['slug'])) ?>" class="card card-hover" style="overflow:hidden;display:block;" data-reveal>
                 <?php if ($p['featured_image']): ?>
-                <img src="/uploads/<?= e($p['featured_image']) ?>" alt="<?= e($p['title']) ?>" style="width:100%;height:170px;object-fit:cover;">
+                <img src="/uploads/<?= e($p['featured_image']) ?>" alt="<?= e($p['title']) ?>" width="360" height="170" loading="lazy" style="width:100%;height:170px;object-fit:cover;">
                 <?php else: ?>
                 <div style="width:100%;height:170px;background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:32px;"><i class="ri-heart-pulse-line"></i></div>
                 <?php endif; ?>
                 <div style="padding:20px;">
                     <span style="font-size:12px;color:var(--color-text-muted);"><?= format_date($p['published_at']) ?></span>
-                    <h4 style="margin:8px 0 10px;line-height:1.4;"><?= e($p['title']) ?></h4>
+                    <h3 style="margin:8px 0 10px;line-height:1.4;font-size:17px;"><?= e($p['title']) ?></h3>
                     <p style="color:var(--color-text-muted);font-size:13.5px;margin-bottom:14px;"><?= e($p['excerpt'] ?: excerpt(strip_tags($p['content']), 110)) ?></p>
                     <div style="display:flex;align-items:center;gap:8px;">
-                        <img src="<?= e(avatar_url($p['author_avatar'], $p['author_name'])) ?>" style="width:26px;height:26px;border-radius:50%;object-fit:cover;">
+                        <img src="<?= e(avatar_url($p['author_avatar'], $p['author_name'])) ?>" alt="<?= e($p['author_name']) ?>" width="26" height="26" loading="lazy" style="width:26px;height:26px;border-radius:50%;object-fit:cover;">
                         <span style="font-size:13px;font-weight:600;"><?= e($p['author_name']) ?></span>
                     </div>
                 </div>

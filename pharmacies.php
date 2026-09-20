@@ -47,6 +47,9 @@ $pageTitle = 'Find Pharmacies — ' . SITE_NAME;
 $metaDescription = 'Browse verified pharmacies and medicine stores. Order medicines directly from registered, verified sellers.';
 $canonical = filtered_canonical('/pharmacies', ['q' => $q, 'city' => $city]);
 $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Find Pharmacies']];
+if ($q !== '') {
+    $metaRobots = 'noindex, follow'; // free-text search results are thin/duplicate content
+}
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);padding-bottom:0;">
@@ -75,17 +78,18 @@ require __DIR__ . '/includes/header.php';
         </aside>
 
         <div>
+            <h2 class="sr-only"><?= (int) $total ?> pharmac<?= $total == 1 ? 'y' : 'ies' ?> found</h2>
             <?php if ($total === 0): ?>
             <div class="empty-state card">
                 <i class="ri-capsule-line"></i>
-                <h4>No pharmacies match your filters</h4>
+                <p style="font-weight:700;font-size:17px;margin-bottom:6px;color:var(--color-text);">No pharmacies match your filters</p>
                 <p>Try broadening your search or clearing filters.</p>
             </div>
             <?php else: ?>
             <div class="grid grid-3 stagger">
                 <?php foreach ($pharmacies as $p): ?>
                 <a href="<?= e(pharmacy_url($p['slug'])) ?>" class="card card-hover" style="padding:20px;display:block;" data-reveal>
-                    <img src="<?= e(avatar_url($p['avatar'], $p['store_name'])) ?>" alt="<?= e($p['store_name']) ?>" style="width:52px;height:52px;border-radius:14px;object-fit:cover;margin-bottom:14px;">
+                    <img src="<?= e(avatar_url($p['avatar'], $p['store_name'])) ?>" alt="<?= e($p['store_name']) ?>" width="52" height="52" loading="lazy" style="width:52px;height:52px;border-radius:14px;object-fit:cover;margin-bottom:14px;">
                     <h3 style="font-size:16px;margin-bottom:6px;"><?= e($p['store_name']) ?></h3>
                     <p style="font-size:13px;color:var(--color-text-muted);margin-bottom:10px;"><i class="ri-map-pin-line"></i> <?= e($p['city'] ?: 'Location not set') ?></p>
                     <div style="display:flex;justify-content:space-between;align-items:center;">

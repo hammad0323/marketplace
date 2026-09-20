@@ -47,6 +47,14 @@ require __DIR__ . '/includes/header.php';
             <label class="checkbox-row" style="margin-bottom:20px;"><input type="checkbox" name="maintenance_mode" value="1" <?= ($settings['maintenance_mode'] ?? '0') === '1' ? 'checked' : '' ?>> Maintenance mode</label>
 
             <div class="divider-fade" style="margin:20px 0;"></div>
+            <h4 style="margin-bottom:4px;">Social Links</h4>
+            <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:14px;">Shown as icons in the footer, and used as the site's <code>sameAs</code> in structured data. Leave blank to hide an icon.</p>
+            <div class="form-group"><label class="form-label">Facebook URL</label><input type="url" class="form-control" name="facebook_url" placeholder="https://facebook.com/yourpage" value="<?= e($settings['facebook_url'] ?? '') ?>"></div>
+            <div class="form-group"><label class="form-label">Twitter / X URL</label><input type="url" class="form-control" name="twitter_url" placeholder="https://x.com/yourhandle" value="<?= e($settings['twitter_url'] ?? '') ?>"></div>
+            <div class="form-group"><label class="form-label">Instagram URL</label><input type="url" class="form-control" name="instagram_url" placeholder="https://instagram.com/yourhandle" value="<?= e($settings['instagram_url'] ?? '') ?>"></div>
+            <div class="form-group"><label class="form-label">LinkedIn URL</label><input type="url" class="form-control" name="linkedin_url" placeholder="https://linkedin.com/company/yourcompany" value="<?= e($settings['linkedin_url'] ?? '') ?>"></div>
+
+            <div class="divider-fade" style="margin:20px 0;"></div>
             <h4 style="margin-bottom:4px;">Branding</h4>
             <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:16px;">Replaces the icon + text logo and browser tab icon everywhere — the main site, and the admin, doctor, patient, and pharmacy panels.</p>
             <div class="grid grid-2">

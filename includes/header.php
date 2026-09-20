@@ -1,7 +1,7 @@
 <?php
 /**
- * Public site header. Pages set $pageTitle / $metaDescription / $metaKeywords
- * / $ogImage / $canonical before requiring this file; all have sensible
+ * Public site header. Pages set $pageTitle / $metaDescription / $ogImage /
+ * $canonical / $metaRobots before requiring this file; all have sensible
  * defaults. The default canonical strips ALL query params — correct for
  * simple pages with no content-defining params (login, contact, blog...).
  * Two kinds of pages must set $canonical themselves instead:
@@ -13,12 +13,14 @@
  *     canonical, but deliberately excludes `page` and `sort` — so every
  *     page/sort variant of the SAME filter combination shares one canonical
  *     instead of each being treated as separate content.
+ * $metaKeywords is intentionally not supported — Google and Bing both
+ * ignore the keywords meta tag, so it's pure page weight.
  */
 $pageTitle = $pageTitle ?? SITE_NAME . ' — Trusted Doctors, Online & In-Person';
 $metaDescription = $metaDescription ?? get_setting('site_tagline', 'Book verified doctors for online and in-person consultations.');
-$metaKeywords = $metaKeywords ?? 'telemedicine, doctors, online consultation, book appointment, healthcare';
 $canonical = $canonical ?? (APP_URL . strtok($_SERVER['REQUEST_URI'], '?'));
-$ogImage = $ogImage ?? APP_URL . '/assets/img/og-default.svg';
+$ogImage = $ogImage ?? APP_URL . '/assets/img/og-default.png';
+$metaRobots = $metaRobots ?? 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1';
 $breadcrumbs = $breadcrumbs ?? null;
 $user = current_user();
 ?><!DOCTYPE html>
@@ -28,9 +30,8 @@ $user = current_user();
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?= e($pageTitle) ?></title>
 <meta name="description" content="<?= e($metaDescription) ?>">
-<meta name="keywords" content="<?= e($metaKeywords) ?>">
 <link rel="canonical" href="<?= e($canonical) ?>">
-<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="robots" content="<?= e($metaRobots) ?>">
 
 <meta property="og:type" content="website">
 <meta property="og:title" content="<?= e($pageTitle) ?>">

@@ -8,6 +8,7 @@ if (is_logged_in()) {
 
 $pageTitle = 'Log In — ' . SITE_NAME;
 $metaDescription = 'Log in to your ' . SITE_NAME . ' account to manage appointments, chat with doctors, and more.';
+$metaRobots = 'noindex, follow';
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 40px);min-height:80vh;display:flex;align-items:center;">

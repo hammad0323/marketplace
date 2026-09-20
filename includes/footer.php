@@ -10,23 +10,33 @@ $footerSpecs = mysqli_query(db(), 'SELECT name, slug FROM specializations WHERE 
                     <?= brand_wordmark_html() ?>
                 </div>
                 <p style="max-width:280px;font-size:14px;margin-bottom:20px;"><?= e(get_setting('site_tagline', 'Trusted care, one click away.')) ?></p>
+                <?php
+                $socialLinks = [
+                    ['url' => get_setting('facebook_url'), 'label' => 'Facebook', 'icon' => 'ri-facebook-fill'],
+                    ['url' => get_setting('twitter_url'), 'label' => 'Twitter / X', 'icon' => 'ri-twitter-x-fill'],
+                    ['url' => get_setting('instagram_url'), 'label' => 'Instagram', 'icon' => 'ri-instagram-line'],
+                    ['url' => get_setting('linkedin_url'), 'label' => 'LinkedIn', 'icon' => 'ri-linkedin-fill'],
+                ];
+                $socialLinks = array_filter($socialLinks, fn($s) => !empty($s['url']));
+                ?>
+                <?php if ($socialLinks): ?>
                 <div class="social-row">
-                    <a href="#" aria-label="Facebook"><i class="ri-facebook-fill"></i></a>
-                    <a href="#" aria-label="Twitter"><i class="ri-twitter-x-fill"></i></a>
-                    <a href="#" aria-label="Instagram"><i class="ri-instagram-line"></i></a>
-                    <a href="#" aria-label="LinkedIn"><i class="ri-linkedin-fill"></i></a>
+                    <?php foreach ($socialLinks as $s): ?>
+                    <a href="<?= e($s['url']) ?>" target="_blank" rel="noopener noreferrer nofollow" aria-label="<?= e($s['label']) ?> (opens in a new tab)"><i class="<?= e($s['icon']) ?>"></i></a>
+                    <?php endforeach; ?>
                 </div>
+                <?php endif; ?>
             </div>
             <div>
-                <h5>Specializations</h5>
+                <h2>Specializations</h2>
                 <ul>
                     <?php while ($s = mysqli_fetch_assoc($footerSpecs)): ?>
-                    <li><a href="/doctors?specialization=<?= e($s['slug']) ?>"><?= e($s['name']) ?></a></li>
+                    <li><a href="/specializations/<?= e($s['slug']) ?>"><?= e($s['name']) ?></a></li>
                     <?php endwhile; ?>
                 </ul>
             </div>
             <div>
-                <h5>Company</h5>
+                <h2>Company</h2>
                 <ul>
                     <li><a href="/about">About Us</a></li>
                     <li><a href="/blog">Blog</a></li>
@@ -39,7 +49,7 @@ $footerSpecs = mysqli_query(db(), 'SELECT name, slug FROM specializations WHERE 
                 </ul>
             </div>
             <div>
-                <h5>Legal</h5>
+                <h2>Legal</h2>
                 <ul>
                     <li><a href="/privacy-policy">Privacy Policy</a></li>
                     <li><a href="/terms">Terms &amp; Conditions</a></li>
@@ -53,7 +63,6 @@ $footerSpecs = mysqli_query(db(), 'SELECT name, slug FROM specializations WHERE 
     </div>
 </footer>
 
-<?php require __DIR__ . '/auth-modal.php'; ?>
 <?php require __DIR__ . '/guest-contact-modal.php'; ?>
 
 <script>
