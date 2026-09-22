@@ -9,10 +9,16 @@ $maxFee = $_GET['max_fee'] ?? '';
 $freeOnly = !empty($_GET['free']);
 $premiumOnly = !empty($_GET['premium']);
 $sort = $_GET['sort'] ?? 'rating';
+$nearLat = is_numeric($_GET['lat'] ?? null) ? (float) $_GET['lat'] : null;
+$nearLng = is_numeric($_GET['lng'] ?? null) ? (float) $_GET['lng'] : null;
+$nearMe = $nearLat !== null && $nearLng !== null;
 
 $where = ["d.verification_status = 'verified'", "u.status = 'active'"];
 $params = [];
 $types = '';
+if ($nearMe) {
+    $where[] = 'd.latitude IS NOT NULL AND d.longitude IS NOT NULL';
+}
 
 if ($q !== '') {
     $where[] = '(u.full_name LIKE ? OR d.bio LIKE ? OR d.qualification LIKE ?)';
@@ -48,7 +54,8 @@ if ($premiumOnly) {
 }
 
 $whereSql = implode(' AND ', $where);
-$orderSql = match ($sort) {
+$distanceSql = $nearMe ? haversine_distance_sql('d.latitude', 'd.longitude', $nearLat, $nearLng) : null;
+$orderSql = $nearMe ? 'distance_km ASC' : match ($sort) {
     'fee_low' => 'd.consultation_fee_online ASC',
     'fee_high' => 'd.consultation_fee_online DESC',
     'experience' => 'd.experience_years DESC',
@@ -64,7 +71,8 @@ mysqli_stmt_close($stmt);
 
 $pagination = paginate($total, 9);
 
-$listSql = "SELECT d.*, u.full_name, u.avatar
+$distanceSelect = $nearMe ? ", $distanceSql AS distance_km" : '';
+$listSql = "SELECT d.*, u.full_name, u.avatar $distanceSelect
     FROM doctors d JOIN users u ON u.id = d.user_id
     WHERE $whereSql ORDER BY $orderSql LIMIT ? OFFSET ?";
 $stmt = mysqli_prepare(db(), $listSql);
@@ -104,13 +112,24 @@ $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Find Doc
 if ($q !== '') {
     $metaRobots = 'noindex, follow'; // free-text search results are thin/duplicate content
 }
+$extraScripts = '<script>document.addEventListener("DOMContentLoaded",function(){if(window.setupNearMeButton)setupNearMeButton("#near-me-btn","/doctors");});</script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);padding-bottom:0;">
     <div class="container">
         <nav class="breadcrumb"><a href="/">Home</a> <i class="ri-arrow-right-s-line"></i> <span>Find Doctors</span></nav>
-        <h1 style="font-size:32px;margin-bottom:8px;">Find Doctors</h1>
-        <p style="color:var(--color-text-muted);margin-bottom:32px;"><?= $total ?> verified doctor<?= $total === 1 ? '' : 's' ?> found<?= $specName ? ' in ' . e($specName) : '' ?></p>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+            <div>
+                <h1 style="font-size:32px;margin-bottom:8px;">Find Doctors</h1>
+                <p style="color:var(--color-text-muted);margin-bottom:0;"><?= $total ?> verified doctor<?= $total === 1 ? '' : 's' ?> found<?= $specName ? ' in ' . e($specName) : '' ?><?= $nearMe ? ', sorted by distance from you' : '' ?></p>
+            </div>
+            <?php if ($nearMe): ?>
+            <a href="<?= e(filtered_canonical('/doctors', ['q' => $q, 'specialization' => $specSlug, 'city' => $city, 'min_fee' => $minFee, 'max_fee' => $maxFee, 'free' => $freeOnly ? 1 : '', 'premium' => $premiumOnly ? 1 : ''])) ?>" class="btn btn-outline btn-sm"><i class="ri-close-line"></i> Clear "Near Me"</a>
+            <?php else: ?>
+            <button type="button" class="btn btn-primary btn-sm" id="near-me-btn"><i class="ri-map-pin-user-fill"></i> Near Me</button>
+            <?php endif; ?>
+        </div>
+        <div style="margin-bottom:32px;"></div>
     </div>
 </section>
 
@@ -118,6 +137,10 @@ require __DIR__ . '/includes/header.php';
     <div class="container split-sidebar-left" style="gap:32px;">
         <aside class="card" style="padding:24px;position:sticky;top:calc(var(--header-height) + 20px);">
             <form method="get" id="filter-form">
+                <?php if ($nearMe): ?>
+                <input type="hidden" name="lat" value="<?= e($nearLat) ?>">
+                <input type="hidden" name="lng" value="<?= e($nearLng) ?>">
+                <?php endif; ?>
                 <div class="form-group">
                     <label class="form-label">Search</label>
                     <input type="text" name="q" class="form-control" placeholder="Name or keyword" value="<?= e($q) ?>">

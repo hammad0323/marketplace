@@ -7,6 +7,9 @@ $type = in_array($_GET['type'] ?? '', ['product', 'service'], true) ? $_GET['typ
 $minPrice = $_GET['min_price'] ?? '';
 $maxPrice = $_GET['max_price'] ?? '';
 $sort = $_GET['sort'] ?? ($q !== '' ? 'relevance' : 'newest');
+$nearLat = is_numeric($_GET['lat'] ?? null) ? (float) $_GET['lat'] : null;
+$nearLng = is_numeric($_GET['lng'] ?? null) ? (float) $_GET['lng'] : null;
+$nearMe = $nearLat !== null && $nearLng !== null;
 
 $where = [
     "dp.is_active = 1",
@@ -15,6 +18,9 @@ $where = [
 $params = [];
 $types = '';
 $boolQuery = '';
+if ($nearMe) {
+    $where[] = "((dp.seller_type = 'doctor' AND d.latitude IS NOT NULL AND d.longitude IS NOT NULL) OR (dp.seller_type = 'pharmacy' AND ph.latitude IS NOT NULL AND ph.longitude IS NOT NULL))";
+}
 
 if ($q !== '') {
     // Boolean-mode full-text search: each word becomes a required prefix match
@@ -49,7 +55,8 @@ if ($maxPrice !== '') {
 
 $whereSql = implode(' AND ', $where);
 $useRelevanceOrder = $sort === 'relevance' && $q !== '';
-$orderSql = match (true) {
+$distanceSql = $nearMe ? haversine_distance_sql('COALESCE(d.latitude, ph.latitude)', 'COALESCE(d.longitude, ph.longitude)', $nearLat, $nearLng) : null;
+$orderSql = $nearMe ? 'distance_km ASC' : match (true) {
     $useRelevanceOrder => 'MATCH(dp.name, dp.description) AGAINST (? IN BOOLEAN MODE) DESC',
     $sort === 'price_low' => 'dp.price ASC',
     $sort === 'price_high' => 'dp.price DESC',
@@ -68,8 +75,10 @@ mysqli_stmt_close($stmt);
 
 $pagination = paginate($total, 12);
 
+$distanceSelect = $nearMe ? ", $distanceSql AS distance_km" : '';
 $listSql = "SELECT dp.*, u.full_name AS doctor_name, d.slug AS doctor_slug,
         ph.store_name AS pharmacy_name, ph.slug AS pharmacy_slug, pc.name AS category_name
+        $distanceSelect
     FROM doctor_products dp
     LEFT JOIN doctors d ON d.id = dp.doctor_id AND dp.seller_type = 'doctor'
     LEFT JOIN users u ON u.id = d.user_id
@@ -96,13 +105,24 @@ $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Products
 if ($q !== '') {
     $metaRobots = 'noindex, follow'; // free-text search results are thin/duplicate content
 }
+$extraScripts = '<script>document.addEventListener("DOMContentLoaded",function(){if(window.setupNearMeButton)setupNearMeButton("#near-me-btn","/products");});</script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);padding-bottom:0;">
     <div class="container">
         <nav class="breadcrumb"><a href="/">Home</a> <i class="ri-arrow-right-s-line"></i> <span>Products &amp; Services</span></nav>
-        <h1 style="font-size:32px;margin-bottom:8px;">Products &amp; Services</h1>
-        <p style="color:var(--color-text-muted);margin-bottom:32px;"><?= $total ?> listing<?= $total === 1 ? '' : 's' ?> found<?= $q !== '' ? ' for "' . e($q) . '"' : '' ?></p>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+            <div>
+                <h1 style="font-size:32px;margin-bottom:8px;">Products &amp; Services</h1>
+                <p style="color:var(--color-text-muted);margin-bottom:0;"><?= $total ?> listing<?= $total === 1 ? '' : 's' ?> found<?= $q !== '' ? ' for "' . e($q) . '"' : '' ?><?= $nearMe ? ', sorted by distance from you' : '' ?></p>
+            </div>
+            <?php if ($nearMe): ?>
+            <a href="<?= e(filtered_canonical('/products', ['q' => $q, 'category' => $categorySlug, 'type' => $type, 'min_price' => $minPrice, 'max_price' => $maxPrice])) ?>" class="btn btn-outline btn-sm"><i class="ri-close-line"></i> Clear "Near Me"</a>
+            <?php else: ?>
+            <button type="button" class="btn btn-primary btn-sm" id="near-me-btn"><i class="ri-map-pin-user-fill"></i> Near Me</button>
+            <?php endif; ?>
+        </div>
+        <div style="margin-bottom:32px;"></div>
     </div>
 </section>
 
@@ -110,6 +130,10 @@ require __DIR__ . '/includes/header.php';
     <div class="container split-sidebar-left" style="gap:32px;">
         <aside class="card" style="padding:24px;position:sticky;top:calc(var(--header-height) + 20px);">
             <form method="get" id="product-filter-form">
+                <?php if ($nearMe): ?>
+                <input type="hidden" name="lat" value="<?= e($nearLat) ?>">
+                <input type="hidden" name="lng" value="<?= e($nearLng) ?>">
+                <?php endif; ?>
                 <div class="form-group">
                     <label class="form-label">Search</label>
                     <input type="text" name="q" class="form-control" placeholder="e.g. blood pressure, therapy" value="<?= e($q) ?>">
@@ -180,11 +204,15 @@ require __DIR__ . '/includes/header.php';
                         <?php else: ?>
                         <span style="font-size:12px;color:var(--color-text-muted);"><i class="ri-stethoscope-line"></i> <?= e($p['doctor_name']) ?></span>
                         <?php endif; ?>
+                        <?php if (isset($p['distance_km'])): ?><span style="font-size:12px;color:var(--color-text-muted);"> · <?= number_format((float) $p['distance_km'], 1) ?> km away</span><?php endif; ?>
                     </div>
                 </a>
                 <?php endforeach; ?>
             </div>
-            <?= pagination_links($pagination, '/products' . ($q !== '' ? '?q=' . urlencode($q) : '')) ?>
+            <?php
+            $qs = $_GET; unset($qs['page']);
+            echo pagination_links($pagination, '/products' . ($qs ? '?' . http_build_query($qs) : ''));
+            ?>
             <?php endif; ?>
         </div>
     </div>

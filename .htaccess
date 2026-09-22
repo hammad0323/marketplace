@@ -30,7 +30,7 @@ RewriteRule ^(config|includes)/ - [F,L]
 # elsewhere, so this closes that gap with the header engines actually key
 # noindex off. Matched by an env var (not a hardcoded header block) so it
 # keeps working through the clean-URL rewrites below instead of racing them.
-RewriteRule ^(admin|doctor|patient|pharmacy|ajax)(/|$) - [E=NOINDEX:1]
+RewriteRule ^(admin|doctor|patient|pharmacy|manager|ajax)(/|$) - [E=NOINDEX:1]
 
 # ---------------------------------------------------------------------------
 # Clean URLs

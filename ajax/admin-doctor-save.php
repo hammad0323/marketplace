@@ -30,6 +30,7 @@ $clinicCountry = clean($_POST['clinic_country'] ?? '') ?: null;
 $specializationIds = array_filter(array_map('intval', (array) ($_POST['specialization_ids'] ?? [])));
 $metaTitle = mb_substr(clean($_POST['meta_title'] ?? ''), 0, 200) ?: null;
 $metaDescription = mb_substr(clean($_POST['meta_description'] ?? ''), 0, 300) ?: null;
+$bookingMode = ($_POST['booking_mode'] ?? '') === 'tickets' ? 'tickets' : 'slots';
 $schedule = json_decode($_POST['schedule'] ?? '[]', true);
 if (!is_array($schedule)) {
     $schedule = [];
@@ -104,11 +105,11 @@ if ($id > 0) {
         mysqli_stmt_close($stmt);
     }
 
-    $stmt = mysqli_prepare($db, 'UPDATE doctors SET designation=?, qualification=?, registration_number=?, experience_years=?, bio=?, consultation_fee_online=?, consultation_fee_physical=?, free_consultation=?, clinic_name=?, clinic_address=?, clinic_city=?, clinic_state=?, clinic_country=?, meta_title=?, meta_description=? WHERE id=?');
+    $stmt = mysqli_prepare($db, 'UPDATE doctors SET designation=?, qualification=?, registration_number=?, experience_years=?, bio=?, consultation_fee_online=?, consultation_fee_physical=?, free_consultation=?, clinic_name=?, clinic_address=?, clinic_city=?, clinic_state=?, clinic_country=?, meta_title=?, meta_description=?, booking_mode=? WHERE id=?');
     mysqli_stmt_bind_param(
-        $stmt, 'sssisddisssssssi',
+        $stmt, 'sssisddissssssssi',
         $designation, $qualification, $registrationNumber, $experienceYears, $bio, $feeOnline, $feePhysical, $freeConsultation,
-        $clinicName, $clinicAddress, $clinicCity, $clinicState, $clinicCountry, $metaTitle, $metaDescription, $id
+        $clinicName, $clinicAddress, $clinicCity, $clinicState, $clinicCountry, $metaTitle, $metaDescription, $bookingMode, $id
     );
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
@@ -137,11 +138,11 @@ try {
     mysqli_stmt_close($stmt);
 
     $slug = unique_slug($db, 'doctors', 'dr-' . $fullName);
-    $stmt = mysqli_prepare($db, "INSERT INTO doctors (user_id, slug, designation, qualification, registration_number, experience_years, bio, consultation_fee_online, consultation_fee_physical, free_consultation, clinic_name, clinic_address, clinic_city, clinic_state, clinic_country, meta_title, meta_description, verification_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'verified')");
+    $stmt = mysqli_prepare($db, "INSERT INTO doctors (user_id, slug, designation, qualification, registration_number, experience_years, bio, consultation_fee_online, consultation_fee_physical, free_consultation, clinic_name, clinic_address, clinic_city, clinic_state, clinic_country, meta_title, meta_description, booking_mode, verification_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'verified')");
     mysqli_stmt_bind_param(
-        $stmt, 'issssisddisssssss',
+        $stmt, 'issssisddisssssss' . 's',
         $userId, $slug, $designation, $qualification, $registrationNumber, $experienceYears, $bio, $feeOnline, $feePhysical, $freeConsultation,
-        $clinicName, $clinicAddress, $clinicCity, $clinicState, $clinicCountry, $metaTitle, $metaDescription
+        $clinicName, $clinicAddress, $clinicCity, $clinicState, $clinicCountry, $metaTitle, $metaDescription, $bookingMode
     );
     mysqli_stmt_execute($stmt);
     $newId = mysqli_insert_id($db);

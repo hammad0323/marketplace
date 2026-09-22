@@ -1,6 +1,10 @@
 (function ($) {
     'use strict';
 
+    if (window.setupLocationCaptureButton) {
+        window.setupLocationCaptureButton('#set-store-location-btn', '#store-latitude', '#store-longitude', '#store-location-status');
+    }
+
     function bindForm(formId, endpointFallback, onSuccess) {
         var $form = $('#' + formId);
         if (!$form.length) return;

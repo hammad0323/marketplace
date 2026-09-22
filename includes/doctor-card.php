@@ -29,6 +29,7 @@ $specNames = specialization_names($d['specializations']) ?: 'General';
     <div class="doctor-card-meta">
         <?php if ((int)$d['experience_years'] > 0): ?><span><i class="ri-briefcase-line"></i> <?= (int)$d['experience_years'] ?> yrs exp</span><?php endif; ?>
         <span><i class="ri-map-pin-line"></i> <?= e($d['clinic_city'] ?: 'Online') ?></span>
+        <?php if (isset($d['distance_km'])): ?><span><i class="ri-route-line"></i> <?= number_format((float) $d['distance_km'], 1) ?> km away</span><?php endif; ?>
     </div>
     <div class="doctor-card-footer">
         <?php if ($fee > 0): ?>

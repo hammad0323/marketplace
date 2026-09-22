@@ -2,7 +2,9 @@
 /** Doctor dashboard shell. Call require_doctor_page() before including this. */
 $user = current_user();
 $currentPage = basename($_SERVER['SCRIPT_NAME']);
-$doctorSlug = mysqli_fetch_assoc(mysqli_query(db(), 'SELECT slug FROM doctors WHERE user_id = ' . (int) $user['id']))['slug'] ?? '';
+$doctorRow = mysqli_fetch_assoc(mysqli_query(db(), 'SELECT slug, booking_mode FROM doctors WHERE user_id = ' . (int) $user['id'])) ?: [];
+$doctorSlug = $doctorRow['slug'] ?? '';
+$doctorBookingMode = $doctorRow['booking_mode'] ?? 'slots';
 $unreadCount = mysqli_fetch_assoc(mysqli_query(db(), 'SELECT COUNT(*) c FROM notifications WHERE user_id = ' . (int) $user['id'] . ' AND is_read = 0'))['c'];
 $pageTitle = ($pageTitle ?? 'Dashboard') . ' — ' . SITE_NAME;
 ?><!DOCTYPE html>
@@ -27,7 +29,13 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — ' . SITE_NAME;
         <a href="/" class="brand"><?= brand_logo_html('ri-heart-pulse-fill') ?></a>
         <nav class="dash-nav">
             <a href="/doctor/dashboard" class="<?= $currentPage === 'dashboard.php' ? 'active' : '' ?>"><i class="ri-dashboard-3-line"></i> Dashboard</a>
+            <?php if ($doctorBookingMode === 'tickets'): ?>
+            <a href="/doctor/queue" class="<?= $currentPage === 'queue.php' ? 'active' : '' ?>"><i class="ri-ticket-2-line"></i> Ticket Queue</a>
+            <a href="/doctor/ticket-report" class="<?= $currentPage === 'ticket-report.php' ? 'active' : '' ?>"><i class="ri-bar-chart-2-line"></i> Ticket Reports</a>
+            <a href="/doctor/managers" class="<?= $currentPage === 'managers.php' ? 'active' : '' ?>"><i class="ri-team-line"></i> Staff Access</a>
+            <?php else: ?>
             <a href="/doctor/appointments" class="<?= $currentPage === 'appointments.php' ? 'active' : '' ?>"><i class="ri-calendar-check-line"></i> Appointments</a>
+            <?php endif; ?>
             <a href="/doctor/availability" class="<?= $currentPage === 'availability.php' ? 'active' : '' ?>"><i class="ri-calendar-2-line"></i> Availability</a>
             <a href="/doctor/messages" class="<?= $currentPage === 'messages.php' ? 'active' : '' ?>"><i class="ri-chat-3-line"></i> Messages</a>
             <a href="/doctor/patients" class="<?= in_array($currentPage, ['patients.php', 'patient-history.php'], true) ? 'active' : '' ?>"><i class="ri-group-line"></i> My Patients</a>

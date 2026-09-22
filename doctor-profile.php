@@ -99,7 +99,8 @@ $extraHead .= '<script type="application/ld+json">' . json_encode([
     '@context' => 'https://schema.org', '@type' => 'FAQPage',
     'mainEntity' => array_map(fn($f) => ['@type' => 'Question', 'name' => $f['q'], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f['a']]], $faqEntries),
 ]) . '</script>';
-$extraScripts = '<script defer src="' . asset_url('/assets/js/calendar-widget.js') . '"></script><script defer src="' . asset_url('/assets/js/booking.js') . '"></script>';
+$bookingScript = $doctor['booking_mode'] === 'tickets' ? 'ticket-booking.js' : 'booking.js';
+$extraScripts = '<script defer src="' . asset_url('/assets/js/calendar-widget.js') . '"></script><script defer src="' . asset_url('/assets/js/' . $bookingScript) . '"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 40px);">
@@ -229,6 +230,25 @@ require __DIR__ . '/includes/header.php';
             </div>
 
             <div style="position:sticky;top:calc(var(--header-height) + 20px);">
+                <?php if ($doctor['booking_mode'] === 'tickets'): ?>
+                <div class="card" style="padding:24px;" id="ticket-widget" data-doctor-id="<?= (int)$doctor['id'] ?>" data-reveal="right">
+                    <h2 style="margin-bottom:4px;font-size:16px;">Get a Ticket</h2>
+                    <p style="font-size:12.5px;color:var(--color-text-muted);margin-bottom:16px;">First-come-first-served — pick a date, get your number, and come in during the hours shown.</p>
+                    <?php if ($privacy['show_fees'] && $feePhysical > 0): ?>
+                    <div class="card" style="padding:12px;text-align:center;margin-bottom:16px;"><i class="ri-hospital-line" style="color:var(--color-primary);"></i> <strong><?= format_currency($feePhysical) ?></strong> <span style="font-size:11.5px;color:var(--color-text-muted);">/ visit</span></div>
+                    <?php endif; ?>
+                    <div style="font-size:12.5px;font-weight:700;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:8px;">Select a date</div>
+                    <div id="ticket-calendar" style="margin-bottom:16px;"></div>
+                    <div id="ticket-day-status"></div>
+                    <form id="ticket-form" style="margin-top:14px;display:none;">
+                        <div class="form-group">
+                            <label class="form-label">Reason for visit (optional)</label>
+                            <textarea class="form-control" id="ticket-notes" rows="2" placeholder="Briefly describe your symptoms or reason for the visit"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block" id="confirm-ticket-btn">Get My Ticket</button>
+                    </form>
+                </div>
+                <?php else: ?>
                 <div class="card" style="padding:24px;" id="booking-widget" data-doctor-id="<?= (int)$doctor['id'] ?>" data-reveal="right">
                     <h2 style="margin-bottom:16px;font-size:16px;">Book an Appointment</h2>
                     <?php if ($privacy['show_fees'] && ($feeOnline > 0 || $feePhysical > 0)): ?>
@@ -256,6 +276,7 @@ require __DIR__ . '/includes/header.php';
                         <button type="submit" class="btn btn-primary btn-block" id="confirm-booking-btn" disabled>Confirm Booking</button>
                     </form>
                 </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

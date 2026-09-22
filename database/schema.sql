@@ -22,7 +22,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS users;
 CREATE TABLE users (
     id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    role              ENUM('patient','doctor','admin','pharmacy') NOT NULL DEFAULT 'patient',
+    role              ENUM('patient','doctor','admin','pharmacy','manager') NOT NULL DEFAULT 'patient',
     full_name         VARCHAR(150) NOT NULL,
     email             VARCHAR(150) NOT NULL,
     phone             VARCHAR(30)  DEFAULT NULL,
@@ -111,6 +111,9 @@ CREATE TABLE doctors (
     chat_end_time              TIME DEFAULT NULL,
     meta_title                VARCHAR(200) DEFAULT NULL COMMENT 'blank = auto-generated from name/specialization',
     meta_description          VARCHAR(300) DEFAULT NULL COMMENT 'blank = auto-generated from bio',
+    booking_mode              ENUM('slots','tickets') NOT NULL DEFAULT 'slots' COMMENT 'admin-controlled: date/time slots, or a first-come-first-served ticket queue',
+    latitude                  DECIMAL(10,7) DEFAULT NULL COMMENT 'clinic location, for "near me" search',
+    longitude                 DECIMAL(10,7) DEFAULT NULL,
     created_at                DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at                DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_doctors_user (user_id),
@@ -184,6 +187,8 @@ CREATE TABLE pharmacies (
     rating_avg          DECIMAL(3,2) NOT NULL DEFAULT 0.00,
     rating_count        INT UNSIGNED NOT NULL DEFAULT 0,
     profile_views       INT UNSIGNED NOT NULL DEFAULT 0,
+    latitude            DECIMAL(10,7) DEFAULT NULL COMMENT 'store location, for "near me" search',
+    longitude           DECIMAL(10,7) DEFAULT NULL,
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_pharmacies_user (user_id),
@@ -227,6 +232,81 @@ CREATE TABLE doctor_blocked_dates (
     created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_blocked_doctor_date (doctor_id, blocked_date),
     CONSTRAINT fk_blocked_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ----------------------------------------------------------------------------
+-- Ticket/token queue booking — an alternative to the slot-based system above.
+-- Admin picks which mode a doctor uses (doctors.booking_mode). Weekly hours
+-- work the same way as doctor_availability (day_of_week + start/end time),
+-- but tickets aren't tied to a specific time — a doctor_tickets row for a
+-- given (doctor_id, ticket_date) just gets the next sequential number,
+-- first-come-first-served, and the doctor/manager calls them out in order.
+-- ----------------------------------------------------------------------------
+
+DROP TABLE IF EXISTS doctor_ticket_schedule;
+CREATE TABLE doctor_ticket_schedule (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    doctor_id   INT UNSIGNED NOT NULL,
+    day_of_week TINYINT UNSIGNED NOT NULL COMMENT '0=Sunday .. 6=Saturday',
+    start_time  TIME NOT NULL,
+    end_time    TIME NOT NULL,
+    is_active   TINYINT(1) NOT NULL DEFAULT 1,
+    KEY idx_ticket_sched_doctor_day (doctor_id, day_of_week),
+    CONSTRAINT fk_ticket_sched_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- One row per (doctor, date) that has ever had a ticket. last_number is the
+-- next number to hand out (incremented under a row lock, see
+-- allocate_ticket_number() in includes/functions.php); current_serving is
+-- what the doctor/manager is calling out right now — this is what a patient
+-- checks to gauge their wait, and what "Next" advances.
+DROP TABLE IF EXISTS doctor_ticket_counters;
+CREATE TABLE doctor_ticket_counters (
+    doctor_id       INT UNSIGNED NOT NULL,
+    ticket_date     DATE NOT NULL,
+    last_number     INT UNSIGNED NOT NULL DEFAULT 0,
+    current_serving INT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (doctor_id, ticket_date),
+    CONSTRAINT fk_ticket_counter_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- patient_id is NULL for a walk-in ticket a doctor/manager adds directly at
+-- the clinic (guest_name/guest_phone capture who they are instead — no
+-- account is created for someone standing at the front desk).
+DROP TABLE IF EXISTS doctor_tickets;
+CREATE TABLE doctor_tickets (
+    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    doctor_id     INT UNSIGNED NOT NULL,
+    patient_id    INT UNSIGNED DEFAULT NULL,
+    guest_name    VARCHAR(150) DEFAULT NULL,
+    guest_phone   VARCHAR(30) DEFAULT NULL,
+    ticket_date   DATE NOT NULL,
+    ticket_number INT UNSIGNED NOT NULL,
+    status        ENUM('waiting','serving','completed','no_show','cancelled') NOT NULL DEFAULT 'waiting',
+    added_by      ENUM('patient','doctor','manager') NOT NULL DEFAULT 'patient',
+    notes         VARCHAR(255) DEFAULT NULL,
+    created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_ticket_doctor_date_number (doctor_id, ticket_date, ticket_number),
+    KEY idx_ticket_patient (patient_id),
+    CONSTRAINT fk_ticket_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ticket_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- A doctor's front-desk staff account — logs in like any other user
+-- (role='manager') but can only reach /manager/* (ticket queue management
+-- for the one doctor they're linked to). Fixed capability, not a general
+-- permission system: add/advance/complete tickets for that doctor's queue.
+DROP TABLE IF EXISTS doctor_managers;
+CREATE TABLE doctor_managers (
+    id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    doctor_id  INT UNSIGNED NOT NULL,
+    user_id    INT UNSIGNED NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_manager_user (user_id),
+    KEY idx_manager_doctor (doctor_id),
+    CONSTRAINT fk_manager_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE,
+    CONSTRAINT fk_manager_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ----------------------------------------------------------------------------

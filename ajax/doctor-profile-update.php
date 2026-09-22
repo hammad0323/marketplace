@@ -28,6 +28,8 @@ $clinicCountry = clean($_POST['clinic_country'] ?? '');
 $specializationIds = array_filter(array_map('intval', (array) ($_POST['specialization_ids'] ?? [])));
 $metaTitle = mb_substr(clean($_POST['meta_title'] ?? ''), 0, 200) ?: null;
 $metaDescription = mb_substr(clean($_POST['meta_description'] ?? ''), 0, 300) ?: null;
+$latitude = is_numeric($_POST['latitude'] ?? null) ? (float) $_POST['latitude'] : null;
+$longitude = is_numeric($_POST['longitude'] ?? null) ? (float) $_POST['longitude'] : null;
 
 if ($fullName === '') {
     json_response(false, ['errors' => ['full_name' => 'Full name is required.']], 'Please fix the errors below.');
@@ -41,8 +43,8 @@ mysqli_stmt_bind_param($stmt, 'ssi', $fullName, $phone, $userId);
 mysqli_stmt_execute($stmt);
 mysqli_stmt_close($stmt);
 
-$stmt = mysqli_prepare($db, 'UPDATE doctors SET designation = ?, qualification = ?, experience_years = ?, bio = ?, consultation_fee_online = ?, consultation_fee_physical = ?, free_consultation = ?, clinic_name = ?, clinic_address = ?, clinic_city = ?, clinic_state = ?, clinic_country = ?, meta_title = ?, meta_description = ? WHERE id = ?');
-mysqli_stmt_bind_param($stmt, 'ssisddisssssssi', $designation, $qualification, $experienceYears, $bio, $feeOnline, $feePhysical, $freeConsultation, $clinicName, $clinicAddress, $clinicCity, $clinicState, $clinicCountry, $metaTitle, $metaDescription, $doctorId);
+$stmt = mysqli_prepare($db, 'UPDATE doctors SET designation = ?, qualification = ?, experience_years = ?, bio = ?, consultation_fee_online = ?, consultation_fee_physical = ?, free_consultation = ?, clinic_name = ?, clinic_address = ?, clinic_city = ?, clinic_state = ?, clinic_country = ?, meta_title = ?, meta_description = ?, latitude = ?, longitude = ? WHERE id = ?');
+mysqli_stmt_bind_param($stmt, 'ssisddisssssssddi', $designation, $qualification, $experienceYears, $bio, $feeOnline, $feePhysical, $freeConsultation, $clinicName, $clinicAddress, $clinicCity, $clinicState, $clinicCountry, $metaTitle, $metaDescription, $latitude, $longitude, $doctorId);
 mysqli_stmt_execute($stmt);
 mysqli_stmt_close($stmt);
 

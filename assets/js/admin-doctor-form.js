@@ -113,6 +113,7 @@
             $('#doctor-qualification').val(d.qualification);
             $('#doctor-registration-number').val(d.registration_number);
             $('#doctor-experience-years').val(d.experience_years);
+            $('#doctor-booking-mode').val(d.booking_mode || 'slots');
             setBioContent(d.bio);
             $('#doctor-fee-online').val(d.consultation_fee_online);
             $('#doctor-fee-physical').val(d.consultation_fee_physical);

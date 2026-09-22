@@ -736,6 +736,56 @@ function save_doctor_availability($doctorId, array $rows)
     }
 }
 
+/** @return array<int,array{id:int,start_time:string,end_time:string,is_active:int}> keyed by day_of_week */
+function get_doctor_ticket_schedule($doctorId)
+{
+    $byDay = [];
+    $stmt = mysqli_prepare(db(), 'SELECT * FROM doctor_ticket_schedule WHERE doctor_id = ? ORDER BY day_of_week');
+    mysqli_stmt_bind_param($stmt, 'i', $doctorId);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    while ($row = mysqli_fetch_assoc($res)) {
+        $byDay[(int) $row['day_of_week']] = $row;
+    }
+    mysqli_stmt_close($stmt);
+    return $byDay;
+}
+
+/** Replaces a doctor's weekly ticket-queue hours with the given rows (delete + re-insert), same shape as save_doctor_availability(). */
+function save_doctor_ticket_schedule($doctorId, array $rows)
+{
+    $db = db();
+    mysqli_begin_transaction($db);
+    try {
+        $stmt = mysqli_prepare($db, 'DELETE FROM doctor_ticket_schedule WHERE doctor_id = ?');
+        mysqli_stmt_bind_param($stmt, 'i', $doctorId);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+
+        $insert = mysqli_prepare($db, 'INSERT INTO doctor_ticket_schedule (doctor_id, day_of_week, start_time, end_time) VALUES (?, ?, ?, ?)');
+        foreach ($rows as $row) {
+            $day = (int) ($row['day_of_week'] ?? -1);
+            $start = $row['start_time'] ?? '';
+            $end = $row['end_time'] ?? '';
+            if ($day < 0 || $day > 6 || !preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $start) || !preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $end)) {
+                continue;
+            }
+            if (strtotime($start) >= strtotime($end)) {
+                continue;
+            }
+            mysqli_stmt_bind_param($insert, 'iiss', $doctorId, $day, $start, $end);
+            mysqli_stmt_execute($insert);
+        }
+        mysqli_stmt_close($insert);
+        mysqli_commit($db);
+        return true;
+    } catch (Exception $e) {
+        mysqli_rollback($db);
+        error_log('save_doctor_ticket_schedule failed: ' . $e->getMessage());
+        return false;
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Settings, notifications, activity log, pagination
 // ---------------------------------------------------------------------------
@@ -967,8 +1017,97 @@ function role_home_url($role)
         'doctor' => '/doctor/dashboard',
         'pharmacy' => '/pharmacy/dashboard',
         'admin' => '/admin/dashboard',
+        'manager' => '/manager/queue',
         default => '/patient/dashboard',
     };
+}
+
+/**
+ * doctor_id whose ticket queue the CURRENT session may manage — the doctor
+ * themselves, or a manager account linked to that doctor. Used by every
+ * ticket-management ajax endpoint so the same code path serves both
+ * doctor/queue.php and manager/queue.php. Returns null (and the caller
+ * should reject the request) for anyone else.
+ */
+function resolve_ticket_doctor_id()
+{
+    $role = current_role();
+    if ($role === 'doctor') {
+        return current_profile_id();
+    }
+    if ($role === 'manager') {
+        return current_manager_doctor_id();
+    }
+    return null;
+}
+
+/** doctor_id a logged-in manager account manages, or null if the current user isn't a manager. */
+function current_manager_doctor_id()
+{
+    $user = current_user();
+    if (!$user || $user['role'] !== 'manager') {
+        return null;
+    }
+    $stmt = mysqli_prepare(db(), 'SELECT doctor_id FROM doctor_managers WHERE user_id = ? LIMIT 1');
+    mysqli_stmt_bind_param($stmt, 'i', $user['id']);
+    mysqli_stmt_execute($stmt);
+    $row = mysqli_stmt_get_result($stmt)->fetch_assoc();
+    mysqli_stmt_close($stmt);
+    return $row ? (int) $row['doctor_id'] : null;
+}
+
+/**
+ * Allocates the next ticket number for a doctor's queue on a given date and
+ * returns it. Safe under concurrent bookings: the counter row is created if
+ * missing, then locked with SELECT ... FOR UPDATE inside a transaction the
+ * caller must have already opened with mysqli_begin_transaction() — the row
+ * lock serializes concurrent callers so two patients booking at the same
+ * instant can never receive the same number.
+ */
+function allocate_ticket_number($doctorId, $date)
+{
+    $db = db();
+    $stmt = mysqli_prepare($db, 'INSERT INTO doctor_ticket_counters (doctor_id, ticket_date) VALUES (?, ?) ON DUPLICATE KEY UPDATE doctor_id = doctor_id');
+    mysqli_stmt_bind_param($stmt, 'is', $doctorId, $date);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+
+    $stmt = mysqli_prepare($db, 'SELECT last_number FROM doctor_ticket_counters WHERE doctor_id = ? AND ticket_date = ? FOR UPDATE');
+    mysqli_stmt_bind_param($stmt, 'is', $doctorId, $date);
+    mysqli_stmt_execute($stmt);
+    $current = (int) (mysqli_stmt_get_result($stmt)->fetch_assoc()['last_number'] ?? 0);
+    mysqli_stmt_close($stmt);
+
+    $next = $current + 1;
+    $stmt = mysqli_prepare($db, 'UPDATE doctor_ticket_counters SET last_number = ? WHERE doctor_id = ? AND ticket_date = ?');
+    mysqli_stmt_bind_param($stmt, 'iis', $next, $doctorId, $date);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+
+    return $next;
+}
+
+/** Display name for a ticket row (real account name, or the walk-in/guest name captured at booking). */
+function ticket_display_name($ticket)
+{
+    return $ticket['patient_name'] ?: ($ticket['guest_name'] ?: 'Patient');
+}
+
+/**
+ * A SQL expression computing great-circle distance in kilometers from
+ * ($lat, $lng) to a row's $latCol/$lngCol, via the Haversine formula — no
+ * spatial extension or geocoding API required, just plain trig functions
+ * every MySQL/MariaDB version supports. Embed directly in a SELECT list
+ * (aliased, e.g. "AS distance_km") and/or ORDER BY.
+ */
+function haversine_distance_sql($latCol, $lngCol, $lat, $lng)
+{
+    $lat = (float) $lat;
+    $lng = (float) $lng;
+    return "(6371 * ACOS(LEAST(1, GREATEST(-1,
+        COS(RADIANS($lat)) * COS(RADIANS($latCol)) * COS(RADIANS($lngCol) - RADIANS($lng))
+        + SIN(RADIANS($lat)) * SIN(RADIANS($latCol))
+    ))))";
 }
 
 /**

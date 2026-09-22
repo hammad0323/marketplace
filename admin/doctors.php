@@ -44,7 +44,7 @@ require __DIR__ . '/includes/header.php';
 <?php else: ?>
 <div class="card table-card" data-reveal>
     <div class="table-scroll"><table class="data-table">
-        <thead><tr><th>Doctor</th><th>Specialization</th><th>License #</th><th>Applied</th><th>Status</th><th>Account</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Doctor</th><th>Specialization</th><th>License #</th><th>Booking</th><th>Applied</th><th>Status</th><th>Account</th><th>Actions</th></tr></thead>
         <tbody>
         <?php foreach ($doctors as $d): ?>
         <tr data-doctor-id="<?= (int)$d['id'] ?>" data-meta-title="<?= e($d['meta_title']) ?>" data-meta-description="<?= e($d['meta_description']) ?>">
@@ -54,6 +54,7 @@ require __DIR__ . '/includes/header.php';
             </td>
             <td><?= e($d['spec_names']) ?></td>
             <td><?= e($d['registration_number']) ?></td>
+            <td><span class="badge badge-<?= $d['booking_mode'] === 'tickets' ? 'pending' : 'free' ?>"><?= $d['booking_mode'] === 'tickets' ? 'Ticket Queue' : 'Slots' ?></span></td>
             <td><?= format_date($d['created_at']) ?></td>
             <td><span class="status-pill status-<?= e($d['verification_status']) ?>"><?= ucfirst($d['verification_status']) ?></span>
                 <?php if ($d['is_premium']): ?><span class="badge badge-premium" style="margin-left:4px;">Premium</span><?php endif; ?>
@@ -131,6 +132,16 @@ require __DIR__ . '/includes/header.php';
                     <label class="form-label">Bio</label>
                     <div data-rich-editor data-target="#doctor-bio" data-upload-url="/ajax/medicine-image-upload.php"></div>
                     <textarea id="doctor-bio" name="bio"></textarea>
+                </div>
+
+                <div class="divider-fade"></div>
+                <h4 style="margin-bottom:4px;">Booking Mode</h4>
+                <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:14px;">Date/time slots (patients pick an exact time) or a first-come-first-served ticket queue (patients get a number, called out in order — common for walk-in clinics).</p>
+                <div class="form-group" style="max-width:320px;">
+                    <select class="form-control" name="booking_mode" id="doctor-booking-mode">
+                        <option value="slots">Date & Time Slots</option>
+                        <option value="tickets">Ticket / Token Queue</option>
+                    </select>
                 </div>
 
                 <div class="divider-fade"></div>

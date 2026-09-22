@@ -19,6 +19,8 @@ $address = clean($_POST['address'] ?? '');
 $registrationNumber = clean($_POST['registration_number'] ?? '');
 $licenseAuthority = clean($_POST['license_authority'] ?? '');
 $bio = clean($_POST['bio'] ?? '');
+$latitude = is_numeric($_POST['latitude'] ?? null) ? (float) $_POST['latitude'] : null;
+$longitude = is_numeric($_POST['longitude'] ?? null) ? (float) $_POST['longitude'] : null;
 
 if ($storeName === '') {
     json_response(false, ['errors' => ['store_name' => 'Store name is required.']], 'Please fix the errors below.');
@@ -32,8 +34,8 @@ mysqli_stmt_bind_param($stmt, 'ssi', $fullName, $phone, $userId);
 mysqli_stmt_execute($stmt);
 mysqli_stmt_close($stmt);
 
-$stmt = mysqli_prepare($db, 'UPDATE pharmacies SET store_name = ?, city = ?, address = ?, registration_number = ?, license_authority = ?, bio = ? WHERE id = ?');
-mysqli_stmt_bind_param($stmt, 'ssssssi', $storeName, $city, $address, $registrationNumber, $licenseAuthority, $bio, $pharmacyId);
+$stmt = mysqli_prepare($db, 'UPDATE pharmacies SET store_name = ?, city = ?, address = ?, registration_number = ?, license_authority = ?, bio = ?, latitude = ?, longitude = ? WHERE id = ?');
+mysqli_stmt_bind_param($stmt, 'ssssssddi', $storeName, $city, $address, $registrationNumber, $licenseAuthority, $bio, $latitude, $longitude, $pharmacyId);
 mysqli_stmt_execute($stmt);
 mysqli_stmt_close($stmt);
 

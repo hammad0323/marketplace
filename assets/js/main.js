@@ -165,6 +165,77 @@
         return { title: title, description: description };
     };
 
+    // ---- "Near Me" geolocation helpers --------------------------------------------
+    // Shared by doctors.php/pharmacies.php/products.php (redirect with
+    // ?lat=&lng=, sorted server-side by distance) and doctor/pharmacy profile
+    // pages (capture the clinic/store's own coordinates into hidden inputs).
+    // Both just wrap the browser Geolocation API with the same permission/
+    // error handling so every "near me" entry point behaves identically.
+    function requestGeolocation(onSuccess, onError) {
+        if (!('geolocation' in navigator)) {
+            onError('Your browser does not support location — try searching by city instead.');
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            function (pos) { onSuccess(pos.coords.latitude, pos.coords.longitude); },
+            function (err) {
+                var msg = err.code === err.PERMISSION_DENIED
+                    ? 'Location permission was denied — allow it in your browser settings, or search by city instead.'
+                    : 'Could not get your location. Please try again or search by city.';
+                onError(msg);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+        );
+    }
+
+    window.setupNearMeButton = function (buttonSelector, baseUrl) {
+        var btn = document.querySelector(buttonSelector);
+        if (!btn) return;
+        var originalHtml = btn.innerHTML;
+        btn.addEventListener('click', function () {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loader-ring" style="width:14px;height:14px;border-width:2px;"></span> Locating…';
+            requestGeolocation(function (lat, lng) {
+                var url = new URL(baseUrl, window.location.origin);
+                var params = new URLSearchParams(window.location.search);
+                params.delete('page');
+                params.set('lat', lat.toFixed(6));
+                params.set('lng', lng.toFixed(6));
+                url.search = params.toString();
+                window.location.href = url.toString();
+            }, function (message) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                if (window.showToast) showToast('error', 'Location unavailable', message);
+                else alert(message);
+            });
+        });
+    };
+
+    window.setupLocationCaptureButton = function (buttonSelector, latInputSelector, lngInputSelector, statusSelector) {
+        var btn = document.querySelector(buttonSelector);
+        if (!btn) return;
+        var originalHtml = btn.innerHTML;
+        btn.addEventListener('click', function () {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loader-ring" style="width:14px;height:14px;border-width:2px;"></span> Locating…';
+            requestGeolocation(function (lat, lng) {
+                document.querySelector(latInputSelector).value = lat.toFixed(7);
+                document.querySelector(lngInputSelector).value = lng.toFixed(7);
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                var status = document.querySelector(statusSelector);
+                if (status) status.textContent = 'Location captured — click Save to confirm.';
+                if (window.showToast) showToast('success', 'Location captured', 'Click Save to confirm your clinic location.');
+            }, function (message) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                if (window.showToast) showToast('error', 'Location unavailable', message);
+                else alert(message);
+            });
+        });
+    };
+
     // ---- Scroll reveal animations ------------------------------------------------
     var revealEls = document.querySelectorAll('[data-reveal]');
     if ('IntersectionObserver' in window && revealEls.length) {

@@ -1,6 +1,10 @@
 (function ($) {
     'use strict';
 
+    if (window.setupLocationCaptureButton) {
+        window.setupLocationCaptureButton('#set-clinic-location-btn', '#clinic-latitude', '#clinic-longitude', '#clinic-location-status');
+    }
+
     $('#privacy-form').on('submit', function (e) {
         e.preventDefault();
         var $form = $(this);

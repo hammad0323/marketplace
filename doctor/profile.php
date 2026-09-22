@@ -99,6 +99,13 @@ require __DIR__ . '/includes/header.php';
                         <div class="form-group"><label class="form-label">State</label><input type="text" class="form-control" name="clinic_state" value="<?= e($doctor['clinic_state']) ?>"></div>
                         <div class="form-group"><label class="form-label">Country</label><input type="text" class="form-control" name="clinic_country" value="<?= e($doctor['clinic_country']) ?>"></div>
                     </div>
+                    <div class="form-group">
+                        <label class="form-label">Clinic Location <span style="font-weight:400;color:var(--color-text-muted);">(for "Near Me" search)</span></label>
+                        <input type="hidden" name="latitude" id="clinic-latitude" value="<?= e($doctor['latitude']) ?>">
+                        <input type="hidden" name="longitude" id="clinic-longitude" value="<?= e($doctor['longitude']) ?>">
+                        <button type="button" class="btn btn-outline btn-sm" id="set-clinic-location-btn"><i class="ri-map-pin-user-line"></i> Use My Current Location</button>
+                        <span id="clinic-location-status" style="font-size:13px;color:var(--color-text-muted);margin-left:10px;"><?= ($doctor['latitude'] && $doctor['longitude']) ? 'Location set — patients searching "Near Me" can find you.' : 'Not set yet — stand at your clinic and tap the button.' ?></span>
+                    </div>
                     <div class="divider-fade"></div>
                     <h4 style="margin-bottom:4px;">SEO <span style="font-weight:400;color:var(--color-text-muted);font-size:13px;">(optional)</span></h4>
                     <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:14px;">Auto-filled from your name, designation, and specialization below — edit freely, or clear it to let the suggestion take over again.</p>

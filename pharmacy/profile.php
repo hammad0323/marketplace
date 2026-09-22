@@ -58,6 +58,13 @@ require __DIR__ . '/includes/header.php';
                         <div class="form-group"><label class="form-label">City</label><input type="text" class="form-control" name="city" value="<?= e($pharmacy['city']) ?>"></div>
                     </div>
                     <div class="form-group"><label class="form-label">Address</label><input type="text" class="form-control" name="address" value="<?= e($pharmacy['address']) ?>"></div>
+                    <div class="form-group">
+                        <label class="form-label">Store Location <span style="font-weight:400;color:var(--color-text-muted);">(for "Near Me" search)</span></label>
+                        <input type="hidden" name="latitude" id="store-latitude" value="<?= e($pharmacy['latitude']) ?>">
+                        <input type="hidden" name="longitude" id="store-longitude" value="<?= e($pharmacy['longitude']) ?>">
+                        <button type="button" class="btn btn-outline btn-sm" id="set-store-location-btn"><i class="ri-map-pin-user-line"></i> Use My Current Location</button>
+                        <span id="store-location-status" style="font-size:13px;color:var(--color-text-muted);margin-left:10px;"><?= ($pharmacy['latitude'] && $pharmacy['longitude']) ? 'Location set — patients searching "Near Me" can find you.' : 'Not set yet — stand at your store and tap the button.' ?></span>
+                    </div>
                     <div class="grid grid-2">
                         <div class="form-group"><label class="form-label">Registration Number</label><input type="text" class="form-control" name="registration_number" value="<?= e($pharmacy['registration_number']) ?>"></div>
                         <div class="form-group"><label class="form-label">Issuing Authority</label><input type="text" class="form-control" name="license_authority" value="<?= e($pharmacy['license_authority']) ?>"></div>
