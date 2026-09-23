@@ -1290,3 +1290,301 @@ function seo_score_for_medicine(array $data)
 
     return min(100, $score);
 }
+
+/**
+ * Block-based blog editor. A post's `blocks` column is a JSON array of
+ * {type, ...type-specific fields}; render_blog_blocks() walks it in order.
+ * Posts written before this feature existed have blocks = NULL and keep
+ * rendering their old single `content` HTML field (see blog-post.php).
+ */
+function get_blog_blocks($post)
+{
+    if (empty($post['blocks'])) {
+        return null;
+    }
+    $blocks = json_decode($post['blocks'], true);
+    return (is_array($blocks) && $blocks) ? $blocks : null;
+}
+
+/** Doctor rows for doctor/doctor_carousel/comparison_table blocks, verified only, in the author's chosen order. */
+function fetch_doctors_for_blocks(array $doctorIds)
+{
+    $doctorIds = array_values(array_unique(array_filter(array_map('intval', $doctorIds))));
+    if (!$doctorIds) {
+        return [];
+    }
+    $placeholders = implode(',', array_fill(0, count($doctorIds), '?'));
+    $stmt = mysqli_prepare(db(), "SELECT d.*, u.full_name, u.avatar FROM doctors d JOIN users u ON u.id = d.user_id
+        WHERE d.id IN ($placeholders) AND d.verification_status = 'verified' AND u.status = 'active'");
+    mysqli_stmt_bind_param($stmt, str_repeat('i', count($doctorIds)), ...$doctorIds);
+    mysqli_stmt_execute($stmt);
+    $byId = [];
+    foreach (mysqli_stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC) as $row) {
+        $row['specializations'] = get_doctor_specializations($row['id']);
+        $byId[(int) $row['id']] = $row;
+    }
+    mysqli_stmt_close($stmt);
+    $ordered = [];
+    foreach ($doctorIds as $id) {
+        if (isset($byId[$id])) $ordered[] = $byId[$id];
+    }
+    return $ordered;
+}
+
+/** Medicine rows for medicine blocks, published only, in the author's chosen order. */
+function fetch_medicines_for_blocks(array $medicineIds)
+{
+    $medicineIds = array_values(array_unique(array_filter(array_map('intval', $medicineIds))));
+    if (!$medicineIds) {
+        return [];
+    }
+    $placeholders = implode(',', array_fill(0, count($medicineIds), '?'));
+    $stmt = mysqli_prepare(db(), "SELECT * FROM medicine_info WHERE id IN ($placeholders) AND status = 'published'");
+    mysqli_stmt_bind_param($stmt, str_repeat('i', count($medicineIds)), ...$medicineIds);
+    mysqli_stmt_execute($stmt);
+    $byId = [];
+    foreach (mysqli_stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC) as $row) {
+        $byId[(int) $row['id']] = $row;
+    }
+    mysqli_stmt_close($stmt);
+    $ordered = [];
+    foreach ($medicineIds as $id) {
+        if (isset($byId[$id])) $ordered[] = $byId[$id];
+    }
+    return $ordered;
+}
+
+/** youtube.com/watch, youtu.be, or vimeo.com URL -> embeddable iframe src, or null if unrecognized. */
+function video_embed_url($url)
+{
+    $url = trim((string) $url);
+    if ($url === '') return null;
+    if (preg_match('~(?:youtube\.com/(?:watch\?v=|embed/|shorts/)|youtu\.be/)([\w-]{11})~i', $url, $m)) {
+        return 'https://www.youtube.com/embed/' . $m[1];
+    }
+    if (preg_match('~vimeo\.com/(?:video/)?(\d+)~i', $url, $m)) {
+        return 'https://player.vimeo.com/video/' . $m[1];
+    }
+    return null;
+}
+
+/** A map block's address (or lat/lng) -> a keyless Google Maps embed URL. */
+function map_embed_url(array $block)
+{
+    $q = trim($block['address'] ?? '');
+    if ($q === '' && isset($block['lat'], $block['lng']) && is_numeric($block['lat']) && is_numeric($block['lng'])) {
+        $q = $block['lat'] . ',' . $block['lng'];
+    }
+    return $q === '' ? null : 'https://www.google.com/maps?q=' . urlencode($q) . '&output=embed';
+}
+
+/** Stable, unique #anchor slug for a heading block's text, used by both the heading itself and any Table of Contents block. */
+function _blog_heading_slug($text, array &$seen)
+{
+    $base = trim(preg_replace('/[^a-z0-9]+/', '-', mb_strtolower($text)), '-');
+    if ($base === '') $base = 'section';
+    $slug = $base;
+    $n = 2;
+    while (isset($seen[$slug])) {
+        $slug = $base . '-' . $n++;
+    }
+    $seen[$slug] = true;
+    return $slug;
+}
+
+/** Plain-text extract of a block-based post's readable content, for excerpt/meta-description auto-fallback when the author didn't write one. */
+function blog_blocks_to_text(array $blocks)
+{
+    $parts = [];
+    foreach ($blocks as $b) {
+        switch ($b['type'] ?? '') {
+            case 'heading': $parts[] = $b['text'] ?? ''; break;
+            case 'richtext': $parts[] = strip_tags($b['html'] ?? ''); break;
+            case 'callout': $parts[] = strip_tags($b['html'] ?? ''); break;
+            case 'quote': $parts[] = $b['text'] ?? ''; break;
+        }
+    }
+    return trim(implode(' ', array_filter($parts)));
+}
+
+/** Renders every block in order. Pre-scans headings first so a `toc` block anywhere in the post can list all of them regardless of position. */
+function render_blog_blocks(array $blocks)
+{
+    $seenSlugs = [];
+    $headings = [];
+    foreach ($blocks as $i => $b) {
+        if (($b['type'] ?? '') === 'heading' && trim($b['text'] ?? '') !== '') {
+            $blocks[$i]['_id'] = _blog_heading_slug($b['text'], $seenSlugs);
+            $headings[] = ['id' => $blocks[$i]['_id'], 'text' => $b['text'], 'level' => $b['level'] ?? 'h2'];
+        }
+    }
+    foreach ($blocks as $block) {
+        render_blog_block($block, $headings);
+    }
+}
+
+function render_blog_block(array $block, array $headings = [])
+{
+    $type = $block['type'] ?? '';
+    switch ($type) {
+        case 'heading':
+            if (trim($block['text'] ?? '') === '') break;
+            $level = ($block['level'] ?? 'h2') === 'h3' ? 'h3' : 'h2';
+            echo '<' . $level . ' id="' . e($block['_id'] ?? '') . '" style="margin:36px 0 14px;scroll-margin-top:100px;">' . e($block['text']) . '</' . $level . '>';
+            break;
+
+        case 'richtext':
+            if (trim(strip_tags($block['html'] ?? '')) === '') break;
+            echo '<div class="rich-content">' . render_rich_html($block['html']) . '</div>';
+            break;
+
+        case 'image':
+            if (empty($block['url'])) break;
+            echo '<figure class="blog-block-figure">';
+            echo '<img src="' . e($block['url']) . '" alt="' . e($block['alt'] ?? '') . '" loading="lazy">';
+            if (!empty($block['caption'])) echo '<figcaption>' . e($block['caption']) . '</figcaption>';
+            echo '</figure>';
+            break;
+
+        case 'gallery':
+            $images = array_filter($block['images'] ?? [], fn($img) => !empty($img['url']));
+            if (!$images) break;
+            echo '<div class="city-carousel-wrap blog-block-gallery" data-carousel>';
+            echo '<button type="button" class="carousel-nav-btn" data-carousel-prev aria-label="Scroll left"><i class="ri-arrow-left-s-line"></i></button>';
+            echo '<div class="city-carousel-track" data-carousel-track>';
+            foreach ($images as $img) {
+                echo '<img src="' . e($img['url']) . '" alt="' . e($img['alt'] ?? '') . '" loading="lazy">';
+            }
+            echo '</div>';
+            echo '<button type="button" class="carousel-nav-btn" data-carousel-next aria-label="Scroll right"><i class="ri-arrow-right-s-line"></i></button>';
+            echo '</div>';
+            break;
+
+        case 'video':
+            $embed = video_embed_url($block['url'] ?? '');
+            if (!$embed) break;
+            echo '<div class="blog-video-wrap"><iframe src="' . e($embed) . '" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen title="Video"></iframe></div>';
+            break;
+
+        case 'map':
+            $embed = map_embed_url($block);
+            if (!$embed) break;
+            echo '<div class="blog-map-wrap"><iframe src="' . e($embed) . '" loading="lazy" title="Map"></iframe></div>';
+            break;
+
+        case 'doctor':
+            $doctors = fetch_doctors_for_blocks([(int) ($block['doctor_id'] ?? 0)]);
+            if (!$doctors) break;
+            $d = $doctors[0];
+            echo '<div class="blog-block-single-card">';
+            require __DIR__ . '/doctor-card.php';
+            echo '</div>';
+            break;
+
+        case 'doctor_carousel':
+            $doctors = fetch_doctors_for_blocks($block['doctor_ids'] ?? []);
+            if (!$doctors) break;
+            echo '<div class="blog-block-carousel-section">';
+            if (!empty($block['heading'])) echo '<h3>' . e($block['heading']) . '</h3>';
+            echo '<div class="city-carousel-wrap" data-carousel>';
+            echo '<button type="button" class="carousel-nav-btn" data-carousel-prev aria-label="Scroll left"><i class="ri-arrow-left-s-line"></i></button>';
+            echo '<div class="city-carousel-track" data-carousel-track>';
+            foreach ($doctors as $d) {
+                echo '<div class="blog-block-carousel-item">';
+                require __DIR__ . '/doctor-card.php';
+                echo '</div>';
+            }
+            echo '</div>';
+            echo '<button type="button" class="carousel-nav-btn" data-carousel-next aria-label="Scroll right"><i class="ri-arrow-right-s-line"></i></button>';
+            echo '</div></div>';
+            break;
+
+        case 'medicine':
+            $medicines = fetch_medicines_for_blocks([(int) ($block['medicine_id'] ?? 0)]);
+            if (!$medicines) break;
+            $m = $medicines[0];
+            echo '<a href="' . e(medicine_url($m['slug'])) . '" class="card card-hover blog-block-medicine-card">';
+            if ($m['featured_image']) echo '<img src="/uploads/' . e($m['featured_image']) . '" alt="' . e($m['name']) . '" loading="lazy">';
+            else echo '<div class="blog-block-medicine-icon"><i class="ri-capsule-line"></i></div>';
+            echo '<div><strong>' . e($m['name']) . '</strong>';
+            if ($m['category']) echo '<span>' . e($m['category']) . '</span>';
+            echo '</div><i class="ri-arrow-right-line"></i></a>';
+            break;
+
+        case 'comparison_table':
+            $doctors = fetch_doctors_for_blocks($block['doctor_ids'] ?? []);
+            if (!$doctors) break;
+            echo '<div class="card table-card blog-block-comparison">';
+            if (!empty($block['heading'])) echo '<h3 style="padding:20px 20px 0;">' . e($block['heading']) . '</h3>';
+            echo '<div class="table-scroll"><table class="data-table"><thead><tr><th>Doctor</th><th>Specialization</th><th>Experience</th><th>Online Fee</th><th>In-Person Fee</th><th>Rating</th><th></th></tr></thead><tbody>';
+            foreach ($doctors as $d) {
+                $specNames = specialization_names($d['specializations']) ?: '—';
+                $fee = (float) $d['consultation_fee_online'];
+                $feeInPerson = (float) $d['consultation_fee_physical'];
+                echo '<tr><td class="table-user"><img src="' . e(avatar_url($d['avatar'], $d['full_name'])) . '" alt=""><strong>' . e($d['full_name']) . '</strong></td>';
+                echo '<td>' . e($specNames) . '</td>';
+                echo '<td>' . ((int) $d['experience_years'] > 0 ? (int) $d['experience_years'] . ' yrs' : '—') . '</td>';
+                echo '<td>' . ($fee > 0 ? format_currency($fee) : ($d['free_consultation'] ? 'Free' : '—')) . '</td>';
+                echo '<td>' . ($feeInPerson > 0 ? format_currency($feeInPerson) : '—') . '</td>';
+                echo '<td>' . ((int) $d['rating_count'] > 0 ? '<i class="ri-star-fill" style="color:#F59E0B;"></i> ' . number_format($d['rating_avg'], 1) : 'New') . '</td>';
+                echo '<td><a href="' . e(doctor_url($d['slug'])) . '" class="btn btn-outline btn-sm">View</a></td></tr>';
+            }
+            echo '</tbody></table></div></div>';
+            break;
+
+        case 'fact_box':
+            $facts = array_filter($block['facts'] ?? [], fn($f) => trim($f['label'] ?? '') !== '');
+            if (!$facts) break;
+            echo '<div class="blog-fact-box">';
+            if (!empty($block['heading'])) echo '<h3>' . e($block['heading']) . '</h3>';
+            echo '<dl>';
+            foreach ($facts as $f) {
+                echo '<div><dt>' . e($f['label']) . '</dt><dd>' . e($f['value'] ?? '') . '</dd></div>';
+            }
+            echo '</dl></div>';
+            break;
+
+        case 'callout':
+            if (trim(strip_tags($block['html'] ?? '')) === '') break;
+            $style = in_array($block['style'] ?? 'info', ['info', 'success', 'warning'], true) ? $block['style'] : 'info';
+            echo '<div class="blog-callout blog-callout-' . e($style) . '">' . render_rich_html($block['html']) . '</div>';
+            break;
+
+        case 'faq':
+            $items = array_filter($block['items'] ?? [], fn($f) => trim($f['q'] ?? '') !== '');
+            if (!$items) break;
+            echo '<div class="blog-block-faq">';
+            if (!empty($block['heading'])) echo '<h3>' . e($block['heading']) . '</h3>';
+            echo '<div data-faq-group>';
+            foreach ($items as $f) {
+                echo '<div class="card" style="margin-bottom:12px;overflow:hidden;">
+                    <button type="button" class="faq-q" style="width:100%;text-align:left;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px;background:none;border:none;font-weight:700;font-size:14.5px;color:var(--color-text);">'
+                    . e($f['q']) . '<i class="ri-add-line" style="transition:var(--transition);flex-shrink:0;"></i></button>
+                    <div class="faq-a" style="max-height:0;overflow:hidden;transition:max-height 0.35s ease;"><p style="padding:0 22px 18px;color:var(--color-text-muted);font-size:14px;">' . e($f['a'] ?? '') . '</p></div>
+                </div>';
+            }
+            echo '</div></div>';
+            break;
+
+        case 'quote':
+            if (trim($block['text'] ?? '') === '') break;
+            echo '<blockquote class="blog-block-quote"><p>' . e($block['text']) . '</p>';
+            if (!empty($block['cite'])) echo '<cite>' . e($block['cite']) . '</cite>';
+            echo '</blockquote>';
+            break;
+
+        case 'toc':
+            if (!$headings) break;
+            echo '<nav class="blog-toc-box" aria-label="Table of contents">';
+            echo '<h3>' . e($block['heading'] ?? 'Table of Contents') . '</h3><ol>';
+            foreach ($headings as $h) {
+                echo '<li class="toc-' . e($h['level']) . '"><a href="#' . e($h['id']) . '">' . e($h['text']) . '</a></li>';
+            }
+            echo '</ol></nav>';
+            break;
+
+        case 'divider':
+            echo '<hr class="blog-block-divider">';
+            break;
+    }
+}

@@ -7,11 +7,32 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 require_csrf_or_fail();
 require_role_page_or_json('admin');
 
+/**
+ * Strips the block editor's internal, non-persisted `_uid` key (used only
+ * client-side to track DOM nodes) from every block before it's saved.
+ */
+function sanitize_blog_blocks_json($raw)
+{
+    $blocks = json_decode($raw ?? '', true);
+    if (!is_array($blocks)) {
+        return null;
+    }
+    foreach ($blocks as &$b) {
+        if (is_array($b)) {
+            unset($b['_uid']);
+        }
+    }
+    unset($b);
+    return $blocks ? json_encode($blocks) : null;
+}
+
 $db = db();
 $id = (int) ($_POST['id'] ?? 0);
 $title = clean($_POST['title'] ?? '');
 $excerpt = clean($_POST['excerpt'] ?? '');
+$category = clean($_POST['category'] ?? '') ?: null;
 $content = $_POST['content'] ?? '';
+$blocks = sanitize_blog_blocks_json($_POST['blocks'] ?? null);
 $status = ($_POST['status'] ?? 'draft') === 'published' ? 'published' : 'draft';
 $metaTitle = clean($_POST['meta_title'] ?? '') ?: null;
 $metaDescription = clean($_POST['meta_description'] ?? '') ?: null;
@@ -20,8 +41,8 @@ $errors = [];
 if ($title === '' || mb_strlen($title) < 5) {
     $errors['title'] = 'Please enter a title (at least 5 characters).';
 }
-if (trim(strip_tags($content)) === '') {
-    $errors['content'] = 'Post content cannot be empty.';
+if ($blocks === null && trim(strip_tags($content)) === '') {
+    $errors['content'] = 'Add at least one block with content.';
 }
 if ($errors) {
     json_response(false, ['errors' => $errors], 'Please fix the errors below.');
@@ -56,11 +77,11 @@ if ($id > 0) {
     }
 
     if ($publishedAt) {
-        $stmt = mysqli_prepare($db, 'UPDATE blog_posts SET title=?, excerpt=?, content=?, featured_image=?, status=?, meta_title=?, meta_description=?, published_at=? WHERE id=?');
-        mysqli_stmt_bind_param($stmt, 'ssssssssi', $title, $excerpt, $content, $featuredImage, $status, $metaTitle, $metaDescription, $publishedAt, $id);
+        $stmt = mysqli_prepare($db, 'UPDATE blog_posts SET title=?, excerpt=?, content=?, blocks=?, category=?, featured_image=?, status=?, meta_title=?, meta_description=?, published_at=? WHERE id=?');
+        mysqli_stmt_bind_param($stmt, 'ssssssssssi', $title, $excerpt, $content, $blocks, $category, $featuredImage, $status, $metaTitle, $metaDescription, $publishedAt, $id);
     } else {
-        $stmt = mysqli_prepare($db, 'UPDATE blog_posts SET title=?, excerpt=?, content=?, featured_image=?, status=?, meta_title=?, meta_description=? WHERE id=?');
-        mysqli_stmt_bind_param($stmt, 'sssssssi', $title, $excerpt, $content, $featuredImage, $status, $metaTitle, $metaDescription, $id);
+        $stmt = mysqli_prepare($db, 'UPDATE blog_posts SET title=?, excerpt=?, content=?, blocks=?, category=?, featured_image=?, status=?, meta_title=?, meta_description=? WHERE id=?');
+        mysqli_stmt_bind_param($stmt, 'sssssssssi', $title, $excerpt, $content, $blocks, $category, $featuredImage, $status, $metaTitle, $metaDescription, $id);
     }
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
@@ -70,8 +91,8 @@ if ($id > 0) {
 
 $slug = unique_slug($db, 'blog_posts', $title);
 $publishedAt = $status === 'published' ? date('Y-m-d H:i:s') : null;
-$stmt = mysqli_prepare($db, 'INSERT INTO blog_posts (author_id, title, slug, excerpt, content, featured_image, status, meta_title, meta_description, published_at) VALUES (?,?,?,?,?,?,?,?,?,?)');
-mysqli_stmt_bind_param($stmt, 'isssssssss', $authorId, $title, $slug, $excerpt, $content, $featuredImage, $status, $metaTitle, $metaDescription, $publishedAt);
+$stmt = mysqli_prepare($db, 'INSERT INTO blog_posts (author_id, title, slug, excerpt, content, blocks, category, featured_image, status, meta_title, meta_description, published_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
+mysqli_stmt_bind_param($stmt, 'isssssssssss', $authorId, $title, $slug, $excerpt, $content, $blocks, $category, $featuredImage, $status, $metaTitle, $metaDescription, $publishedAt);
 mysqli_stmt_execute($stmt);
 $newId = mysqli_insert_id($db);
 mysqli_stmt_close($stmt);

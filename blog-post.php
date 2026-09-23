@@ -30,8 +30,10 @@ $related = mysqli_query(db(), "
     ORDER BY published_at DESC LIMIT 3
 ")->fetch_all(MYSQLI_ASSOC);
 
+$blocks = get_blog_blocks($post);
+$fallbackText = $post['excerpt'] ?: ($blocks ? blog_blocks_to_text($blocks) : strip_tags($post['content']));
 $pageTitle = $post['meta_title'] ?: ($post['title'] . ' — ' . SITE_NAME);
-$metaDescription = $post['meta_description'] ?: excerpt($post['excerpt'] ?: strip_tags($post['content']), 155);
+$metaDescription = $post['meta_description'] ?: excerpt($fallbackText, 155);
 $ogImage = $post['featured_image'] ? APP_URL . '/uploads/' . $post['featured_image'] : null;
 $canonical = APP_URL . blog_url($post['slug']);
 $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Blog', 'url' => APP_URL . '/blog'], ['name' => $post['title']]];
@@ -58,11 +60,19 @@ require __DIR__ . '/includes/header.php';
             </div>
         </div>
 
+        <?php if ($post['category']): ?>
+        <span class="badge badge-free" style="margin-bottom:12px;display:inline-block;"><?= e($post['category']) ?></span>
+        <?php endif; ?>
+
         <?php if ($post['featured_image']): ?>
         <img src="/uploads/<?= e($post['featured_image']) ?>" alt="<?= e($post['title']) ?>" style="width:100%;max-height:420px;object-fit:cover;border-radius:var(--radius-md);margin-bottom:28px;" data-reveal>
         <?php endif; ?>
 
+        <?php if ($blocks): ?>
+        <?php render_blog_blocks($blocks); ?>
+        <?php else: ?>
         <div class="rich-content" data-reveal><?= render_rich_html($post['content']) ?></div>
+        <?php endif; ?>
 
         <?php if ($related): ?>
         <div class="divider-fade"></div>

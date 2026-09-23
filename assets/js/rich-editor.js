@@ -212,4 +212,9 @@
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('[data-rich-editor]').forEach(initEditor);
     });
+
+    // Exposed so the blog block editor (assets/js/blog-block-editor.js) can turn
+    // freshly-inserted [data-rich-editor] hosts into live editors on demand,
+    // for blocks added after DOMContentLoaded already fired.
+    window.initRichEditor = initEditor;
 })();

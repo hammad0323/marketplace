@@ -3,15 +3,6 @@
 
     var $modal = $('#post-modal');
     var $form = $('#post-form');
-    var $editorHost = $('[data-rich-editor]')[0];
-
-    function setEditorContent(html) {
-        if ($editorHost && $editorHost.richEditorSetContent) {
-            $editorHost.richEditorSetContent(html || '<p></p>');
-        } else {
-            $('#post-content').val(html || '');
-        }
-    }
 
     function openModal(title) {
         $('#post-modal-title').text(title);
@@ -26,7 +17,7 @@
     $('#add-post-btn').on('click', function () {
         $form[0].reset();
         $('#post-id').val('0');
-        setEditorContent('<p></p>');
+        if (window.blogBlockEditor) window.blogBlockEditor.reset();
         openModal('New Post');
     });
 
@@ -37,10 +28,24 @@
         $('#post-id').val(id);
         $('#post-title').val($row.data('title'));
         $('#post-excerpt').val($row.data('excerpt'));
+        $('#post-category').val($row.data('category'));
         $('#post-status').val($row.data('status'));
         $('#post-meta-title').val($row.data('meta-title'));
         $('#post-meta-description').val($row.data('meta-description'));
-        setEditorContent((window.BLOG_POST_CONTENT || {})[id]);
+        if (window.blogBlockEditor) {
+            var savedBlocks = (window.BLOG_POST_BLOCKS || {})[id];
+            if (savedBlocks && savedBlocks.length) {
+                window.blogBlockEditor.load(savedBlocks);
+            } else {
+                // Legacy post written with the old single rich-text editor —
+                // seed one Text block with its content so it opens straight
+                // into the block editor instead of losing/hiding the content.
+                var legacyContent = (window.BLOG_POST_CONTENT || {})[id];
+                var richBlock = window.blogBlockEditor.newBlock('richtext');
+                richBlock.html = legacyContent || '';
+                window.blogBlockEditor.load([richBlock]);
+            }
+        }
         openModal('Edit Post');
     });
 
@@ -56,6 +61,7 @@
 
     $form.on('submit', function (e) {
         e.preventDefault();
+        if (window.blogBlockEditor) $('#post-blocks-json').val(window.blogBlockEditor.getBlocksJson());
         var formData = new FormData($form[0]);
         var $btn = $form.find('button[type="submit"]').prop('disabled', true).text('Saving…');
         $.ajax({ url: '/ajax/admin-blog-save.php', type: 'POST', data: formData, processData: false, contentType: false, dataType: 'json' })
