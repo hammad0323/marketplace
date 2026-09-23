@@ -475,6 +475,9 @@ textarea.form-control { resize: vertical; min-height: 110px; }
 .social-row { display: flex; gap: 10px; }
 .social-row a { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; }
 .social-row a:hover { background: var(--color-primary); color: #fff; }
+/* Same component reused on light cards (doctor profile) instead of the dark footer. */
+.card .social-row a { background: var(--color-surface); color: var(--color-text-muted); box-shadow: var(--shadow-sm); }
+.card .social-row a:hover { background: var(--color-primary); color: #fff; }
 
 /* ---- Dashboard shell (patient / doctor / admin) -------------------------- */
 .dash-shell { display: flex; min-height: 100vh; background: var(--color-bg); }

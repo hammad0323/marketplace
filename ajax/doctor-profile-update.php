@@ -31,6 +31,18 @@ $metaDescription = mb_substr(clean($_POST['meta_description'] ?? ''), 0, 300) ?:
 $latitude = is_numeric($_POST['latitude'] ?? null) ? (float) $_POST['latitude'] : null;
 $longitude = is_numeric($_POST['longitude'] ?? null) ? (float) $_POST['longitude'] : null;
 
+// Social links become an <a href> on the public profile, so a non-empty
+// value must be a real http(s) URL — closes off javascript:/data: pseudo-
+// protocol XSS on click (same rule as the site-wide social settings).
+$socialUrl = function ($key) {
+    $value = clean($_POST[$key] ?? '');
+    return ($value !== '' && preg_match('~^https?://~i', $value)) ? $value : null;
+};
+$facebookUrl = $socialUrl('facebook_url');
+$twitterUrl = $socialUrl('twitter_url');
+$instagramUrl = $socialUrl('instagram_url');
+$linkedinUrl = $socialUrl('linkedin_url');
+
 if ($fullName === '') {
     json_response(false, ['errors' => ['full_name' => 'Full name is required.']], 'Please fix the errors below.');
 }
@@ -43,8 +55,8 @@ mysqli_stmt_bind_param($stmt, 'ssi', $fullName, $phone, $userId);
 mysqli_stmt_execute($stmt);
 mysqli_stmt_close($stmt);
 
-$stmt = mysqli_prepare($db, 'UPDATE doctors SET designation = ?, qualification = ?, experience_years = ?, bio = ?, consultation_fee_online = ?, consultation_fee_physical = ?, free_consultation = ?, clinic_name = ?, clinic_address = ?, clinic_city = ?, clinic_state = ?, clinic_country = ?, meta_title = ?, meta_description = ?, latitude = ?, longitude = ? WHERE id = ?');
-mysqli_stmt_bind_param($stmt, 'ssisddisssssssddi', $designation, $qualification, $experienceYears, $bio, $feeOnline, $feePhysical, $freeConsultation, $clinicName, $clinicAddress, $clinicCity, $clinicState, $clinicCountry, $metaTitle, $metaDescription, $latitude, $longitude, $doctorId);
+$stmt = mysqli_prepare($db, 'UPDATE doctors SET designation = ?, qualification = ?, experience_years = ?, bio = ?, consultation_fee_online = ?, consultation_fee_physical = ?, free_consultation = ?, clinic_name = ?, clinic_address = ?, clinic_city = ?, clinic_state = ?, clinic_country = ?, meta_title = ?, meta_description = ?, latitude = ?, longitude = ?, facebook_url = ?, twitter_url = ?, instagram_url = ?, linkedin_url = ? WHERE id = ?');
+mysqli_stmt_bind_param($stmt, 'ssisddisssssssdd' . 'ssss' . 'i', $designation, $qualification, $experienceYears, $bio, $feeOnline, $feePhysical, $freeConsultation, $clinicName, $clinicAddress, $clinicCity, $clinicState, $clinicCountry, $metaTitle, $metaDescription, $latitude, $longitude, $facebookUrl, $twitterUrl, $instagramUrl, $linkedinUrl, $doctorId);
 mysqli_stmt_execute($stmt);
 mysqli_stmt_close($stmt);
 

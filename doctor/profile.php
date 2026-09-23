@@ -107,6 +107,15 @@ require __DIR__ . '/includes/header.php';
                         <span id="clinic-location-status" style="font-size:13px;color:var(--color-text-muted);margin-left:10px;"><?= ($doctor['latitude'] && $doctor['longitude']) ? 'Location set — patients searching "Near Me" can find you.' : 'Not set yet — stand at your clinic and tap the button.' ?></span>
                     </div>
                     <div class="divider-fade"></div>
+                    <h4 style="margin-bottom:4px;">Social Links <span style="font-weight:400;color:var(--color-text-muted);font-size:13px;">(optional)</span></h4>
+                    <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:14px;">Shown as icons on your public profile — left blank, an icon simply won't appear.</p>
+                    <div class="grid grid-2">
+                        <div class="form-group"><label class="form-label"><i class="ri-facebook-fill"></i> Facebook</label><input type="url" class="form-control" name="facebook_url" placeholder="https://facebook.com/..." value="<?= e($doctor['facebook_url']) ?>"></div>
+                        <div class="form-group"><label class="form-label"><i class="ri-twitter-x-fill"></i> Twitter / X</label><input type="url" class="form-control" name="twitter_url" placeholder="https://x.com/..." value="<?= e($doctor['twitter_url']) ?>"></div>
+                        <div class="form-group"><label class="form-label"><i class="ri-instagram-line"></i> Instagram</label><input type="url" class="form-control" name="instagram_url" placeholder="https://instagram.com/..." value="<?= e($doctor['instagram_url']) ?>"></div>
+                        <div class="form-group"><label class="form-label"><i class="ri-linkedin-fill"></i> LinkedIn</label><input type="url" class="form-control" name="linkedin_url" placeholder="https://linkedin.com/in/..." value="<?= e($doctor['linkedin_url']) ?>"></div>
+                    </div>
+                    <div class="divider-fade"></div>
                     <h4 style="margin-bottom:4px;">SEO <span style="font-weight:400;color:var(--color-text-muted);font-size:13px;">(optional)</span></h4>
                     <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:14px;">Auto-filled from your name, designation, and specialization below — edit freely, or clear it to let the suggestion take over again.</p>
                     <div class="form-group"><label class="form-label">Meta Title</label><input type="text" class="form-control" name="meta_title" id="doctor-meta-title-field" maxlength="200" value="<?= e($doctor['meta_title']) ?>"></div>

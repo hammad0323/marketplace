@@ -137,6 +137,21 @@ require __DIR__ . '/includes/header.php';
                                 <?php if ((int)$doctor['experience_years'] > 0): ?><span><i class="ri-briefcase-line"></i> <?= (int)$doctor['experience_years'] ?> years experience</span><?php endif; ?>
                                 <?php if ($privacy['show_clinic_address'] && $doctor['clinic_city']): ?><span><i class="ri-map-pin-line"></i> <?= e($doctor['clinic_city']) ?>, <?= e($doctor['clinic_state']) ?></span><?php endif; ?>
                             </div>
+                            <?php
+                            $doctorSocialLinks = array_filter([
+                                ['url' => $doctor['facebook_url'], 'label' => 'Facebook', 'icon' => 'ri-facebook-fill'],
+                                ['url' => $doctor['twitter_url'], 'label' => 'Twitter / X', 'icon' => 'ri-twitter-x-fill'],
+                                ['url' => $doctor['instagram_url'], 'label' => 'Instagram', 'icon' => 'ri-instagram-line'],
+                                ['url' => $doctor['linkedin_url'], 'label' => 'LinkedIn', 'icon' => 'ri-linkedin-fill'],
+                            ], fn($s) => !empty($s['url']));
+                            ?>
+                            <?php if ($doctorSocialLinks): ?>
+                            <div class="social-row" style="margin-top:12px;">
+                                <?php foreach ($doctorSocialLinks as $s): ?>
+                                <a href="<?= e($s['url']) ?>" target="_blank" rel="noopener noreferrer nofollow" aria-label="<?= e($s['label']) ?> (opens in a new tab)"><i class="<?= e($s['icon']) ?>"></i></a>
+                                <?php endforeach; ?>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
