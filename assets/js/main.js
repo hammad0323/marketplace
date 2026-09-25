@@ -43,7 +43,7 @@
     // aria-haspopup/aria-expanded are set here in JS (not the markup) so every
     // trigger site-wide — nav, notifications, user menu — gets correct,
     // consistent disclosure-widget semantics without touching each template.
-    document.querySelectorAll('[data-dropdown-trigger]').forEach(function (trigger) {
+    function wireDropdownTrigger(trigger) {
         var menu = document.getElementById(trigger.getAttribute('data-dropdown-trigger'));
         if (!menu) return;
         trigger.setAttribute('aria-haspopup', 'true');
@@ -61,7 +61,8 @@
             menu.classList.toggle('open', willOpen);
             trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
         });
-    });
+    }
+    document.querySelectorAll('[data-dropdown-trigger]').forEach(wireDropdownTrigger);
     document.addEventListener('click', function () {
         document.querySelectorAll('.dropdown-menu.open').forEach(function (m) {
             m.classList.remove('open');
@@ -69,6 +70,10 @@
             if (t) t.setAttribute('aria-expanded', 'false');
         });
     });
+    // Exposed so JS-built UI (e.g. the blog block editor's nested column "Add
+    // Block" menus, created after DOMContentLoaded) can wire a new trigger the
+    // same way the ones present at page load already are.
+    window.wireDropdownTrigger = wireDropdownTrigger;
 
     // ---- Tab groups (role="tablist") --------------------------------------------
     // One generic, ARIA-complete implementation shared by every tabbed panel

@@ -447,6 +447,29 @@ CREATE TABLE activity_logs (
     CONSTRAINT fk_log_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
+-- One row per public-page view, logged from includes/header.php (dashboards
+-- use their own header, so internal admin/doctor/patient/pharmacy usage is
+-- never counted). No IP address is stored — visitor_hash is a same-day
+-- salted hash, good enough to de-duplicate a visitor without persistent
+-- tracking. Bots are filtered out in track_pageview() before the insert.
+DROP TABLE IF EXISTS page_visits;
+CREATE TABLE page_visits (
+    id             BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    url            VARCHAR(255) NOT NULL,
+    source_type    ENUM('direct','search','social','referral','internal','campaign') NOT NULL DEFAULT 'direct',
+    source_label   VARCHAR(100) DEFAULT NULL,
+    search_keyword VARCHAR(255) DEFAULT NULL COMMENT 'only populated when the referrer/UTM discloses it — Google organic search does not',
+    device_type    ENUM('desktop','mobile','tablet') NOT NULL DEFAULT 'desktop',
+    browser        VARCHAR(50) DEFAULT NULL,
+    visitor_hash   CHAR(64) NOT NULL,
+    visit_date     DATE NOT NULL,
+    created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_visits_date (visit_date),
+    KEY idx_visits_source (source_type),
+    KEY idx_visits_device (device_type),
+    KEY idx_visits_visitor (visitor_hash)
+) ENGINE=InnoDB;
+
 DROP TABLE IF EXISTS contact_messages;
 CREATE TABLE contact_messages (
     id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

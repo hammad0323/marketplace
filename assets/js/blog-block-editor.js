@@ -1,13 +1,21 @@
 /**
  * Block-based blog post editor. Each post is an ordered array of blocks
- * (`window.blogBlockEditor.getBlocks()`), reordered with up/down (no drag
- * library in this codebase) and rendered live into #blog-blocks-list.
+ * (`window.blogBlockEditor.getBlocksJson()`), reordered with up/down (no
+ * drag library in this codebase) and rendered live into #blog-blocks-list.
+ * A `columns` block holds its own N nested block arrays (one per column,
+ * building a simple grid layout) — everything below is built around a
+ * reusable "controller" so the same append/remove/move/render logic works
+ * for the top-level list and for every column's list without duplicating it.
+ * Nesting a `columns` block inside a column is not allowed (kept to one
+ * level deep).
+ *
  * `window.blogBlockEditor.load(blocks)` seeds it for Edit; `.reset()` clears
- * it for Add. assets/js/admin-blog.js calls both and reads getBlocks() on
- * submit.
+ * it for Add. assets/js/admin-blog.js calls both and reads getBlocksJson()
+ * on submit.
  *
  * Requires window.ALL_DOCTORS = [{id,name,spec}], window.ALL_MEDICINES =
- * [{id,name}], and rich-editor.js loaded first (for window.initRichEditor).
+ * [{id,name}], rich-editor.js (for window.initRichEditor), and main.js (for
+ * window.wireDropdownTrigger) loaded first.
  */
 (function ($) {
     'use strict';
@@ -24,6 +32,7 @@
         richtext: { label: 'Text', icon: 'ri-text' },
         image: { label: 'Image', icon: 'ri-image-line' },
         gallery: { label: 'Image Gallery / Carousel', icon: 'ri-gallery-line' },
+        columns: { label: 'Columns / Grid', icon: 'ri-layout-grid-line' },
         video: { label: 'Video', icon: 'ri-video-line' },
         map: { label: 'Map', icon: 'ri-map-pin-line' },
         doctor: { label: 'Doctor Card', icon: 'ri-user-heart-line' },
@@ -45,6 +54,7 @@
             case 'richtext': return $.extend(base, { html: '' });
             case 'image': return $.extend(base, { url: '', alt: '', caption: '' });
             case 'gallery': return $.extend(base, { images: [] });
+            case 'columns': return $.extend(base, { column_count: 2, columns: [[], []] });
             case 'video': return $.extend(base, { url: '' });
             case 'map': return $.extend(base, { address: '' });
             case 'doctor': return $.extend(base, { doctor_id: '' });
@@ -61,8 +71,23 @@
         return base;
     }
 
-    function updateEmptyState() {
-        $empty.toggle(blocks.length === 0);
+    /** Recursively assigns a fresh client-side `_uid` to a block and (for `columns`) every nested block, so DOM tracking works after Edit reloads saved JSON. */
+    function hydrateBlock(b) {
+        b._uid = uid();
+        if (b.type === 'columns' && Array.isArray(b.columns)) {
+            b.columns.forEach(function (col) { (col || []).forEach(hydrateBlock); });
+        }
+        return b;
+    }
+
+    /** The inverse of hydrateBlock: strips `_uid` (client-only bookkeeping) before the block list is serialized for saving. */
+    function stripUid(b) {
+        var copy = $.extend({}, b);
+        delete copy._uid;
+        if (copy.type === 'columns' && Array.isArray(copy.columns)) {
+            copy.columns = copy.columns.map(function (col) { return (col || []).map(stripUid); });
+        }
+        return copy;
     }
 
     // ---- Small reusable field builders (each returns a jQuery element and wires its own state sync) ----
@@ -160,6 +185,19 @@
         return $wrap;
     }
 
+    /** Builds a standalone dropdown-menu (same look/behavior as the server-rendered top-level one) for a nested "Add Block" trigger, e.g. inside a column. */
+    function buildBlockTypeMenu(menuId, excludeTypes, onPick) {
+        var $menu = $('<div class="dropdown-menu" id="' + menuId + '" style="left:0;right:auto;min-width:240px;max-height:280px;overflow-y:auto;"></div>');
+        Object.keys(BLOCK_META).forEach(function (type) {
+            if (excludeTypes.indexOf(type) !== -1) return;
+            var meta = BLOCK_META[type];
+            var $item = $('<a href="#"><i class="' + meta.icon + '"></i> ' + meta.label + '</a>');
+            $item.on('click', function (e) { e.preventDefault(); onPick(type); $menu.removeClass('open'); });
+            $menu.append($item);
+        });
+        return $menu;
+    }
+
     // ---- Per-type body builders. Each mutates `block` directly via closures. ----
     var BODY_BUILDERS = {
         heading: function (block, $body) {
@@ -202,6 +240,40 @@
                 });
             });
             $body.append('<label class="form-label" style="font-size:12.5px;">Images</label>').append($items).append($file);
+        },
+        columns: function (block, $body) {
+            if (!Array.isArray(block.columns) || !block.columns.length) block.columns = [[], []];
+            $body.append(selectField('Number of Columns', String(block.columns.length), [
+                { value: '2', text: '2 Columns' }, { value: '3', text: '3 Columns' }, { value: '4', text: '4 Columns' },
+            ], function (v) {
+                var n = parseInt(v, 10);
+                while (block.columns.length < n) block.columns.push([]);
+                block.columns.length = n;
+                renderColumns();
+            }));
+            var $grid = $('<div style="display:grid;gap:14px;margin-top:10px;"></div>');
+            function renderColumns() {
+                $grid.empty().css('grid-template-columns', 'repeat(' + block.columns.length + ', 1fr)');
+                block.columns.forEach(function (colArr, colIndex) {
+                    var $col = $('<div class="card" style="padding:10px;background:var(--color-bg);"></div>');
+                    $col.append('<div style="font-size:11px;font-weight:700;color:var(--color-text-muted);margin-bottom:8px;">COLUMN ' + (colIndex + 1) + '</div>');
+                    var $colList = $('<div></div>');
+                    var $colEmpty = $('<p style="font-size:12px;color:var(--color-text-muted);margin:4px 0;">Empty</p>');
+                    var controller = createBlockController(colArr, $colList, $colEmpty);
+                    controller.renderAll();
+                    var menuId = 'col-menu-' + uid();
+                    var $addBtn = $('<button type="button" class="btn btn-outline btn-sm" data-dropdown-trigger="' + menuId + '"><i class="ri-add-line"></i> Add Block</button>');
+                    var $menuWrap = $('<div style="position:relative;margin-top:8px;"></div>');
+                    var $menu = buildBlockTypeMenu(menuId, ['columns'], function (type) { controller.append(newBlock(type)); });
+                    $menuWrap.append($addBtn).append($menu);
+                    $col.append($colList).append($colEmpty).append($menuWrap);
+                    $grid.append($col);
+                    setTimeout(function () { if (window.wireDropdownTrigger) window.wireDropdownTrigger($addBtn[0]); }, 0);
+                });
+            }
+            renderColumns();
+            $body.append('<label class="form-label" style="font-size:12.5px;">Columns</label>').append($grid);
+            $body.append('<p style="font-size:12px;color:var(--color-text-muted);margin-top:8px;">Each column is its own mini block list — add text, an image, a doctor card, etc. side by side.</p>');
         },
         video: function (block, $body) {
             $body.append(textField('YouTube or Vimeo URL', block.url, function (v) { block.url = v; }, 'https://www.youtube.com/watch?v=...'));
@@ -274,7 +346,7 @@
         },
         toc: function (block, $body) {
             $body.append(textField('Box Heading', block.heading, function (v) { block.heading = v; }));
-            $body.append('<p style="font-size:12px;color:var(--color-text-muted);">Automatically lists every Heading block in this post, in order — add Heading blocks above/below and they’ll show up here.</p>');
+            $body.append('<p style="font-size:12px;color:var(--color-text-muted);">Automatically lists every Heading block in this post (including ones inside Columns), in order.</p>');
         },
         quote: function (block, $body) {
             $body.append(textField('Quote', block.text, function (v) { block.text = v; }));
@@ -283,7 +355,7 @@
         divider: function () {},
     };
 
-    function renderBlockCard(block) {
+    function renderBlockCard(block, controller) {
         var meta = BLOCK_META[block.type] || { label: block.type, icon: 'ri-file-line' };
         var $card = $('<div class="card blog-editor-block" style="padding:16px;margin-bottom:12px;"></div>').attr('data-block-uid', block._uid);
         var $head = $('<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"></div>');
@@ -292,9 +364,9 @@
         var $up = $('<button type="button" class="btn-icon btn-sm" title="Move up"><i class="ri-arrow-up-line"></i></button>');
         var $down = $('<button type="button" class="btn-icon btn-sm" title="Move down"><i class="ri-arrow-down-line"></i></button>');
         var $del = $('<button type="button" class="btn-icon btn-sm" title="Delete"><i class="ri-delete-bin-line"></i></button>');
-        $up.on('click', function () { moveBlock(block._uid, -1); });
-        $down.on('click', function () { moveBlock(block._uid, 1); });
-        $del.on('click', function () { if (confirm('Remove this block?')) removeBlock(block._uid); });
+        $up.on('click', function () { controller.move(block._uid, -1); });
+        $down.on('click', function () { controller.move(block._uid, 1); });
+        $del.on('click', function () { if (confirm('Remove this block?')) controller.remove(block._uid); });
         $actions.append($up).append($down).append($del);
         $head.append($actions);
         var $body = $('<div></div>');
@@ -303,49 +375,57 @@
         return $card;
     }
 
-    function appendBlock(block) {
-        blocks.push(block);
-        $list.append(renderBlockCard(block));
-        updateEmptyState();
+    /** Binds append/remove/move/renderAll to a specific block array + its DOM container — used for the top-level list and, independently, for each column inside a `columns` block. */
+    function createBlockController(arr, $container, $emptyEl) {
+        var controller = {};
+        controller.updateEmpty = function () {
+            if ($emptyEl) $emptyEl.toggle(arr.length === 0);
+        };
+        controller.append = function (block) {
+            arr.push(block);
+            $container.append(renderBlockCard(block, controller));
+            controller.updateEmpty();
+        };
+        controller.remove = function (blockUid) {
+            var idx = arr.findIndex(function (b) { return b._uid === blockUid; });
+            if (idx === -1) return;
+            arr.splice(idx, 1);
+            $container.find('[data-block-uid="' + blockUid + '"]').remove();
+            controller.updateEmpty();
+        };
+        controller.move = function (blockUid, dir) {
+            var idx = arr.findIndex(function (b) { return b._uid === blockUid; });
+            var newIdx = idx + dir;
+            if (idx === -1 || newIdx < 0 || newIdx >= arr.length) return;
+            var tmp = arr[idx]; arr[idx] = arr[newIdx]; arr[newIdx] = tmp;
+            var $card = $container.find('[data-block-uid="' + blockUid + '"]');
+            if (dir < 0) $card.insertBefore($card.prev()); else $card.insertAfter($card.next());
+        };
+        controller.renderAll = function () {
+            $container.empty();
+            arr.forEach(function (block) { $container.append(renderBlockCard(block, controller)); });
+            controller.updateEmpty();
+        };
+        return controller;
     }
 
-    function removeBlock(blockUid) {
-        var idx = blocks.findIndex(function (b) { return b._uid === blockUid; });
-        if (idx === -1) return;
-        blocks.splice(idx, 1);
-        $list.find('[data-block-uid="' + blockUid + '"]').remove();
-        updateEmptyState();
-    }
-
-    function moveBlock(blockUid, dir) {
-        var idx = blocks.findIndex(function (b) { return b._uid === blockUid; });
-        var newIdx = idx + dir;
-        if (idx === -1 || newIdx < 0 || newIdx >= blocks.length) return;
-        var tmp = blocks[idx]; blocks[idx] = blocks[newIdx]; blocks[newIdx] = tmp;
-        var $card = $list.find('[data-block-uid="' + blockUid + '"]');
-        if (dir < 0) $card.insertBefore($card.prev()); else $card.insertAfter($card.next());
-    }
+    var topController = createBlockController(blocks, $list, $empty);
 
     function reset() {
-        blocks = [];
-        $list.empty();
-        updateEmptyState();
+        blocks.length = 0;
+        topController.renderAll();
     }
 
     function load(savedBlocks) {
-        reset();
+        blocks.length = 0;
         (savedBlocks || []).forEach(function (b) {
-            var block = $.extend({}, b, { _uid: uid() });
-            appendBlock(block);
+            blocks.push(hydrateBlock($.extend(true, {}, b)));
         });
+        topController.renderAll();
     }
 
     function getBlocksJson() {
-        return JSON.stringify(blocks.map(function (b) {
-            var copy = $.extend({}, b);
-            delete copy._uid;
-            return copy;
-        }));
+        return JSON.stringify(blocks.map(stripUid));
     }
 
     // #add-block-btn opens/closes #add-block-menu via the site-wide
@@ -354,10 +434,10 @@
     // click itself is this file's concern.
     $('#add-block-menu [data-block-type]').on('click', function (e) {
         e.preventDefault();
-        appendBlock(newBlock($(this).data('block-type')));
+        topController.append(newBlock($(this).data('block-type')));
         $('#add-block-menu').removeClass('open');
     });
 
     window.blogBlockEditor = { reset: reset, load: load, getBlocksJson: getBlocksJson, newBlock: newBlock };
-    updateEmptyState();
+    topController.updateEmpty();
 })(jQuery);

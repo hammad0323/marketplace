@@ -111,6 +111,7 @@ window.ALL_MEDICINES = <?= json_encode(array_map(fn($m) => ['id' => (int) $m['id
                             <?php foreach ([
                                 'heading' => ['ri-h-1', 'Heading'], 'richtext' => ['ri-text', 'Text'],
                                 'image' => ['ri-image-line', 'Image'], 'gallery' => ['ri-gallery-line', 'Image Gallery / Carousel'],
+                                'columns' => ['ri-layout-grid-line', 'Columns / Grid'],
                                 'video' => ['ri-video-line', 'Video'], 'map' => ['ri-map-pin-line', 'Map'],
                                 'doctor' => ['ri-user-heart-line', 'Doctor Card'], 'doctor_carousel' => ['ri-team-line', 'Featured Doctors Carousel'],
                                 'medicine' => ['ri-capsule-line', 'Medicine Card'], 'comparison_table' => ['ri-table-line', 'Doctor Comparison Table'],

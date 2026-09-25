@@ -11,18 +11,24 @@ require_role_page_or_json('admin');
  * Strips the block editor's internal, non-persisted `_uid` key (used only
  * client-side to track DOM nodes) from every block before it's saved.
  */
+function strip_blog_block_uid(array $b)
+{
+    unset($b['_uid']);
+    if (($b['type'] ?? '') === 'columns' && !empty($b['columns']) && is_array($b['columns'])) {
+        foreach ($b['columns'] as $i => $col) {
+            $b['columns'][$i] = is_array($col) ? array_map('strip_blog_block_uid', array_filter($col, 'is_array')) : [];
+        }
+    }
+    return $b;
+}
+
 function sanitize_blog_blocks_json($raw)
 {
     $blocks = json_decode($raw ?? '', true);
     if (!is_array($blocks)) {
         return null;
     }
-    foreach ($blocks as &$b) {
-        if (is_array($b)) {
-            unset($b['_uid']);
-        }
-    }
-    unset($b);
+    $blocks = array_map('strip_blog_block_uid', array_filter($blocks, 'is_array'));
     return $blocks ? json_encode($blocks) : null;
 }
 

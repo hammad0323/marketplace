@@ -23,6 +23,7 @@ $ogImage = $ogImage ?? APP_URL . '/assets/img/og-default.png';
 $metaRobots = $metaRobots ?? 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1';
 $breadcrumbs = $breadcrumbs ?? null;
 $user = current_user();
+track_pageview();
 ?><!DOCTYPE html>
 <html lang="en">
 <head>

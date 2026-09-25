@@ -1392,7 +1392,7 @@ function _blog_heading_slug($text, array &$seen)
     return $slug;
 }
 
-/** Plain-text extract of a block-based post's readable content, for excerpt/meta-description auto-fallback when the author didn't write one. */
+/** Plain-text extract of a block-based post's readable content, for excerpt/meta-description auto-fallback when the author didn't write one. Recurses into `columns` blocks. */
 function blog_blocks_to_text(array $blocks)
 {
     $parts = [];
@@ -1402,9 +1402,32 @@ function blog_blocks_to_text(array $blocks)
             case 'richtext': $parts[] = strip_tags($b['html'] ?? ''); break;
             case 'callout': $parts[] = strip_tags($b['html'] ?? ''); break;
             case 'quote': $parts[] = $b['text'] ?? ''; break;
+            case 'columns':
+                foreach ($b['columns'] ?? [] as $col) {
+                    $parts[] = blog_blocks_to_text($col);
+                }
+                break;
         }
     }
     return trim(implode(' ', array_filter($parts)));
+}
+
+/** Walks a block list assigning #anchor ids to heading blocks (in place) and collecting them into $headings, recursing into `columns` blocks so a heading nested in a grid still shows up in a top-level Table of Contents. */
+function _blog_scan_headings(array &$blocks, array &$seenSlugs, array &$headings)
+{
+    foreach ($blocks as $i => $b) {
+        if (($b['type'] ?? '') === 'heading' && trim($b['text'] ?? '') !== '') {
+            $blocks[$i]['_id'] = _blog_heading_slug($b['text'], $seenSlugs);
+            $headings[] = ['id' => $blocks[$i]['_id'], 'text' => $b['text'], 'level' => $b['level'] ?? 'h2'];
+        } elseif (($b['type'] ?? '') === 'columns' && !empty($b['columns'])) {
+            foreach ($blocks[$i]['columns'] as $ci => &$col) {
+                if (is_array($col)) {
+                    _blog_scan_headings($col, $seenSlugs, $headings);
+                }
+            }
+            unset($col);
+        }
+    }
 }
 
 /** Renders every block in order. Pre-scans headings first so a `toc` block anywhere in the post can list all of them regardless of position. */
@@ -1412,12 +1435,7 @@ function render_blog_blocks(array $blocks)
 {
     $seenSlugs = [];
     $headings = [];
-    foreach ($blocks as $i => $b) {
-        if (($b['type'] ?? '') === 'heading' && trim($b['text'] ?? '') !== '') {
-            $blocks[$i]['_id'] = _blog_heading_slug($b['text'], $seenSlugs);
-            $headings[] = ['id' => $blocks[$i]['_id'], 'text' => $b['text'], 'level' => $b['level'] ?? 'h2'];
-        }
-    }
+    _blog_scan_headings($blocks, $seenSlugs, $headings);
     foreach ($blocks as $block) {
         render_blog_block($block, $headings);
     }
@@ -1586,5 +1604,153 @@ function render_blog_block(array $block, array $headings = [])
         case 'divider':
             echo '<hr class="blog-block-divider">';
             break;
+
+        case 'columns':
+            $cols = array_filter($block['columns'] ?? [], 'is_array');
+            if (!$cols) break;
+            echo '<div class="blog-columns" style="--blog-col-count:' . (int) count($cols) . ';">';
+            foreach ($cols as $col) {
+                echo '<div class="blog-column">';
+                foreach ($col as $subBlock) {
+                    if (is_array($subBlock)) {
+                        render_blog_block($subBlock, $headings);
+                    }
+                }
+                echo '</div>';
+            }
+            echo '</div>';
+            break;
     }
+}
+
+/**
+ * Self-hosted analytics (admin/analytics.php). Called once from
+ * includes/header.php, so it only ever fires on public pages — dashboards
+ * use their own separate header, so admin/doctor/patient/pharmacy usage is
+ * never logged as a "site visit". Failure is silent: a broken insert must
+ * never break the page it's tracking.
+ */
+function is_bot_user_agent($ua)
+{
+    return (bool) preg_match('/bot|spider|crawl|slurp|headlesschrome|phantomjs|curl|wget|python-requests|facebookexternalhit|whatsapp|telegrambot|pingdom|uptimerobot/i', $ua);
+}
+
+function detect_device_type($ua)
+{
+    if (preg_match('/iPad|Android(?!.*Mobile)|Tablet|Kindle|PlayBook/i', $ua)) {
+        return 'tablet';
+    }
+    if (preg_match('/Mobi|iPhone|Android|BlackBerry|IEMobile|Opera Mini/i', $ua)) {
+        return 'mobile';
+    }
+    return 'desktop';
+}
+
+function detect_browser($ua)
+{
+    if (preg_match('/Edg\//i', $ua)) return 'Edge';
+    if (preg_match('/OPR\/|Opera/i', $ua)) return 'Opera';
+    if (preg_match('/Firefox\//i', $ua)) return 'Firefox';
+    if (preg_match('/Chrome\//i', $ua) && !preg_match('/Chromium/i', $ua)) return 'Chrome';
+    if (preg_match('/Safari\//i', $ua) && !preg_match('/Chrome/i', $ua)) return 'Safari';
+    return 'Other';
+}
+
+/** Classifies an HTTP referrer into [source_type, source_label] for the traffic-sources report. */
+function classify_referrer($referrer)
+{
+    $referrer = trim((string) $referrer);
+    if ($referrer === '') {
+        return ['direct', 'Direct'];
+    }
+    $host = strtolower((string) (parse_url($referrer, PHP_URL_HOST) ?: ''));
+    if ($host === '') {
+        return ['direct', 'Direct'];
+    }
+    $ownHost = strtolower((string) (parse_url(APP_URL, PHP_URL_HOST) ?: ''));
+    if ($ownHost && $host === $ownHost) {
+        return ['internal', 'Internal'];
+    }
+    $searchEngines = [
+        'google.' => 'Google', 'bing.com' => 'Bing', 'yahoo.' => 'Yahoo',
+        'duckduckgo.com' => 'DuckDuckGo', 'baidu.com' => 'Baidu', 'yandex.' => 'Yandex',
+        'ecosia.org' => 'Ecosia', 'brave.com' => 'Brave Search',
+    ];
+    foreach ($searchEngines as $needle => $label) {
+        if (str_contains($host, $needle)) {
+            return ['search', $label];
+        }
+    }
+    $socialSites = [
+        'facebook.com' => 'Facebook', 'fb.com' => 'Facebook', 'instagram.com' => 'Instagram',
+        't.co' => 'Twitter / X', 'twitter.com' => 'Twitter / X', 'x.com' => 'Twitter / X',
+        'linkedin.com' => 'LinkedIn', 'pinterest.' => 'Pinterest', 'reddit.com' => 'Reddit',
+        'tiktok.com' => 'TikTok', 'youtube.com' => 'YouTube', 'whatsapp.com' => 'WhatsApp',
+        'telegram.org' => 'Telegram', 't.me' => 'Telegram',
+    ];
+    foreach ($socialSites as $needle => $label) {
+        if (str_contains($host, $needle)) {
+            return ['social', $label];
+        }
+    }
+    return ['referral', $host];
+}
+
+/**
+ * A search referrer's query-string keyword, when the engine discloses one
+ * (Bing/Yahoo/DuckDuckGo do; Google has not since 2011 for organic HTTPS
+ * traffic — that gap is real and can't be closed without a Google Search
+ * Console integration, so it's surfaced honestly in the admin UI instead of
+ * silently showing "(not provided)" rows as if they were real keywords).
+ */
+function extract_search_keyword($referrer)
+{
+    $query = parse_url((string) $referrer, PHP_URL_QUERY);
+    if (!$query) {
+        return null;
+    }
+    parse_str($query, $params);
+    foreach (['q', 'p', 'query', 'text'] as $key) {
+        if (!empty($params[$key]) && is_string($params[$key])) {
+            return mb_substr(clean($params[$key]), 0, 255);
+        }
+    }
+    return null;
+}
+
+function track_pageview()
+{
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
+        return;
+    }
+    $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    if ($ua === '' || is_bot_user_agent($ua)) {
+        return;
+    }
+    $url = mb_substr((string) strtok($_SERVER['REQUEST_URI'] ?? '/', '?'), 0, 255);
+    $referrer = $_SERVER['HTTP_REFERER'] ?? '';
+    [$sourceType, $sourceLabel] = classify_referrer($referrer);
+    $keyword = extract_search_keyword($referrer);
+
+    // A same-page UTM tag (paid/email/social campaigns) is more reliable
+    // than referrer sniffing and overrides the referrer-based guess.
+    if (!empty($_GET['utm_source']) && is_string($_GET['utm_source'])) {
+        $sourceType = 'campaign';
+        $sourceLabel = mb_substr(clean($_GET['utm_source']), 0, 100);
+    }
+    if (!empty($_GET['utm_term']) && is_string($_GET['utm_term'])) {
+        $keyword = mb_substr(clean($_GET['utm_term']), 0, 255);
+    }
+
+    $device = detect_device_type($ua);
+    $browser = detect_browser($ua);
+    $visitorHash = hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . $ua . '|' . date('Y-m-d') . '|' . APP_URL);
+
+    $stmt = mysqli_prepare(db(), 'INSERT INTO page_visits (url, source_type, source_label, search_keyword, device_type, browser, visitor_hash, visit_date, created_at) VALUES (?,?,?,?,?,?,?,CURDATE(),NOW())');
+    if (!$stmt) {
+        return;
+    }
+    mysqli_stmt_bind_param($stmt, 'sssssss', $url, $sourceType, $sourceLabel, $keyword, $device, $browser, $visitorHash);
+    @mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
 }

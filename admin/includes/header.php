@@ -44,6 +44,7 @@ $pageTitle = ($pageTitle ?? 'Dashboard') . ' — Admin — ' . SITE_NAME;
             <a href="/admin/blog" class="<?= $currentPage === 'blog.php' ? 'active' : '' ?>"><i class="ri-quill-pen-line"></i> Blog</a>
             <a href="/admin/medicines" class="<?= $currentPage === 'medicines.php' ? 'active' : '' ?>"><i class="ri-capsule-line"></i> Medicine Info</a>
             <a href="/admin/messages" class="<?= $currentPage === 'messages.php' ? 'active' : '' ?>"><i class="ri-mail-line"></i> Messages</a>
+            <a href="/admin/analytics" class="<?= $currentPage === 'analytics.php' ? 'active' : '' ?>"><i class="ri-bar-chart-2-line"></i> Analytics</a>
             <div class="nav-section-title">System</div>
             <a href="/admin/settings" class="<?= $currentPage === 'settings.php' ? 'active' : '' ?>"><i class="ri-settings-3-line"></i> Site Settings</a>
             <a href="/admin/logs" class="<?= $currentPage === 'logs.php' ? 'active' : '' ?>"><i class="ri-file-list-3-line"></i> Activity Logs</a>
