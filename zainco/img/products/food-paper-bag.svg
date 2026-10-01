@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">
+<defs>
+  <radialGradient id="bg" cx="50%" cy="38%" r="75%">
+    <stop offset="0" stop-color="#fdf6ec"/><stop offset="1" stop-color="#efe0c9"/>
+  </radialGradient>
+  <filter id="sh" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="14"/><feOffset dy="18"/>
+    <feComponentTransfer><feFuncA type="linear" slope=".28"/></feComponentTransfer>
+    <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <pattern id="weave" width="10" height="10" patternUnits="userSpaceOnUse">
+    <path d="M0 2.5h10M0 7.5h10" stroke="#000" stroke-opacity=".07" stroke-width="2.4"/>
+    <path d="M2.5 0v10M7.5 0v10" stroke="#fff" stroke-opacity=".10" stroke-width="2.4"/>
+  </pattern>
+  <pattern id="flute" width="8" height="8" patternUnits="userSpaceOnUse">
+    <path d="M0 4q2-4 4 0t4 0" fill="none" stroke="#000" stroke-opacity=".08" stroke-width="1.2"/>
+  </pattern>
+  <linearGradient id="gloss" x1="0" x2="1">
+    <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".45" stop-color="#fff" stop-opacity=".35"/>
+    <stop offset=".55" stop-color="#fff" stop-opacity="0"/>
+  </linearGradient>
+  
+</defs>
+<rect width="600" height="600" fill="url(#bg)"/>
+<circle cx="300" cy="300" r="230" fill="#fff" fill-opacity=".06"/>
+<ellipse cx="300" cy="530" rx="200" ry="22" fill="#000" fill-opacity=".10"/>
+<g filter="url(#sh)">
+<path d="M245 175 Q245 95 300 95 Q355 95 355 175" fill="none" stroke="#e6c9a0" stroke-width="12" stroke-linecap="round"/>
+<path d="M150 175 L410 175 L430 485 L130 485 Z" fill="#e6c9a0"/>
+<path d="M410 175 L470 195 L470 470 L430 485 Z" fill="#bca483"/>
+<path d="M150 175 L410 175 L405 205 L155 205 Z" fill="#bca483" opacity=".5"/>
+<circle cx="245" cy="200" r="7" fill="#7e6e58"/><circle cx="355" cy="200" r="7" fill="#7e6e58"/>
+<g transform="translate(285 330) scale(1.25)" fill="#7f1d1d" font-family="Arial,Helvetica,sans-serif" text-anchor="middle"><text font-size="34" font-weight="900" letter-spacing="3">ZAINCO</text><text y="22" font-size="11" letter-spacing="4" opacity=".85">PACKAGING</text></g>
+<path d="M200 395 h170" stroke="#7f1d1d" stroke-width="2" opacity=".5"/>
+<text x="285" y="425" text-anchor="middle" font-family="Georgia" font-style="italic" font-size="18" fill="#7f1d1d">eco friendly</text>
+</g>
+</svg>
