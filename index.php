@@ -4,7 +4,7 @@ require __DIR__ . '/config/config.php';
 $pageTitle = SITE_NAME . ' — Book Verified Doctors Online & In-Person';
 $metaDescription = get_setting('site_tagline') . '. Search verified specialists, book online or in-clinic appointments, and manage your care in one place.';
 
-$specs = mysqli_query(db(), 'SELECT id, name, slug, icon, description FROM specializations WHERE is_active = 1 ORDER BY sort_order LIMIT 10');
+$specs = mysqli_query(db(), 'SELECT id, name, slug, icon, description FROM specializations WHERE is_active = 1 ORDER BY sort_order LIMIT 10')->fetch_all(MYSQLI_ASSOC);
 
 $cities = mysqli_query(db(), "
     SELECT d.clinic_city AS city, COUNT(*) AS doctor_count
@@ -22,12 +22,13 @@ $featuredDoctors = mysqli_query(db(), "
     JOIN users u ON u.id = d.user_id
     WHERE d.verification_status = 'verified' AND u.status = 'active'
     ORDER BY d.is_premium DESC, d.rating_avg DESC
-    LIMIT 6
+    LIMIT 8
 ")->fetch_all(MYSQLI_ASSOC);
 foreach ($featuredDoctors as &$fd) {
     $fd['specializations'] = get_doctor_specializations($fd['id']);
 }
 unset($fd);
+$heroDoctors = array_slice($featuredDoctors, 0, 3);
 
 $featuredPharmacies = mysqli_query(db(), "
     SELECT p.*, u.full_name, u.avatar,
@@ -38,51 +39,61 @@ $featuredPharmacies = mysqli_query(db(), "
     LIMIT 3
 ")->fetch_all(MYSQLI_ASSOC);
 
-$testimonials = mysqli_query(db(), 'SELECT * FROM testimonials WHERE is_active = 1 ORDER BY sort_order LIMIT 3');
-$homeFaqs = mysqli_query(db(), 'SELECT question, answer FROM faqs WHERE is_active = 1 ORDER BY sort_order LIMIT 5')->fetch_all(MYSQLI_ASSOC);
+$testimonials = mysqli_query(db(), 'SELECT * FROM testimonials WHERE is_active = 1 ORDER BY sort_order LIMIT 5')->fetch_all(MYSQLI_ASSOC);
+$homeFaqs = mysqli_query(db(), 'SELECT question, answer FROM faqs WHERE is_active = 1 ORDER BY sort_order LIMIT 6')->fetch_all(MYSQLI_ASSOC);
 $topCityNames = array_slice(array_column($cities, 'city'), 0, 6);
 
-$totalDoctors = mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM doctors WHERE verification_status='verified'"))['c'];
-$totalAppointments = mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM appointments"))['c'];
-$totalSpecs = mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM specializations WHERE is_active=1"))['c'];
+$totalDoctors = (int) mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM doctors WHERE verification_status='verified'"))['c'];
+$totalAppointments = (int) mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM appointments"))['c'];
+$totalSpecs = (int) mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM specializations WHERE is_active=1"))['c'];
 $ratingRow = mysqli_fetch_assoc(mysqli_query(db(), "
     SELECT AVG(rating_avg) AS avg_rating, SUM(rating_count) AS total_reviews
     FROM doctors WHERE verification_status = 'verified' AND rating_count > 0
 "));
 $avgRating = $ratingRow && $ratingRow['avg_rating'] ? round((float) $ratingRow['avg_rating'], 1) : null;
 $totalReviews = $ratingRow ? (int) $ratingRow['total_reviews'] : 0;
+$siteName = get_setting('site_name', SITE_NAME);
 
-$extraScripts = '<script defer src="' . asset_url('/assets/js/search-suggest.js') . '"></script>';
+// Hero headline, split into per-word spans server-side so the rise-in
+// animation needs no JS and the full sentence is still plain text for SEO.
+$headline = [['Healthcare', false], ['that', false], ['fits', false], ['your', true], ['schedule,', true], ['not', false], ['a', false], ['waiting', false], ['room.', false]];
+
+$extraHead = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap">'
+    . '<link rel="stylesheet" href="' . asset_url('/assets/css/home.css') . '">';
 if ($homeFaqs) {
-    $extraHead = '<script type="application/ld+json">' . json_encode(['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(
+    $extraHead .= '<script type="application/ld+json">' . json_encode(['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(
         fn($f) => ['@type' => 'Question', 'name' => $f['question'], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => strip_tags($f['answer'])]],
         $homeFaqs
     )]) . '</script>';
 }
+$extraScripts = '<script defer src="' . asset_url('/assets/js/search-suggest.js') . '"></script>'
+    . '<script defer src="' . asset_url('/assets/js/home.js') . '"></script>';
 require __DIR__ . '/includes/header.php';
 ?>
 
-<section class="hero">
-    <div class="floating-shape" style="width:70px;height:70px;background:var(--color-accent);opacity:0.5;top:140px;left:6%;"></div>
-    <div class="floating-shape" style="width:40px;height:40px;background:var(--color-primary);opacity:0.4;top:280px;left:14%;animation-delay:1.2s;"></div>
-    <div class="container hero-grid">
-        <div data-reveal="left">
-            <span class="eyebrow"><i class="ri-verified-badge-fill"></i> Trusted by <?= (int)$totalDoctors ?>+ verified doctors</span>
-            <h1>Healthcare that fits <span class="text-gradient">your schedule</span>, not a waiting room.</h1>
-            <p class="lead">Search verified specialists, compare fees and reviews, and book an online or in-clinic consultation in under two minutes.</p>
+<!-- ============================== HERO ============================== -->
+<section class="h-hero">
+    <div class="h-hero-grain" aria-hidden="true"></div>
+    <div class="container h-hero-grid">
+        <div class="h-hero-copy">
+            <span class="h-eyebrow h-fade" style="--d:0"><span class="h-live-dot"></span> <?= $totalDoctors ?> verified doctor<?= $totalDoctors == 1 ? '' : 's' ?> accepting patients</span>
+            <h1 class="h-title">
+                <?php foreach ($headline as $i => [$word, $serif]): ?><span class="h-word<?= $serif ? ' h-word-serif' : '' ?>"><span style="--i:<?= $i ?>"><?= e($word) ?></span></span> <?php endforeach; ?>
+            </h1>
+            <p class="h-lead h-fade" style="--d:6">Search verified specialists, compare fees and reviews, and book an online or in-clinic consultation in under two minutes.</p>
 
-            <form class="search-box" id="hero-search-box" action="/doctors" method="get" style="margin-bottom:32px;" autocomplete="off">
+            <form class="search-box h-search h-fade" style="--d:8" id="hero-search-box" action="/doctors" method="get" autocomplete="off">
                 <i class="ri-search-line" style="color:var(--color-text-muted);"></i>
-                <input type="text" id="hero-search-input" name="q" placeholder="Search doctor, condition, or specialization…">
+                <input type="text" id="hero-search-input" name="q" placeholder="Doctor or condition…" aria-label="Search doctors, conditions or specialties">
                 <span class="divider"></span>
-                <select name="specialization">
+                <select name="specialization" aria-label="Specialty">
                     <option value="">All Specialties</option>
-                    <?php mysqli_data_seek($specs, 0); while ($s = mysqli_fetch_assoc($specs)): ?>
+                    <?php foreach ($specs as $s): ?>
                     <option value="<?= e($s['slug']) ?>"><?= e($s['name']) ?></option>
-                    <?php endwhile; ?>
+                    <?php endforeach; ?>
                 </select>
                 <span class="divider"></span>
-                <select name="city">
+                <select name="city" aria-label="City">
                     <option value="">All Cities</option>
                     <?php foreach ($cities as $c): ?>
                     <option value="<?= e($c['city']) ?>"><?= e($c['city']) ?></option>
@@ -91,233 +102,326 @@ require __DIR__ . '/includes/header.php';
                 <button type="submit" class="btn btn-primary">Search</button>
             </form>
 
-            <div class="hero-stats">
-                <div class="hero-stat"><b class="counter" data-counter="<?= (int)$totalDoctors ?>"><?= (int)$totalDoctors ?></b><span>Verified Doctors</span></div>
-                <div class="hero-stat"><b class="counter" data-counter="<?= (int)$totalAppointments ?>"><?= (int)$totalAppointments ?></b><span>Appointments Booked</span></div>
-                <div class="hero-stat"><b class="counter" data-counter="<?= (int)$totalSpecs ?>"><?= (int)$totalSpecs ?></b><span>Specializations</span></div>
-                <?php if ($avgRating !== null): ?>
-                <div class="hero-stat"><b class="counter" data-counter="<?= e($avgRating) ?>" data-suffix="/5"><?= e($avgRating) ?>/5</b><span>Average Rating</span></div>
-                <?php else: ?>
-                <div class="hero-stat"><b>100%</b><span>Credential-Verified</span></div>
-                <?php endif; ?>
-            </div>
-        </div>
-        <div class="hero-visual" data-reveal="right">
-            <div class="hero-card-float" style="top:10%;left:6%;">
-                <span class="icon-badge" style="background:var(--color-success);"><i class="ri-checkbox-circle-fill"></i></span>
-                <div><strong style="display:block;font-size:14px;">Appointment Confirmed</strong><span style="font-size:12.5px;color:var(--color-text-muted);">Online consultation — Today, 10:00 AM</span></div>
-            </div>
-            <div class="hero-card-float" style="top:44%;right:2%;animation-delay:0.6s;">
-                <span class="icon-badge" style="background:var(--color-primary);"><i class="ri-video-chat-fill"></i></span>
-                <div><strong style="display:block;font-size:14px;">Online Consultation</strong><span style="font-size:12.5px;color:var(--color-text-muted);">Starts in 5 minutes</span></div>
-            </div>
-            <?php if ($avgRating !== null): ?>
-            <div class="hero-card-float" style="bottom:6%;left:14%;animation-delay:1.1s;">
-                <span class="icon-badge" style="background:var(--color-warning);"><i class="ri-star-fill"></i></span>
-                <div><strong style="display:block;font-size:14px;"><?= e($avgRating) ?> average rating</strong><span style="font-size:12.5px;color:var(--color-text-muted);">from <?= number_format($totalReviews) ?> review<?= $totalReviews == 1 ? '' : 's' ?></span></div>
-            </div>
-            <?php else: ?>
-            <div class="hero-card-float" style="bottom:6%;left:14%;animation-delay:1.1s;">
-                <span class="icon-badge" style="background:var(--color-warning);"><i class="ri-shield-check-fill"></i></span>
-                <div><strong style="display:block;font-size:14px;">Manually verified</strong><span style="font-size:12.5px;color:var(--color-text-muted);">Every doctor credential-checked</span></div>
+            <?php if ($specs): ?>
+            <div class="h-popular h-fade" style="--d:10">
+                <span>Popular:</span>
+                <?php foreach (array_slice($specs, 0, 4) as $s): ?>
+                <a href="/specializations/<?= e($s['slug']) ?>"><?= e($s['name']) ?></a>
+                <?php endforeach; ?>
             </div>
             <?php endif; ?>
-            <div style="position:absolute;inset:14% 10%;border-radius:32px;background:var(--gradient-primary);opacity:0.12;"></div>
         </div>
+
+        <div class="h-hero-visual" data-hero-stage aria-hidden="true">
+            <div class="h-parallax" data-parallax="-0.06"><div class="h-orb"></div></div>
+            <div class="h-parallax h-arch-wrap" data-parallax="0.04">
+                <div class="h-arch">
+                    <div class="h-arch-pattern"></div>
+                    <div class="h-arch-content">
+                        <span class="h-arch-num"><?= $totalDoctors ?></span>
+                        <span class="h-arch-label">verified doctors across<br><?= $totalSpecs ?> specialt<?= $totalSpecs == 1 ? 'y' : 'ies' ?></span>
+                    </div>
+                </div>
+            </div>
+            <div class="h-parallax h-badge-wrap" data-parallax="-0.12">
+                <div class="h-badge">
+                    <svg viewBox="0 0 120 120"><defs><path id="h-circle" d="M60,60 m-46,0 a46,46 0 1,1 92,0 a46,46 0 1,1 -92,0"/></defs><text><textPath href="#h-circle">VERIFIED DOCTORS · BOOK IN 2 MINUTES · </textPath></text></svg>
+                    <i class="ri-shield-check-fill"></i>
+                </div>
+            </div>
+            <?php foreach ($heroDoctors as $i => $d): $specName = specialization_names($d['specializations']) ?: 'General'; ?>
+            <div class="h-tile h-tile-<?= $i + 1 ?>" data-depth="<?= [18, 30, 12][$i] ?>">
+                <div class="h-tile-inner">
+                    <img src="<?= e(avatar_url($d['avatar'], $d['full_name'])) ?>" alt="" width="44" height="44">
+                    <div>
+                        <strong><?= e($d['full_name']) ?></strong>
+                        <span><?= e($specName) ?></span>
+                    </div>
+                    <?php if ((int) $d['rating_count'] > 0): ?>
+                    <em><i class="ri-star-fill"></i> <?= number_format((float) $d['rating_avg'], 1) ?></em>
+                    <?php else: ?>
+                    <em class="h-tile-new">New</em>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <a href="#h-stats" class="h-scroll-cue" aria-label="Scroll to learn more"><span></span></a>
+</section>
+
+<!-- ============================== MARQUEE ============================== -->
+<?php if ($specs): ?>
+<div class="h-marquee">
+    <div class="h-marquee-track">
+        <?php for ($g = 0; $g < 2; $g++): ?>
+        <div class="h-marquee-group"<?= $g ? ' aria-hidden="true"' : '' ?>>
+            <?php foreach ($specs as $s): ?>
+            <a href="/specializations/<?= e($s['slug']) ?>" class="h-marquee-item"<?= $g ? ' tabindex="-1"' : '' ?>><?= e($s['name']) ?></a>
+            <span class="h-marquee-sep"><i class="ri-asterisk"></i></span>
+            <?php endforeach; ?>
+        </div>
+        <?php endfor; ?>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- ============================== STATS ============================== -->
+<section class="h-stats" id="h-stats">
+    <div class="container h-stats-grid">
+        <div class="h-stat" data-reveal><b class="counter" data-counter="<?= $totalDoctors ?>"><?= $totalDoctors ?></b><span>Verified doctors</span></div>
+        <div class="h-stat" data-reveal><b class="counter" data-counter="<?= $totalAppointments ?>"><?= $totalAppointments ?></b><span>Appointments booked</span></div>
+        <div class="h-stat" data-reveal><b class="counter" data-counter="<?= $totalSpecs ?>"><?= $totalSpecs ?></b><span>Specializations</span></div>
+        <?php if ($avgRating !== null): ?>
+        <div class="h-stat" data-reveal><b class="counter" data-counter="<?= e($avgRating) ?>" data-suffix="/5"><?= e($avgRating) ?>/5</b><span>From <?= number_format($totalReviews) ?> review<?= $totalReviews == 1 ? '' : 's' ?></span></div>
+        <?php else: ?>
+        <div class="h-stat" data-reveal><b>100%</b><span>Credential-verified</span></div>
+        <?php endif; ?>
     </div>
 </section>
 
-<section class="section" style="padding-bottom:0;">
+<!-- ============================== WHO WE SERVE ============================== -->
+<section class="h-section h-intro">
     <div class="container">
-        <div class="section-head" style="max-width:760px;" data-reveal>
-            <span class="eyebrow">Who We Serve</span>
-            <h2>Healthcare for patients, care teams for doctors and pharmacies</h2>
-            <p>
-                <?= e(get_setting('site_name', SITE_NAME)) ?> connects patients with <?= (int) $totalDoctors ?> verified doctor<?= $totalDoctors == 1 ? '' : 's' ?> across <?= (int) $totalSpecs ?> specialt<?= $totalSpecs == 1 ? 'y' : 'ies' ?><?php if ($topCityNames): ?>, currently practicing in <?= e(implode(', ', array_slice($topCityNames, 0, -1)) . (count($topCityNames) > 1 ? ' and ' . end($topCityNames) : $topCityNames[0])) ?><?php endif; ?>.
+        <div class="h-intro-grid">
+            <div data-reveal>
+                <span class="h-kicker">Who we serve</span>
+                <h2 class="h-h2">One place for <span class="h-serif">patients</span>, doctors and pharmacies.</h2>
+            </div>
+            <p class="h-intro-text" data-reveal>
+                <?= e($siteName) ?> connects patients with <?= $totalDoctors ?> verified doctor<?= $totalDoctors == 1 ? '' : 's' ?> across <?= $totalSpecs ?> specialt<?= $totalSpecs == 1 ? 'y' : 'ies' ?><?php if ($topCityNames): ?>, currently practicing in <?= e(implode(', ', array_slice($topCityNames, 0, -1)) . (count($topCityNames) > 1 ? ' and ' . end($topCityNames) : $topCityNames[0])) ?><?php endif; ?>.
                 Every doctor is manually credential-checked before they can accept patients, whether the visit is a five-minute online follow-up or an in-person specialist consultation.
                 Doctors get a bookable public profile and calendar; verified pharmacies get an online storefront to sell directly to patients.
             </p>
         </div>
-    </div>
-</section>
-
-<section class="section" id="specializations">
-    <div class="container">
-        <div class="section-head" data-reveal>
-            <span class="eyebrow">Browse by Specialty</span>
-            <h2>Find the right specialist, fast</h2>
-            <p>Every doctor is verified by our medical credentialing team before they can accept patients.</p>
-        </div>
-        <div class="grid grid-4 stagger">
-            <?php mysqli_data_seek($specs, 0); while ($s = mysqli_fetch_assoc($specs)): ?>
-            <a href="/specializations/<?= e($s['slug']) ?>" class="card card-hover spec-card" data-reveal data-tilt>
-                <div class="icon"><i class="<?= e($s['icon']) ?>"></i></div>
-                <h3><?= e($s['name']) ?></h3>
-                <p><?= e($s['description']) ?></p>
+        <div class="h-audience">
+            <a href="/doctors" class="h-audience-item" data-reveal>
+                <span class="h-audience-icon"><i class="ri-user-heart-line"></i></span>
+                <h3>For patients</h3>
+                <p>Compare verified doctors, see real fees and reviews, and book online or in-clinic.</p>
+                <span class="h-link">Find a doctor <i class="ri-arrow-right-line"></i></span>
             </a>
-            <?php endwhile; ?>
+            <a href="/doctor-register" class="h-audience-item" data-reveal>
+                <span class="h-audience-icon"><i class="ri-stethoscope-line"></i></span>
+                <h3>For doctors</h3>
+                <p>A public profile, a live booking calendar, and patient history in one dashboard.</p>
+                <span class="h-link">Join as a doctor <i class="ri-arrow-right-line"></i></span>
+            </a>
+            <a href="/pharmacy-register" class="h-audience-item" data-reveal>
+                <span class="h-audience-icon"><i class="ri-store-2-line"></i></span>
+                <h3>For pharmacies</h3>
+                <p>A licensed online storefront to sell medicines directly to patients near you.</p>
+                <span class="h-link">Register your pharmacy <i class="ri-arrow-right-line"></i></span>
+            </a>
         </div>
     </div>
 </section>
 
-<?php if (count($cities) > 0): ?>
-<section class="section" style="padding-top:0;">
+<!-- ============================== SPECIALTIES INDEX ============================== -->
+<?php if ($specs): ?>
+<section class="h-section h-specs" id="specializations">
     <div class="container">
-        <div class="section-head" data-reveal>
-            <span class="eyebrow">Explore by Location</span>
-            <h2>Find doctors near you</h2>
-            <p>Browse verified doctors practicing in your city.</p>
-        </div>
-        <div class="city-carousel-wrap" data-reveal data-carousel>
-            <button type="button" class="carousel-nav-btn" data-carousel-prev aria-label="Scroll left"><i class="ri-arrow-left-s-line"></i></button>
-            <div class="city-carousel-track" data-carousel-track>
-                <?php foreach ($cities as $c): ?>
-                <a href="/doctors?city=<?= e($c['city']) ?>" class="city-chip">
-                    <span class="city-chip-icon"><i class="ri-map-pin-2-fill"></i></span>
-                    <span class="city-chip-name"><?= e($c['city']) ?></span>
-                    <span class="city-chip-count"><?= (int) $c['doctor_count'] ?> doctor<?= $c['doctor_count'] == 1 ? '' : 's' ?></span>
-                </a>
-                <?php endforeach; ?>
+        <div class="h-head" data-reveal>
+            <div>
+                <span class="h-kicker">Browse by specialty</span>
+                <h2 class="h-h2">Find the right <span class="h-serif">specialist</span>, fast.</h2>
             </div>
-            <button type="button" class="carousel-nav-btn" data-carousel-next aria-label="Scroll right"><i class="ri-arrow-right-s-line"></i></button>
+            <a href="/specializations" class="h-link">All specializations <i class="ri-arrow-right-line"></i></a>
+        </div>
+        <div class="h-spec-list">
+            <?php foreach ($specs as $i => $s): ?>
+            <a href="/specializations/<?= e($s['slug']) ?>" class="h-spec-row" data-reveal>
+                <span class="h-spec-num"><?= str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT) ?></span>
+                <span class="h-spec-icon"><i class="<?= e($s['icon']) ?>"></i></span>
+                <span class="h-spec-body">
+                    <h3><?= e($s['name']) ?></h3>
+                    <?php if ($s['description']): ?><p><?= e($s['description']) ?></p><?php endif; ?>
+                </span>
+                <span class="h-spec-arrow"><i class="ri-arrow-right-up-line"></i></span>
+            </a>
+            <?php endforeach; ?>
         </div>
     </div>
 </section>
 <?php endif; ?>
 
-<section class="section" style="background:var(--color-surface);">
-    <div class="container">
-        <div class="section-head" data-reveal>
-            <span class="eyebrow">Top Rated</span>
-            <h2>Meet our featured doctors</h2>
-            <p>Highly rated, premium-verified specialists accepting new patients this week.</p>
+<!-- ============================== HOW IT WORKS ============================== -->
+<section class="h-steps-sec" data-steps>
+    <div class="h-parallax h-steps-glow" data-parallax="0.15" aria-hidden="true"></div>
+    <div class="container h-steps-grid">
+        <div class="h-steps-sticky">
+            <span class="h-kicker h-kicker-light">How it works</span>
+            <h2 class="h-h2">Booking care in <span class="h-serif">three</span> simple steps.</h2>
+            <p>No phone queues, no guessing who's available. See real open slots and confirm in a couple of taps.</p>
+            <a href="/doctors" class="btn h-btn-light">Start searching <i class="ri-arrow-right-line"></i></a>
         </div>
-        <div class="grid grid-3 stagger">
-            <?php foreach ($featuredDoctors as $d): require __DIR__ . '/includes/doctor-card.php'; endforeach; ?>
-        </div>
-        <div style="text-align:center;margin-top:44px;" data-reveal>
-            <a href="/doctors" class="btn btn-primary">Browse All Doctors <i class="ri-arrow-right-line"></i></a>
+        <div class="h-steps-list">
+            <div class="h-steps-line"><span></span></div>
+            <div class="h-step">
+                <span class="h-step-num">01</span>
+                <div>
+                    <h3><i class="ri-search-eye-line"></i> Search</h3>
+                    <p>Filter by specialty, city, fee, rating or availability — or tap <strong>Near Me</strong> to see the closest verified doctors first.</p>
+                </div>
+            </div>
+            <div class="h-step">
+                <span class="h-step-num">02</span>
+                <div>
+                    <h3><i class="ri-calendar-check-line"></i> Book</h3>
+                    <p>Pick an open slot from the doctor's live calendar — online or in-clinic. Some clinics give you a numbered ticket instead, so you know exactly when it's your turn.</p>
+                </div>
+            </div>
+            <div class="h-step">
+                <span class="h-step-num">03</span>
+                <div>
+                    <h3><i class="ri-heart-pulse-line"></i> Consult</h3>
+                    <p>Meet your doctor at the scheduled time, message them afterwards, and keep every appointment in your dashboard.</p>
+                </div>
+            </div>
         </div>
     </div>
 </section>
 
-<?php if (count($featuredPharmacies) > 0): ?>
-<section class="section">
+<!-- ============================== FEATURED DOCTORS ============================== -->
+<?php if ($featuredDoctors): ?>
+<section class="h-section h-doctors" data-carousel>
     <div class="container">
-        <div class="section-head" data-reveal>
-            <span class="eyebrow">Medicine Stores</span>
-            <h2>Order from verified pharmacies</h2>
-            <p>Registered, license-verified pharmacies selling medicines directly to you.</p>
+        <div class="h-head" data-reveal>
+            <div>
+                <span class="h-kicker">Top rated</span>
+                <h2 class="h-h2">Meet our <span class="h-serif">featured</span> doctors.</h2>
+            </div>
+            <div class="h-head-actions">
+                <button type="button" class="h-round-btn" data-carousel-prev aria-label="Previous doctors"><i class="ri-arrow-left-line"></i></button>
+                <button type="button" class="h-round-btn" data-carousel-next aria-label="Next doctors"><i class="ri-arrow-right-line"></i></button>
+            </div>
         </div>
-        <div class="grid grid-3 stagger">
+    </div>
+    <div class="h-doctor-track" data-carousel-track>
+        <?php foreach ($featuredDoctors as $d): ?>
+        <div class="h-doctor-slide"><?php require __DIR__ . '/includes/doctor-card.php'; ?></div>
+        <?php endforeach; ?>
+    </div>
+    <div class="container" style="margin-top:28px;">
+        <a href="/doctors" class="h-link">Browse all doctors <i class="ri-arrow-right-line"></i></a>
+    </div>
+</section>
+<?php endif; ?>
+
+<!-- ============================== CITIES ============================== -->
+<?php if ($cities): ?>
+<section class="h-section h-cities">
+    <div class="container">
+        <div class="h-head" data-reveal>
+            <div>
+                <span class="h-kicker">Explore by location</span>
+                <h2 class="h-h2">Find doctors <span class="h-serif">near you</span>.</h2>
+            </div>
+        </div>
+        <div class="h-city-cloud">
+            <?php foreach ($cities as $c): ?>
+            <a href="/doctors?city=<?= urlencode($c['city']) ?>" data-reveal><?= e($c['city']) ?><sup><?= (int) $c['doctor_count'] ?></sup></a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
+
+<!-- ============================== PHARMACIES ============================== -->
+<?php if ($featuredPharmacies): ?>
+<section class="h-section h-pharm">
+    <div class="container">
+        <div class="h-head" data-reveal>
+            <div>
+                <span class="h-kicker">Medicine stores</span>
+                <h2 class="h-h2">Order from <span class="h-serif">verified</span> pharmacies.</h2>
+            </div>
+            <a href="/pharmacies" class="h-link">All pharmacies <i class="ri-arrow-right-line"></i></a>
+        </div>
+        <div class="h-pharm-grid">
             <?php foreach ($featuredPharmacies as $ph): ?>
-            <a href="<?= e(pharmacy_url($ph['slug'])) ?>" class="card card-hover" style="padding:20px;display:block;" data-reveal data-tilt>
-                <img src="<?= e(avatar_url($ph['avatar'], $ph['store_name'])) ?>" alt="<?= e($ph['store_name']) ?>" width="52" height="52" loading="lazy" style="width:52px;height:52px;border-radius:14px;object-fit:cover;margin-bottom:14px;">
-                <h3 style="font-size:16px;margin-bottom:6px;"><?= e($ph['store_name']) ?></h3>
-                <p style="font-size:13px;color:var(--color-text-muted);margin-bottom:10px;"><i class="ri-map-pin-line"></i> <?= e($ph['city'] ?: 'Location not set') ?></p>
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span class="badge badge-verified"><i class="ri-verified-badge-fill"></i> Verified</span>
-                    <span style="font-size:12.5px;color:var(--color-text-muted);"><?= (int) $ph['product_count'] ?> listing<?= $ph['product_count'] == 1 ? '' : 's' ?></span>
+            <a href="<?= e(pharmacy_url($ph['slug'])) ?>" class="h-pharm-card" data-reveal>
+                <img src="<?= e(avatar_url($ph['avatar'], $ph['store_name'])) ?>" alt="<?= e($ph['store_name']) ?>" width="56" height="56" loading="lazy">
+                <div>
+                    <h3><?= e($ph['store_name']) ?></h3>
+                    <p><i class="ri-map-pin-line"></i> <?= e($ph['city'] ?: 'Location not set') ?> · <?= (int) $ph['product_count'] ?> listing<?= $ph['product_count'] == 1 ? '' : 's' ?></p>
                 </div>
+                <i class="ri-arrow-right-up-line h-pharm-arrow"></i>
             </a>
             <?php endforeach; ?>
         </div>
-        <div style="text-align:center;margin-top:44px;" data-reveal>
-            <a href="/pharmacies" class="btn btn-primary">Browse All Pharmacies <i class="ri-arrow-right-line"></i></a>
-        </div>
     </div>
 </section>
 <?php endif; ?>
 
-<section class="section">
+<!-- ============================== TESTIMONIALS ============================== -->
+<?php if ($testimonials): ?>
+<section class="h-section h-quotes" data-quotes>
     <div class="container">
-        <div class="section-head" data-reveal>
-            <span class="eyebrow">How It Works</span>
-            <h2>Booking care in three simple steps</h2>
+        <span class="h-kicker" data-reveal>What people say</span>
+        <h2 class="sr-only">Testimonials from patients and doctors</h2>
+        <div class="h-quote-stage">
+            <span class="h-quote-mark" aria-hidden="true">&ldquo;</span>
+            <?php foreach ($testimonials as $i => $t): ?>
+            <figure class="h-quote<?= $i === 0 ? ' is-active' : '' ?>" data-quote>
+                <blockquote><?= e($t['content']) ?></blockquote>
+                <figcaption>
+                    <img src="<?= e(avatar_url($t['avatar'], $t['name'])) ?>" alt="<?= e($t['name']) ?><?= $t['role'] ? ', ' . e($t['role']) : '' ?>" width="48" height="48" loading="lazy">
+                    <span><strong><?= e($t['name']) ?></strong><?= e($t['role']) ?></span>
+                    <span class="h-quote-stars" aria-label="<?= (int) $t['rating'] ?> out of 5 stars"><?php for ($s = 0; $s < (int) $t['rating']; $s++): ?><i class="ri-star-fill"></i><?php endfor; ?></span>
+                </figcaption>
+            </figure>
+            <?php endforeach; ?>
         </div>
-        <div class="grid grid-3 stagger">
-            <div class="card card-hover" style="padding:32px;text-align:center;" data-reveal>
-                <div class="icon" style="margin:0 auto 20px;width:60px;height:60px;border-radius:18px;background:var(--gradient-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;"><i class="ri-search-eye-line"></i></div>
-                <h3 style="margin-bottom:8px;font-size:17px;">1. Search</h3>
-                <p style="color:var(--color-text-muted);font-size:14.5px;">Filter by specialty, fee, rating, or availability to find the right doctor.</p>
-            </div>
-            <div class="card card-hover" style="padding:32px;text-align:center;" data-reveal>
-                <div class="icon" style="margin:0 auto 20px;width:60px;height:60px;border-radius:18px;background:var(--gradient-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;"><i class="ri-calendar-check-line"></i></div>
-                <h3 style="margin-bottom:8px;font-size:17px;">2. Book</h3>
-                <p style="color:var(--color-text-muted);font-size:14.5px;">Pick an open slot from the doctor's live calendar — online or in-clinic.</p>
-            </div>
-            <div class="card card-hover" style="padding:32px;text-align:center;" data-reveal>
-                <div class="icon" style="margin:0 auto 20px;width:60px;height:60px;border-radius:18px;background:var(--gradient-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;"><i class="ri-heart-pulse-line"></i></div>
-                <h3 style="margin-bottom:8px;font-size:17px;">3. Consult</h3>
-                <p style="color:var(--color-text-muted);font-size:14.5px;">Meet your doctor at the scheduled time and manage everything from your dashboard.</p>
-            </div>
+        <?php if (count($testimonials) > 1): ?>
+        <div class="h-quote-dots">
+            <?php foreach ($testimonials as $i => $t): ?>
+            <button type="button" class="<?= $i === 0 ? 'is-active' : '' ?>" data-quote-dot="<?= $i ?>" aria-label="Show testimonial <?= $i + 1 ?>"></button>
+            <?php endforeach; ?>
         </div>
+        <?php endif; ?>
     </div>
 </section>
+<?php endif; ?>
 
-<section class="section" style="background:var(--color-surface);">
-    <div class="container">
-        <div class="section-head" data-reveal>
-            <span class="eyebrow">Testimonials</span>
-            <h2>Loved by patients and doctors alike</h2>
-        </div>
-        <div class="grid grid-3 stagger">
-            <?php while ($t = mysqli_fetch_assoc($testimonials)): ?>
-            <div class="card card-hover" style="padding:28px;" data-reveal>
-                <div class="rating" style="margin-bottom:14px;">
-                    <?php for ($i = 0; $i < $t['rating']; $i++): ?><i class="ri-star-fill"></i><?php endfor; ?>
-                </div>
-                <p style="margin-bottom:18px;font-size:14.5px;">&ldquo;<?= e($t['content']) ?>&rdquo;</p>
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <img src="<?= e(avatar_url($t['avatar'], $t['name'])) ?>" alt="<?= e($t['name']) ?><?= $t['role'] ? ', ' . $t['role'] : '' ?>" width="40" height="40" loading="lazy" style="width:40px;height:40px;border-radius:50%;">
-                    <div><strong style="display:block;font-size:14px;"><?= e($t['name']) ?></strong><span style="font-size:12.5px;color:var(--color-text-muted);"><?= e($t['role']) ?></span></div>
-                </div>
-            </div>
-            <?php endwhile; ?>
-        </div>
-    </div>
-</section>
-
+<!-- ============================== FAQ ============================== -->
 <?php if ($homeFaqs): ?>
-<section class="section" style="background:var(--color-surface);">
-    <div class="container">
-        <div class="section-head" data-reveal>
-            <span class="eyebrow">FAQ</span>
-            <h2>Questions patients ask before booking</h2>
+<section class="h-section h-faq">
+    <div class="container h-faq-grid">
+        <div class="h-faq-side" data-reveal>
+            <span class="h-kicker">FAQ</span>
+            <h2 class="h-h2">Questions patients ask <span class="h-serif">before</span> booking.</h2>
+            <a href="/faq" class="h-link">See all FAQs <i class="ri-arrow-right-line"></i></a>
         </div>
-        <div class="grid grid-2 stagger" style="max-width:920px;margin:0 auto;">
+        <div class="h-faq-list" data-faq-group>
             <?php foreach ($homeFaqs as $f): ?>
-            <div class="card" style="padding:24px;" data-reveal>
-                <h3 style="font-size:16px;margin-bottom:8px;"><?= e($f['question']) ?></h3>
-                <p style="color:var(--color-text-muted);font-size:14px;"><?= e($f['answer']) ?></p>
+            <div class="h-faq-item">
+                <button type="button" class="faq-q"><?= e($f['question']) ?><i class="ri-add-line"></i></button>
+                <div class="faq-a"><p><?= e(strip_tags($f['answer'])) ?></p></div>
             </div>
             <?php endforeach; ?>
         </div>
-        <div style="text-align:center;margin-top:32px;" data-reveal>
-            <a href="/faq" style="color:var(--color-primary);font-weight:600;">See all FAQs <i class="ri-arrow-right-line"></i></a>
-        </div>
     </div>
 </section>
 <?php endif; ?>
 
-<section class="section">
-    <div class="container">
-        <div class="grid grid-2" style="gap:24px;">
-            <div class="card-gradient-border" data-reveal="zoom">
-                <div class="card-inner" style="padding:48px 32px;text-align:center;">
-                    <h2 style="margin-bottom:12px;font-size:24px;">Are you a doctor?</h2>
-                    <p style="color:var(--color-text-muted);margin-bottom:24px;">Join <?= e(SITE_NAME) ?> to manage your appointments, grow your patient base, and get discovered by patients searching for your specialty.</p>
-                    <a href="/doctor-register" class="btn btn-primary">Apply as a Doctor <i class="ri-arrow-right-line"></i></a>
-                </div>
-            </div>
-            <div class="card-gradient-border" data-reveal="zoom">
-                <div class="card-inner" style="padding:48px 32px;text-align:center;">
-                    <h2 style="margin-bottom:12px;font-size:24px;">Have a pharmacy?</h2>
-                    <p style="color:var(--color-text-muted);margin-bottom:24px;">Register your medicine store on <?= e(SITE_NAME) ?>, upload your license, and start selling to patients online.</p>
-                    <a href="/pharmacy-register" class="btn btn-primary">Register Your Pharmacy <i class="ri-arrow-right-line"></i></a>
-                </div>
-            </div>
-        </div>
+<!-- ============================== CTA ============================== -->
+<section class="h-section h-cta">
+    <div class="container h-cta-grid">
+        <a href="/doctor-register" class="h-cta-panel h-cta-dark" data-reveal>
+            <div class="h-parallax h-cta-ring" data-parallax="0.08" aria-hidden="true"></div>
+            <span class="h-kicker h-kicker-light">For doctors</span>
+            <h2>Grow your practice with <span class="h-serif">a calendar that fills itself.</span></h2>
+            <p>Join <?= e(SITE_NAME) ?> to manage appointments, get discovered by patients searching your specialty, and run your clinic's queue.</p>
+            <span class="h-cta-btn">Apply as a doctor <i class="ri-arrow-right-up-line"></i></span>
+        </a>
+        <a href="/pharmacy-register" class="h-cta-panel h-cta-teal" data-reveal>
+            <div class="h-parallax h-cta-ring" data-parallax="-0.08" aria-hidden="true"></div>
+            <span class="h-kicker h-kicker-light">For pharmacies</span>
+            <h2>Put your store <span class="h-serif">online</span> in an afternoon.</h2>
+            <p>Register your medicine store, upload your license, and start selling to patients online.</p>
+            <span class="h-cta-btn">Register your pharmacy <i class="ri-arrow-right-up-line"></i></span>
+        </a>
     </div>
 </section>
 
