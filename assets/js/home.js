@@ -63,13 +63,36 @@
             var y = (e.clientY - rect.top) / rect.height - 0.5;
             tiles.forEach(function (tile) {
                 var depth = parseFloat(tile.getAttribute('data-depth')) || 0;
-                tile.style.transform = 'translate3d(' + (-x * depth).toFixed(1) + 'px,' + (-y * depth).toFixed(1) + 'px,0)';
+                // `translate` (not `transform`) so it composes with the entrance
+                // animation, which holds its own final transform.
+                tile.style.translate = (-x * depth).toFixed(1) + 'px ' + (-y * depth).toFixed(1) + 'px';
             });
         });
         hero.addEventListener('mouseleave', function () {
-            tiles.forEach(function (tile) { tile.style.transform = ''; });
+            tiles.forEach(function (tile) { tile.style.translate = ''; });
         });
     }
+
+    // ---- Hero booking preview: the selected time slot steps along every few
+    // seconds so the card reads as a live booking UI, not a static picture.
+    var slotBox = document.querySelector('[data-slots]');
+    if (slotBox && !reduceMotion) {
+        var slotEls = Array.prototype.slice.call(slotBox.children);
+        var slotIdx = Math.max(0, slotEls.findIndex(function (el) { return el.classList.contains('is-selected'); }));
+        var slotPaused = false;
+        slotBox.addEventListener('mouseenter', function () { slotPaused = true; });
+        slotBox.addEventListener('mouseleave', function () { slotPaused = false; });
+        if (slotEls.length > 1) {
+            setInterval(function () {
+                if (slotPaused || document.hidden) return;
+                slotEls[slotIdx].classList.remove('is-selected');
+                slotIdx = (slotIdx + 1) % slotEls.length;
+                slotEls[slotIdx].classList.add('is-selected');
+            }, 2400);
+        }
+    }
+
+    if (window.setupNearMeButton) window.setupNearMeButton('#hero-near-me', '/doctors');
 
     // ---- Testimonials: crossfade, auto-advancing every 6s, paused on hover/focus.
     var quoteSec = document.querySelector('[data-quotes]');

@@ -28,7 +28,6 @@ foreach ($featuredDoctors as &$fd) {
     $fd['specializations'] = get_doctor_specializations($fd['id']);
 }
 unset($fd);
-$heroDoctors = array_slice($featuredDoctors, 0, 3);
 
 $featuredPharmacies = mysqli_query(db(), "
     SELECT p.*, u.full_name, u.avatar,
@@ -54,12 +53,71 @@ $avgRating = $ratingRow && $ratingRow['avg_rating'] ? round((float) $ratingRow['
 $totalReviews = $ratingRow ? (int) $ratingRow['total_reviews'] : 0;
 $siteName = get_setting('site_name', SITE_NAME);
 
-// Hero headline, split into per-word spans server-side so the rise-in
-// animation needs no JS and the full sentence is still plain text for SEO.
-$headline = [['Healthcare', false], ['that', false], ['fits', false], ['your', true], ['schedule,', true], ['not', false], ['a', false], ['waiting', false], ['room.', false]];
+/**
+ * Real "next available" slots for the hero booking preview — same rules as
+ * ajax/check-availability.php (online windows, skipping blocked dates, booked
+ * slots and times already past), looking up to a week ahead.
+ */
+function home_next_slots($doctorId)
+{
+    $db = db();
+    for ($i = 0; $i < 7; $i++) {
+        $date = date('Y-m-d', strtotime("+$i day"));
+        $stmt = mysqli_prepare($db, 'SELECT 1 FROM doctor_blocked_dates WHERE doctor_id = ? AND blocked_date = ? LIMIT 1');
+        mysqli_stmt_bind_param($stmt, 'is', $doctorId, $date);
+        mysqli_stmt_execute($stmt);
+        $blocked = (bool) mysqli_stmt_get_result($stmt)->fetch_assoc();
+        mysqli_stmt_close($stmt);
+        if ($blocked) continue;
 
-$extraHead = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap">'
-    . '<link rel="stylesheet" href="' . asset_url('/assets/css/home.css') . '">';
+        $dow = (int) date('w', strtotime($date));
+        $stmt = mysqli_prepare($db, "SELECT start_time, end_time, slot_duration_mins FROM doctor_availability
+            WHERE doctor_id = ? AND day_of_week = ? AND is_active = 1 AND consultation_type IN ('online', 'both') ORDER BY start_time");
+        mysqli_stmt_bind_param($stmt, 'ii', $doctorId, $dow);
+        mysqli_stmt_execute($stmt);
+        $windows = mysqli_stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC);
+        mysqli_stmt_close($stmt);
+        if (!$windows) continue;
+
+        $stmt = mysqli_prepare($db, "SELECT start_time FROM appointments WHERE doctor_id = ? AND appointment_date = ? AND status IN ('pending','approved')");
+        mysqli_stmt_bind_param($stmt, 'is', $doctorId, $date);
+        mysqli_stmt_execute($stmt);
+        $booked = array_column(mysqli_stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC), 'start_time');
+        mysqli_stmt_close($stmt);
+
+        $labels = [];
+        foreach ($windows as $w) {
+            $cursor = strtotime($date . ' ' . $w['start_time']);
+            $end = strtotime($date . ' ' . $w['end_time']);
+            $step = max(5, (int) $w['slot_duration_mins']) * 60;
+            while ($cursor + $step <= $end && count($labels) < 6) {
+                if (!in_array(date('H:i:s', $cursor), $booked, true) && $cursor > time()) {
+                    $labels[] = date('g:i A', $cursor);
+                }
+                $cursor += $step;
+            }
+        }
+        if ($labels) {
+            $dayLabel = $i === 0 ? 'Today' : ($i === 1 ? 'Tomorrow' : date('D, j M', strtotime($date)));
+            return ['day' => $dayLabel, 'labels' => $labels, 'duration' => max(5, (int) $windows[0]['slot_duration_mins'])];
+        }
+    }
+    return null;
+}
+
+$heroDoctor = $featuredDoctors[0] ?? null;
+$heroSlots = null;
+foreach ($featuredDoctors as $candidate) {
+    if (($candidate['booking_mode'] ?? 'slots') !== 'slots') continue;
+    if ($slots = home_next_slots((int) $candidate['id'])) {
+        $heroDoctor = $candidate;
+        $heroSlots = $slots;
+        break;
+    }
+}
+$avatarStack = array_slice($featuredDoctors, 0, 4);
+
+$extraHead = '<link rel="stylesheet" href="' . asset_url('/assets/css/home.css') . '">';
 if ($homeFaqs) {
     $extraHead .= '<script type="application/ld+json">' . json_encode(['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(
         fn($f) => ['@type' => 'Question', 'name' => $f['question'], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => strip_tags($f['answer'])]],
@@ -73,81 +131,98 @@ require __DIR__ . '/includes/header.php';
 
 <!-- ============================== HERO ============================== -->
 <section class="h-hero">
-    <div class="h-hero-grain" aria-hidden="true"></div>
     <div class="container h-hero-grid">
         <div class="h-hero-copy">
-            <span class="h-eyebrow h-fade" style="--d:0"><span class="h-live-dot"></span> <?= $totalDoctors ?> verified doctor<?= $totalDoctors == 1 ? '' : 's' ?> accepting patients</span>
-            <h1 class="h-title">
-                <?php foreach ($headline as $i => [$word, $serif]): ?><span class="h-word<?= $serif ? ' h-word-serif' : '' ?>"><span style="--i:<?= $i ?>"><?= e($word) ?></span></span> <?php endforeach; ?>
-            </h1>
-            <p class="h-lead h-fade" style="--d:6">Search verified specialists, compare fees and reviews, and book an online or in-clinic consultation in under two minutes.</p>
-
-            <form class="search-box h-search h-fade" style="--d:8" id="hero-search-box" action="/doctors" method="get" autocomplete="off">
-                <i class="ri-search-line" style="color:var(--color-text-muted);"></i>
-                <input type="text" id="hero-search-input" name="q" placeholder="Doctor or condition…" aria-label="Search doctors, conditions or specialties">
-                <span class="divider"></span>
-                <select name="specialization" aria-label="Specialty">
-                    <option value="">All Specialties</option>
-                    <?php foreach ($specs as $s): ?>
-                    <option value="<?= e($s['slug']) ?>"><?= e($s['name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <span class="divider"></span>
-                <select name="city" aria-label="City">
-                    <option value="">All Cities</option>
-                    <?php foreach ($cities as $c): ?>
-                    <option value="<?= e($c['city']) ?>"><?= e($c['city']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <button type="submit" class="btn btn-primary">Search</button>
-            </form>
-
-            <?php if ($specs): ?>
-            <div class="h-popular h-fade" style="--d:10">
-                <span>Popular:</span>
-                <?php foreach (array_slice($specs, 0, 4) as $s): ?>
-                <a href="/specializations/<?= e($s['slug']) ?>"><?= e($s['name']) ?></a>
-                <?php endforeach; ?>
+            <?php if ($avatarStack): ?>
+            <div class="h-trust h-fade" style="--d:0">
+                <span class="h-avatars">
+                    <?php foreach ($avatarStack as $d): ?><img src="<?= e(avatar_url($d['avatar'], $d['full_name'])) ?>" alt="" width="34" height="34"><?php endforeach; ?>
+                </span>
+                <span>
+                    <strong><?= $totalDoctors ?> verified doctor<?= $totalDoctors == 1 ? '' : 's' ?></strong>
+                    <?php if ($avgRating !== null): ?><span class="h-trust-sub"><i class="ri-star-fill"></i> <?= e($avgRating) ?> average from <?= number_format($totalReviews) ?> reviews</span><?php else: ?><span class="h-trust-sub">Every credential checked by our team</span><?php endif; ?>
+                </span>
             </div>
             <?php endif; ?>
+
+            <h1 class="h-title h-fade" style="--d:1">Book <span class="h-underline">verified doctors<svg viewBox="0 0 300 14" preserveAspectRatio="none" aria-hidden="true"><path d="M2 10 C 70 3, 150 2, 298 7"/></svg></span>, online or in-clinic.</h1>
+            <p class="h-lead h-fade" style="--d:2">Compare real fees, reviews and open time slots — then confirm your appointment in under two minutes. No calls, no waiting rooms.</p>
+
+            <form class="h-search h-fade" style="--d:3" id="hero-search-box" action="/doctors" method="get" autocomplete="off">
+                <label class="h-field h-field-grow">
+                    <span class="h-field-label">What</span>
+                    <span class="h-field-control"><i class="ri-search-line"></i><input type="text" id="hero-search-input" name="q" placeholder="Specialty, condition or doctor"></span>
+                </label>
+                <label class="h-field">
+                    <span class="h-field-label">Where</span>
+                    <span class="h-field-control"><i class="ri-map-pin-2-line"></i>
+                        <select name="city">
+                            <option value="">Any city</option>
+                            <?php foreach ($cities as $c): ?><option value="<?= e($c['city']) ?>"><?= e($c['city']) ?></option><?php endforeach; ?>
+                        </select>
+                    </span>
+                </label>
+                <button type="submit" class="h-search-btn"><i class="ri-search-line"></i><span>Find doctors</span></button>
+            </form>
+
+            <div class="h-search-meta h-fade" style="--d:4">
+                <button type="button" class="h-nearme" id="hero-near-me"><i class="ri-crosshair-2-line"></i> Use my location</button>
+                <?php if ($specs): ?>
+                <span class="h-search-meta-sep"></span>
+                <span class="h-popular">
+                    <?php foreach (array_slice($specs, 0, 4) as $s): ?><a href="/specializations/<?= e($s['slug']) ?>"><?= e($s['name']) ?></a><?php endforeach; ?>
+                </span>
+                <?php endif; ?>
+            </div>
+
+            <ul class="h-checks h-fade" style="--d:5">
+                <li><i class="ri-shield-check-line"></i> Credential-verified</li>
+                <li><i class="ri-time-line"></i> Live availability</li>
+                <li><i class="ri-video-chat-line"></i> Video or in-clinic</li>
+            </ul>
         </div>
 
-        <div class="h-hero-visual" data-hero-stage aria-hidden="true">
-            <div class="h-parallax" data-parallax="-0.06"><div class="h-orb"></div></div>
-            <div class="h-parallax h-arch-wrap" data-parallax="0.04">
-                <div class="h-arch">
-                    <div class="h-arch-pattern"></div>
-                    <div class="h-arch-content">
-                        <span class="h-arch-num"><?= $totalDoctors ?></span>
-                        <span class="h-arch-label">verified doctors across<br><?= $totalSpecs ?> specialt<?= $totalSpecs == 1 ? 'y' : 'ies' ?></span>
+        <?php if ($heroDoctor): $heroSpec = specialization_names($heroDoctor['specializations']) ?: 'General'; $heroFee = (float) $heroDoctor['consultation_fee_online']; ?>
+        <div class="h-hero-visual" data-hero-stage>
+            <div class="h-panel" aria-hidden="true"></div>
+            <div class="h-parallax h-card-wrap" data-parallax="0.04">
+                <div class="h-book-card h-rise" style="--d:3" data-depth="10">
+                    <div class="h-book-head">
+                        <img src="<?= e(avatar_url($heroDoctor['avatar'], $heroDoctor['full_name'])) ?>" alt="<?= e($heroDoctor['full_name']) ?>" width="56" height="56">
+                        <div>
+                            <strong><?= e($heroDoctor['full_name']) ?> <i class="ri-verified-badge-fill" title="Verified"></i></strong>
+                            <span><?= e($heroSpec) ?></span>
+                            <?php if ((int) $heroDoctor['rating_count'] > 0): ?>
+                            <span class="h-book-rating"><i class="ri-star-fill"></i> <?= number_format((float) $heroDoctor['rating_avg'], 1) ?> <em>(<?= (int) $heroDoctor['rating_count'] ?> reviews)</em></span>
+                            <?php endif; ?>
+                        </div>
                     </div>
-                </div>
-            </div>
-            <div class="h-parallax h-badge-wrap" data-parallax="-0.12">
-                <div class="h-badge">
-                    <svg viewBox="0 0 120 120"><defs><path id="h-circle" d="M60,60 m-46,0 a46,46 0 1,1 92,0 a46,46 0 1,1 -92,0"/></defs><text><textPath href="#h-circle">VERIFIED DOCTORS · BOOK IN 2 MINUTES · </textPath></text></svg>
-                    <i class="ri-shield-check-fill"></i>
-                </div>
-            </div>
-            <?php foreach ($heroDoctors as $i => $d): $specName = specialization_names($d['specializations']) ?: 'General'; ?>
-            <div class="h-tile h-tile-<?= $i + 1 ?>" data-depth="<?= [18, 30, 12][$i] ?>">
-                <div class="h-tile-inner">
-                    <img src="<?= e(avatar_url($d['avatar'], $d['full_name'])) ?>" alt="" width="44" height="44">
-                    <div>
-                        <strong><?= e($d['full_name']) ?></strong>
-                        <span><?= e($specName) ?></span>
+                    <?php if ($heroSlots): ?>
+                    <div class="h-book-day"><span>Next available</span><strong><?= e($heroSlots['day']) ?></strong></div>
+                    <div class="h-slots" data-slots>
+                        <?php foreach ($heroSlots['labels'] as $i => $label): ?><span class="h-slot<?= $i === 1 ? ' is-selected' : '' ?>"><?= e($label) ?></span><?php endforeach; ?>
                     </div>
-                    <?php if ((int) $d['rating_count'] > 0): ?>
-                    <em><i class="ri-star-fill"></i> <?= number_format((float) $d['rating_avg'], 1) ?></em>
                     <?php else: ?>
-                    <em class="h-tile-new">New</em>
+                    <div class="h-book-day"><span>Consultation</span><strong>Online &amp; in-clinic</strong></div>
                     <?php endif; ?>
+                    <a href="<?= e(doctor_url($heroDoctor['slug'])) ?>" class="h-book-btn">Book appointment <i class="ri-arrow-right-line"></i></a>
                 </div>
             </div>
-            <?php endforeach; ?>
+            <div class="h-parallax h-mini-wrap" data-parallax="-0.05">
+                <div class="h-mini-card h-rise" style="--d:5" data-depth="22">
+                    <span class="h-mini-icon"><i class="ri-video-chat-line"></i></span>
+                    <div>
+                        <strong>Online consultation</strong>
+                        <span><?= $heroSlots ? (int) $heroSlots['duration'] . ' min video call' : 'Video call from home' ?><?php if ($heroFee > 0): ?> · <?= e(format_currency($heroFee)) ?><?php elseif ($heroDoctor['free_consultation']): ?> · Free<?php endif; ?></span>
+                    </div>
+                </div>
+            </div>
+            <div class="h-parallax h-pill-wrap" data-parallax="0.08">
+                <div class="h-pill h-rise" style="--d:6" data-depth="16"><i class="ri-shield-check-fill"></i> Credential verified</div>
+            </div>
         </div>
+        <?php endif; ?>
     </div>
-    <a href="#h-stats" class="h-scroll-cue" aria-label="Scroll to learn more"><span></span></a>
 </section>
 
 <!-- ============================== MARQUEE ============================== -->
@@ -186,7 +261,7 @@ require __DIR__ . '/includes/header.php';
         <div class="h-intro-grid">
             <div data-reveal>
                 <span class="h-kicker">Who we serve</span>
-                <h2 class="h-h2">One place for <span class="h-serif">patients</span>, doctors and pharmacies.</h2>
+                <h2 class="h-h2">One place for <span class="h-accent">patients</span>, doctors and pharmacies.</h2>
             </div>
             <p class="h-intro-text" data-reveal>
                 <?= e($siteName) ?> connects patients with <?= $totalDoctors ?> verified doctor<?= $totalDoctors == 1 ? '' : 's' ?> across <?= $totalSpecs ?> specialt<?= $totalSpecs == 1 ? 'y' : 'ies' ?><?php if ($topCityNames): ?>, currently practicing in <?= e(implode(', ', array_slice($topCityNames, 0, -1)) . (count($topCityNames) > 1 ? ' and ' . end($topCityNames) : $topCityNames[0])) ?><?php endif; ?>.
@@ -224,7 +299,7 @@ require __DIR__ . '/includes/header.php';
         <div class="h-head" data-reveal>
             <div>
                 <span class="h-kicker">Browse by specialty</span>
-                <h2 class="h-h2">Find the right <span class="h-serif">specialist</span>, fast.</h2>
+                <h2 class="h-h2">Find the right <span class="h-accent">specialist</span>, fast.</h2>
             </div>
             <a href="/specializations" class="h-link">All specializations <i class="ri-arrow-right-line"></i></a>
         </div>
@@ -251,7 +326,7 @@ require __DIR__ . '/includes/header.php';
     <div class="container h-steps-grid">
         <div class="h-steps-sticky">
             <span class="h-kicker h-kicker-light">How it works</span>
-            <h2 class="h-h2">Booking care in <span class="h-serif">three</span> simple steps.</h2>
+            <h2 class="h-h2">Booking care in <span class="h-accent">three</span> simple steps.</h2>
             <p>No phone queues, no guessing who's available. See real open slots and confirm in a couple of taps.</p>
             <a href="/doctors" class="btn h-btn-light">Start searching <i class="ri-arrow-right-line"></i></a>
         </div>
@@ -289,7 +364,7 @@ require __DIR__ . '/includes/header.php';
         <div class="h-head" data-reveal>
             <div>
                 <span class="h-kicker">Top rated</span>
-                <h2 class="h-h2">Meet our <span class="h-serif">featured</span> doctors.</h2>
+                <h2 class="h-h2">Meet our <span class="h-accent">featured</span> doctors.</h2>
             </div>
             <div class="h-head-actions">
                 <button type="button" class="h-round-btn" data-carousel-prev aria-label="Previous doctors"><i class="ri-arrow-left-line"></i></button>
@@ -315,12 +390,12 @@ require __DIR__ . '/includes/header.php';
         <div class="h-head" data-reveal>
             <div>
                 <span class="h-kicker">Explore by location</span>
-                <h2 class="h-h2">Find doctors <span class="h-serif">near you</span>.</h2>
+                <h2 class="h-h2">Find doctors <span class="h-accent">near you</span>.</h2>
             </div>
         </div>
         <div class="h-city-cloud">
             <?php foreach ($cities as $c): ?>
-            <a href="/doctors?city=<?= urlencode($c['city']) ?>" data-reveal><?= e($c['city']) ?><sup><?= (int) $c['doctor_count'] ?></sup></a>
+            <a href="/doctors?city=<?= urlencode($c['city']) ?>" data-reveal><i class="ri-map-pin-2-line"></i><?= e($c['city']) ?><sup><?= (int) $c['doctor_count'] ?></sup></a>
             <?php endforeach; ?>
         </div>
     </div>
@@ -334,7 +409,7 @@ require __DIR__ . '/includes/header.php';
         <div class="h-head" data-reveal>
             <div>
                 <span class="h-kicker">Medicine stores</span>
-                <h2 class="h-h2">Order from <span class="h-serif">verified</span> pharmacies.</h2>
+                <h2 class="h-h2">Order from <span class="h-accent">verified</span> pharmacies.</h2>
             </div>
             <a href="/pharmacies" class="h-link">All pharmacies <i class="ri-arrow-right-line"></i></a>
         </div>
@@ -390,7 +465,7 @@ require __DIR__ . '/includes/header.php';
     <div class="container h-faq-grid">
         <div class="h-faq-side" data-reveal>
             <span class="h-kicker">FAQ</span>
-            <h2 class="h-h2">Questions patients ask <span class="h-serif">before</span> booking.</h2>
+            <h2 class="h-h2">Questions patients ask <span class="h-accent">before</span> booking.</h2>
             <a href="/faq" class="h-link">See all FAQs <i class="ri-arrow-right-line"></i></a>
         </div>
         <div class="h-faq-list" data-faq-group>
@@ -411,14 +486,14 @@ require __DIR__ . '/includes/header.php';
         <a href="/doctor-register" class="h-cta-panel h-cta-dark" data-reveal>
             <div class="h-parallax h-cta-ring" data-parallax="0.08" aria-hidden="true"></div>
             <span class="h-kicker h-kicker-light">For doctors</span>
-            <h2>Grow your practice with <span class="h-serif">a calendar that fills itself.</span></h2>
+            <h2>Grow your practice with <span class="h-accent">a calendar that fills itself.</span></h2>
             <p>Join <?= e(SITE_NAME) ?> to manage appointments, get discovered by patients searching your specialty, and run your clinic's queue.</p>
             <span class="h-cta-btn">Apply as a doctor <i class="ri-arrow-right-up-line"></i></span>
         </a>
         <a href="/pharmacy-register" class="h-cta-panel h-cta-teal" data-reveal>
             <div class="h-parallax h-cta-ring" data-parallax="-0.08" aria-hidden="true"></div>
             <span class="h-kicker h-kicker-light">For pharmacies</span>
-            <h2>Put your store <span class="h-serif">online</span> in an afternoon.</h2>
+            <h2>Put your store <span class="h-accent">online</span> in an afternoon.</h2>
             <p>Register your medicine store, upload your license, and start selling to patients online.</p>
             <span class="h-cta-btn">Register your pharmacy <i class="ri-arrow-right-up-line"></i></span>
         </a>
