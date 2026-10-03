@@ -105,15 +105,29 @@ function home_next_slots($doctorId)
     return null;
 }
 
-$heroDoctor = $featuredDoctors[0] ?? null;
+// Hero preview doctor: a different random verified doctor on every load.
+// Doctors with an uploaded photo come first (still shuffled among
+// themselves), and the first one with real open slots wins; if none of
+// the sampled doctors has slots, the card shows their fees/experience.
+$heroPool = mysqli_query(db(), "
+    SELECT d.*, u.full_name, u.avatar
+    FROM doctors d JOIN users u ON u.id = d.user_id
+    WHERE d.verification_status = 'verified' AND u.status = 'active'
+    ORDER BY (u.avatar IS NOT NULL AND u.avatar != '') DESC, RAND()
+    LIMIT 12
+")->fetch_all(MYSQLI_ASSOC);
+$heroDoctor = $heroPool[0] ?? null;
 $heroSlots = null;
-foreach ($featuredDoctors as $candidate) {
+foreach ($heroPool as $candidate) {
     if (($candidate['booking_mode'] ?? 'slots') !== 'slots') continue;
     if ($slots = home_next_slots((int) $candidate['id'])) {
         $heroDoctor = $candidate;
         $heroSlots = $slots;
         break;
     }
+}
+if ($heroDoctor) {
+    $heroDoctor['specializations'] = get_doctor_specializations($heroDoctor['id']);
 }
 $avatarStack = array_slice($featuredDoctors, 0, 4);
 
@@ -202,8 +216,21 @@ require __DIR__ . '/includes/header.php';
                     <div class="h-slots" data-slots>
                         <?php foreach ($heroSlots['labels'] as $i => $label): ?><span class="h-slot<?= $i === 1 ? ' is-selected' : '' ?>"><?= e($label) ?></span><?php endforeach; ?>
                     </div>
-                    <?php else: ?>
-                    <div class="h-book-day"><span>Consultation</span><strong>Online &amp; in-clinic</strong></div>
+                    <?php else:
+                        $heroFacts = array_filter([
+                            ['Online fee', (float) $heroDoctor['consultation_fee_online'] > 0 ? format_currency($heroDoctor['consultation_fee_online']) : ($heroDoctor['free_consultation'] ? 'Free' : null)],
+                            ['In-clinic fee', (float) $heroDoctor['consultation_fee_physical'] > 0 ? format_currency($heroDoctor['consultation_fee_physical']) : null],
+                            ['Experience', (int) $heroDoctor['experience_years'] > 0 ? (int) $heroDoctor['experience_years'] . ' yrs' : null],
+                            ['Location', $heroDoctor['clinic_city'] ?: null],
+                        ], fn($f) => $f[1] !== null);
+                        $heroFacts = array_slice($heroFacts, 0, 3);
+                    ?>
+                    <div class="h-book-day"><span><?= ($heroDoctor['booking_mode'] ?? 'slots') === 'tickets' ? 'Walk-in ticket queue' : 'Online &amp; in-clinic' ?></span><strong><?= ($heroDoctor['booking_mode'] ?? 'slots') === 'tickets' ? 'Get a token' : 'Accepting patients' ?></strong></div>
+                    <?php if ($heroFacts): ?>
+                    <div class="h-facts" style="--cols:<?= count($heroFacts) ?>">
+                        <?php foreach ($heroFacts as [$label, $value]): ?><div><span><?= e($label) ?></span><strong><?= e($value) ?></strong></div><?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
                     <?php endif; ?>
                     <a href="<?= e(doctor_url($heroDoctor['slug'])) ?>" class="h-book-btn">Book appointment <i class="ri-arrow-right-line"></i></a>
                 </div>
