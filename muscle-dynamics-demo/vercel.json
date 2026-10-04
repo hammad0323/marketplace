@@ -1,0 +1,13 @@
+{
+  "trailingSlash": false,
+  "redirects": [
+    { "source": "/trainers", "destination": "/trainers.html", "permanent": true },
+    { "source": "/facilities", "destination": "/facilities.html", "permanent": true },
+    { "source": "/gallery", "destination": "/gallery.html", "permanent": true },
+    { "source": "/contact", "destination": "/contact.html", "permanent": true },
+    { "source": "/membership", "destination": "/membership.html", "permanent": true }
+  ],
+  "headers": [
+    { "source": "/assets/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }] }
+  ]
+}
