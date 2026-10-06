@@ -55,6 +55,16 @@ require __DIR__ . '/includes/header.php';
             <div class="form-group"><label class="form-label">LinkedIn URL</label><input type="url" class="form-control" name="linkedin_url" placeholder="https://linkedin.com/company/yourcompany" value="<?= e($settings['linkedin_url'] ?? '') ?>"></div>
 
             <div class="divider-fade" style="margin:20px 0;"></div>
+            <h4 style="margin-bottom:4px;">Google AdSense</h4>
+            <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:14px;">
+                Paste your publisher ID from AdSense → Account → Account information (it looks like <code>ca-pub-1234567890123456</code>).
+                This adds the AdSense verification tag to every public page, serves <a href="/ads.txt" target="_blank" style="color:var(--color-primary);font-weight:600;">/ads.txt</a> automatically,
+                and loads ads only on content pages (never on login/register forms, search results, empty pages, or profiles without a written bio).
+                Leave blank to turn AdSense off.
+            </p>
+            <div class="form-group"><label class="form-label">AdSense Publisher ID</label><input type="text" class="form-control" name="adsense_client_id" placeholder="ca-pub-0000000000000000" value="<?= e($settings['adsense_client_id'] ?? '') ?>" pattern="(ca-)?pub-[0-9]{10,20}"></div>
+
+            <div class="divider-fade" style="margin:20px 0;"></div>
             <h4 style="margin-bottom:4px;">Branding</h4>
             <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:16px;">Replaces the icon + text logo and browser tab icon everywhere — the main site, and the admin, doctor, patient, and pharmacy panels.</p>
             <div class="grid grid-2">

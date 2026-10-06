@@ -109,8 +109,13 @@ $canonical = filtered_canonical('/doctors', [
     'min_fee' => $minFee, 'max_fee' => $maxFee, 'free' => $freeOnly ? 1 : '', 'premium' => $premiumOnly ? 1 : '',
 ], $pagination['page']);
 $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Find Doctors']];
-if ($q !== '') {
-    $metaRobots = 'noindex, follow'; // free-text search results are thin/duplicate content
+if ($q !== '' || $minFee !== '' || $maxFee !== '' || $freeOnly || $premiumOnly || $nearMe) {
+    // Free-text searches and fee/flag/near-me facets are reshuffles of the
+    // same doctors — near-duplicates of pages that are already indexed.
+    $metaRobots = 'noindex, follow';
+} elseif ($specName !== '' && $city === '' && $pagination['page'] == 1) {
+    // Specialty-only page 1 duplicates /specializations/{slug}; point Google there.
+    $canonical = APP_URL . '/specializations/' . $specSlug;
 }
 $extraScripts = '<script>document.addEventListener("DOMContentLoaded",function(){if(window.setupNearMeButton)setupNearMeButton("#near-me-btn","/doctors");});</script>';
 require __DIR__ . '/includes/header.php';

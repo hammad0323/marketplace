@@ -140,6 +140,8 @@ if ($homeFaqs) {
 }
 $extraScripts = '<script defer src="' . asset_url('/assets/js/search-suggest.js') . '"></script>'
     . '<script defer src="' . asset_url('/assets/js/home.js') . '"></script>';
+// Content-rich enough to carry ads (see includes/header.php).
+$adsEligible = true;
 require __DIR__ . '/includes/header.php';
 ?>
 

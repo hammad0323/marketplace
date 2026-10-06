@@ -38,6 +38,13 @@ $extraHead = '<script type="application/ld+json">' . json_encode(array_filter([
     '@context' => 'https://schema.org', '@type' => 'Pharmacy', 'name' => $pharmacy['store_name'],
     'address' => $pharmacy['address'] ?: null, 'url' => $canonical,
 ])) . '</script>';
+// No description and nothing listed: an empty page — keep it out of the index
+// (build_sitemap_xml() skips these too).
+if (trim((string) $pharmacy['bio']) === '' && !$products) {
+    $metaRobots = 'noindex, follow';
+}
+// Content-rich enough to carry ads (see includes/header.php).
+$adsEligible = content_word_count($pharmacy['bio']) >= 100;
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 40px);">

@@ -53,20 +53,52 @@ $cities = mysqli_query(db(), "
 
 $intro = $spec['description'] ?: ('Board-certified ' . $spec['name'] . ' specialists offering online and in-person consultations.');
 
-$faqs = [
-    ['q' => 'What does a ' . $spec['name'] . ' treat?', 'a' => $intro],
-    ['q' => 'How do I book a ' . $spec['name'] . ' appointment on ' . get_setting('site_name', SITE_NAME) . '?', 'a' => 'Pick a doctor below, choose an open online or in-person slot from their live calendar, and confirm — most patients book in under two minutes.'],
-    ['q' => 'Are ' . $spec['name'] . ' doctors on ' . get_setting('site_name', SITE_NAME) . ' verified?', 'a' => 'Yes. Every doctor is manually reviewed by our medical credentialing team — registration number, certificates, and qualifications are checked before they can accept patients.'],
-];
+// Every answer here is specific to this specialty (its own description, its
+// doctors' real fee range and cities) — generic copy repeated word-for-word
+// on every specialty page is what AdSense/Google flag as replicated content.
+$feeRange = mysqli_fetch_assoc(mysqli_query(db(), '
+    SELECT MIN(NULLIF(d.consultation_fee_online, 0)) AS online_min, MAX(NULLIF(d.consultation_fee_online, 0)) AS online_max,
+           MIN(NULLIF(d.consultation_fee_physical, 0)) AS clinic_min, MAX(NULLIF(d.consultation_fee_physical, 0)) AS clinic_max
+    FROM doctors d JOIN users u ON u.id = d.user_id
+    WHERE d.verification_status = "verified" AND u.status = "active"
+      AND d.id IN (SELECT ds.doctor_id FROM doctor_specializations ds WHERE ds.specialization_id = ' . (int) $spec['id'] . ')
+'));
+$rangeText = fn($min, $max) => $min === null ? null : ((float) $min === (float) $max ? format_currency($min) : format_currency($min) . ' to ' . format_currency($max));
+$onlineRange = $rangeText($feeRange['online_min'], $feeRange['online_max']);
+$clinicRange = $rangeText($feeRange['clinic_min'], $feeRange['clinic_max']);
+$siteName = get_setting('site_name', SITE_NAME);
+$cityNames = array_column($cities, 'city');
+
+$faqs = [];
+if (trim((string) $spec['description']) !== '') {
+    $faqs[] = ['q' => 'What does a ' . $spec['name'] . ' specialist treat?', 'a' => $spec['description']];
+}
+if ($onlineRange || $clinicRange) {
+    $parts = [];
+    if ($onlineRange) $parts[] = 'online consultations cost ' . $onlineRange;
+    if ($clinicRange) $parts[] = 'in-clinic visits cost ' . $clinicRange;
+    $faqs[] = ['q' => 'How much does a ' . $spec['name'] . ' consultation cost?', 'a' => 'Across the ' . $doctorCount . ' verified ' . $spec['name'] . ' doctor' . ($doctorCount == 1 ? '' : 's') . ' on ' . $siteName . ', ' . implode(' and ', $parts) . '. Each doctor sets their own fee, shown on their profile before you book.'];
+}
+if ($cityNames) {
+    $cityList = count($cityNames) > 1 ? implode(', ', array_slice($cityNames, 0, -1)) . ' and ' . end($cityNames) : $cityNames[0];
+    $faqs[] = ['q' => 'Where can I see a ' . $spec['name'] . ' doctor in person?', 'a' => 'Verified ' . $spec['name'] . ' doctors on ' . $siteName . ' currently practice in ' . $cityList . '. Filter by city above, or book an online consultation from anywhere.'];
+}
+
+// An empty specialty page has nothing for a searcher yet — keep it out of the index.
+if ($doctorCount == 0) {
+    $metaRobots = 'noindex, follow';
+}
 
 $pageTitle = $spec['name'] . ' Doctors — Book Online or In-Person | ' . get_setting('site_name', SITE_NAME);
 $metaDescription = 'Find verified ' . $spec['name'] . ' specialists on ' . get_setting('site_name', SITE_NAME) . '. Compare fees and availability, then book an online or in-person consultation.' . ($doctorCount > 0 ? ' ' . $doctorCount . ' doctor' . ($doctorCount == 1 ? '' : 's') . ' available.' : '');
 $canonical = APP_URL . '/specializations/' . $spec['slug'];
 $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Specializations', 'url' => APP_URL . '/specializations'], ['name' => $spec['name']]];
-$extraHead = '<script type="application/ld+json">' . json_encode(['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(
-    fn($f) => ['@type' => 'Question', 'name' => $f['q'], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f['a']]],
-    $faqs
-)]) . '</script>';
+if ($faqs) {
+    $extraHead = '<script type="application/ld+json">' . json_encode(['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(
+        fn($f) => ['@type' => 'Question', 'name' => $f['q'], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f['a']]],
+        $faqs
+    )]) . '</script>';
+}
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);padding-bottom:0;">
@@ -110,13 +142,14 @@ require __DIR__ . '/includes/header.php';
     </div>
 </section>
 
+<?php if ($faqs): ?>
 <section class="section" style="background:var(--color-surface);">
     <div class="container">
         <div class="section-head" data-reveal>
             <span class="eyebrow">FAQ</span>
             <h2>Common questions about <?= e($spec['name']) ?> care</h2>
         </div>
-        <div class="grid grid-3 stagger">
+        <div class="grid grid-<?= min(3, count($faqs)) ?> stagger">
             <?php foreach ($faqs as $f): ?>
             <div class="card" style="padding:24px;" data-reveal>
                 <h3 style="font-size:16px;margin-bottom:8px;"><?= e($f['q']) ?></h3>
@@ -126,4 +159,5 @@ require __DIR__ . '/includes/header.php';
         </div>
     </div>
 </section>
+<?php endif; ?>
 <?php require __DIR__ . '/includes/footer.php'; ?>

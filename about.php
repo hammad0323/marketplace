@@ -17,6 +17,8 @@ if (!$page) {
 $pageTitle = $page['meta_title'] ?: ($page['title'] . ' — ' . SITE_NAME);
 $metaDescription = $page['meta_description'] ?: excerpt($page['content'], 155);
 $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => $page['title']]];
+// Content-rich enough to carry ads (see includes/header.php).
+$adsEligible = content_word_count($page['content']) >= 150;
 require __DIR__ . '/includes/header.php';
 
 $totalDoctors = mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM doctors WHERE verification_status='verified'"))['c'];

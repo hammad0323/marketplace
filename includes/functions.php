@@ -1152,8 +1152,22 @@ function build_sitemap_xml()
     $staticPages = ['/', '/doctors', '/specializations', '/products', '/medicines', '/pharmacies', '/blog', '/about', '/contact', '/faq', '/privacy-policy', '/terms', '/doctor-register', '/pharmacy-register'];
 
     $doctors = mysqli_query($db, "SELECT slug, updated_at FROM doctors WHERE verification_status = 'verified'");
-    $pharmacies = mysqli_query($db, "SELECT slug, updated_at FROM pharmacies WHERE verification_status = 'verified'");
-    $specs = mysqli_query($db, 'SELECT slug FROM specializations WHERE is_active = 1');
+    // Empty pages (no pharmacy description and no products; specialties with no
+    // verified doctors) are noindexed on the page itself, so they're left out
+    // here too — submitting empty pages is what reads as "low value content".
+    $pharmacies = mysqli_query($db, "
+        SELECT p.slug, p.updated_at FROM pharmacies p
+        WHERE p.verification_status = 'verified'
+          AND (TRIM(COALESCE(p.bio, '')) != ''
+               OR EXISTS (SELECT 1 FROM doctor_products dp WHERE dp.pharmacy_id = p.id AND dp.seller_type = 'pharmacy' AND dp.is_active = 1))
+    ");
+    $specs = mysqli_query($db, "
+        SELECT s.slug FROM specializations s
+        WHERE s.is_active = 1 AND EXISTS (
+            SELECT 1 FROM doctor_specializations ds JOIN doctors d ON d.id = ds.doctor_id JOIN users u ON u.id = d.user_id
+            WHERE ds.specialization_id = s.id AND d.verification_status = 'verified' AND u.status = 'active'
+        )
+    ");
     $blogPosts = mysqli_query($db, "SELECT slug, published_at FROM blog_posts WHERE status = 'published'");
     $storeProducts = mysqli_query($db, "
         SELECT dp.slug, dp.created_at FROM doctor_products dp
@@ -1753,4 +1767,11 @@ function track_pageview()
     mysqli_stmt_bind_param($stmt, 'sssssss', $url, $sourceType, $sourceLabel, $keyword, $device, $browser, $visitorHash);
     @mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
+}
+
+/** Words in an HTML/plain-text string — Unicode-aware (Urdu etc.), unlike str_word_count(). */
+function content_word_count($html)
+{
+    $text = trim(html_entity_decode(strip_tags((string) $html), ENT_QUOTES, 'UTF-8'));
+    return $text === '' ? 0 : count(preg_split('/\s+/u', $text));
 }

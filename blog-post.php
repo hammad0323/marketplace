@@ -41,6 +41,8 @@ $extraHead = '<script type="application/ld+json">' . json_encode([
     '@context' => 'https://schema.org', '@type' => 'BlogPosting', 'headline' => $post['title'],
     'datePublished' => $post['published_at'], 'author' => ['@type' => 'Person', 'name' => $post['author_name']],
 ]) . '</script>';
+// Content-rich enough to carry ads (see includes/header.php).
+$adsEligible = content_word_count($blocks ? blog_blocks_to_text($blocks) : $post['content']) >= 300;
 require __DIR__ . '/includes/header.php';
 ?>
 <article class="section" style="padding-top:calc(var(--header-height) + 48px);">

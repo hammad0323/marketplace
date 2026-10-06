@@ -10,6 +10,9 @@ $extraHead = '<script type="application/ld+json">' . json_encode(['@context' => 
 }, mysqli_fetch_all($faqs, MYSQLI_ASSOC))]) . '</script>';
 mysqli_data_seek($faqs, 0);
 $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'FAQ']];
+// Content-rich enough to carry ads (see includes/header.php).
+$adsEligible = content_word_count(implode(' ', array_column(mysqli_fetch_all($faqs, MYSQLI_ASSOC), 'answer'))) >= 300;
+mysqli_data_seek($faqs, 0);
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 48px);">

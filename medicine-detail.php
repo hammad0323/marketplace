@@ -87,6 +87,8 @@ $sections = array_filter([
     'faqs' => ['label' => 'FAQ', 'icon' => 'ri-question-line', 'color' => '#22C55E', 'show' => (bool) $displayFaqs],
 ], fn($s) => $s['show']);
 
+// Content-rich enough to carry ads (see includes/header.php).
+$adsEligible = content_word_count(implode(' ', [$medicine['content'], $medicine['uses'], $medicine['dosage'], $medicine['side_effects'], $medicine['precautions']])) >= 300;
 require __DIR__ . '/includes/header.php';
 
 function med_section_heading($id, $icon, $color, $title)

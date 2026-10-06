@@ -69,38 +69,21 @@ $metaDescription = $doctor['meta_description'] ?: doctor_meta_description($docto
 $canonical = APP_URL . doctor_url($doctor['slug']);
 $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Find Doctors', 'url' => APP_URL . '/doctors'], ['name' => $doctor['full_name']]];
 
-// FAQPage answers only what the doctor/admin has chosen to show publicly
-// (respects the same privacy toggles as the rest of this page) — an AEO/GEO
-// structured-data win: AI answer engines can quote these Q&As directly
-// instead of having to parse the page's prose.
-$faqEntries = [];
-$faqEntries[] = ['q' => 'Is ' . $doctor['full_name'] . ' accepting new patients?', 'a' => 'Yes, ' . $doctor['full_name'] . ' is a verified provider on ' . SITE_NAME . ' currently accepting online bookings.'];
+// No templated FAQPage markup here: it was the same four sentences with the
+// name swapped on every profile, invisible on the page — Google treats that
+// as replicated content and requires FAQ markup to match visible text.
 $feeOnline = (float) $doctor['consultation_fee_online'];
 $feePhysical = (float) $doctor['consultation_fee_physical'];
-if ($privacy['show_fees'] && ($feeOnline > 0 || $feePhysical > 0 || $doctor['free_consultation'])) {
-    $feeParts = [];
-    if ($feeOnline > 0) $feeParts[] = 'online consultations are ' . format_currency($feeOnline);
-    if ($feePhysical > 0) $feeParts[] = 'in-person consultations are ' . format_currency($feePhysical);
-    $feeAnswer = $feeParts ? ucfirst(implode(' and ', $feeParts)) . '.' : '';
-    if ($doctor['free_consultation']) $feeAnswer .= ' Free consultation slots are also offered.';
-    $faqEntries[] = ['q' => 'What are ' . $doctor['full_name'] . "'s consultation fees?", 'a' => trim($feeAnswer)];
-}
-if ($specNames) {
-    $faqEntries[] = ['q' => 'What does ' . $doctor['full_name'] . ' specialize in?', 'a' => $doctor['full_name'] . ' specializes in ' . $specNames . ($doctor['experience_years'] ? ', with ' . (int) $doctor['experience_years'] . ' years of experience.' : '.')];
-}
-$faqEntries[] = ['q' => 'Can I book an online consultation with ' . $doctor['full_name'] . '?', 'a' => 'Yes, ' . $doctor['full_name'] . ' offers online video consultations that can be booked directly from this profile.'];
 
 $extraHead = '<script type="application/ld+json">' . json_encode([
     '@context' => 'https://schema.org', '@type' => 'Physician', 'name' => $doctor['full_name'],
     'medicalSpecialty' => array_column($doctorSpecializations, 'name'), 'url' => $canonical,
     'aggregateRating' => $doctor['rating_count'] > 0 ? ['@type' => 'AggregateRating', 'ratingValue' => $doctor['rating_avg'], 'reviewCount' => $doctor['rating_count']] : null,
 ]) . '</script>';
-$extraHead .= '<script type="application/ld+json">' . json_encode([
-    '@context' => 'https://schema.org', '@type' => 'FAQPage',
-    'mainEntity' => array_map(fn($f) => ['@type' => 'Question', 'name' => $f['q'], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f['a']]], $faqEntries),
-]) . '</script>';
 $bookingScript = $doctor['booking_mode'] === 'tickets' ? 'ticket-booking.js' : 'booking.js';
 $extraScripts = '<script defer src="' . asset_url('/assets/js/calendar-widget.js') . '"></script><script defer src="' . asset_url('/assets/js/' . $bookingScript) . '"></script>';
+// Content-rich enough to carry ads (see includes/header.php).
+$adsEligible = content_word_count($doctor['bio']) >= 100;
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section" style="padding-top:calc(var(--header-height) + 40px);">

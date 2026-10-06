@@ -31,8 +31,19 @@ function upload_branding_asset($fileKey, array $allowedExt, $maxBytes, $imageMax
 }
 
 $db = db();
-$allowedKeys = ['site_name', 'site_tagline', 'contact_email', 'contact_phone', 'contact_address', 'currency_symbol', 'maintenance_mode', 'facebook_url', 'twitter_url', 'instagram_url', 'linkedin_url'];
+$allowedKeys = ['site_name', 'site_tagline', 'contact_email', 'contact_phone', 'contact_address', 'currency_symbol', 'maintenance_mode', 'facebook_url', 'twitter_url', 'instagram_url', 'linkedin_url', 'adsense_client_id'];
 $socialKeys = ['facebook_url', 'twitter_url', 'instagram_url', 'linkedin_url'];
+
+// Validated before anything is written so a bad ID can't leave the other
+// settings half-saved. Stored normalized as "ca-pub-<digits>"; anything else
+// is rejected so it can't inject into the <script>/<meta> tags or ads.txt.
+$adsenseClientId = clean($_POST['adsense_client_id'] ?? '');
+if ($adsenseClientId !== '') {
+    if (!preg_match('/^(?:ca-)?pub-(\d{10,20})$/', $adsenseClientId, $m)) {
+        json_response(false, ['errors' => ['adsense_client_id' => 'Publisher ID should look like ca-pub-1234567890123456.']], 'Invalid AdSense publisher ID.');
+    }
+    $adsenseClientId = 'ca-pub-' . $m[1];
+}
 
 $stmt = mysqli_prepare($db, 'INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)');
 foreach ($allowedKeys as $key) {
@@ -45,6 +56,9 @@ foreach ($allowedKeys as $key) {
         // pseudo-protocol XSS on click.
         if (in_array($key, $socialKeys, true) && $value !== '' && !preg_match('~^https?://~i', $value)) {
             $value = '';
+        }
+        if ($key === 'adsense_client_id') {
+            $value = $adsenseClientId;
         }
     }
     mysqli_stmt_bind_param($stmt, 'ss', $key, $value);

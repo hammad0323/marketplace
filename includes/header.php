@@ -13,6 +13,11 @@
  *     canonical, but deliberately excludes `page` and `sort` — so every
  *     page/sort variant of the SAME filter combination shares one canonical
  *     instead of each being treated as separate content.
+ * $adsEligible = true opts a page in to the AdSense loader (when a publisher
+ * ID is set in Site Settings). Only pages with substantial original content
+ * should set it — forms, listings, search results and empty/thin pages must
+ * not, or AdSense flags "ads on screens without publisher content". The
+ * google-adsense-account verification tag is emitted on every public page.
  * $metaKeywords is intentionally not supported — Google and Bing both
  * ignore the keywords meta tag, so it's pure page weight.
  */
@@ -56,6 +61,11 @@ track_pageview();
 <noscript><link rel="stylesheet" href="<?= asset_url('/assets/fonts/remixicon/remixicon.css') ?>"></noscript>
 <link rel="stylesheet" href="<?= asset_url('/assets/css/style.css') ?>">
 <?php if (!empty($extraHead)) echo $extraHead; ?>
+<?php $adsenseClient = get_setting('adsense_client_id'); if ($adsenseClient): ?>
+<meta name="google-adsense-account" content="<?= e($adsenseClient) ?>">
+<?php if (!empty($adsEligible) && !str_contains($metaRobots, 'noindex')): ?>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=<?= e($adsenseClient) ?>" crossorigin="anonymous"></script>
+<?php endif; endif; ?>
 </head>
 <body data-logged-in="<?= is_logged_in() ? '1' : '0' ?>">
 <div id="page-loader"><div class="loader-ring"></div></div>

@@ -83,6 +83,12 @@ RewriteRule ^blog/([\w-]+)/?$ blog-post.php?slug=$1 [L,QSA]
 RewriteRule ^pharmacies/([\w-]+)/?$ pharmacy-profile.php?slug=$1 [L,QSA]
 RewriteRule ^specializations/([\w-]+)/?$ specialization-detail.php?slug=$1 [L,QSA]
 
+# 2b) Generated text files: ads.txt from the AdSense ID in Site Settings, and
+#     robots.txt with an absolute Sitemap URL (the domain is only known at
+#     request time).
+RewriteRule ^ads\.txt$ ads-txt.php [L]
+RewriteRule ^robots\.txt$ robots.php [L]
+
 # 3) Serve the matching .php file for a clean-URL request, transparently
 #    (no redirect, no visible change to the address bar).
 RewriteCond %{REQUEST_URI} !^/(ajax|assets|uploads|database)/
