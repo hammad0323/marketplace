@@ -107,20 +107,20 @@ $c         = customer();
   <nav class="main-nav hide-mobile" aria-label="Main">
     <ul class="container">
       <li><a href="<?= url('shop?filter=new') ?>">New In</a></li>
-      <?php foreach ($cats as $cat): ?>
-        <li class="<?= $cat['children'] ? 'has-mega' : '' ?>">
-          <a href="<?= category_url($cat) ?>"><?= e($cat['name']) ?></a>
-          <?php if ($cat['children']): ?>
+      <?php foreach ($cats as $menuCat): ?>
+        <li class="<?= $menuCat['children'] ? 'has-mega' : '' ?>">
+          <a href="<?= category_url($menuCat) ?>"><?= e($menuCat['name']) ?></a>
+          <?php if ($menuCat['children']): ?>
           <div class="mega">
             <div class="mega__inner container">
               <div class="mega__links">
-                <h4><?= e($cat['name']) ?></h4>
-                <a href="<?= category_url($cat) ?>">View All</a>
-                <?php foreach ($cat['children'] as $sub): ?><a href="<?= category_url($sub) ?>"><?= e($sub['name']) ?></a><?php endforeach; ?>
+                <h4><?= e($menuCat['name']) ?></h4>
+                <a href="<?= category_url($menuCat) ?>">View All</a>
+                <?php foreach ($menuCat['children'] as $menuSub): ?><a href="<?= category_url($menuSub) ?>"><?= e($menuSub['name']) ?></a><?php endforeach; ?>
               </div>
-              <a class="mega__feature" href="<?= category_url($cat) ?>">
-                <img src="<?= e(img($cat['banner'] ?: $cat['image'])) ?>" alt="<?= e($cat['name']) ?>" loading="lazy">
-                <span><?= e($cat['description'] ? excerpt($cat['description'], 70) : 'Discover ' . $cat['name']) ?></span>
+              <a class="mega__feature" href="<?= category_url($menuCat) ?>">
+                <img src="<?= e(img($menuCat['banner'] ?: $menuCat['image'])) ?>" alt="<?= e($menuCat['name']) ?>" loading="lazy">
+                <span><?= e($menuCat['description'] ? excerpt($menuCat['description'], 70) : 'Discover ' . $menuCat['name']) ?></span>
               </a>
             </div>
           </div>
@@ -147,14 +147,14 @@ $c         = customer();
   <div class="drawer__head"><span class="logo__text sm"><?= e($siteName) ?></span><button class="icon-btn" data-close aria-label="Close"><?= icon('close', 22) ?></button></div>
   <nav class="drawer__nav">
     <a href="<?= url('shop?filter=new') ?>">New In</a>
-    <?php foreach ($cats as $cat): ?>
-      <?php if ($cat['children']): ?>
-        <details><summary><?= e($cat['name']) ?></summary>
-          <a href="<?= category_url($cat) ?>">View All <?= e($cat['name']) ?></a>
-          <?php foreach ($cat['children'] as $sub): ?><a href="<?= category_url($sub) ?>"><?= e($sub['name']) ?></a><?php endforeach; ?>
+    <?php foreach ($cats as $menuCat): ?>
+      <?php if ($menuCat['children']): ?>
+        <details><summary><?= e($menuCat['name']) ?></summary>
+          <a href="<?= category_url($menuCat) ?>">View All <?= e($menuCat['name']) ?></a>
+          <?php foreach ($menuCat['children'] as $menuSub): ?><a href="<?= category_url($menuSub) ?>"><?= e($menuSub['name']) ?></a><?php endforeach; ?>
         </details>
       <?php else: ?>
-        <a href="<?= category_url($cat) ?>"><?= e($cat['name']) ?></a>
+        <a href="<?= category_url($menuCat) ?>"><?= e($menuCat['name']) ?></a>
       <?php endif; ?>
     <?php endforeach; ?>
     <a href="<?= url('shop?filter=sale') ?>" class="nav-sale">Sale</a>

@@ -19,7 +19,7 @@
     <div data-reveal data-delay="1">
       <h4>Shop</h4>
       <ul>
-        <?php foreach (array_slice(category_tree(), 0, 6) as $cat): ?><li><a href="<?= category_url($cat) ?>"><?= e($cat['name']) ?></a></li><?php endforeach; ?>
+        <?php foreach (array_slice(category_tree(), 0, 6) as $footCat): ?><li><a href="<?= category_url($footCat) ?>"><?= e($footCat['name']) ?></a></li><?php endforeach; ?>
       </ul>
     </div>
     <div data-reveal data-delay="2">
