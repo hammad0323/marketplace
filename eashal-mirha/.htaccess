@@ -1,0 +1,70 @@
+# =========================================================
+#  Eashal Mirha — clean URLs (no .php) & security
+#  Requires Apache mod_rewrite (enabled on almost all cPanel hosts)
+# =========================================================
+Options -Indexes
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+# Works in the domain root and in sub-folders without changes.
+# If your host needs it, uncomment and set:  RewriteBase /   (or /store/)
+# RewriteBase /
+
+# Optional: force HTTPS (uncomment once SSL is active)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Block private folders / files
+RewriteRule (^|/)(includes|logs)(/|$) - [F,L]
+RewriteRule ^install/.+\.sql$ - [F,L]
+RewriteRule (^|/)\.(?!well-known) - [F,L]
+
+# SEO files: serve generated files if they exist, otherwise build them live
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^robots\.txt$ seo-files.php?f=robots [L,QSA]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ads\.txt$ seo-files.php?f=ads [L,QSA]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^sitemap\.xml$ seo-files.php?f=sitemap [L,QSA]
+
+# Pretty routes
+RewriteRule ^product/([a-z0-9-]+)/?$ product.php?slug=$1 [L,QSA,NC]
+RewriteRule ^category/([a-z0-9-]+)/([a-z0-9-]+)/?$ shop.php?cat=$1&sub=$2 [L,QSA,NC]
+RewriteRule ^category/([a-z0-9-]+)/?$ shop.php?cat=$1 [L,QSA,NC]
+RewriteRule ^page/([a-z0-9-]+)/?$ page.php?slug=$1 [L,QSA,NC]
+RewriteRule ^order-success/([A-Z0-9]+)/?$ order-success.php?no=$1 [L,QSA,NC]
+RewriteRule ^pay/([A-Z0-9]+)/?$ pay.php?no=$1 [L,QSA,NC]
+
+# Any other /something → something.php (and /admin/something → admin/something.php)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.+?)/?$ $1.php [L,QSA]
+
+# Everything else → custom 404
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ 404.php [L]
+</IfModule>
+
+# Change to /yourfolder/404.php if installed in a sub-folder
+ErrorDocument 404 /404.php
+
+<FilesMatch "^(config\.php|.*\.sql|.*\.md|install\.lock)$">
+    Require all denied
+</FilesMatch>
+
+# Performance
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript image/svg+xml application/json text/plain application/xml
+</IfModule>
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/webp "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType text/css "access plus 1 month"
+  ExpiresByType application/javascript "access plus 1 month"
+</IfModule>
