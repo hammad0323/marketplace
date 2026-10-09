@@ -324,7 +324,7 @@ admin_header($id ? 'Edit: ' . ($p['name'] ?? '') : 'Add product', 'products');
     </div>
     <div class="col-lg-4">
       <?= f_select('status', 'Status', ['draft' => 'Draft', 'published' => 'Published', 'inactive' => 'Inactive'], $p['status'] ?? 'draft') ?>
-      <?= f_select('category_id', 'Category', $topCats, $p['category_id'] ?? '', ['required' => true, 'id' => 'catSelect']) ?>
+      <?= f_select('category_id', 'Category', $topCats, $p['category_id'] ?? '', ['required' => true]) ?>
       <div class="mb-3"><label class="form-label" for="subSelect">Subcategory</label>
         <select class="form-select" name="subcategory_id" id="subSelect"><option value="">— None —</option>
           <?php foreach ($allSubs as $s): ?><option value="<?= (int) $s['id'] ?>" data-parent="<?= (int) $s['parent_id'] ?>"<?= (int) ($p['subcategory_id'] ?? 0) === (int) $s['id'] ? ' selected' : '' ?>><?= e($s['name']) ?></option><?php endforeach; ?>
@@ -457,7 +457,7 @@ admin_header($id ? 'Edit: ' . ($p['name'] ?? '') : 'Add product', 'products');
 <?php endif; ?>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  var cat = document.getElementById('catSelect'), sub = document.getElementById('subSelect');
+  var cat = document.getElementById('f_category_id'), sub = document.getElementById('subSelect');
   function filterSubs() { [].forEach.call(sub.options, function (o) { if (!o.value) return; var show = o.dataset.parent === cat.value; o.hidden = !show; if (!show && o.selected) sub.value = ''; }); }
   cat.addEventListener('change', filterSubs); filterSubs();
   document.querySelectorAll('[data-tab]').forEach(function (b) { b.addEventListener('shown.bs.tab', function () { document.getElementById('activeTab').value = b.dataset.tab; history.replaceState(null, '', '#' + b.dataset.tab); }); });

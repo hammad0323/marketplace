@@ -5,7 +5,7 @@ body.admin { background: #F3F1EC; font-family: 'Inter', system-ui, sans-serif; f
 .btn-primary { --bs-btn-bg: var(--royal); --bs-btn-border-color: var(--royal); --bs-btn-hover-bg: var(--navy); --bs-btn-hover-border-color: var(--navy); --bs-btn-active-bg: var(--navy); }
 .btn-outline-primary { --bs-btn-color: var(--royal); --bs-btn-border-color: var(--royal); --bs-btn-hover-bg: var(--royal); --bs-btn-hover-border-color: var(--royal); }
 a { color: var(--royal); }
-.admin-sidebar { width: var(--sidebar-w); background: var(--navy); color: #cfd6e4; position: fixed; inset: 0 auto 0 0; overflow-y: auto; z-index: 1040; }
+.admin-sidebar { width: var(--sidebar-w); background: var(--navy) !important; color: #cfd6e4; position: fixed; inset: 0 auto 0 0; overflow-y: auto; z-index: 1040; }
 @media (max-width: 991.98px) { .admin-sidebar { position: fixed; } }
 .admin-sidebar__brand { display: flex; align-items: center; justify-content: space-between; padding: 22px 22px 18px; border-bottom: 1px solid rgba(255,255,255,.06); }
 .admin-sidebar__brand a { color: var(--ivory); text-decoration: none; display: flex; flex-direction: column; }

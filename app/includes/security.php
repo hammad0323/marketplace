@@ -84,9 +84,9 @@ function require_csrf(): void
 {
     if (!csrf_valid()) {
         if (is_ajax()) {
-            json_response(['ok' => false, 'message' => 'Your session expired. Please refresh the page and try again.'], 419);
+            json_response(['ok' => false, 'message' => 'Your session expired. Please refresh the page and try again.'], 403);
         }
-        http_response_code(419);
+        http_response_code(403);
         flash('error', 'Your session expired. Please try again.');
         redirect($_SERVER['HTTP_REFERER'] ?? path_url('/'));
     }

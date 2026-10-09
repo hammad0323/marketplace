@@ -10,7 +10,7 @@ $posMap = ['top' => 'flex-start', 'middle' => 'center', 'bottom' => 'flex-end'];
          style="--hero-speed: <?= max(200, min(4000, (int) $s['transition_speed'])) ?>ms" aria-roledescription="carousel" aria-label="Featured">
   <div class="hero__slides">
     <?php foreach ($slides as $i => $sl):
-        $style = sprintf('--h-desktop:%dpx;--h-mobile:%dpx;--overlay:%s;--overlay-opacity:%s;--text:%s;--accent:%s;--btn-bg:%s;--btn-text:%s;--bg-pos:%s;--bg-size:%s;--justify:%s;',
+        $style = sprintf('--h-desktop:%dpx;--h-mobile:%dpx;--overlay:%s;--overlay-opacity:%s;--text:%s;--slide-accent:%s;--slide-btn-bg:%s;--slide-btn-text:%s;--bg-pos:%s;--bg-size:%s;--justify:%s;',
             max(320, min(1200, (int) $sl['height_desktop'])), max(320, min(1200, (int) $sl['height_mobile'])),
             valid_hex($sl['overlay_color']) ? $sl['overlay_color'] : '#0A1426', max(0, min(90, (int) $sl['overlay_opacity'])) / 100,
             valid_hex($sl['text_color']) ? $sl['text_color'] : '#FFFFFF', valid_hex($sl['accent_color']) ? $sl['accent_color'] : '#B99A5B',

@@ -1,0 +1,2 @@
+Cormorant Garamond and Inter are licensed under the SIL Open Font License 1.1 (https://openfontlicense.org).
+They are converted from the bundled woff2 files and used only by tools/generate-sample-images.php.

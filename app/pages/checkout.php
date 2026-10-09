@@ -10,13 +10,13 @@ $customer = current_customer();
 if (is_post()) {
     require_csrf();
     $key = input('checkout_key');
+    // A duplicate submit of the same form returns the order already created.
+    if (preg_match('/^[a-f0-9]{64}$/', $key) && ($existing = db_one('SELECT * FROM orders WHERE idempotency_key = ?', [$key])) && order_visible_to_visitor($existing, null)) {
+        redirect(path_url('order/' . $existing['order_number']));
+    }
     if (!preg_match('/^[a-f0-9]{64}$/', $key) || empty($_SESSION['checkout_keys'][$key])) {
         flash('error', 'Your checkout session expired. Please review your order and try again.');
         redirect(path_url('checkout'));
-    }
-    // A duplicate submit of the same form returns the order already created.
-    if ($existing = db_one('SELECT * FROM orders WHERE idempotency_key = ?', [$key])) {
-        redirect(path_url('order/' . $existing['order_number']));
     }
     if (!rate_limit('checkout', client_ip(), 15, 600)) {
         flash('error', 'Too many checkout attempts. Please wait a few minutes.');
