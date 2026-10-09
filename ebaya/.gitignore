@@ -1,0 +1,6 @@
+config/config.php
+storage/logs/*.log
+uploads/**/*.jpg
+uploads/**/*.png
+uploads/**/*.webp
+uploads/**/*.ico
