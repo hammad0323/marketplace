@@ -192,7 +192,7 @@ body { background: #fff; }
 
 /* ---- Stats --------------------------------------------------------------- */
 .h-stats { background: #fff; padding: 80px 0; border-bottom: 1px solid var(--h-line); }
-.h-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
+.h-stats-grid { display: grid; grid-template-columns: repeat(var(--cols, 4), 1fr); }
 .h-stat { padding: 4px 32px; border-left: 1px solid var(--h-line); }
 .h-stat:first-child { border-left: none; padding-left: 0; }
 .h-stat b { display: block; font-size: clamp(40px, 4.6vw, 60px); font-weight: 800; letter-spacing: -0.045em; line-height: 1; color: var(--h-teal); font-variant-numeric: tabular-nums; }
@@ -314,6 +314,21 @@ body { background: #fff; }
 .h-city-cloud a:hover { border-color: var(--h-teal); transform: translateY(-3px); box-shadow: 0 16px 30px -22px rgba(12,107,93,0.6); }
 .h-city-cloud a:hover sup { background: var(--h-teal); color: #fff; }
 
+/* ---- Explore (internal links) -------------------------------------------- */
+.h-explore { background: #fff; }
+.h-explore-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.h-explore-col { padding: 28px; border: 1px solid var(--h-line); border-radius: 22px; }
+.h-explore-col h3 { display: flex; align-items: center; gap: 10px; font-size: 17px; color: var(--h-ink); margin-bottom: 14px; }
+.h-explore-col h3 i { width: 34px; height: 34px; border-radius: 10px; background: var(--h-teal-50); color: var(--h-teal); display: flex; align-items: center; justify-content: center; font-size: 17px; }
+.h-explore-col ul { list-style: none; margin-bottom: 14px; }
+.h-explore-col li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 0; border-bottom: 1px dashed var(--h-line); font-size: 14.5px; }
+.h-explore-col li:last-child { border-bottom: none; }
+.h-explore-col li a { color: var(--h-ink); font-weight: 600; transition: color 0.2s; }
+.h-explore-col li a:hover { color: var(--h-teal); }
+.h-explore-col li span { font-size: 12.5px; color: var(--h-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; }
+.h-faq-h { margin: 0; font-size: inherit; font-weight: inherit; }
+.h-quote figcaption > span a { color: var(--h-teal); font-weight: 600; }
+
 /* ---- Pharmacies ----------------------------------------------------------- */
 .h-pharm { background: #fff; padding-top: 100px; padding-bottom: 100px; }
 .h-pharm-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
@@ -419,7 +434,7 @@ body { background: #fff; }
     .h-steps-grid, .h-faq-grid, .h-intro-grid { grid-template-columns: 1fr; gap: 48px; }
     .h-steps-sticky, .h-faq-side { position: static; }
     .h-spec-list { grid-template-columns: 1fr; }
-    .h-cta-grid, .h-pharm-grid, .h-audience { grid-template-columns: 1fr; }
+    .h-cta-grid, .h-pharm-grid, .h-audience, .h-explore-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
     .h-section { padding: 80px 0; }

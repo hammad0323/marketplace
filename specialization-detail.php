@@ -25,8 +25,9 @@ $stmt = mysqli_prepare(db(), "
     FROM doctors d JOIN users u ON u.id = d.user_id
     WHERE d.verification_status = 'verified' AND u.status = 'active'
       AND d.id IN (SELECT ds.doctor_id FROM doctor_specializations ds WHERE ds.specialization_id = ?)
-    ORDER BY d.is_premium DESC, d.rating_avg DESC
-    LIMIT 12
+    ORDER BY d.is_premium DESC, (d.rating_count > 0) DESC, (u.avatar IS NOT NULL AND u.avatar != '') DESC,
+             (CHAR_LENGTH(COALESCE(d.bio, '')) > 200) DESC, d.rating_avg DESC, u.full_name
+    LIMIT 60
 ");
 mysqli_stmt_bind_param($stmt, 'i', $spec['id']);
 mysqli_stmt_execute($stmt);
@@ -89,12 +90,21 @@ if ($doctorCount == 0) {
     $metaRobots = 'noindex, follow';
 }
 
-$pageTitle = $spec['name'] . ' Doctors — Book Online or In-Person | ' . get_setting('site_name', SITE_NAME);
+$pageTitle = $spec['name'] . ' Doctors in Pakistan – Book Verified Specialists | ' . get_setting('site_name', SITE_NAME);
 $metaDescription = 'Find verified ' . $spec['name'] . ' specialists on ' . get_setting('site_name', SITE_NAME) . '. Compare fees and availability, then book an online or in-person consultation.' . ($doctorCount > 0 ? ' ' . $doctorCount . ' doctor' . ($doctorCount == 1 ? '' : 's') . ' available.' : '');
 $canonical = APP_URL . '/specializations/' . $spec['slug'];
 $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Specializations', 'url' => APP_URL . '/specializations'], ['name' => $spec['name']]];
+// MedicalWebPage + the doctors listed on it, so the page's subject is explicit.
+$extraHead = '<script type="application/ld+json">' . json_encode([
+    '@context' => 'https://schema.org', '@type' => 'MedicalWebPage', 'name' => $spec['name'] . ' doctors', 'url' => $canonical,
+    'about' => ['@type' => 'MedicalSpecialty', 'name' => $spec['name']],
+    'mainEntity' => ['@type' => 'ItemList', 'numberOfItems' => count($doctors), 'itemListElement' => array_map(
+        fn($d, $i) => ['@type' => 'ListItem', 'position' => $i + 1, 'url' => APP_URL . doctor_url($d['slug']), 'name' => doctor_display_name($d['full_name'])],
+        $doctors, array_keys($doctors)
+    )],
+]) . '</script>';
 if ($faqs) {
-    $extraHead = '<script type="application/ld+json">' . json_encode(['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(
+    $extraHead .= '<script type="application/ld+json">' . json_encode(['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(
         fn($f) => ['@type' => 'Question', 'name' => $f['q'], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f['a']]],
         $faqs
     )]) . '</script>';
@@ -135,12 +145,27 @@ require __DIR__ . '/includes/header.php';
         </div>
         <?php if ($doctorCount > count($doctors)): ?>
         <div style="text-align:center;margin-top:44px;" data-reveal>
+            <p style="color:var(--color-text-muted);font-size:14px;margin-bottom:14px;">Showing <?= count($doctors) ?> of <?= (int) $doctorCount ?> <?= e($spec['name']) ?> doctors</p>
             <a href="/doctors?specialization=<?= e($spec['slug']) ?>" class="btn btn-primary">See All <?= e($spec['name']) ?> Doctors <i class="ri-arrow-right-line"></i></a>
         </div>
         <?php endif; ?>
         <?php endif; ?>
     </div>
 </section>
+
+<?php $specGuides = guides_for_specialization($spec['name'], 4); ?>
+<?php if ($specGuides): ?>
+<section class="section" style="padding-top:0;">
+    <div class="container">
+        <h2 style="font-size:20px;margin-bottom:12px;"><?= e($spec['name']) ?> health guides</h2>
+        <ul style="list-style:none;display:grid;gap:8px;">
+            <?php foreach ($specGuides as $g): ?>
+            <li><a href="<?= e(blog_url($g['slug'])) ?>" style="color:var(--color-primary);font-weight:600;"><i class="ri-article-line"></i> <?= e($g['title']) ?></a></li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+</section>
+<?php endif; ?>
 
 <?php if ($faqs): ?>
 <section class="section" style="background:var(--color-surface);">

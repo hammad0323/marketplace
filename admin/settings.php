@@ -43,7 +43,7 @@ require __DIR__ . '/includes/header.php';
             <div class="form-group"><label class="form-label">Contact Email</label><input type="email" class="form-control" name="contact_email" value="<?= e($settings['contact_email'] ?? '') ?>"></div>
             <div class="form-group"><label class="form-label">Contact Phone</label><input type="text" class="form-control" name="contact_phone" value="<?= e($settings['contact_phone'] ?? '') ?>"></div>
             <div class="form-group"><label class="form-label">Contact Address</label><input type="text" class="form-control" name="contact_address" value="<?= e($settings['contact_address'] ?? '') ?>"></div>
-            <div class="form-group"><label class="form-label">Currency Symbol</label><input type="text" class="form-control" name="currency_symbol" value="<?= e($settings['currency_symbol'] ?? '$') ?>" style="max-width:100px;"></div>
+            <div class="form-group"><label class="form-label">Currency Symbol</label><input type="text" class="form-control" name="currency_symbol" value="<?= e($settings['currency_symbol'] ?? 'Rs') ?>" placeholder="Rs" style="max-width:100px;"></div>
             <label class="checkbox-row" style="margin-bottom:20px;"><input type="checkbox" name="maintenance_mode" value="1" <?= ($settings['maintenance_mode'] ?? '0') === '1' ? 'checked' : '' ?>> Maintenance mode</label>
 
             <div class="divider-fade" style="margin:20px 0;"></div>

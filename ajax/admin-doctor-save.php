@@ -137,7 +137,7 @@ try {
     $userId = mysqli_insert_id($db);
     mysqli_stmt_close($stmt);
 
-    $slug = unique_slug($db, 'doctors', 'dr-' . $fullName);
+    $slug = unique_slug($db, 'doctors', doctor_slug_base($fullName));
     $stmt = mysqli_prepare($db, "INSERT INTO doctors (user_id, slug, designation, qualification, registration_number, experience_years, bio, consultation_fee_online, consultation_fee_physical, free_consultation, clinic_name, clinic_address, clinic_city, clinic_state, clinic_country, meta_title, meta_description, booking_mode, verification_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'verified')");
     mysqli_stmt_bind_param(
         $stmt, 'issssisddisssssss' . 's',

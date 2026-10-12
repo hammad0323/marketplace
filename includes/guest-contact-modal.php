@@ -12,7 +12,7 @@
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">Continue</button>
                 <p style="text-align:center;font-size:13.5px;margin-top:18px;color:var(--color-text-muted);">
-                    Already have an account? <a href="#" style="color:var(--color-primary);font-weight:600;" onclick="event.preventDefault();closeGuestModal();openAuthModal('login')">Log in</a>
+                    Already have an account? <a href="/login" rel="nofollow" style="color:var(--color-primary);font-weight:600;" onclick="event.preventDefault();closeGuestModal();openAuthModal('login')">Log in</a>
                 </p>
             </form>
         </div>

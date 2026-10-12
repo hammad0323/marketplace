@@ -34,13 +34,15 @@ $related = mysqli_query(db(), "
     ORDER BY created_at DESC LIMIT 4
 ")->fetch_all(MYSQLI_ASSOC);
 
-$topDoctors = mysqli_query(db(), "
-    SELECT d.slug, d.consultation_fee_online, d.rating_avg, d.rating_count, u.full_name, u.avatar,
-        (SELECT GROUP_CONCAT(s.name SEPARATOR ', ') FROM doctor_specializations ds JOIN specializations s ON s.id = ds.specialization_id WHERE ds.doctor_id = d.id) AS specs
-    FROM doctors d JOIN users u ON u.id = d.user_id
-    WHERE d.verification_status = 'verified' AND u.status = 'active'
-    ORDER BY d.is_premium DESC, d.rating_avg DESC LIMIT 3
-")->fetch_all(MYSQLI_ASSOC);
+// Doctors relevant to this medicine (by what it treats), not a sitewide top
+// list — so an antibiotic page doesn't recommend physiotherapists.
+$medicineSpec = infer_specialization(implode(' ', [$medicine['category'], $medicine['uses'], $medicine['content']]), $medicine['name'] . ' ' . $medicine['generic_name']);
+$topDoctors = $medicineSpec ? doctors_for_specialization((int) $medicineSpec['id'], 3) : [];
+foreach ($topDoctors as &$td) {
+    $td['specs'] = specialization_names($td['specializations']);
+}
+unset($td);
+$medicineGuides = $medicineSpec ? guides_for_specialization($medicineSpec['name'], 3) : [];
 
 $customFaqs = get_medicine_faqs($medicine['id']);
 
@@ -203,29 +205,40 @@ function med_section_heading($id, $icon, $color, $title)
         <?php if ($topDoctors): ?>
         <div class="card-gradient-border" style="margin-bottom:40px;" data-reveal>
             <div class="card-inner" style="padding:32px;">
-                <h3 style="font-size:18px;margin-bottom:4px;">Consult a Doctor Online</h3>
+                <h3 style="font-size:18px;margin-bottom:4px;">Consult a <?= e($medicineSpec['name']) ?> doctor</h3>
                 <p style="color:var(--color-text-muted);font-size:14px;margin-bottom:20px;">Get expert medical advice before starting any medication — book a verified doctor in minutes.</p>
                 <div class="grid grid-3 stagger">
                     <?php foreach ($topDoctors as $d): ?>
                     <a href="<?= e(doctor_url($d['slug'])) ?>" class="card card-hover" style="padding:16px;" data-reveal>
                         <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">
-                            <img src="<?= e(avatar_url($d['avatar'], $d['full_name'])) ?>" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+                            <img src="<?= e(avatar_url($d['avatar'], $d['full_name'])) ?>" alt="<?= e($d['full_name']) ?>" width="40" height="40" loading="lazy" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
                             <div style="min-width:0;">
                                 <strong style="display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= e($d['full_name']) ?></strong>
                                 <span style="font-size:12px;color:var(--color-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;"><?= e($d['specs'] ?: 'General Physician') ?></span>
                             </div>
                         </div>
                         <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;">
-                            <span><i class="ri-star-fill" style="color:var(--color-warning);"></i> <?= number_format($d['rating_avg'], 1) ?></span>
+                            <?php if ((int) $d['rating_count'] > 0): ?><span><i class="ri-star-fill" style="color:var(--color-warning);"></i> <?= number_format($d['rating_avg'], 1) ?></span><?php else: ?><span style="color:var(--color-text-muted);">New</span><?php endif; ?>
                             <strong style="color:var(--color-primary);"><?= format_currency($d['consultation_fee_online']) ?></strong>
                         </div>
                     </a>
                     <?php endforeach; ?>
                 </div>
                 <div style="text-align:center;margin-top:20px;">
-                    <a href="/doctors" class="btn btn-primary btn-sm">Browse All Doctors <i class="ri-arrow-right-line"></i></a>
+                    <a href="/specializations/<?= e($medicineSpec['slug']) ?>" class="btn btn-primary btn-sm">See all <?= e($medicineSpec['name']) ?> doctors <i class="ri-arrow-right-line"></i></a>
                 </div>
             </div>
+        </div>
+        <?php endif; ?>
+
+        <?php if ($medicineGuides): ?>
+        <div style="margin-bottom:40px;" data-reveal>
+            <h3 style="font-size:18px;margin-bottom:12px;">Related health guides</h3>
+            <ul style="list-style:none;display:grid;gap:8px;">
+                <?php foreach ($medicineGuides as $g): ?>
+                <li><a href="<?= e(blog_url($g['slug'])) ?>" style="color:var(--color-primary);font-weight:600;"><i class="ri-article-line"></i> <?= e($g['title']) ?></a></li>
+                <?php endforeach; ?>
+            </ul>
         </div>
         <?php endif; ?>
 
@@ -235,7 +248,7 @@ function med_section_heading($id, $icon, $color, $title)
             <?php foreach ($related as $r): ?>
             <a href="<?= e(medicine_url($r['slug'])) ?>" class="card card-hover" style="padding:14px;text-align:center;" data-reveal>
                 <?php if ($r['featured_image']): ?>
-                <img src="/uploads/<?= e($r['featured_image']) ?>" alt="" style="width:40px;height:40px;border-radius:10px;object-fit:cover;margin:0 auto 8px;">
+                <img src="/uploads/<?= e($r['featured_image']) ?>" alt="<?= e($r['name']) ?>" width="40" height="40" loading="lazy" style="width:40px;height:40px;border-radius:10px;object-fit:cover;margin:0 auto 8px;">
                 <?php else: ?>
                 <div style="width:40px;height:40px;border-radius:10px;background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;color:#fff;margin:0 auto 8px;"><i class="ri-capsule-line"></i></div>
                 <?php endif; ?>

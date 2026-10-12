@@ -34,19 +34,21 @@ $totalAppointments = mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FR
             <div style="font-size:16px;color:var(--color-text-muted);line-height:1.9;"><?= $page['content'] ?></div>
         </div>
 
-        <div class="grid grid-3 stagger" style="margin-top:56px;">
+        <?php
+        // Real numbers only, written into the HTML (not a "0" waiting for JS),
+        // and patient/appointment totals only once they're big enough to help.
+        $totalSpecs = (int) mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM specializations WHERE is_active = 1"))['c'];
+        $aboutStats = [[(int) $totalDoctors, 'Verified Doctors'], [$totalSpecs, 'Specialties']];
+        if ($totalPatients >= 100) $aboutStats[] = [(int) $totalPatients, 'Registered Patients'];
+        if ($totalAppointments >= 100) $aboutStats[] = [(int) $totalAppointments, 'Appointments Booked'];
+        ?>
+        <div class="grid grid-<?= count($aboutStats) ?> stagger" style="margin-top:56px;">
+            <?php foreach ($aboutStats as [$value, $label]): ?>
             <div class="card card-hover" style="padding:28px;text-align:center;" data-reveal>
-                <b class="counter" data-counter="<?= (int)$totalDoctors ?>" style="font-size:34px;display:block;color:var(--color-primary);">0</b>
-                <span style="color:var(--color-text-muted);">Verified Doctors</span>
+                <b class="counter" data-counter="<?= $value ?>" style="font-size:34px;display:block;color:var(--color-primary);"><?= number_format($value) ?></b>
+                <span style="color:var(--color-text-muted);"><?= e($label) ?></span>
             </div>
-            <div class="card card-hover" style="padding:28px;text-align:center;" data-reveal>
-                <b class="counter" data-counter="<?= (int)$totalPatients ?>" style="font-size:34px;display:block;color:var(--color-primary);">0</b>
-                <span style="color:var(--color-text-muted);">Registered Patients</span>
-            </div>
-            <div class="card card-hover" style="padding:28px;text-align:center;" data-reveal>
-                <b class="counter" data-counter="<?= (int)$totalAppointments ?>" style="font-size:34px;display:block;color:var(--color-primary);">0</b>
-                <span style="color:var(--color-text-muted);">Appointments Booked</span>
-            </div>
+            <?php endforeach; ?>
         </div>
     </div>
 </section>

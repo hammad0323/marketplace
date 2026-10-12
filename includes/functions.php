@@ -25,6 +25,12 @@ function e($value)
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
+/** For <title>/meta/og text that may already carry entities (imported or rich-editor content): decode once, then encode exactly once. */
+function meta_text($value)
+{
+    return e(html_entity_decode(strip_tags((string) $value), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+}
+
 function clean($value)
 {
     return trim((string) $value);
@@ -37,6 +43,13 @@ function slugify($text)
     $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text) ?: $text;
     $text = strtolower(preg_replace('~[^-\w]+~', '', $text));
     return $text ?: 'item';
+}
+
+/** "dr-<name>" slug base with any typed-in "Dr."/"Doctor" prefix removed first (no more dr-dr-...). */
+function doctor_slug_base($fullName)
+{
+    $name = preg_replace('/^\s*(?:(?:dr|doctor)\b\.?\s*)+/i', '', (string) $fullName);
+    return 'dr-' . ($name !== '' ? $name : $fullName);
 }
 
 function unique_slug(mysqli $db, string $table, string $base)
@@ -316,9 +329,24 @@ function handle_multi_upload($fileKey, $subdir, array $allowedExt, $maxBytes = 5
 // Formatting
 // ---------------------------------------------------------------------------
 
+/** Site currency symbol from Site Settings, defaulting to Rs (PKR) when unset. */
+function currency_symbol()
+{
+    $symbol = trim((string) get_setting('currency_symbol', ''));
+    return $symbol !== '' ? $symbol : 'Rs';
+}
+
+/** Symbol as a price prefix: letter symbols get a space ("Rs 1,500"), signs don't ("$15"). */
+function currency_prefix()
+{
+    $symbol = currency_symbol();
+    return preg_match('/\p{L}$/u', $symbol) ? $symbol . ' ' : $symbol;
+}
+
 function format_currency($amount)
 {
-    return get_setting('currency_symbol', '$') . number_format((float) $amount, 2);
+    $amount = (float) $amount;
+    return currency_prefix() . number_format($amount, floor($amount) == $amount ? 0 : 2);
 }
 
 function format_date($date, $format = 'M j, Y')
@@ -355,7 +383,9 @@ function time_ago($datetime)
 
 function excerpt($text, $length = 140)
 {
-    $text = trim(strip_tags($text));
+    // Decode after stripping tags: rich-editor HTML keeps entities (&amp;,
+    // &#039;) that would otherwise be encoded a second time by e().
+    $text = trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags((string) $text), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
     return mb_strlen($text) > $length ? mb_substr($text, 0, $length) . '…' : $text;
 }
 
@@ -398,10 +428,6 @@ function render_rich_html($html)
 // ---------------------------------------------------------------------------
 function organization_schema()
 {
-    $ratingRow = mysqli_fetch_assoc(mysqli_query(db(), "
-        SELECT AVG(rating_avg) AS avg_rating, SUM(rating_count) AS total_reviews
-        FROM doctors WHERE verification_status = 'verified' AND rating_count > 0
-    "));
     $logoUrl = get_setting('site_logo') ? APP_URL . '/uploads/' . get_setting('site_logo') : APP_URL . '/assets/img/favicon.svg';
     return array_filter([
         '@type' => 'MedicalBusiness',
@@ -412,7 +438,6 @@ function organization_schema()
         'description' => get_setting('site_tagline') ?: null,
         'logo' => $logoUrl,
         'image' => $logoUrl,
-        'priceRange' => '$$',
         'medicalSpecialty' => array_values(array_filter(array_map(fn($s) => $s['name'] ?? null,
             mysqli_query(db(), 'SELECT name FROM specializations WHERE is_active = 1 ORDER BY sort_order LIMIT 10')->fetch_all(MYSQLI_ASSOC)
         ))),
@@ -425,7 +450,7 @@ function organization_schema()
             'contactType' => 'customer support',
             'telephone' => get_setting('contact_phone') ?: null,
             'email' => get_setting('contact_email') ?: null,
-            'availableLanguage' => ['English'],
+            'availableLanguage' => ['English', 'Urdu'],
         ]) ?: null,
         'sameAs' => array_values(array_filter([
             get_setting('facebook_url') ?: null,
@@ -433,11 +458,9 @@ function organization_schema()
             get_setting('instagram_url') ?: null,
             get_setting('linkedin_url') ?: null,
         ])) ?: null,
-        'aggregateRating' => ($ratingRow && $ratingRow['avg_rating']) ? [
-            '@type' => 'AggregateRating',
-            'ratingValue' => number_format((float) $ratingRow['avg_rating'], 1),
-            'reviewCount' => (string) (int) $ratingRow['total_reviews'],
-        ] : null,
+        // No aggregateRating here: a site rating built from its own doctors'
+        // reviews is "self-serving" review markup, which Google ignores or
+        // penalises on Organization/LocalBusiness. Ratings live on Physician.
     ]);
 }
 
@@ -561,34 +584,68 @@ function specialization_names($specializations)
     return implode(', ', array_column($specializations, 'name'));
 }
 
-/**
- * SEO-optimized fallback <title> for a doctor's public profile — used when
- * the doctor/admin hasn't set a custom meta title, and to pre-fill the SEO
- * form field so they can see and tweak the suggestion before saving.
- */
-function doctor_meta_title($fullName, $designation, $qualification, $specNames)
+/** "Dr. <name>" — adds the prefix only when the stored name doesn't already start with it. */
+function doctor_display_name($fullName)
 {
-    $role = $designation ?: $qualification;
-    return implode(' — ', array_filter([$fullName, $role ?: null, $specNames ?: null]));
+    $fullName = trim((string) $fullName);
+    return preg_match('/^(dr|doctor)\b/i', $fullName) ? $fullName : 'Dr. ' . $fullName;
 }
 
 /**
- * SEO-optimized fallback meta description for a doctor's public profile —
- * same "pre-fill the form, fall back on the live page" role as
- * doctor_meta_title() above. Deliberately built from name/designation/
- * specialization rather than the bio, so it stays a consistent length and
- * keyword-focused regardless of how (or whether) the doctor writes their bio.
+ * Fallback <title> for a doctor profile when no custom meta title is set:
+ * "Dr. Name – Specialty in City | Clinic" — the shape people search in
+ * ("Dr X dentist Karachi", "Dr X Liaquat National"), instead of a string of
+ * credentials. Mirrored by window.buildDoctorSeoText() in main.js.
  */
-function doctor_meta_description($fullName, $designation, $qualification, $specNames)
+function doctor_meta_title($fullName, $specNames, $city = '', $clinic = '')
 {
-    if (!$fullName) {
+    if (trim((string) $fullName) === '') {
         return '';
     }
-    $role = $designation ?: ($qualification ?: 'doctor');
-    $spec = $specNames ?: 'multiple specialties';
-    return $fullName . ' is a ' . $role . ' specializing in ' . $spec
-        . '. View profile, qualifications, specialization and professional details on '
-        . get_setting('site_name', SITE_NAME) . '.';
+    $spec = trim(explode(',', (string) $specNames)[0]);
+    $city = trim((string) $city);
+    $clinic = trim((string) $clinic);
+    $title = doctor_display_name($fullName);
+    if ($spec !== '') {
+        $title .= ' – ' . $spec . ($city !== '' ? ' in ' . $city : '');
+    } elseif ($city !== '') {
+        $title .= ' – Doctor in ' . $city;
+    }
+    return $clinic !== '' ? $title . ' | ' . $clinic : $title;
+}
+
+/** Fallback meta description for a doctor profile; same inputs as doctor_meta_title(). */
+function doctor_meta_description($fullName, $specNames, $city = '', $clinic = '')
+{
+    if (trim((string) $fullName) === '') {
+        return '';
+    }
+    $spec = trim((string) $specNames);
+    $where = trim(implode(', ', array_filter([trim((string) $clinic), trim((string) $city)])));
+    return doctor_display_name($fullName) . ($spec !== '' ? ' is a ' . $spec . ' specialist' : ' is a doctor')
+        . ($where !== '' ? ' at ' . $where : '')
+        . '. See fees, timings and qualifications, and book an appointment online on ' . get_setting('site_name', SITE_NAME) . '.';
+}
+
+/**
+ * True when a saved meta title/description is just the old auto-fill text
+ * (name — designation/qualification — specialties), which the profile form
+ * used to write into the field and save. Those are replaced by the new
+ * fallback on the live page; anything a person actually typed is kept.
+ */
+function doctor_meta_is_legacy_auto($saved, array $doctor, $specNames, $field)
+{
+    $saved = trim((string) $saved);
+    if ($saved === '') {
+        return true;
+    }
+    $role = $doctor['designation'] ?: $doctor['qualification'];
+    if ($field === 'title') {
+        return $saved === implode(' — ', array_filter([$doctor['full_name'], $role ?: null, $specNames ?: null]));
+    }
+    $legacy = $doctor['full_name'] . ' is a ' . ($role ?: 'doctor') . ' specializing in ' . ($specNames ?: 'multiple specialties')
+        . '. View profile, qualifications, specialization and professional details on ';
+    return str_starts_with($saved, $legacy);
 }
 
 /** Replaces a doctor's specialization set with the given ids (validated against the specializations table). */
@@ -1143,68 +1200,101 @@ function filtered_canonical($path, array $params, $page = 1)
 // SEO
 // ---------------------------------------------------------------------------
 
-/** Builds the full sitemap XML. Used by both the always-fresh sitemap.php
- * (dynamic, generated per-request) and the admin "Generate Sitemap" action
- * (writes the same output to a static sitemap.xml file at the project root). */
-function build_sitemap_xml()
+/**
+ * Sitemap URL entries, grouped by type: [type => [[loc, lastmod|null, changefreq, priority], ...]].
+ * Pass a type to fetch just that group. Empty pages (no pharmacy description and
+ * no products; specialties with no verified doctors) are noindexed on the page
+ * itself, so they're left out here too — submitting empty pages is what reads
+ * as "low value content".
+ */
+function sitemap_entries($only = null)
 {
     $db = db();
-    $staticPages = ['/', '/doctors', '/specializations', '/products', '/medicines', '/pharmacies', '/blog', '/about', '/contact', '/faq', '/privacy-policy', '/terms', '/doctor-register', '/pharmacy-register'];
+    $types = ['pages', 'doctors', 'specialities', 'blog', 'medicines', 'pharmacies', 'products'];
+    $out = [];
+    $lastmod = fn($v) => $v ? date('Y-m-d', strtotime($v)) : null;
+    foreach ($types as $type) {
+        if ($only !== null && $only !== $type) continue;
+        $rows = [];
+        switch ($type) {
+            case 'pages':
+                foreach (['/', '/doctors', '/specializations', '/products', '/medicines', '/pharmacies', '/blog', '/about', '/contact', '/faq', '/privacy-policy', '/terms', '/doctor-register', '/pharmacy-register'] as $path) {
+                    $rows[] = [APP_URL . $path, null, 'weekly', '0.8'];
+                }
+                break;
+            case 'doctors':
+                $res = mysqli_query($db, "SELECT d.slug, d.updated_at FROM doctors d JOIN users u ON u.id = d.user_id WHERE d.verification_status = 'verified' AND u.status = 'active'");
+                while ($r = mysqli_fetch_assoc($res)) $rows[] = [APP_URL . doctor_url($r['slug']), $lastmod($r['updated_at']), 'weekly', '0.7'];
+                break;
+            case 'specialities':
+                $res = mysqli_query($db, "
+                    SELECT s.slug FROM specializations s
+                    WHERE s.is_active = 1 AND EXISTS (
+                        SELECT 1 FROM doctor_specializations ds JOIN doctors d ON d.id = ds.doctor_id JOIN users u ON u.id = d.user_id
+                        WHERE ds.specialization_id = s.id AND d.verification_status = 'verified' AND u.status = 'active'
+                    )
+                ");
+                while ($r = mysqli_fetch_assoc($res)) $rows[] = [APP_URL . '/specializations/' . $r['slug'], null, 'weekly', '0.8'];
+                break;
+            case 'blog':
+                $res = mysqli_query($db, "SELECT slug, published_at FROM blog_posts WHERE status = 'published'");
+                while ($r = mysqli_fetch_assoc($res)) $rows[] = [APP_URL . blog_url($r['slug']), $lastmod($r['published_at']), 'monthly', '0.6'];
+                break;
+            case 'medicines':
+                $res = mysqli_query($db, "SELECT slug, updated_at FROM medicine_info WHERE status = 'published'");
+                while ($r = mysqli_fetch_assoc($res)) $rows[] = [APP_URL . medicine_url($r['slug']), $lastmod($r['updated_at']), 'monthly', '0.6'];
+                break;
+            case 'pharmacies':
+                $res = mysqli_query($db, "
+                    SELECT p.slug, p.updated_at FROM pharmacies p
+                    WHERE p.verification_status = 'verified'
+                      AND (TRIM(COALESCE(p.bio, '')) != ''
+                           OR EXISTS (SELECT 1 FROM doctor_products dp WHERE dp.pharmacy_id = p.id AND dp.seller_type = 'pharmacy' AND dp.is_active = 1))
+                ");
+                while ($r = mysqli_fetch_assoc($res)) $rows[] = [APP_URL . pharmacy_url($r['slug']), $lastmod($r['updated_at']), 'weekly', '0.6'];
+                break;
+            case 'products':
+                $res = mysqli_query($db, "
+                    SELECT dp.slug, dp.created_at FROM doctor_products dp
+                    LEFT JOIN doctors d ON d.id = dp.doctor_id AND dp.seller_type = 'doctor'
+                    LEFT JOIN pharmacies ph ON ph.id = dp.pharmacy_id AND dp.seller_type = 'pharmacy'
+                    WHERE dp.is_active = 1
+                        AND ((dp.seller_type = 'doctor' AND d.is_premium = 1 AND d.verification_status = 'verified')
+                            OR (dp.seller_type = 'pharmacy' AND ph.verification_status = 'verified'))
+                ");
+                while ($r = mysqli_fetch_assoc($res)) $rows[] = [APP_URL . product_url($r['slug']), $lastmod($r['created_at']), 'weekly', '0.5'];
+                break;
+        }
+        $out[$type] = $rows;
+    }
+    return $out;
+}
 
-    $doctors = mysqli_query($db, "SELECT slug, updated_at FROM doctors WHERE verification_status = 'verified'");
-    // Empty pages (no pharmacy description and no products; specialties with no
-    // verified doctors) are noindexed on the page itself, so they're left out
-    // here too — submitting empty pages is what reads as "low value content".
-    $pharmacies = mysqli_query($db, "
-        SELECT p.slug, p.updated_at FROM pharmacies p
-        WHERE p.verification_status = 'verified'
-          AND (TRIM(COALESCE(p.bio, '')) != ''
-               OR EXISTS (SELECT 1 FROM doctor_products dp WHERE dp.pharmacy_id = p.id AND dp.seller_type = 'pharmacy' AND dp.is_active = 1))
-    ");
-    $specs = mysqli_query($db, "
-        SELECT s.slug FROM specializations s
-        WHERE s.is_active = 1 AND EXISTS (
-            SELECT 1 FROM doctor_specializations ds JOIN doctors d ON d.id = ds.doctor_id JOIN users u ON u.id = d.user_id
-            WHERE ds.specialization_id = s.id AND d.verification_status = 'verified' AND u.status = 'active'
-        )
-    ");
-    $blogPosts = mysqli_query($db, "SELECT slug, published_at FROM blog_posts WHERE status = 'published'");
-    $storeProducts = mysqli_query($db, "
-        SELECT dp.slug, dp.created_at FROM doctor_products dp
-        LEFT JOIN doctors d ON d.id = dp.doctor_id AND dp.seller_type = 'doctor'
-        LEFT JOIN pharmacies ph ON ph.id = dp.pharmacy_id AND dp.seller_type = 'pharmacy'
-        WHERE dp.is_active = 1
-            AND ((dp.seller_type = 'doctor' AND d.is_premium = 1 AND d.verification_status = 'verified')
-                OR (dp.seller_type = 'pharmacy' AND ph.verification_status = 'verified'))
-    ");
-    $medicines = mysqli_query($db, "SELECT slug, updated_at FROM medicine_info WHERE status = 'published'");
-
+/** One <urlset>: every URL when $type is null (the static sitemap.xml), else just that group. */
+function build_sitemap_xml($type = null)
+{
     $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
     $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
-
-    foreach ($staticPages as $path) {
-        $xml .= '<url><loc>' . e(APP_URL . $path) . '</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>' . "\n";
+    foreach (sitemap_entries($type) as $rows) {
+        foreach ($rows as [$loc, $mod, $freq, $prio]) {
+            $xml .= '<url><loc>' . e($loc) . '</loc>' . ($mod ? '<lastmod>' . $mod . '</lastmod>' : '') . '<changefreq>' . $freq . '</changefreq><priority>' . $prio . '</priority></url>' . "\n";
+        }
     }
-    while ($d = mysqli_fetch_assoc($doctors)) {
-        $xml .= '<url><loc>' . e(APP_URL . doctor_url($d['slug'])) . '</loc><lastmod>' . date('Y-m-d', strtotime($d['updated_at'])) . '</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>' . "\n";
-    }
-    while ($ph = mysqli_fetch_assoc($pharmacies)) {
-        $xml .= '<url><loc>' . e(APP_URL . pharmacy_url($ph['slug'])) . '</loc><lastmod>' . date('Y-m-d', strtotime($ph['updated_at'])) . '</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>' . "\n";
-    }
-    while ($s = mysqli_fetch_assoc($specs)) {
-        $xml .= '<url><loc>' . e(APP_URL . '/specializations/' . $s['slug']) . '</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>' . "\n";
-    }
-    while ($b = mysqli_fetch_assoc($blogPosts)) {
-        $xml .= '<url><loc>' . e(APP_URL . blog_url($b['slug'])) . '</loc><lastmod>' . date('Y-m-d', strtotime($b['published_at'])) . '</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>' . "\n";
-    }
-    while ($p = mysqli_fetch_assoc($storeProducts)) {
-        $xml .= '<url><loc>' . e(APP_URL . product_url($p['slug'])) . '</loc><lastmod>' . date('Y-m-d', strtotime($p['created_at'])) . '</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>' . "\n";
-    }
-    while ($m = mysqli_fetch_assoc($medicines)) {
-        $xml .= '<url><loc>' . e(APP_URL . medicine_url($m['slug'])) . '</loc><lastmod>' . date('Y-m-d', strtotime($m['updated_at'])) . '</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>' . "\n";
-    }
-
     $xml .= '</urlset>';
+    return $xml;
+}
+
+/** Sitemap index pointing at one child sitemap per non-empty group (/sitemap?type=doctors ...). */
+function build_sitemap_index_xml()
+{
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+    $xml .= '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+    foreach (sitemap_entries() as $type => $rows) {
+        if (!$rows) continue;
+        $mods = array_filter(array_column($rows, 1));
+        $xml .= '<sitemap><loc>' . e(APP_URL . '/sitemap?type=' . $type) . '</loc>' . ($mods ? '<lastmod>' . max($mods) . '</lastmod>' : '') . '</sitemap>' . "\n";
+    }
+    $xml .= '</sitemapindex>';
     return $xml;
 }
 
@@ -1553,7 +1643,7 @@ function render_blog_block(array $block, array $headings = [])
                 $specNames = specialization_names($d['specializations']) ?: '—';
                 $fee = (float) $d['consultation_fee_online'];
                 $feeInPerson = (float) $d['consultation_fee_physical'];
-                echo '<tr><td class="table-user"><img src="' . e(avatar_url($d['avatar'], $d['full_name'])) . '" alt=""><strong>' . e($d['full_name']) . '</strong></td>';
+                echo '<tr><td class="table-user"><img src="' . e(avatar_url($d['avatar'], $d['full_name'])) . '" alt="' . e($d['full_name']) . '" width="36" height="36" loading="lazy"><strong>' . e($d['full_name']) . '</strong></td>';
                 echo '<td>' . e($specNames) . '</td>';
                 echo '<td>' . ((int) $d['experience_years'] > 0 ? (int) $d['experience_years'] . ' yrs' : '—') . '</td>';
                 echo '<td>' . ($fee > 0 ? format_currency($fee) : ($d['free_consultation'] ? 'Free' : '—')) . '</td>';
@@ -1774,4 +1864,106 @@ function content_word_count($html)
 {
     $text = trim(html_entity_decode(strip_tags((string) $html), ENT_QUOTES, 'UTF-8'));
     return $text === '' ? 0 : count(preg_split('/\s+/u', $text));
+}
+
+/**
+ * Best-matching active specialization for a piece of health content (blog
+ * post, medicine page), used to show relevant doctors instead of a sitewide
+ * "top doctors" list. Scores each specialty by stems of its own name in the
+ * text plus common lay keywords; falls back to a general physician specialty.
+ * Returns ['id','name','slug'] or null.
+ */
+function infer_specialization($text, $title = '')
+{
+    static $specs = null;
+    if ($specs === null) {
+        $specs = mysqli_query(db(), 'SELECT id, name, slug FROM specializations WHERE is_active = 1')->fetch_all(MYSQLI_ASSOC);
+    }
+    $hay = mb_strtolower(html_entity_decode(strip_tags(str_repeat($title . ' ', 3) . ' ' . $text), ENT_QUOTES, 'UTF-8'));
+    // Lay keywords, keyed by a pattern matched against the specialty's name.
+    $hints = [
+        '/\bcardio/' => 'heart|cardiac|blood pressure|hypertension|cholesterol|chest pain',
+        '/\bdermat/' => 'skin|acne|eczema|psoriasis|rash|fungal|hair fall',
+        '/\bgastro|\bhepat/' => 'stomach|acidity|acid reflux|ulcer|liver|hepatitis|bowel|diarrh|constipation|digest',
+        '/\bortho/' => 'bone|joint|arthritis|fracture|back pain|calcium',
+        '/\bneuro/' => 'brain|seizure|epilep|migraine|stroke|nerve|spine',
+        '/\bpa?edia/' => 'child|children|infant|baby|kids',
+        '/\bgyn|\bobstet/' => 'pregnan|period|menstru|pcos|women\'s health',
+        '/\bdent/' => 'tooth|teeth|dental|gum|cavity|toothache',
+        '/\bpsych/' => 'depress|anxiety|stress|insomnia|mental health',
+        '/\bendo|\bdiabet/' => 'diabet|sugar level|insulin|glucose|thyroid|hormone|hba1c',
+        '/\bnephro|\burolog/' => 'kidney|urine|urinary|renal|stone',
+        '/\bophthal|\beye/' => 'eye|vision|cataract|glaucoma',
+        '/^ent\b|\botolaryn/' => 'ear|nose|throat|sinus|tonsil',
+        '/\bphysio/' => 'physiotherap|exercise|rehab|sprain|posture',
+        '/\bnutri|\bdiet/' => 'diet|nutrition|weight loss|vitamin',
+        '/\bradio/' => 'x-ray|ultrasound|mri|ct scan',
+        '/\bpulmo|\bchest/' => 'asthma|lung|cough|breathing|tuberculosis',
+    ];
+    $best = null;
+    $bestScore = 0;
+    $general = null;
+    foreach ($specs as $s) {
+        $name = mb_strtolower($s['name']);
+        if (preg_match('/general|physician|family|internal/', $name)) {
+            $general = $general ?? $s;
+        }
+        $score = 0;
+        foreach (preg_split('/[^\p{L}]+/u', $name, -1, PREG_SPLIT_NO_EMPTY) as $word) {
+            if (mb_strlen($word) < 5 || in_array($word, ['general', 'surgery', 'medicine', 'physician', 'family'], true)) continue;
+            $score += 2 * substr_count($hay, mb_substr($word, 0, max(5, mb_strlen($word) - 4)));
+        }
+        foreach ($hints as $namePattern => $keywords) {
+            if (preg_match($namePattern, $name)) {
+                $score += preg_match_all('/\b(?:' . $keywords . ')/u', $hay);
+            }
+        }
+        if ($score > $bestScore) {
+            $best = $s;
+            $bestScore = $score;
+        }
+    }
+    // One incidental keyword isn't enough to pick a specialty over a GP.
+    return ($bestScore >= 2 || !$general) ? ($best ?? $general) : $general;
+}
+
+/** Verified doctors in a specialization, most complete profiles first (premium, real reviews, photo, written bio). */
+function doctors_for_specialization($specId, $limit = 4, $excludeDoctorId = 0)
+{
+    $stmt = mysqli_prepare(db(), "
+        SELECT d.*, u.full_name, u.avatar FROM doctors d JOIN users u ON u.id = d.user_id
+        WHERE d.verification_status = 'verified' AND u.status = 'active' AND d.id != ?
+          AND d.id IN (SELECT ds.doctor_id FROM doctor_specializations ds WHERE ds.specialization_id = ?)
+        ORDER BY d.is_premium DESC, (d.rating_count > 0) DESC, (u.avatar IS NOT NULL AND u.avatar != '') DESC,
+                 (CHAR_LENGTH(COALESCE(d.bio, '')) > 200) DESC, d.rating_avg DESC, RAND()
+        LIMIT ?
+    ");
+    mysqli_stmt_bind_param($stmt, 'iii', $excludeDoctorId, $specId, $limit);
+    mysqli_stmt_execute($stmt);
+    $rows = mysqli_stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC);
+    mysqli_stmt_close($stmt);
+    foreach ($rows as &$r) {
+        $r['specializations'] = get_doctor_specializations($r['id']);
+    }
+    unset($r);
+    return $rows;
+}
+
+/** Published blog posts about a specialization (its name stem in the title or category), newest first. */
+function guides_for_specialization($specName, $limit = 3, $excludePostId = 0)
+{
+    $words = array_filter(preg_split('/[^\p{L}]+/u', mb_strtolower($specName), -1, PREG_SPLIT_NO_EMPTY),
+        fn($w) => mb_strlen($w) >= 5 && !in_array($w, ['general', 'surgery', 'medicine', 'physician', 'family'], true));
+    if (!$words) {
+        return [];
+    }
+    $word = reset($words);
+    $like = '%' . mb_substr($word, 0, max(5, mb_strlen($word) - 4)) . '%';
+    $stmt = mysqli_prepare(db(), "SELECT id, title, slug, featured_image, published_at FROM blog_posts
+        WHERE status = 'published' AND id != ? AND (title LIKE ? OR category LIKE ?) ORDER BY published_at DESC LIMIT ?");
+    mysqli_stmt_bind_param($stmt, 'issi', $excludePostId, $like, $like, $limit);
+    mysqli_stmt_execute($stmt);
+    $rows = mysqli_stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC);
+    mysqli_stmt_close($stmt);
+    return $rows;
 }

@@ -40,7 +40,7 @@
                     </div>
                     <button type="submit" class="btn btn-primary btn-block">Log In</button>
                     <p style="text-align:center;font-size:13.5px;margin-top:18px;color:var(--color-text-muted);">
-                        New here? <a href="#" style="color:var(--color-primary);font-weight:600;" onclick="event.preventDefault();openAuthModal('register')">Create an account</a>
+                        New here? <a href="/register" rel="nofollow" style="color:var(--color-primary);font-weight:600;" onclick="event.preventDefault();openAuthModal('register')">Create an account</a>
                     </p>
                 </form>
             </div>
@@ -78,7 +78,7 @@
                     </label>
                     <button type="submit" class="btn btn-primary btn-block">Create Account</button>
                     <p style="text-align:center;font-size:13.5px;margin-top:18px;color:var(--color-text-muted);">
-                        Already have an account? <a href="#" style="color:var(--color-primary);font-weight:600;" onclick="event.preventDefault();openAuthModal('login')">Log in</a>
+                        Already have an account? <a href="/login" rel="nofollow" style="color:var(--color-primary);font-weight:600;" onclick="event.preventDefault();openAuthModal('login')">Log in</a>
                     </p>
                     <p style="text-align:center;font-size:12.5px;margin-top:10px;color:var(--color-text-muted);">
                         Are you a doctor? <a href="/doctor-register" style="color:var(--color-primary);font-weight:600;">Apply here</a>

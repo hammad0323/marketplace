@@ -102,14 +102,28 @@ if ($specSlug !== '') {
     mysqli_stmt_close($stmt);
 }
 
-$pageTitle = 'Find Doctors — ' . SITE_NAME;
-$metaDescription = 'Search and compare verified doctors by specialty, fee, and rating. Book online or in-person consultations instantly.';
+// Specialty/city filter pages get their own title, H1 and description
+// ("Dermatology doctors in Karachi") instead of the generic listing copy.
+$listingSubject = trim(($specName !== '' ? $specName . ' doctors' : 'Doctors') . ($city !== '' ? ' in ' . $city : ''));
+if ($specName !== '' || $city !== '') {
+    $listingH1 = $listingSubject;
+    $pageTitle = $listingSubject . ($city === '' ? ' in Pakistan' : '') . ' – Book Verified Specialists | ' . SITE_NAME;
+    $metaDescription = 'Compare ' . $total . ' verified ' . strtolower($listingSubject) . ($city === '' ? ' in Pakistan' : '') . ' on ' . SITE_NAME . '. See fees, timings and reviews, and book an online or in-clinic appointment.';
+} else {
+    $listingH1 = 'Find Doctors';
+    $pageTitle = 'Find Doctors in Pakistan – Book Verified Specialists | ' . SITE_NAME;
+    $metaDescription = 'Search and compare verified doctors in Pakistan by specialty, city, fee and rating. Book online or in-clinic consultations instantly.';
+}
 $canonical = filtered_canonical('/doctors', [
     'q' => $q, 'specialization' => $specSlug, 'city' => $city,
     'min_fee' => $minFee, 'max_fee' => $maxFee, 'free' => $freeOnly ? 1 : '', 'premium' => $premiumOnly ? 1 : '',
 ], $pagination['page']);
-$breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Find Doctors']];
-if ($q !== '' || $minFee !== '' || $maxFee !== '' || $freeOnly || $premiumOnly || $nearMe) {
+$breadcrumbs = ($specName !== '' || $city !== '')
+    ? [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Find Doctors', 'url' => APP_URL . '/doctors'], ['name' => $listingSubject]]
+    : [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Find Doctors']];
+if ($q !== '' || $minFee !== '' || $maxFee !== '' || $freeOnly || $premiumOnly || $nearMe
+    || (($specName !== '' || $city !== '') && $total < 3)) {
+    // (A specialty/city page with 0-2 doctors is thin — kept out of the index.)
     // Free-text searches and fee/flag/near-me facets are reshuffles of the
     // same doctors — near-duplicates of pages that are already indexed.
     $metaRobots = 'noindex, follow';
@@ -125,8 +139,8 @@ require __DIR__ . '/includes/header.php';
         <nav class="breadcrumb"><a href="/">Home</a> <i class="ri-arrow-right-s-line"></i> <span>Find Doctors</span></nav>
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
             <div>
-                <h1 style="font-size:32px;margin-bottom:8px;">Find Doctors</h1>
-                <p style="color:var(--color-text-muted);margin-bottom:0;"><?= $total ?> verified doctor<?= $total === 1 ? '' : 's' ?> found<?= $specName ? ' in ' . e($specName) : '' ?><?= $nearMe ? ', sorted by distance from you' : '' ?></p>
+                <h1 style="font-size:32px;margin-bottom:8px;"><?= e($listingH1) ?></h1>
+                <p style="color:var(--color-text-muted);margin-bottom:0;"><?= $total ?> verified doctor<?= $total === 1 ? '' : 's' ?> found<?= $nearMe ? ', sorted by distance from you' : '' ?></p>
             </div>
             <?php if ($nearMe): ?>
             <a href="<?= e(filtered_canonical('/doctors', ['q' => $q, 'specialization' => $specSlug, 'city' => $city, 'min_fee' => $minFee, 'max_fee' => $maxFee, 'free' => $freeOnly ? 1 : '', 'premium' => $premiumOnly ? 1 : ''])) ?>" class="btn btn-outline btn-sm"><i class="ri-close-line"></i> Clear "Near Me"</a>
@@ -169,7 +183,7 @@ require __DIR__ . '/includes/header.php';
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Fee Range ($)</label>
+                    <label class="form-label">Fee Range (<?= e(currency_symbol()) ?>)</label>
                     <div style="display:flex;gap:8px;">
                         <input type="number" name="min_fee" class="form-control" placeholder="Min" value="<?= e($minFee) ?>">
                         <input type="number" name="max_fee" class="form-control" placeholder="Max" value="<?= e($maxFee) ?>">

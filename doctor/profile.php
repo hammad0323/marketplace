@@ -87,8 +87,8 @@ require __DIR__ . '/includes/header.php';
                         <textarea id="doctor-bio-field" name="bio"><?= e($doctor['bio']) ?></textarea>
                     </div>
                     <div class="grid grid-2">
-                        <div class="form-group"><label class="form-label">Online Consultation Fee ($)</label><input type="number" min="0" step="0.01" class="form-control" name="consultation_fee_online" value="<?= e($doctor['consultation_fee_online']) ?>"></div>
-                        <div class="form-group"><label class="form-label">In-Person Consultation Fee ($)</label><input type="number" min="0" step="0.01" class="form-control" name="consultation_fee_physical" value="<?= e($doctor['consultation_fee_physical']) ?>"></div>
+                        <div class="form-group"><label class="form-label">Online Consultation Fee (<?= e(currency_symbol()) ?>)</label><input type="number" min="0" step="0.01" class="form-control" name="consultation_fee_online" value="<?= e($doctor['consultation_fee_online']) ?>"></div>
+                        <div class="form-group"><label class="form-label">In-Person Consultation Fee (<?= e(currency_symbol()) ?>)</label><input type="number" min="0" step="0.01" class="form-control" name="consultation_fee_physical" value="<?= e($doctor['consultation_fee_physical']) ?>"></div>
                     </div>
                     <label class="checkbox-row" style="margin-bottom:20px;"><input type="checkbox" name="free_consultation" value="1" <?= $doctor['free_consultation'] ? 'checked' : '' ?>> Offer free consultations</label>
                     <div class="divider-fade"></div>

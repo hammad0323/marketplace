@@ -156,7 +156,7 @@ require __DIR__ . '/includes/header.php';
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Price Range ($)</label>
+                    <label class="form-label">Price Range (<?= e(currency_symbol()) ?>)</label>
                     <div style="display:flex;gap:8px;">
                         <input type="number" name="min_price" class="form-control" placeholder="Min" value="<?= e($minPrice) ?>">
                         <input type="number" name="max_price" class="form-control" placeholder="Max" value="<?= e($maxPrice) ?>">

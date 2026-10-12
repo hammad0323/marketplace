@@ -62,12 +62,14 @@
             $('#doctor-designation').val(),
             $('#doctor-qualification').val(),
             specNames,
-            window.APP.siteName
+            window.APP.siteName,
+            $('#doctor-clinic-city').val(),
+            $('#doctor-clinic-name').val()
         );
         if (!titleDirty) $seoTitle.val(seo.title);
         if (!descDirty) $seoDesc.val(seo.description);
     }
-    $('#doctor-full-name, #doctor-designation, #doctor-qualification').on('input', refreshDoctorSeo);
+    $('#doctor-full-name, #doctor-designation, #doctor-qualification, #doctor-clinic-city, #doctor-clinic-name').on('input', refreshDoctorSeo);
     $('#doctor-specializations').on('change', 'input[type="checkbox"]', refreshDoctorSeo);
 
     function resetAvailability() {

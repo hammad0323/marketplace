@@ -152,7 +152,7 @@ INSERT INTO site_settings (setting_key, setting_value) VALUES
 ('contact_email', 'support@mediconnect.test'),
 ('contact_phone', '+1-555-0111'),
 ('contact_address', '500 Market Street, San Francisco, CA'),
-('currency_symbol', '$'),
+('currency_symbol', 'Rs'),
 ('maintenance_mode', '0'),
 ('email_notifications_enabled', '1'),
 ('smtp_host', ''),

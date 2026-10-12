@@ -1,10 +1,10 @@
 <?php
 require __DIR__ . '/config/config.php';
 
-$pageTitle = SITE_NAME . ' — Book Verified Doctors Online & In-Person';
-$metaDescription = get_setting('site_tagline') . '. Search verified specialists, book online or in-clinic appointments, and manage your care in one place.';
+$pageTitle = 'Book Doctors Online in Pakistan | Verified Specialists | ' . SITE_NAME;
+$metaDescription = 'Find and book verified doctors in Karachi and across Pakistan. Compare specialists, fees and timings, and book online or in-clinic on ' . SITE_NAME . '.';
 
-$specs = mysqli_query(db(), 'SELECT id, name, slug, icon, description FROM specializations WHERE is_active = 1 ORDER BY sort_order LIMIT 10')->fetch_all(MYSQLI_ASSOC);
+$specs = mysqli_query(db(), 'SELECT id, name, slug, icon, description FROM specializations WHERE is_active = 1 ORDER BY sort_order, name')->fetch_all(MYSQLI_ASSOC);
 
 $cities = mysqli_query(db(), "
     SELECT d.clinic_city AS city, COUNT(*) AS doctor_count
@@ -16,18 +16,32 @@ $cities = mysqli_query(db(), "
     LIMIT 12
 ")->fetch_all(MYSQLI_ASSOC);
 
-$featuredDoctors = mysqli_query(db(), "
+// Featured doctors: spread across specialties (at most one per primary
+// specialty first) and ranked by profile completeness — premium, real
+// reviews, a photo, a written bio — instead of 8 near-identical profiles
+// from whichever specialty happens to sort first.
+$featuredPool = mysqli_query(db(), "
     SELECT d.*, u.full_name, u.avatar
-    FROM doctors d
-    JOIN users u ON u.id = d.user_id
+    FROM doctors d JOIN users u ON u.id = d.user_id
     WHERE d.verification_status = 'verified' AND u.status = 'active'
-    ORDER BY d.is_premium DESC, d.rating_avg DESC
-    LIMIT 8
+    ORDER BY d.is_premium DESC, (d.rating_count > 0) DESC, (u.avatar IS NOT NULL AND u.avatar != '') DESC,
+             (CHAR_LENGTH(COALESCE(d.bio, '')) > 200) DESC, d.rating_avg DESC, RAND()
+    LIMIT 80
 ")->fetch_all(MYSQLI_ASSOC);
-foreach ($featuredDoctors as &$fd) {
-    $fd['specializations'] = get_doctor_specializations($fd['id']);
+$featuredDoctors = [];
+$usedSpecs = [];
+foreach ([true, false] as $onePerSpecialty) {
+    foreach ($featuredPool as $fd) {
+        if (count($featuredDoctors) >= 8) break 2;
+        if (isset($featuredDoctors[$fd['id']])) continue;
+        $fd['specializations'] = $fd['specializations'] ?? get_doctor_specializations($fd['id']);
+        $primary = $fd['specializations'][0]['id'] ?? 0;
+        if ($onePerSpecialty && isset($usedSpecs[$primary])) continue;
+        $usedSpecs[$primary] = true;
+        $featuredDoctors[$fd['id']] = $fd;
+    }
 }
-unset($fd);
+$featuredDoctors = array_values($featuredDoctors);
 
 $featuredPharmacies = mysqli_query(db(), "
     SELECT p.*, u.full_name, u.avatar,
@@ -38,20 +52,61 @@ $featuredPharmacies = mysqli_query(db(), "
     LIMIT 3
 ")->fetch_all(MYSQLI_ASSOC);
 
-$testimonials = mysqli_query(db(), 'SELECT * FROM testimonials WHERE is_active = 1 ORDER BY sort_order LIMIT 5')->fetch_all(MYSQLI_ASSOC);
+// Real patient reviews (not hand-written testimonials): visible, 4-5 stars,
+// with a comment worth reading. Shown as first name + last initial.
+$testimonials = mysqli_query(db(), "
+    SELECT r.rating, r.comment AS content, u.full_name AS patient_name, du.full_name AS doctor_name, d.slug AS doctor_slug
+    FROM reviews r
+    JOIN patients pt ON pt.id = r.patient_id JOIN users u ON u.id = pt.user_id
+    JOIN doctors d ON d.id = r.doctor_id JOIN users du ON du.id = d.user_id
+    WHERE r.status = 'visible' AND r.rating >= 4 AND CHAR_LENGTH(r.comment) >= 40 AND d.verification_status = 'verified'
+    ORDER BY r.created_at DESC
+    LIMIT 5
+")->fetch_all(MYSQLI_ASSOC);
+foreach ($testimonials as &$t) {
+    $parts = preg_split('/\s+/u', trim($t['patient_name']));
+    $t['name'] = $parts[0] . (count($parts) > 1 ? ' ' . mb_substr(end($parts), 0, 1) . '.' : '');
+}
+unset($t);
 $homeFaqs = mysqli_query(db(), 'SELECT question, answer FROM faqs WHERE is_active = 1 ORDER BY sort_order LIMIT 6')->fetch_all(MYSQLI_ASSOC);
 $topCityNames = array_slice(array_column($cities, 'city'), 0, 6);
 
 $totalDoctors = (int) mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM doctors WHERE verification_status='verified'"))['c'];
 $totalAppointments = (int) mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM appointments"))['c'];
 $totalSpecs = (int) mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) c FROM specializations WHERE is_active=1"))['c'];
-$ratingRow = mysqli_fetch_assoc(mysqli_query(db(), "
-    SELECT AVG(rating_avg) AS avg_rating, SUM(rating_count) AS total_reviews
-    FROM doctors WHERE verification_status = 'verified' AND rating_count > 0
-"));
-$avgRating = $ratingRow && $ratingRow['avg_rating'] ? round((float) $ratingRow['avg_rating'], 1) : null;
-$totalReviews = $ratingRow ? (int) $ratingRow['total_reviews'] : 0;
+$totalCities = (int) mysqli_fetch_assoc(mysqli_query(db(), "
+    SELECT COUNT(DISTINCT d.clinic_city) c FROM doctors d JOIN users u ON u.id = d.user_id
+    WHERE d.verification_status = 'verified' AND u.status = 'active' AND d.clinic_city IS NOT NULL AND d.clinic_city != ''
+"))['c'];
+// Ratings from actual visible review rows (not stored per-doctor counters),
+// and only shown once there are enough of them to mean something.
+$ratingRow = mysqli_fetch_assoc(mysqli_query(db(), "SELECT AVG(rating) AS avg_rating, COUNT(*) AS total_reviews FROM reviews WHERE status = 'visible'"));
+$totalReviews = (int) ($ratingRow['total_reviews'] ?? 0);
+$avgRating = $totalReviews >= 10 ? round((float) $ratingRow['avg_rating'], 1) : null;
+
+// Stats strip: only real numbers, and only once they're large enough not to
+// undercut trust ("3 appointments booked" reads worse than no number).
+$homeStats = [['value' => $totalDoctors, 'label' => 'Verified doctors'], ['value' => $totalSpecs, 'label' => 'Specialties']];
+if ($totalCities > 1) $homeStats[] = ['value' => $totalCities, 'label' => 'Cities'];
+if ($totalAppointments >= 100) $homeStats[] = ['value' => $totalAppointments, 'label' => 'Appointments booked'];
+if ($avgRating !== null) $homeStats[] = ['value' => $avgRating, 'suffix' => '/5', 'label' => 'From ' . number_format($totalReviews) . ' patient reviews'];
+$homeStats = array_slice($homeStats, 0, 4);
 $siteName = get_setting('site_name', SITE_NAME);
+
+// "Explore" internal links: specialty-in-city searches that actually have
+// doctors behind them (3+), the newest guides, and common medicines.
+$popularSearches = mysqli_query(db(), "
+    SELECT s.name, s.slug, d.clinic_city AS city, COUNT(DISTINCT d.id) AS doctor_count
+    FROM doctors d JOIN users u ON u.id = d.user_id
+    JOIN doctor_specializations ds ON ds.doctor_id = d.id JOIN specializations s ON s.id = ds.specialization_id AND s.is_active = 1
+    WHERE d.verification_status = 'verified' AND u.status = 'active' AND d.clinic_city IS NOT NULL AND d.clinic_city != ''
+    GROUP BY s.id, s.name, s.slug, d.clinic_city
+    HAVING doctor_count >= 3
+    ORDER BY doctor_count DESC, s.name
+    LIMIT 10
+")->fetch_all(MYSQLI_ASSOC);
+$latestGuides = mysqli_query(db(), "SELECT title, slug, published_at FROM blog_posts WHERE status = 'published' ORDER BY published_at DESC LIMIT 5")->fetch_all(MYSQLI_ASSOC);
+$commonMedicines = mysqli_query(db(), "SELECT name, slug, generic_name FROM medicine_info WHERE status = 'published' ORDER BY updated_at DESC LIMIT 8")->fetch_all(MYSQLI_ASSOC);
 
 /**
  * Real "next available" slots for the hero booking preview — same rules as
@@ -152,7 +207,7 @@ require __DIR__ . '/includes/header.php';
             <?php if ($avatarStack): ?>
             <div class="h-trust h-fade" style="--d:0">
                 <span class="h-avatars">
-                    <?php foreach ($avatarStack as $d): ?><img src="<?= e(avatar_url($d['avatar'], $d['full_name'])) ?>" alt="" width="34" height="34"><?php endforeach; ?>
+                    <?php foreach ($avatarStack as $d): ?><img src="<?= e(avatar_url($d['avatar'], $d['full_name'])) ?>" alt="<?= e($d['full_name']) ?>" width="34" height="34"><?php endforeach; ?>
                 </span>
                 <span>
                     <strong><?= $totalDoctors ?> verified doctor<?= $totalDoctors == 1 ? '' : 's' ?></strong>
@@ -161,7 +216,7 @@ require __DIR__ . '/includes/header.php';
             </div>
             <?php endif; ?>
 
-            <h1 class="h-title h-fade" style="--d:1">Book <span class="h-underline">verified doctors<svg viewBox="0 0 300 14" preserveAspectRatio="none" aria-hidden="true"><path d="M2 10 C 70 3, 150 2, 298 7"/></svg></span>, online or in-clinic.</h1>
+            <h1 class="h-title h-fade" style="--d:1">Book <span class="h-underline">verified doctors<svg viewBox="0 0 300 14" preserveAspectRatio="none" aria-hidden="true"><path d="M2 10 C 70 3, 150 2, 298 7"/></svg></span> in Pakistan, online or in-clinic.</h1>
             <p class="h-lead h-fade" style="--d:2">Compare real fees, reviews and open time slots — then confirm your appointment in under two minutes. No calls, no waiting rooms.</p>
 
             <form class="h-search h-fade" style="--d:3" id="hero-search-box" action="/doctors" method="get" autocomplete="off">
@@ -272,15 +327,10 @@ require __DIR__ . '/includes/header.php';
 
 <!-- ============================== STATS ============================== -->
 <section class="h-stats" id="h-stats">
-    <div class="container h-stats-grid">
-        <div class="h-stat" data-reveal><b class="counter" data-counter="<?= $totalDoctors ?>"><?= $totalDoctors ?></b><span>Verified doctors</span></div>
-        <div class="h-stat" data-reveal><b class="counter" data-counter="<?= $totalAppointments ?>"><?= $totalAppointments ?></b><span>Appointments booked</span></div>
-        <div class="h-stat" data-reveal><b class="counter" data-counter="<?= $totalSpecs ?>"><?= $totalSpecs ?></b><span>Specializations</span></div>
-        <?php if ($avgRating !== null): ?>
-        <div class="h-stat" data-reveal><b class="counter" data-counter="<?= e($avgRating) ?>" data-suffix="/5"><?= e($avgRating) ?>/5</b><span>From <?= number_format($totalReviews) ?> review<?= $totalReviews == 1 ? '' : 's' ?></span></div>
-        <?php else: ?>
-        <div class="h-stat" data-reveal><b>100%</b><span>Credential-verified</span></div>
-        <?php endif; ?>
+    <div class="container h-stats-grid" style="--cols:<?= count($homeStats) ?>">
+        <?php foreach ($homeStats as $st): $suffix = $st['suffix'] ?? ''; ?>
+        <div class="h-stat" data-reveal><b class="counter" data-counter="<?= e($st['value']) ?>"<?= $suffix ? ' data-suffix="' . e($suffix) . '"' : '' ?>><?= e($st['value']) . e($suffix) ?></b><span><?= e($st['label']) ?></span></div>
+        <?php endforeach; ?>
     </div>
 </section>
 
@@ -392,8 +442,8 @@ require __DIR__ . '/includes/header.php';
     <div class="container">
         <div class="h-head" data-reveal>
             <div>
-                <span class="h-kicker">Top rated</span>
-                <h2 class="h-h2">Meet our <span class="h-accent">featured</span> doctors.</h2>
+                <span class="h-kicker">Featured doctors</span>
+                <h2 class="h-h2">Meet doctors across <span class="h-accent">specialties</span>.</h2>
             </div>
             <div class="h-head-actions">
                 <button type="button" class="h-round-btn" data-carousel-prev aria-label="Previous doctors"><i class="ri-arrow-left-line"></i></button>
@@ -431,6 +481,54 @@ require __DIR__ . '/includes/header.php';
 </section>
 <?php endif; ?>
 
+<!-- ============================== EXPLORE (internal links) ============================== -->
+<?php if ($popularSearches || $latestGuides || $commonMedicines): ?>
+<section class="h-section h-explore">
+    <div class="container">
+        <div class="h-head" data-reveal>
+            <div>
+                <span class="h-kicker">Explore</span>
+                <h2 class="h-h2">Popular searches and <span class="h-accent">health guides</span>.</h2>
+            </div>
+        </div>
+        <div class="h-explore-grid">
+            <?php if ($popularSearches): ?>
+            <div class="h-explore-col" data-reveal>
+                <h3><i class="ri-search-line"></i> Popular searches</h3>
+                <ul>
+                    <?php foreach ($popularSearches as $ps): ?>
+                    <li><a href="/doctors?specialization=<?= urlencode($ps['slug']) ?>&amp;city=<?= urlencode($ps['city']) ?>"><?= e($ps['name']) ?> doctors in <?= e($ps['city']) ?></a><span><?= (int) $ps['doctor_count'] ?></span></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            <?php endif; ?>
+            <?php if ($latestGuides): ?>
+            <div class="h-explore-col" data-reveal>
+                <h3><i class="ri-article-line"></i> Latest health guides</h3>
+                <ul>
+                    <?php foreach ($latestGuides as $g): ?>
+                    <li><a href="<?= e(blog_url($g['slug'])) ?>"><?= e($g['title']) ?></a></li>
+                    <?php endforeach; ?>
+                </ul>
+                <a href="/blog" class="h-link">All guides <i class="ri-arrow-right-line"></i></a>
+            </div>
+            <?php endif; ?>
+            <?php if ($commonMedicines): ?>
+            <div class="h-explore-col" data-reveal>
+                <h3><i class="ri-capsule-line"></i> Common medicines</h3>
+                <ul>
+                    <?php foreach ($commonMedicines as $m): ?>
+                    <li><a href="<?= e(medicine_url($m['slug'])) ?>"><?= e($m['name']) ?></a><?php if ($m['generic_name']): ?><span><?= e($m['generic_name']) ?></span><?php endif; ?></li>
+                    <?php endforeach; ?>
+                </ul>
+                <a href="/medicines" class="h-link">All medicines <i class="ri-arrow-right-line"></i></a>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
+
 <!-- ============================== PHARMACIES ============================== -->
 <?php if ($featuredPharmacies): ?>
 <section class="h-section h-pharm">
@@ -463,15 +561,15 @@ require __DIR__ . '/includes/header.php';
 <section class="h-section h-quotes" data-quotes>
     <div class="container">
         <span class="h-kicker" data-reveal>What people say</span>
-        <h2 class="sr-only">Testimonials from patients and doctors</h2>
+        <h2 class="sr-only">Reviews from patients</h2>
         <div class="h-quote-stage">
             <span class="h-quote-mark" aria-hidden="true">&ldquo;</span>
             <?php foreach ($testimonials as $i => $t): ?>
             <figure class="h-quote<?= $i === 0 ? ' is-active' : '' ?>" data-quote>
                 <blockquote><?= e($t['content']) ?></blockquote>
                 <figcaption>
-                    <img src="<?= e(avatar_url($t['avatar'], $t['name'])) ?>" alt="<?= e($t['name']) ?><?= $t['role'] ? ', ' . e($t['role']) : '' ?>" width="48" height="48" loading="lazy">
-                    <span><strong><?= e($t['name']) ?></strong><?= e($t['role']) ?></span>
+                    <img src="<?= e(avatar_url(null, $t['name'])) ?>" alt="" width="48" height="48" loading="lazy">
+                    <span><strong><?= e($t['name']) ?></strong>Patient of <a href="<?= e(doctor_url($t['doctor_slug'])) ?>"><?= e($t['doctor_name']) ?></a></span>
                     <span class="h-quote-stars" aria-label="<?= (int) $t['rating'] ?> out of 5 stars"><?php for ($s = 0; $s < (int) $t['rating']; $s++): ?><i class="ri-star-fill"></i><?php endfor; ?></span>
                 </figcaption>
             </figure>
@@ -500,7 +598,7 @@ require __DIR__ . '/includes/header.php';
         <div class="h-faq-list" data-faq-group>
             <?php foreach ($homeFaqs as $f): ?>
             <div class="h-faq-item">
-                <button type="button" class="faq-q"><?= e($f['question']) ?><i class="ri-add-line"></i></button>
+                <h3 class="h-faq-h"><button type="button" class="faq-q"><?= e($f['question']) ?><i class="ri-add-line"></i></button></h3>
                 <div class="faq-a"><p><?= e(strip_tags($f['answer'])) ?></p></div>
             </div>
             <?php endforeach; ?>

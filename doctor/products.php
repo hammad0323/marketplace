@@ -161,7 +161,7 @@ require __DIR__ . '/includes/header.php';
                 </div>
                 <div class="grid grid-2">
                     <div class="form-group" data-field="price">
-                        <label class="form-label">Price ($)</label>
+                        <label class="form-label">Price (<?= e(currency_symbol()) ?>)</label>
                         <input type="number" class="form-control" name="price" min="0" step="0.01" required>
                         <div class="form-error"></div>
                     </div>

@@ -34,20 +34,20 @@ track_pageview();
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title><?= e($pageTitle) ?></title>
-<meta name="description" content="<?= e($metaDescription) ?>">
+<title><?= meta_text($pageTitle) ?></title>
+<meta name="description" content="<?= meta_text($metaDescription) ?>">
 <link rel="canonical" href="<?= e($canonical) ?>">
 <meta name="robots" content="<?= e($metaRobots) ?>">
 
 <meta property="og:type" content="website">
-<meta property="og:title" content="<?= e($pageTitle) ?>">
-<meta property="og:description" content="<?= e($metaDescription) ?>">
+<meta property="og:title" content="<?= meta_text($pageTitle) ?>">
+<meta property="og:description" content="<?= meta_text($metaDescription) ?>">
 <meta property="og:image" content="<?= e($ogImage) ?>">
 <meta property="og:url" content="<?= e($canonical) ?>">
 <meta property="og:site_name" content="<?= e(SITE_NAME) ?>">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="<?= e($pageTitle) ?>">
-<meta name="twitter:description" content="<?= e($metaDescription) ?>">
+<meta name="twitter:title" content="<?= meta_text($pageTitle) ?>">
+<meta name="twitter:description" content="<?= meta_text($metaDescription) ?>">
 <meta name="twitter:image" content="<?= e($ogImage) ?>">
 <?php render_page_schema($pageTitle, $metaDescription, $canonical, $breadcrumbs); ?>
 
@@ -89,8 +89,8 @@ track_pageview();
             <a href="/blog" class="<?= basename($_SERVER['SCRIPT_NAME']) === 'blog.php' ? 'active' : '' ?>">Blog</a>
             <?php if (!$user): ?>
             <div class="nav-mobile-auth">
-                <button class="btn btn-ghost btn-sm btn-block" onclick="openAuthModal('login')">Log In</button>
-                <button class="btn btn-primary btn-sm btn-block" onclick="openAuthModal('register')">Get Started</button>
+                <a href="/login" class="btn btn-ghost btn-sm btn-block" rel="nofollow" onclick="openAuthModal('login'); return false;">Log In</a>
+                <a href="/register" class="btn btn-primary btn-sm btn-block" rel="nofollow" onclick="openAuthModal('register'); return false;">Get Started</a>
             </div>
             <?php endif; ?>
         </nav>
@@ -120,8 +120,8 @@ track_pageview();
                     </div>
                 </div>
             <?php else: ?>
-                <button class="btn btn-ghost btn-sm nav-auth-btn" onclick="openAuthModal('login')">Log In</button>
-                <button class="btn btn-primary btn-sm nav-auth-btn" onclick="openAuthModal('register')">Get Started</button>
+                <a href="/login" class="btn btn-ghost btn-sm nav-auth-btn" rel="nofollow" onclick="openAuthModal('login'); return false;">Log In</a>
+                <a href="/register" class="btn btn-primary btn-sm nav-auth-btn" rel="nofollow" onclick="openAuthModal('register'); return false;">Get Started</a>
             <?php endif; ?>
             <button class="btn-icon nav-toggle" data-nav-toggle aria-label="Menu"><i class="ri-menu-3-line"></i></button>
         </div>

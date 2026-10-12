@@ -408,7 +408,7 @@ function register_doctor_application(array $data)
         $userId = mysqli_insert_id($db);
         mysqli_stmt_close($stmt);
 
-        $slug = unique_slug($db, 'doctors', 'dr-' . $fullName);
+        $slug = unique_slug($db, 'doctors', doctor_slug_base($fullName));
         $stmt = mysqli_prepare($db, 'INSERT INTO doctors (user_id, slug, qualification, registration_number, experience_years, bio, verification_status) VALUES (?, ?, ?, ?, ?, ?, \'pending\')');
         mysqli_stmt_bind_param($stmt, 'isssis', $userId, $slug, $qualification, $registrationNumber, $experienceYears, $bio);
         mysqli_stmt_execute($stmt);

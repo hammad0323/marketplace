@@ -106,7 +106,10 @@
 
     // ---- FAQ accordions (.faq-q trigger / .faq-a panel, anywhere on the site) --
     document.querySelectorAll('.faq-q').forEach(function (btn, i) {
-        var answer = btn.nextElementSibling;
+        // The question button may sit inside a heading (<h3><button>), in which
+        // case its answer panel is the heading's next sibling.
+        var answer = btn.nextElementSibling || (btn.parentElement && btn.parentElement.nextElementSibling);
+        if (!answer) return;
         var icon = btn.querySelector('i');
         var panelId = answer.id || ('faq-panel-' + i + '-' + Math.random().toString(36).slice(2, 7));
         answer.id = panelId;
@@ -156,17 +159,19 @@
     // doctor_meta_title()/doctor_meta_description() in includes/functions.php
     // so the suggestion shown while editing matches what the live page would
     // fall back to if the field is left blank.
-    window.buildDoctorSeoText = function (fullName, designation, qualification, specNames, siteName) {
+    window.buildDoctorSeoText = function (fullName, designation, qualification, specNames, siteName, city, clinic) {
         fullName = (fullName || '').trim();
-        designation = (designation || '').trim();
-        qualification = (qualification || '').trim();
         specNames = (specNames || '').trim();
+        city = (city || '').trim();
+        clinic = (clinic || '').trim();
         siteName = siteName || 'DoctorApna';
         if (!fullName) return { title: '', description: '' };
-        var role = designation || qualification;
-        var title = [fullName, role, specNames].filter(Boolean).join(' — ');
-        var description = fullName + ' is a ' + (role || 'doctor') + ' specializing in ' + (specNames || 'multiple specialties')
-            + '. View profile, qualifications, specialization and professional details on ' + siteName + '.';
+        var name = /^(dr|doctor)\b/i.test(fullName) ? fullName : 'Dr. ' + fullName;
+        var spec = specNames.split(',')[0].trim();
+        var title = name + (spec ? ' – ' + spec + (city ? ' in ' + city : '') : (city ? ' – Doctor in ' + city : '')) + (clinic ? ' | ' + clinic : '');
+        var where = [clinic, city].filter(Boolean).join(', ');
+        var description = name + (specNames ? ' is a ' + specNames + ' specialist' : ' is a doctor') + (where ? ' at ' + where : '')
+            + '. See fees, timings and qualifications, and book an appointment online on ' + siteName + '.';
         return { title: title, description: description };
     };
 

@@ -16,6 +16,20 @@ mysqli_stmt_execute($stmt);
 $doctor = mysqli_stmt_get_result($stmt)->fetch_assoc();
 mysqli_stmt_close($stmt);
 
+// Old "dr-dr-..." slugs (from names typed as "Dr. X") were renamed by
+// migration_v14.sql; send any bookmarked/indexed old URL to the new one.
+if (!$doctor && str_starts_with($slug, 'dr-dr-')) {
+    $stmt = mysqli_prepare(db(), "SELECT slug FROM doctors WHERE slug = ? AND verification_status = 'verified' LIMIT 1");
+    $fixed = substr($slug, 3);
+    mysqli_stmt_bind_param($stmt, 's', $fixed);
+    mysqli_stmt_execute($stmt);
+    if ($row = mysqli_stmt_get_result($stmt)->fetch_assoc()) {
+        header('Location: ' . doctor_url($row['slug']), true, 301);
+        exit;
+    }
+    mysqli_stmt_close($stmt);
+}
+
 if (!$doctor || $doctor['verification_status'] !== 'verified') {
     http_response_code(404);
     require __DIR__ . '/404.php';
@@ -64,8 +78,12 @@ if ($privacy['show_reviews']) {
     mysqli_stmt_close($stmt);
 }
 
-$pageTitle = ($doctor['meta_title'] ?: doctor_meta_title($doctor['full_name'], $doctor['designation'], $doctor['qualification'], $specNames)) . ' | ' . get_setting('site_name', SITE_NAME);
-$metaDescription = $doctor['meta_description'] ?: doctor_meta_description($doctor['full_name'], $doctor['designation'], $doctor['qualification'], $specNames);
+$pageTitle = (doctor_meta_is_legacy_auto($doctor['meta_title'], $doctor, $specNames, 'title')
+        ? doctor_meta_title($doctor['full_name'], $specNames, $doctor['clinic_city'], $doctor['clinic_name'])
+        : $doctor['meta_title']) . ' | ' . get_setting('site_name', SITE_NAME);
+$metaDescription = doctor_meta_is_legacy_auto($doctor['meta_description'], $doctor, $specNames, 'description')
+    ? doctor_meta_description($doctor['full_name'], $specNames, $doctor['clinic_city'], $doctor['clinic_name'])
+    : $doctor['meta_description'];
 $canonical = APP_URL . doctor_url($doctor['slug']);
 $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Find Doctors', 'url' => APP_URL . '/doctors'], ['name' => $doctor['full_name']]];
 
@@ -75,11 +93,25 @@ $breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Find Doc
 $feeOnline = (float) $doctor['consultation_fee_online'];
 $feePhysical = (float) $doctor['consultation_fee_physical'];
 
-$extraHead = '<script type="application/ld+json">' . json_encode([
-    '@context' => 'https://schema.org', '@type' => 'Physician', 'name' => $doctor['full_name'],
-    'medicalSpecialty' => array_column($doctorSpecializations, 'name'), 'url' => $canonical,
-    'aggregateRating' => $doctor['rating_count'] > 0 ? ['@type' => 'AggregateRating', 'ratingValue' => $doctor['rating_avg'], 'reviewCount' => $doctor['rating_count']] : null,
-]) . '</script>';
+// Rating markup only from real, visible review rows shown on this page.
+$reviewAgg = mysqli_fetch_assoc(mysqli_query(db(), "SELECT COUNT(*) AS c, AVG(rating) AS a FROM reviews WHERE status = 'visible' AND doctor_id = " . (int) $doctor['id']));
+$showAddress = $privacy['show_clinic_address'] && ($doctor['clinic_city'] || $doctor['clinic_address']);
+$ogImage = $doctor['avatar'] ? APP_URL . UPLOAD_URL . '/' . $doctor['avatar'] : null;
+$extraHead = '<script type="application/ld+json">' . json_encode(array_filter([
+    '@context' => 'https://schema.org', '@type' => 'Physician',
+    'name' => doctor_display_name($doctor['full_name']), 'url' => $canonical,
+    'image' => $ogImage,
+    'description' => $hasBio ? excerpt($doctor['bio'], 300) : null,
+    'medicalSpecialty' => array_column($doctorSpecializations, 'name') ?: null,
+    'hospitalAffiliation' => ($privacy['show_clinic_address'] && $doctor['clinic_name']) ? ['@type' => 'Hospital', 'name' => $doctor['clinic_name']] : null,
+    'address' => $showAddress ? array_filter([
+        '@type' => 'PostalAddress', 'streetAddress' => $doctor['clinic_address'] ?: null, 'addressLocality' => $doctor['clinic_city'] ?: null,
+        'addressRegion' => $doctor['clinic_state'] ?: null, 'addressCountry' => $doctor['clinic_country'] ?: null,
+    ]) : null,
+    'aggregateRating' => ($privacy['show_reviews'] && (int) $reviewAgg['c'] > 0)
+        ? ['@type' => 'AggregateRating', 'ratingValue' => round((float) $reviewAgg['a'], 1), 'reviewCount' => (int) $reviewAgg['c'], 'bestRating' => 5]
+        : null,
+])) . '</script>';
 $bookingScript = $doctor['booking_mode'] === 'tickets' ? 'ticket-booking.js' : 'booking.js';
 $extraScripts = '<script defer src="' . asset_url('/assets/js/calendar-widget.js') . '"></script><script defer src="' . asset_url('/assets/js/' . $bookingScript) . '"></script>';
 // Content-rich enough to carry ads (see includes/header.php).
@@ -101,12 +133,14 @@ require __DIR__ . '/includes/header.php';
                         <img src="<?= e(avatar_url($doctor['avatar'], $doctor['full_name'])) ?>" alt="<?= e($doctor['full_name']) ?>, <?= e($specNames ?: 'Doctor') ?>" width="110" height="110" style="width:110px;height:110px;border-radius:24px;object-fit:cover;">
                         <div style="flex:1;min-width:220px;">
                             <h1 style="font-size:26px;margin-bottom:4px;"><?= e($doctor['full_name']) ?></h1>
+                            <?php $practice = $privacy['show_clinic_address'] ? implode(', ', array_filter([$doctor['clinic_name'], $doctor['clinic_city']])) : ''; ?>
+                            <?php if ($specNames && $practice): ?><p style="color:var(--color-text-muted);font-size:14.5px;margin-bottom:6px;"><?= e(explode(',', $specNames)[0]) ?> at <?= e($practice) ?></p><?php endif; ?>
                             <?php if ($doctor['designation']): ?><p style="font-weight:600;margin-bottom:2px;"><?= e($doctor['designation']) ?></p><?php endif; ?>
                             <p style="color:var(--color-primary);font-weight:600;margin-bottom:6px;"><?= e($doctor['qualification'] ?: $specNames) ?></p>
                             <?php if ($doctorSpecializations): ?>
                             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
                                 <?php foreach ($doctorSpecializations as $ds): ?>
-                                <span class="badge badge-free"><?= e($ds['name']) ?></span>
+                                <a href="/specializations/<?= e($ds['slug']) ?>" class="badge badge-free"><?= e($ds['name']) ?></a>
                                 <?php endforeach; ?>
                             </div>
                             <?php endif; ?>
@@ -118,7 +152,7 @@ require __DIR__ . '/includes/header.php';
                             <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:13.5px;color:var(--color-text-muted);">
                                 <?php if ((int)$doctor['rating_count'] > 0): ?><span class="rating"><i class="ri-star-fill"></i> <?= number_format($doctor['rating_avg'], 1) ?> (<?= (int)$doctor['rating_count'] ?> reviews)</span><?php endif; ?>
                                 <?php if ((int)$doctor['experience_years'] > 0): ?><span><i class="ri-briefcase-line"></i> <?= (int)$doctor['experience_years'] ?> years experience</span><?php endif; ?>
-                                <?php if ($privacy['show_clinic_address'] && $doctor['clinic_city']): ?><span><i class="ri-map-pin-line"></i> <?= e($doctor['clinic_city']) ?>, <?= e($doctor['clinic_state']) ?></span><?php endif; ?>
+                                <?php if ($privacy['show_clinic_address'] && $doctor['clinic_city']): ?><span><i class="ri-map-pin-line"></i> <a href="/doctors?city=<?= urlencode($doctor['clinic_city']) ?>" style="color:inherit;text-decoration:underline;text-underline-offset:3px;"><?= e($doctor['clinic_city']) ?></a><?= $doctor['clinic_state'] ? ', ' . e($doctor['clinic_state']) : '' ?></span><?php endif; ?>
                             </div>
                             <?php
                             $doctorSocialLinks = array_filter([
@@ -192,7 +226,7 @@ require __DIR__ . '/includes/header.php';
                                 <span class="badge badge-<?= $p['type'] === 'service' ? 'pending' : 'verified' ?>"><?= $p['type'] === 'service' ? 'Service' : 'Product' ?></span>
                                 <strong style="color:var(--color-primary);font-size:17px;"><?= format_currency($p['price']) ?></strong>
                             </div>
-                            <?php if ($p['image']): ?><img src="/uploads/<?= e($p['image']) ?>" alt="" style="width:100%;height:140px;object-fit:cover;border-radius:12px;margin-bottom:10px;"><?php endif; ?>
+                            <?php if ($p['image']): ?><img src="/uploads/<?= e($p['image']) ?>" alt="<?= e($p['name']) ?>" loading="lazy" style="width:100%;height:140px;object-fit:cover;border-radius:12px;margin-bottom:10px;"><?php endif; ?>
                             <strong style="display:block;margin-bottom:4px;"><?= e($p['name']) ?></strong>
                             <p style="font-size:13.5px;color:var(--color-text-muted);margin-bottom:10px;"><?= e($p['description']) ?></p>
                             <p style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px;">
@@ -281,6 +315,36 @@ require __DIR__ . '/includes/header.php';
 </section>
 
 <?php
+// Internal links: similar doctors (same primary specialty) and guides on that specialty.
+$primarySpec = $doctorSpecializations[0] ?? null;
+$similarDoctors = $primarySpec ? doctors_for_specialization((int) $primarySpec['id'], 3, (int) $doctor['id']) : [];
+$doctorGuides = $primarySpec ? guides_for_specialization($primarySpec['name'], 3) : [];
+?>
+<?php if ($similarDoctors || $doctorGuides): ?>
+<section class="section" style="padding-top:0;">
+    <div class="container">
+        <?php if ($similarDoctors): ?>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
+            <h2 style="font-size:22px;">Similar <?= e($primarySpec['name']) ?> doctors</h2>
+            <a href="/specializations/<?= e($primarySpec['slug']) ?>" style="color:var(--color-primary);font-weight:700;">All <?= e($primarySpec['name']) ?> doctors <i class="ri-arrow-right-line"></i></a>
+        </div>
+        <div class="grid grid-3 stagger">
+            <?php foreach ($similarDoctors as $d): require __DIR__ . '/includes/doctor-card.php'; endforeach; ?>
+        </div>
+        <?php endif; ?>
+        <?php if ($doctorGuides): ?>
+        <h2 style="font-size:20px;margin:36px 0 12px;"><?= e($primarySpec['name']) ?> health guides</h2>
+        <ul style="list-style:none;display:grid;gap:8px;">
+            <?php foreach ($doctorGuides as $g): ?>
+            <li><a href="<?= e(blog_url($g['slug'])) ?>" style="color:var(--color-primary);font-weight:600;"><i class="ri-article-line"></i> <?= e($g['title']) ?></a></li>
+            <?php endforeach; ?>
+        </ul>
+        <?php endif; ?>
+    </div>
+</section>
+<?php endif; ?>
+
+<?php
 $viewerIsGuest = !is_logged_in();
 $viewerCanMessage = $viewerIsGuest || current_role() === 'patient';
 if ($viewerCanMessage && doctor_chat_visible($doctor, $viewerIsGuest)):
@@ -288,7 +352,7 @@ if ($viewerCanMessage && doctor_chat_visible($doctor, $viewerIsGuest)):
 ?>
 <div class="doctor-chat-widget" data-reveal="zoom">
     <a href="/patient/messages?doctor_id=<?= (int)$doctor['id'] ?>" class="doctor-chat-fab" rel="nofollow" <?= $viewerIsGuest ? 'data-guest-message data-doctor-id="' . (int)$doctor['id'] . '"' : '' ?>>
-        <img src="<?= e(avatar_url($doctor['avatar'], $doctor['full_name'])) ?>" alt="">
+        <img src="<?= e(avatar_url($doctor['avatar'], $doctor['full_name'])) ?>" alt="<?= e($doctor['full_name']) ?>">
         <span>
             Message <?= e($doctor['full_name']) ?>
             <span style="display:flex;align-items:center;gap:5px;font-weight:500;font-size:11.5px;color:var(--color-text-muted);margin-top:2px;">
