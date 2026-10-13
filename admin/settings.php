@@ -16,8 +16,10 @@ while ($row = mysqli_fetch_assoc($cmsRes)) {
 
 $faqs = mysqli_query(db(), 'SELECT * FROM faqs ORDER BY sort_order');
 
-$staleSitemapFile = is_file(dirname(__DIR__) . '/sitemap.xml');
-$sitemapUrlCount = array_sum(array_map('count', sitemap_entries()));
+$sitemapPath = dirname(__DIR__) . '/sitemap.xml';
+$sitemapExists = is_file($sitemapPath);
+$sitemapGeneratedAt = $sitemapExists ? date('M j, Y g:i A', filemtime($sitemapPath)) : null;
+$sitemapUrlCount = $sitemapExists ? substr_count(file_get_contents($sitemapPath), '<url>') : 0;
 
 $pageTitle = 'Site Settings';
 $heading = 'Site Settings';
@@ -187,20 +189,21 @@ require __DIR__ . '/includes/header.php';
         <div class="divider-fade" style="margin:20px 0;"></div>
         <h4 style="margin-bottom:8px;">Sitemap</h4>
         <p style="color:var(--color-text-muted);font-size:13.5px;margin-bottom:16px;">
-            Submit <code>/sitemap.xml</code> in Google Search Console. It's generated live on every request, so new
-            doctors and URL changes show up immediately, and it lists one sitemap per section (pages, doctors,
-            specialities, blog, medicines, pharmacies, products). The button below refreshes <code>/llms.txt</code>.
+            <strong>Generate Sitemap</strong> writes every public URL to <code>/sitemap.xml</code> (doctor URLs use the
+            URL slug exactly as saved on each doctor) and refreshes <code>/llms.txt</code>. It is also rewritten
+            automatically when you save a doctor here. Click it again after publishing blog posts, medicines or other
+            pages. Submit <code>/sitemap.xml</code> in Google Search Console.
         </p>
         <div id="sitemap-status" style="font-size:13px;color:var(--color-text-muted);margin-bottom:16px;">
-            <?php if ($staleSitemapFile): ?>
-                <strong style="color:var(--color-danger);">An old static sitemap.xml file is on the server.</strong> Click the button below to remove it.
-            <?php else: ?>
-                Live sitemap — <?= (int) $sitemapUrlCount ?> URLs.
+            <?php if ($sitemapExists): ?>
+                Last generated <strong><?= e($sitemapGeneratedAt) ?></strong> — <?= (int) $sitemapUrlCount ?> URLs.
                 <a href="/sitemap.xml" target="_blank" style="color:var(--color-primary);font-weight:600;">View sitemap.xml</a>
+            <?php else: ?>
+                sitemap.xml has not been generated yet — click the button below.
             <?php endif; ?>
         </div>
         <input type="hidden" id="sitemap-csrf" value="<?= e(csrf_token()) ?>">
-        <button type="button" class="btn btn-primary" id="generate-sitemap-btn">Refresh Sitemap</button>
+        <button type="button" class="btn btn-primary" id="generate-sitemap-btn">Generate Sitemap</button>
     </div>
 </div>
 

@@ -135,6 +135,7 @@ if ($id > 0) {
     save_doctor_availability($id, $schedule);
 
     log_activity($_SESSION['user_id'], 'admin', 'update_doctor', "Updated doctor #$id: $fullName");
+    if (is_file(dirname(__DIR__) . '/sitemap.xml')) write_static_sitemap(); // keep the doctor URL current
     json_response(true, ['id' => $id], 'Doctor updated.');
 }
 
@@ -189,4 +190,5 @@ send_email($email, $fullName, 'Your doctor account on ' . get_setting('site_name
         . '<p>Please log in and change your password from your profile settings.</p>',
         'Log In', APP_URL . '/login'));
 
+if (is_file(dirname(__DIR__) . '/sitemap.xml')) write_static_sitemap();
 json_response(true, ['id' => $newId, 'generated_password' => $generatedPassword], 'Doctor created.' . ($generatedPassword ? " Temporary password: $generatedPassword" : ''));

@@ -1296,6 +1296,20 @@ function build_sitemap_xml($type = null)
     return $xml;
 }
 
+/**
+ * Writes every sitemap URL (doctor URLs use doctors.slug exactly as stored) to
+ * the static /sitemap.xml file. Returns the URL count, or false if the file
+ * can't be written (no write permission on the site root).
+ */
+function write_static_sitemap()
+{
+    $xml = build_sitemap_xml();
+    if (@file_put_contents(dirname(__DIR__) . '/sitemap.xml', $xml, LOCK_EX) === false) {
+        return false;
+    }
+    return substr_count($xml, '<url>');
+}
+
 /** Sitemap index pointing at one child sitemap per non-empty group (/sitemap?type=doctors ...). */
 function build_sitemap_index_xml()
 {
