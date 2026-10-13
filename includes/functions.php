@@ -45,11 +45,11 @@ function slugify($text)
     return $text ?: 'item';
 }
 
-/** "dr-<name>" slug base with any typed-in "Dr."/"Doctor" prefix removed first (no more dr-dr-...). */
+/** Doctor slug base: just the name ("sarah-chen"), with any typed-in "Dr."/"Doctor" prefix removed. */
 function doctor_slug_base($fullName)
 {
-    $name = preg_replace('/^\s*(?:(?:dr|doctor)\b\.?\s*)+/i', '', (string) $fullName);
-    return 'dr-' . ($name !== '' ? $name : $fullName);
+    $name = trim(preg_replace('/^\s*(?:(?:dr|doctor)\b\.?\s*)+/i', '', (string) $fullName));
+    return $name !== '' ? $name : (string) $fullName;
 }
 
 function unique_slug(mysqli $db, string $table, string $base)

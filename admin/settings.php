@@ -189,16 +189,17 @@ require __DIR__ . '/includes/header.php';
         <div class="divider-fade" style="margin:20px 0;"></div>
         <h4 style="margin-bottom:8px;">Sitemap</h4>
         <p style="color:var(--color-text-muted);font-size:13.5px;margin-bottom:16px;">
-            <code>/sitemap.xml</code> is always available as a live, dynamically-generated page. Use the button below to
-            also write it out as a real static file at the project root (and refresh <code>/llms.txt</code> alongside
-            it) — useful for search-console verification or to serve it with zero PHP overhead.
+            Submit <code>/sitemap</code> in Google Search Console — it's always live and lists one sitemap per section
+            (pages, doctors, specialities, blog, medicines, pharmacies, products). The button below also writes every URL
+            to a static <code>/sitemap.xml</code> file (and refreshes <code>/llms.txt</code>). Click it again after adding
+            doctors or changing URLs, or the static file will show old links.
         </p>
         <div id="sitemap-status" style="font-size:13px;color:var(--color-text-muted);margin-bottom:16px;">
             <?php if ($sitemapExists): ?>
                 Static file last generated <strong><?= e($sitemapGeneratedAt) ?></strong> — <?= (int) $sitemapUrlCount ?> URLs.
                 <a href="/sitemap.xml" target="_blank" style="color:var(--color-primary);font-weight:600;">View sitemap.xml</a>
             <?php else: ?>
-                No static sitemap.xml has been generated yet. The dynamic <a href="/sitemap.php" target="_blank" style="color:var(--color-primary);font-weight:600;">/sitemap.php</a> is always live regardless.
+                No static sitemap.xml has been generated yet. The live <a href="/sitemap" target="_blank" style="color:var(--color-primary);font-weight:600;">/sitemap</a> is always up to date regardless.
             <?php endif; ?>
         </div>
         <input type="hidden" id="sitemap-csrf" value="<?= e(csrf_token()) ?>">

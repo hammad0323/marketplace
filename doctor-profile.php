@@ -16,16 +16,17 @@ mysqli_stmt_execute($stmt);
 $doctor = mysqli_stmt_get_result($stmt)->fetch_assoc();
 mysqli_stmt_close($stmt);
 
-// Old "dr-dr-..." slugs (from names typed as "Dr. X") were renamed by
-// migration_v14.sql; send any bookmarked/indexed old URL to the new one.
-if (!$doctor && str_starts_with($slug, 'dr-dr-')) {
+// Old "dr-..." / "dr-dr-..." slugs were renamed to the bare name by
+// migration_v15.sql; send any bookmarked/indexed old URL to the new one.
+if (!$doctor && str_starts_with($slug, 'dr-')) {
     $stmt = mysqli_prepare(db(), "SELECT slug FROM doctors WHERE slug = ? AND verification_status = 'verified' LIMIT 1");
-    $fixed = substr($slug, 3);
-    mysqli_stmt_bind_param($stmt, 's', $fixed);
-    mysqli_stmt_execute($stmt);
-    if ($row = mysqli_stmt_get_result($stmt)->fetch_assoc()) {
-        header('Location: ' . doctor_url($row['slug']), true, 301);
-        exit;
+    for ($old = substr($slug, 3); $old !== ''; $old = str_starts_with($old, 'dr-') ? substr($old, 3) : '') {
+        mysqli_stmt_bind_param($stmt, 's', $old);
+        mysqli_stmt_execute($stmt);
+        if ($row = mysqli_stmt_get_result($stmt)->fetch_assoc()) {
+            header('Location: ' . doctor_url($row['slug']), true, 301);
+            exit;
+        }
     }
     mysqli_stmt_close($stmt);
 }
