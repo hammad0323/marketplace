@@ -16,19 +16,20 @@ mysqli_stmt_execute($stmt);
 $doctor = mysqli_stmt_get_result($stmt)->fetch_assoc();
 mysqli_stmt_close($stmt);
 
-// Old "dr-..." / "dr-dr-..." slugs were renamed to the bare name by
-// migration_v15.sql; send any bookmarked/indexed old URL to the new one.
-if (!$doctor && str_starts_with($slug, 'dr-')) {
-    $stmt = mysqli_prepare(db(), "SELECT slug FROM doctors WHERE slug = ? AND verification_status = 'verified' LIMIT 1");
-    for ($old = substr($slug, 3); $old !== ''; $old = str_starts_with($old, 'dr-') ? substr($old, 3) : '') {
-        mysqli_stmt_bind_param($stmt, 's', $old);
-        mysqli_stmt_execute($stmt);
-        if ($row = mysqli_stmt_get_result($stmt)->fetch_assoc()) {
-            header('Location: ' . doctor_url($row['slug']), true, 301);
-            exit;
-        }
-    }
+// Old URLs from earlier slug formats ("dr-dr-ali", "dr-ali" for a name without
+// "Dr", or "ali" for "Dr. Ali") 301 to the doctor's current URL.
+if (!$doctor) {
+    $core = doctor_slug_core($slug);
+    $stmt = mysqli_prepare(db(), "SELECT slug FROM doctors WHERE slug IN (?, ?) AND slug != ? AND verification_status = 'verified' LIMIT 1");
+    $withDr = 'dr-' . $core;
+    mysqli_stmt_bind_param($stmt, 'sss', $core, $withDr, $slug);
+    mysqli_stmt_execute($stmt);
+    $row = mysqli_stmt_get_result($stmt)->fetch_assoc();
     mysqli_stmt_close($stmt);
+    if ($row) {
+        header('Location: ' . doctor_url($row['slug']), true, 301);
+        exit;
+    }
 }
 
 if (!$doctor || $doctor['verification_status'] !== 'verified') {
@@ -86,7 +87,7 @@ $metaDescription = doctor_meta_is_legacy_auto($doctor['meta_description'], $doct
     ? doctor_meta_description($doctor['full_name'], $specNames, $doctor['clinic_city'], $doctor['clinic_name'])
     : $doctor['meta_description'];
 $canonical = APP_URL . doctor_url($doctor['slug']);
-$breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Find Doctors', 'url' => APP_URL . '/doctors'], ['name' => $doctor['full_name']]];
+$breadcrumbs = [['name' => 'Home', 'url' => APP_URL . '/'], ['name' => 'Find Doctors', 'url' => APP_URL . '/doctors'], ['name' => doctor_display_name($doctor['full_name'])]];
 
 // No templated FAQPage markup here: it was the same four sentences with the
 // name swapped on every profile, invisible on the page — Google treats that
@@ -124,7 +125,7 @@ require __DIR__ . '/includes/header.php';
         <nav class="breadcrumb">
             <a href="/">Home</a> <i class="ri-arrow-right-s-line"></i>
             <a href="/doctors">Find Doctors</a> <i class="ri-arrow-right-s-line"></i>
-            <span><?= e($doctor['full_name']) ?></span>
+            <span><?= e(doctor_display_name($doctor['full_name'])) ?></span>
         </nav>
 
         <div class="split-sidebar-right doctor-profile-layout" style="gap:32px;">
@@ -133,7 +134,7 @@ require __DIR__ . '/includes/header.php';
                     <div style="display:flex;gap:20px;flex-wrap:wrap;">
                         <img src="<?= e(avatar_url($doctor['avatar'], $doctor['full_name'])) ?>" alt="<?= e($doctor['full_name']) ?>, <?= e($specNames ?: 'Doctor') ?>" width="110" height="110" style="width:110px;height:110px;border-radius:24px;object-fit:cover;">
                         <div style="flex:1;min-width:220px;">
-                            <h1 style="font-size:26px;margin-bottom:4px;"><?= e($doctor['full_name']) ?></h1>
+                            <h1 style="font-size:26px;margin-bottom:4px;"><?= e(doctor_display_name($doctor['full_name'])) ?></h1>
                             <?php $practice = $privacy['show_clinic_address'] ? implode(', ', array_filter([$doctor['clinic_name'], $doctor['clinic_city']])) : ''; ?>
                             <?php if ($specNames && $practice): ?><p style="color:var(--color-text-muted);font-size:14.5px;margin-bottom:6px;"><?= e(explode(',', $specNames)[0]) ?> at <?= e($practice) ?></p><?php endif; ?>
                             <?php if ($doctor['designation']): ?><p style="font-weight:600;margin-bottom:2px;"><?= e($doctor['designation']) ?></p><?php endif; ?>

@@ -166,7 +166,9 @@
         clinic = (clinic || '').trim();
         siteName = siteName || 'DoctorApna';
         if (!fullName) return { title: '', description: '' };
-        var name = /^(dr|doctor)\b/i.test(fullName) ? fullName : 'Dr. ' + fullName;
+        // "Dr" exactly once — mirrors doctor_display_name() in functions.php.
+        var name = fullName.replace(/\b(?:(?:dr|doctor)\b\.?\s*){2,}/ig, 'Dr. ').replace(/^doctor\b\.?\s*/i, 'Dr. ');
+        if (!/\bdr\b/i.test(name)) name = 'Dr. ' + name;
         var spec = specNames.split(',')[0].trim();
         var title = name + (spec ? ' – ' + spec + (city ? ' in ' + city : '') : (city ? ' – Doctor in ' + city : '')) + (clinic ? ' | ' + clinic : '');
         var where = [clinic, city].filter(Boolean).join(', ');

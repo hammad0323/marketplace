@@ -88,6 +88,8 @@ RewriteRule ^specializations/([\w-]+)/?$ specialization-detail.php?slug=$1 [L,QS
 #     request time).
 RewriteRule ^ads\.txt$ ads-txt.php [L]
 RewriteRule ^robots\.txt$ robots.php [L]
+# /sitemap.xml is always generated live (a stale static copy showed old doctor URLs).
+RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]
 
 # 3) Serve the matching .php file for a clean-URL request, transparently
 #    (no redirect, no visible change to the address bar).

@@ -12,7 +12,7 @@ $specNames = specialization_names($d['specializations']) ?: 'General';
     <div class="doctor-card-top">
         <img src="<?= e(avatar_url($d['avatar'], $d['full_name'])) ?>" alt="<?= e($d['full_name']) ?>, <?= e($specNames) ?>" width="68" height="68" loading="lazy">
         <div>
-            <h3><?= e($d['full_name']) ?></h3>
+            <h3><?= e(doctor_display_name($d['full_name'])) ?></h3>
             <div class="spec"><?= e($specNames) ?></div>
             <?php if ((int)$d['rating_count'] > 0): ?>
             <div class="rating"><i class="ri-star-fill"></i> <?= number_format($d['rating_avg'], 1) ?> (<?= (int)$d['rating_count'] ?>)</div>

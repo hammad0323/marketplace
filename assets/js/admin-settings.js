@@ -77,18 +77,18 @@
         var $btn = $(this).prop('disabled', true).text('Generating…');
         var csrf = $('#sitemap-csrf').val();
         $.post('/ajax/admin-generate-sitemap.php', { csrf_token: csrf }, null, 'json').done(function (res) {
-            $btn.prop('disabled', false).text('Generate Sitemap');
+            $btn.prop('disabled', false).text('Refresh Sitemap');
             if (res.success) {
-                showToast('success', 'Sitemap generated', res.message);
+                showToast('success', 'Sitemap refreshed', res.message);
                 $('#sitemap-status').html(
-                    'Static file last generated <strong>' + res.generated_at + '</strong> — ' + res.url_count + ' URLs. ' +
+                    'Live sitemap — ' + res.url_count + ' URLs. ' +
                     '<a href="' + res.sitemap_url + '" target="_blank" style="color:var(--color-primary);font-weight:600;">View sitemap.xml</a>'
                 );
             } else {
                 showToast('error', 'Could not generate sitemap', res.message);
             }
         }).fail(function () {
-            $btn.prop('disabled', false).text('Generate Sitemap');
+            $btn.prop('disabled', false).text('Refresh Sitemap');
             showToast('error', 'Network error', 'Please try again.');
         });
     });

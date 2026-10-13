@@ -16,10 +16,8 @@ while ($row = mysqli_fetch_assoc($cmsRes)) {
 
 $faqs = mysqli_query(db(), 'SELECT * FROM faqs ORDER BY sort_order');
 
-$sitemapPath = dirname(__DIR__) . '/sitemap.xml';
-$sitemapExists = is_file($sitemapPath);
-$sitemapGeneratedAt = $sitemapExists ? date('M j, Y g:i A', filemtime($sitemapPath)) : null;
-$sitemapUrlCount = $sitemapExists ? substr_count(file_get_contents($sitemapPath), '<url>') : 0;
+$staleSitemapFile = is_file(dirname(__DIR__) . '/sitemap.xml');
+$sitemapUrlCount = array_sum(array_map('count', sitemap_entries()));
 
 $pageTitle = 'Site Settings';
 $heading = 'Site Settings';
@@ -189,21 +187,20 @@ require __DIR__ . '/includes/header.php';
         <div class="divider-fade" style="margin:20px 0;"></div>
         <h4 style="margin-bottom:8px;">Sitemap</h4>
         <p style="color:var(--color-text-muted);font-size:13.5px;margin-bottom:16px;">
-            Submit <code>/sitemap</code> in Google Search Console — it's always live and lists one sitemap per section
-            (pages, doctors, specialities, blog, medicines, pharmacies, products). The button below also writes every URL
-            to a static <code>/sitemap.xml</code> file (and refreshes <code>/llms.txt</code>). Click it again after adding
-            doctors or changing URLs, or the static file will show old links.
+            Submit <code>/sitemap.xml</code> in Google Search Console. It's generated live on every request, so new
+            doctors and URL changes show up immediately, and it lists one sitemap per section (pages, doctors,
+            specialities, blog, medicines, pharmacies, products). The button below refreshes <code>/llms.txt</code>.
         </p>
         <div id="sitemap-status" style="font-size:13px;color:var(--color-text-muted);margin-bottom:16px;">
-            <?php if ($sitemapExists): ?>
-                Static file last generated <strong><?= e($sitemapGeneratedAt) ?></strong> — <?= (int) $sitemapUrlCount ?> URLs.
-                <a href="/sitemap.xml" target="_blank" style="color:var(--color-primary);font-weight:600;">View sitemap.xml</a>
+            <?php if ($staleSitemapFile): ?>
+                <strong style="color:var(--color-danger);">An old static sitemap.xml file is on the server.</strong> Click the button below to remove it.
             <?php else: ?>
-                No static sitemap.xml has been generated yet. The live <a href="/sitemap" target="_blank" style="color:var(--color-primary);font-weight:600;">/sitemap</a> is always up to date regardless.
+                Live sitemap — <?= (int) $sitemapUrlCount ?> URLs.
+                <a href="/sitemap.xml" target="_blank" style="color:var(--color-primary);font-weight:600;">View sitemap.xml</a>
             <?php endif; ?>
         </div>
         <input type="hidden" id="sitemap-csrf" value="<?= e(csrf_token()) ?>">
-        <button type="button" class="btn btn-primary" id="generate-sitemap-btn">Generate Sitemap</button>
+        <button type="button" class="btn btn-primary" id="generate-sitemap-btn">Refresh Sitemap</button>
     </div>
 </div>
 

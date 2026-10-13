@@ -49,7 +49,7 @@ require __DIR__ . '/includes/header.php';
 <div class="card-gradient-border" style="margin-bottom:24px;" data-reveal>
     <div class="card-inner" style="padding:28px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
         <div>
-            <h2 style="margin-bottom:6px;">Welcome back, Dr. <?= e(explode(' ', str_replace('Dr. ', '', $user['full_name']))[0]) ?> 👋</h2>
+            <h2 style="margin-bottom:6px;">Welcome back, Dr. <?= e(explode(' ', trim(preg_replace('/^\s*(?:(?:dr|doctor)\b\.?\s*)+/i', '', $user['full_name'])))[0]) ?> 👋</h2>
             <p style="color:var(--color-text-muted);">You have <?= (int)($stats['pending'] ?? 0) ?> pending request<?= ($stats['pending'] ?? 0) == 1 ? '' : 's' ?> waiting for review.</p>
         </div>
         <a href="/doctor/appointments?status=pending" class="btn btn-primary">Review Requests <i class="ri-arrow-right-line"></i></a>

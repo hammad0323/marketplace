@@ -82,6 +82,9 @@ require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/mailer.php';
 require_once __DIR__ . '/../includes/auth.php';
 
+// One-time: rebuild old "dr-dr-..." doctor URLs (no-op after the first run).
+sync_doctor_slugs();
+
 // Drives doctor chat "online" status — cheap indexed UPDATE, safe to run every request.
 if (!empty($_SESSION['user_id'])) {
     touch_last_active((int) $_SESSION['user_id']);

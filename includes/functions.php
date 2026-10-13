@@ -45,11 +45,57 @@ function slugify($text)
     return $text ?: 'item';
 }
 
-/** Doctor slug base: just the name ("sarah-chen"), with any typed-in "Dr."/"Doctor" prefix removed. */
+/**
+ * Doctor slug from the name exactly as entered, with "Dr" at most once:
+ * "Dr. Ali Khan" -> dr-ali-khan, "Dr Dr Ali" -> dr-ali, "Doctor Sara" -> dr-sara,
+ * "Ali Khan" -> ali-khan (no "dr-" is added when the name doesn't have it).
+ */
 function doctor_slug_base($fullName)
 {
-    $name = trim(preg_replace('/^\s*(?:(?:dr|doctor)\b\.?\s*)+/i', '', (string) $fullName));
-    return $name !== '' ? $name : (string) $fullName;
+    $slug = slugify((string) $fullName);
+    return preg_replace('/(^|-)(?:(?:dr|doctor)-)+/', '$1dr-', $slug);
+}
+
+/** A doctor slug with any leading "dr-" tokens removed — used to match old/new URL variants. */
+function doctor_slug_core($slug)
+{
+    return preg_replace('/^(?:dr-)+/', '', (string) $slug);
+}
+
+/**
+ * One-time fix for slugs made by older code ("dr-" + name, so "Dr. Ali" became
+ * dr-dr-ali; or "dr-" stripped entirely). Each doctor's slug is rebuilt from
+ * their name with doctor_slug_base(). Only the "dr" part may change, never the
+ * name itself, so profiles renamed later keep their URL. Runs once (tracked
+ * in site_settings); doctor-profile.php 301-redirects the old URLs.
+ */
+function sync_doctor_slugs()
+{
+    if (get_setting('doctor_slug_format') === '2') return;
+    $db = db();
+    try {
+        $res = mysqli_query($db, 'SELECT d.id, d.slug, u.full_name FROM doctors d JOIN users u ON u.id = d.user_id ORDER BY d.id');
+        $find = mysqli_prepare($db, 'SELECT id FROM doctors WHERE slug = ? AND id != ? LIMIT 1');
+        $save = mysqli_prepare($db, 'UPDATE doctors SET slug = ? WHERE id = ?');
+        while ($d = mysqli_fetch_assoc($res)) {
+            $want = doctor_slug_base($d['full_name']);
+            // Keep any "-2"/"-3" uniqueness suffix the current slug already has.
+            $suffix = preg_match('/-\d+$/', $d['slug'], $m) && !preg_match('/-\d+$/', $want) ? $m[0] : '';
+            $current = doctor_slug_core(preg_replace('/-\d+$/', '', $d['slug']));
+            if ($want . $suffix === $d['slug'] || doctor_slug_core($want) !== $current) continue;
+            $new = $want . $suffix;
+            $id = (int) $d['id'];
+            mysqli_stmt_bind_param($find, 'si', $new, $id);
+            mysqli_stmt_execute($find);
+            if (mysqli_stmt_get_result($find)->fetch_assoc()) continue; // taken: leave as is
+            mysqli_stmt_bind_param($save, 'si', $new, $id);
+            mysqli_stmt_execute($save);
+        }
+        mysqli_query($db, "INSERT INTO site_settings (setting_key, setting_value) VALUES ('doctor_slug_format', '2')
+            ON DUPLICATE KEY UPDATE setting_value = '2'");
+    } catch (Throwable $ex) {
+        // Retried on the next request.
+    }
 }
 
 function unique_slug(mysqli $db, string $table, string $base)
@@ -584,11 +630,12 @@ function specialization_names($specializations)
     return implode(', ', array_column($specializations, 'name'));
 }
 
-/** "Dr. <name>" — adds the prefix only when the stored name doesn't already start with it. */
+/** "Dr. <name>" with "Dr" exactly once: "Dr. Dr. Ali" -> "Dr. Ali", "Prof. Dr. Ali" kept, "Ali" -> "Dr. Ali". */
 function doctor_display_name($fullName)
 {
-    $fullName = trim((string) $fullName);
-    return preg_match('/^(dr|doctor)\b/i', $fullName) ? $fullName : 'Dr. ' . $fullName;
+    $fullName = preg_replace('/\b(?:(?:dr|doctor)\b\.?\s*){2,}/i', 'Dr. ', trim((string) $fullName));
+    $fullName = preg_replace('/^doctor\b\.?\s*/i', 'Dr. ', $fullName);
+    return preg_match('/\bdr\b/i', $fullName) ? $fullName : 'Dr. ' . $fullName;
 }
 
 /**
