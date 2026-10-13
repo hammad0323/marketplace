@@ -167,6 +167,12 @@ require __DIR__ . '/includes/header.php';
                 <div class="divider-fade"></div>
                 <h4 style="margin-bottom:4px;">SEO <span style="font-weight:400;color:var(--color-text-muted);font-size:13px;">(optional)</span></h4>
                 <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:14px;">Auto-filled from the name, designation, and specialization above — edit freely, or clear it to let the suggestion take over again.</p>
+                <div class="form-group" data-field="slug">
+                    <label class="form-label">URL Slug</label>
+                    <input type="text" class="form-control" name="slug" id="doctor-slug" maxlength="190" placeholder="e.g. ali-khan — leave blank to create it from the name">
+                    <small style="color:var(--color-text-muted);font-size:12px;">Profile URL: <?= e(APP_URL) ?>/doctors/<strong id="doctor-slug-preview">…</strong> — used exactly as written here (also in the sitemap). Letters, numbers and dashes only.</small>
+                    <div class="form-error"></div>
+                </div>
                 <div class="form-group"><label class="form-label">Meta Title</label><input type="text" class="form-control" name="meta_title" id="doctor-meta-title" maxlength="200"></div>
                 <div class="form-group"><label class="form-label">Meta Description</label><textarea class="form-control" name="meta_description" id="doctor-meta-description" rows="2" maxlength="300"></textarea></div>
 

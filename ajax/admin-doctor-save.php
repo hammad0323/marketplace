@@ -28,6 +28,7 @@ $clinicCity = clean($_POST['clinic_city'] ?? '') ?: null;
 $clinicState = clean($_POST['clinic_state'] ?? '') ?: null;
 $clinicCountry = clean($_POST['clinic_country'] ?? '') ?: null;
 $specializationIds = array_filter(array_map('intval', (array) ($_POST['specialization_ids'] ?? [])));
+$slugInput = trim((string) ($_POST['slug'] ?? '')) !== '' ? slugify(mb_substr((string) $_POST['slug'], 0, 190)) : '';
 $metaTitle = mb_substr(clean($_POST['meta_title'] ?? ''), 0, 200) ?: null;
 $metaDescription = mb_substr(clean($_POST['meta_description'] ?? ''), 0, 300) ?: null;
 $bookingMode = ($_POST['booking_mode'] ?? '') === 'tickets' ? 'tickets' : 'slots';
@@ -50,6 +51,15 @@ if ($id === 0 && $password !== '' && strlen($password) < 8) {
     $errors['password'] = 'Password must be at least 8 characters (or leave blank to auto-generate).';
 } elseif ($id > 0 && $password !== '' && strlen($password) < 8) {
     $errors['password'] = 'Password must be at least 8 characters.';
+}
+if ($slugInput !== '') {
+    $stmt = mysqli_prepare($db, 'SELECT id FROM doctors WHERE slug = ? AND id != ? LIMIT 1');
+    mysqli_stmt_bind_param($stmt, 'si', $slugInput, $id);
+    mysqli_stmt_execute($stmt);
+    if (mysqli_stmt_get_result($stmt)->fetch_assoc()) {
+        $errors['slug'] = 'Another doctor already uses this URL slug.';
+    }
+    mysqli_stmt_close($stmt);
 }
 if ($errors) {
     json_response(false, ['errors' => $errors], 'Please fix the errors below.');
@@ -114,6 +124,13 @@ if ($id > 0) {
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
 
+    if ($slugInput !== '') {
+        $stmt = mysqli_prepare($db, 'UPDATE doctors SET slug = ? WHERE id = ?');
+        mysqli_stmt_bind_param($stmt, 'si', $slugInput, $id);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+    }
+
     set_doctor_specializations($id, $specializationIds);
     save_doctor_availability($id, $schedule);
 
@@ -137,7 +154,7 @@ try {
     $userId = mysqli_insert_id($db);
     mysqli_stmt_close($stmt);
 
-    $slug = unique_slug($db, 'doctors', doctor_slug_base($fullName));
+    $slug = $slugInput !== '' ? $slugInput : unique_slug($db, 'doctors', doctor_slug_base($fullName));
     $stmt = mysqli_prepare($db, "INSERT INTO doctors (user_id, slug, designation, qualification, registration_number, experience_years, bio, consultation_fee_online, consultation_fee_physical, free_consultation, clinic_name, clinic_address, clinic_city, clinic_state, clinic_country, meta_title, meta_description, booking_mode, verification_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'verified')");
     mysqli_stmt_bind_param(
         $stmt, 'issssisddisssssss' . 's',

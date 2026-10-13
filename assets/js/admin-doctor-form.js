@@ -95,7 +95,15 @@
         setBioContent('');
         titleDirty = false;
         descDirty = false;
+        $('#doctor-slug').val('').trigger('input');
         openModal('Add Doctor');
+    });
+
+    // Shows the profile URL exactly as it will be saved (same rules as slugify() in PHP).
+    $(document).on('input', '#doctor-slug', function () {
+        var v = ($(this).val() || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        $('#doctor-slug-preview').text(v || '(from the name)');
     });
 
     $(document).on('click', '.btn-edit-doctor', function () {
@@ -125,6 +133,7 @@
             $('#doctor-clinic-city').val(d.clinic_city);
             $('#doctor-clinic-state').val(d.clinic_state);
             $('#doctor-clinic-country').val(d.clinic_country);
+            $('#doctor-slug').val(d.slug).trigger('input');
             $('#doctor-meta-title').val(d.meta_title);
             $('#doctor-meta-description').val(d.meta_description);
             titleDirty = !!(d.meta_title && d.meta_title.trim());
