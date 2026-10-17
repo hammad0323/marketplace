@@ -1,0 +1,18 @@
+{
+    "name": "webanza/proposal-maker",
+    "description": "Proposal Maker \u2014 professional proposal builder (Core PHP + MySQL)",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=7.4",
+        "ext-mysqli": "*",
+        "ext-mbstring": "*",
+        "ext-dom": "*",
+        "ext-gd": "*",
+        "dompdf/dompdf": "^3.0",
+        "phpmailer/phpmailer": "^6.9"
+    },
+    "config": {
+        "platform-check": false
+    }
+}

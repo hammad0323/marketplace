@@ -1,0 +1,8 @@
+config.php
+uploads/**/*
+!uploads/.htaccess
+!uploads/*/
+!uploads/*/.gitkeep
+storage/fonts/*
+storage/tmp/*
+!storage/**/.gitkeep
