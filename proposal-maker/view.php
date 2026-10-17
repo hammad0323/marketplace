@@ -1,5 +1,10 @@
 <?php
-/** Public client view: /proposal/view/{token}  (or view.php?token=...) */
+/**
+ * PUBLIC CLIENT PAGE — /proposal/view/{token}  (or view.php?token=...)
+ *
+ * No login needed. Each visit by a client is counted:
+ * views + 1, first/last viewed date, and status Draft/Sent → Viewed.
+ */
 require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/layouts/viewer.php';
 

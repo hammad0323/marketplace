@@ -1,4 +1,8 @@
 <?php
+/**
+ * CREATE PROPOSAL — 3 steps: client details → template → pre-built content.
+ * When the form is sent, the proposal is created and the editor opens.
+ */
 require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/layouts/partials.php';
 require_login();
@@ -66,7 +70,11 @@ $pageTitle = 'Create Proposal';
 $activeNav = 'create';
 $extraHead = proposal_head_assets();
 include __DIR__ . '/layouts/header.php';
-$v = fn($k, $d = '') => e($_POST[$k] ?? $d);
+// helper: value of a form field after a failed submit (or the default)
+function old_value($key, $default = '')
+{
+    return e($_POST[$key] ?? $default);
+}
 ?>
 <div class="page-head"><div><h1>Create a new proposal</h1><p>Three quick steps — client, design and content.</p></div></div>
 
@@ -88,20 +96,20 @@ $v = fn($k, $d = '') => e($_POST[$k] ?? $d);
     <div class="row g-3">
       <div class="col-lg-7">
         <div class="card-x"><div class="card-head"><h6><i class="bi bi-person-vcard me-1"></i> Client information</h6></div><div class="card-body"><div class="row g-3">
-          <div class="col-md-6"><label class="form-label">Client name</label><input class="form-control" name="client_name" value="<?= $v('client_name') ?>" placeholder="Ahmed Khan"></div>
-          <div class="col-md-6"><label class="form-label">Company name</label><input class="form-control" name="client_company" value="<?= $v('client_company') ?>" placeholder="ABC Company"></div>
-          <div class="col-md-6"><label class="form-label">Email</label><input type="email" class="form-control" name="client_email" value="<?= $v('client_email') ?>"></div>
-          <div class="col-md-6"><label class="form-label">Phone</label><input class="form-control" name="client_phone" value="<?= $v('client_phone') ?>"></div>
-          <div class="col-md-6"><label class="form-label">Website</label><input class="form-control" name="client_website" value="<?= $v('client_website') ?>" placeholder="www.client.com"></div>
-          <div class="col-md-6"><label class="form-label">Address</label><input class="form-control" name="client_address" value="<?= $v('client_address') ?>"></div>
+          <div class="col-md-6"><label class="form-label">Client name</label><input class="form-control" name="client_name" value="<?= old_value('client_name') ?>" placeholder="Ahmed Khan"></div>
+          <div class="col-md-6"><label class="form-label">Company name</label><input class="form-control" name="client_company" value="<?= old_value('client_company') ?>" placeholder="ABC Company"></div>
+          <div class="col-md-6"><label class="form-label">Email</label><input type="email" class="form-control" name="client_email" value="<?= old_value('client_email') ?>"></div>
+          <div class="col-md-6"><label class="form-label">Phone</label><input class="form-control" name="client_phone" value="<?= old_value('client_phone') ?>"></div>
+          <div class="col-md-6"><label class="form-label">Website</label><input class="form-control" name="client_website" value="<?= old_value('client_website') ?>" placeholder="www.client.com"></div>
+          <div class="col-md-6"><label class="form-label">Address</label><input class="form-control" name="client_address" value="<?= old_value('client_address') ?>"></div>
         </div></div></div>
       </div>
       <div class="col-lg-5">
         <div class="card-x"><div class="card-head"><h6><i class="bi bi-file-earmark-text me-1"></i> Proposal details</h6></div><div class="card-body"><div class="row g-3">
-          <div class="col-12"><label class="form-label">Proposal title *</label><input class="form-control" name="title" id="pTitle" required value="<?= $v('title', 'Website Development Proposal') ?>"></div>
-          <div class="col-12"><label class="form-label">Proposal number <span class="text-muted fw-normal small">(auto-generated, editable)</span></label><input class="form-control" name="proposal_number" value="<?= $v('proposal_number', pm_next_number()) ?>"></div>
-          <div class="col-6"><label class="form-label">Proposal date</label><input type="date" class="form-control" name="proposal_date" value="<?= $v('proposal_date', date('Y-m-d')) ?>"></div>
-          <div class="col-6"><label class="form-label">Expiry date</label><input type="date" class="form-control" name="expiry_date" value="<?= $v('expiry_date', date('Y-m-d', strtotime('+' . (int) ($co['default_validity_days'] ?: 30) . ' days'))) ?>"></div>
+          <div class="col-12"><label class="form-label">Proposal title *</label><input class="form-control" name="title" id="pTitle" required value="<?= old_value('title', 'Website Development Proposal') ?>"></div>
+          <div class="col-12"><label class="form-label">Proposal number <span class="text-muted fw-normal small">(auto-generated, editable)</span></label><input class="form-control" name="proposal_number" value="<?= old_value('proposal_number', pm_next_number()) ?>"></div>
+          <div class="col-6"><label class="form-label">Proposal date</label><input type="date" class="form-control" name="proposal_date" value="<?= old_value('proposal_date', date('Y-m-d')) ?>"></div>
+          <div class="col-6"><label class="form-label">Expiry date</label><input type="date" class="form-control" name="expiry_date" value="<?= old_value('expiry_date', date('Y-m-d', strtotime('+' . (int) ($co['default_validity_days'] ?: 30) . ' days'))) ?>"></div>
           <div class="col-6"><label class="form-label">Currency</label>
             <select class="form-select" name="currency" id="currency">
               <?php foreach (currencies() as $code => $c): ?><option value="<?= $code ?>" <?= ($_POST['currency'] ?? $co['default_currency']) === $code ? 'selected' : '' ?>><?= $code ?> (<?= e(trim($c['symbol'])) ?>)</option><?php endforeach; ?>

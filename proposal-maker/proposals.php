@@ -1,4 +1,7 @@
 <?php
+/**
+ * ALL PROPOSALS — list with search, status tabs, filters and pages.
+ */
 require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/layouts/partials.php';
 require_login();

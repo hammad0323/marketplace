@@ -1,8 +1,7 @@
 <?php
 /**
- * One-time web installer.
- * Creates config.php, the database tables, the admin user and seeds the
- * pre-built proposals + content library. Delete this file after installing.
+ * INSTALLER — run once. Creates config.php, the tables, the admin user,
+ * the starter content and (optional) demo data. Delete this file afterwards.
  */
 define('PM_INSTALLER', true);
 require __DIR__ . '/includes/bootstrap.php';
@@ -33,7 +32,32 @@ $v = [
     'name' => $_POST['name'] ?? '',
     'email' => $_POST['email'] ?? '',
     'password' => $_POST['password'] ?? '',
+    // demo data is ticked by default on first visit
+    'demo' => $_SERVER['REQUEST_METHOD'] === 'POST' ? !empty($_POST['demo']) : true,
 ];
+
+/**
+ * Run all SQL statements of a .sql file.
+ * Returns '' when everything worked, or the MySQL error message.
+ */
+function run_sql_file($conn, $path)
+{
+    $sql = file_get_contents($path);
+    if ($sql === false) {
+        return 'file not found';
+    }
+    if (!$conn->multi_query($sql)) {
+        return $conn->error;
+    }
+    // go through every result so the next file can run
+    do {
+        $result = $conn->store_result();
+        if ($result) {
+            $result->free();
+        }
+    } while ($conn->more_results() && $conn->next_result());
+    return $conn->errno ? $conn->error : '';
+}
 
 $checks = [
     'PHP 7.4 or newer' => version_compare(PHP_VERSION, '7.4.0', '>='),
@@ -61,14 +85,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Database connection failed: ' . $conn->connect_error;
         } else {
             $conn->set_charset('utf8mb4');
-            $sql = file_get_contents(__DIR__ . '/database.sql');
-            if (!$conn->multi_query($sql)) {
-                $errors[] = 'Could not create tables: ' . $conn->error;
-            } else {
-                do {
-                    if ($res = $conn->store_result()) $res->free();
-                } while ($conn->more_results() && $conn->next_result());
-                if ($conn->errno) $errors[] = 'SQL error: ' . $conn->error;
+            // 1) tables  2) starter content  3) demo data (only if ticked)
+            $files = ['sql/schema.sql', 'sql/starter.sql'];
+            if ($v['demo']) {
+                $files[] = 'sql/demo.sql';
+            }
+            foreach ($files as $file) {
+                $error = run_sql_file($conn, __DIR__ . '/' . $file);
+                if ($error !== '') {
+                    $errors[] = 'Error in ' . $file . ': ' . $error . ' (please use an EMPTY database)';
+                    break;
+                }
             }
             $conn->close();
         }
@@ -96,8 +123,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 db_query('DELETE FROM users WHERE email = ?', [$v['email']]);
                 db_insert('users', ['name' => $v['name'], 'email' => $v['email'], 'password' => password_hash($v['password'], PASSWORD_DEFAULT), 'role' => 'admin', 'status' => 1, 'created_at' => date('Y-m-d H:i:s')]);
-                db_update('company_settings', ['company_name' => $v['company'], 'email' => $v['email'], 'updated_at' => date('Y-m-d H:i:s')], 'id = 1');
-                pm_seed_defaults();
+                // without demo data: put your company name on the empty profile
+                if (!$v['demo']) {
+                    db_update('company_settings', ['company_name' => $v['company'], 'email' => $v['email'], 'updated_at' => date('Y-m-d H:i:s')], 'id = 1');
+                }
                 $done = true;
             } catch (Throwable $e) {
                 $errors[] = 'Setup failed: ' . $e->getMessage();
@@ -123,6 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="display-4 text-success mb-3"><i class="bi bi-check-circle-fill"></i></div>
       <h3>Installation complete!</h3>
       <p class="text-muted">Your proposal system is ready. For security, <b>delete install.php</b> from your server.</p>
+      <?php if ($v['demo']): ?><p class="small text-muted">Demo data installed. You can also log in as <b>editor@demo.com</b> / <b>editor123</b>.</p><?php endif; ?>
       <a href="login.php" class="btn btn-success btn-lg px-5">Log in</a>
     </div>
   <?php else: ?>
@@ -149,6 +179,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="col-md-6"><label class="form-label">Your name</label><input class="form-control" name="name" value="<?= e($v['name']) ?>" required></div>
         <div class="col-md-6"><label class="form-label">Admin email</label><input class="form-control" type="email" name="email" value="<?= e($v['email']) ?>" required></div>
         <div class="col-md-6"><label class="form-label">Admin password</label><input class="form-control" type="password" name="password" required minlength="6"></div>
+      </div>
+      <h5 class="mb-3">4. Demo data</h5>
+      <div class="form-check form-switch mb-4">
+        <input class="form-check-input" type="checkbox" name="demo" value="1" id="demo" <?= $v['demo'] ? 'checked' : '' ?>>
+        <label class="form-check-label" for="demo"><b>Install demo data</b> — 11 sample proposals (all templates, services and statuses), a demo company profile with logo, client answers and activity. Great for testing; you can delete the demo proposals later.</label>
       </div>
       <button class="btn btn-success btn-lg w-100"><i class="bi bi-rocket-takeoff"></i> Install Proposal Maker</button>
     </form>

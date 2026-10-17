@@ -1,4 +1,7 @@
 <?php
+/**
+ * DASHBOARD — statistics, charts, recent proposals and activity.
+ */
 require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/layouts/partials.php';
 require_login();
@@ -8,14 +11,27 @@ if (!(int) db_value('SELECT COUNT(*) FROM service_templates')) pm_seed_defaults(
 $counts = array_fill_keys(array_keys(status_meta()), 0);
 foreach (db_all('SELECT status, COUNT(*) c FROM proposals GROUP BY status') as $r) $counts[$r['status']] = (int) $r['c'];
 $total = array_sum($counts);
-$value = (float) db_value('SELECT COALESCE(SUM(total),0) FROM proposals');
-$won = (float) db_value("SELECT COALESCE(SUM(total),0) FROM proposals WHERE status = 'accepted'");
+// Total value per currency (we cannot add USD and PKR together!)
+$defaultCurrency = company()['default_currency'] ?? 'USD';
+$value = 0;
+$won = 0;
+$otherCurrencies = [];
+$sql = "SELECT currency, MAX(currency_symbol) AS symbol, SUM(total) AS total, SUM(CASE WHEN status = 'accepted' THEN total ELSE 0 END) AS won
+        FROM proposals GROUP BY currency ORDER BY SUM(total) DESC";
+foreach (db_all($sql) as $row) {
+    if ($row['currency'] === $defaultCurrency) {
+        $value = (float) $row['total'];
+        $won = (float) $row['won'];
+    } else {
+        $otherCurrencies[] = money($row['total'], $row['symbol']);
+    }
+}
 $decided = $counts['accepted'] + $counts['rejected'];
 $winRate = $decided ? round($counts['accepted'] / $decided * 100) : 0;
 $sym = currencies()[company()['default_currency'] ?? 'USD']['symbol'] ?? '$';
 
 $recent = db_all('SELECT * FROM proposals ORDER BY COALESCE(updated_at, created_at) DESC LIMIT 8');
-$activity = db_all('SELECT a.*, p.title, p.proposal_number FROM proposal_activity a JOIN proposals p ON p.id = a.proposal_id ORDER BY a.id DESC LIMIT 8');
+$activity = db_all('SELECT a.*, p.title, p.proposal_number FROM proposal_activity a JOIN proposals p ON p.id = a.proposal_id ORDER BY a.created_at DESC, a.id DESC LIMIT 8');
 
 $months = [];
 for ($i = 5; $i >= 0; $i--) $months[date('Y-m', strtotime("-$i months"))] = ['created' => 0, 'accepted' => 0];
@@ -45,7 +61,8 @@ $cards = [
   <div class="col-xl-4 col-md-6">
     <div class="card-x stat" style="background:linear-gradient(135deg,#015957,#0e7c78);border:0;color:#fff">
       <div class="ic" style="background:rgba(255,255,255,.15);color:#fff"><i class="bi bi-cash-stack"></i></div>
-      <div><div class="l" style="color:rgba(255,255,255,.75)">Total Proposal Value</div><div class="v text-white"><?= e(money($value, $sym)) ?></div><div class="small" style="color:rgba(255,255,255,.75)"><?= e(money($won, $sym)) ?> won · <?= $winRate ?>% win rate</div></div>
+      <div><div class="l" style="color:rgba(255,255,255,.75)">Total Proposal Value</div><div class="v text-white"><?= e(money($value, $sym)) ?></div><div class="small" style="color:rgba(255,255,255,.75)"><?= e(money($won, $sym)) ?> won · <?= $winRate ?>% win rate</div>
+        <?php if ($otherCurrencies): ?><div class="small mt-1" style="color:rgba(255,255,255,.65)">+ <?= e(implode(' · ', $otherCurrencies)) ?></div><?php endif; ?></div>
     </div>
   </div>
   <?php foreach (array_slice($cards, 0, 2) as $c): ?>
@@ -59,22 +76,10 @@ $cards = [
 </div>
 
 <div class="row g-3 mb-4">
-  <div class="col-lg-8"><div class="card-x h-100"><div class="card-head"><h6>Proposals — last 6 months</h6></div><div class="card-body"><canvas id="chMonths" height="110"></canvas></div></div></div>
-  <div class="col-lg-4"><div class="card-x h-100"><div class="card-head"><h6>Status breakdown</h6></div><div class="card-body"><canvas id="chStatus" height="220"></canvas></div></div></div>
-</div>
-
-<div class="row g-3">
-  <div class="col-xl-9">
-    <div class="card-x">
-      <div class="card-head"><h6>Recent Proposals</h6><a href="<?= url('proposals.php') ?>" class="ms-auto small fw-semibold">View all <i class="bi bi-arrow-right"></i></a></div>
-      <div class="table-responsive"><table class="table table-x">
-        <thead><tr><th>Proposal</th><th>Client</th><th>Service</th><th>Amount</th><th>Status</th><th>Created</th><th class="text-end">Actions</th></tr></thead>
-        <tbody><?= proposal_rows($recent) ?></tbody>
-      </table></div>
-    </div>
-  </div>
-  <div class="col-xl-3">
-    <div class="card-x h-100"><div class="card-head"><h6>Recent Activity</h6></div><div class="card-body">
+  <div class="col-xl-6"><div class="card-x h-100"><div class="card-head"><h6>Proposals — last 6 months</h6></div><div class="card-body"><canvas id="chMonths" height="110"></canvas></div></div></div>
+  <div class="col-xl-3 col-md-6"><div class="card-x h-100"><div class="card-head"><h6>Status breakdown</h6></div><div class="card-body"><canvas id="chStatus" height="220"></canvas></div></div></div>
+  <div class="col-xl-3 col-md-6">
+    <div class="card-x h-100"><div class="card-head"><h6>Recent Activity</h6></div><div class="card-body" style="max-height:330px;overflow:auto">
       <?php if (!$activity): ?><div class="text-muted small">No activity yet.</div><?php endif; ?>
       <ul class="timeline-x">
         <?php foreach ($activity as $a): ?>
@@ -83,6 +88,18 @@ $cards = [
         <?php endforeach; ?>
       </ul>
     </div></div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-12">
+    <div class="card-x">
+      <div class="card-head"><h6>Recent Proposals</h6><a href="<?= url('proposals.php') ?>" class="ms-auto small fw-semibold">View all <i class="bi bi-arrow-right"></i></a></div>
+      <div class="table-responsive"><table class="table table-x">
+        <thead><tr><th>Proposal</th><th>Client</th><th>Service</th><th>Amount</th><th>Status</th><th>Created</th><th class="text-end">Actions</th></tr></thead>
+        <tbody><?= proposal_rows($recent) ?></tbody>
+      </table></div>
+    </div>
   </div>
 </div>
 <?php

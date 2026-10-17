@@ -12,8 +12,11 @@
     var sel = null;            // selected block uid
     var curPage = null;        // current page uid
     var dirty = false, saving = false, saveTimer = null, renderTimers = {}, allTimer = null;
-    var zoom = 1, sheetStats = {}, lastBreaks = JSON.stringify(S.proposal.settings.breaks || {});
+    // PHP sends an empty list as [] — in JavaScript we use an object {}
+    if (!S.proposal.settings.breaks || Array.isArray(S.proposal.settings.breaks)) S.proposal.settings.breaks = {};
+    var zoom = 1, sheetStats = {}, lastBreaks = JSON.stringify(S.proposal.settings.breaks);
     var renderSeq = 0;
+    var fontsReady = false;    // page breaks are only trusted once the fonts are loaded
 
     /* ------------------------------------------------------------------
      * Helpers
@@ -190,7 +193,8 @@
         });
         S.proposal.settings.breaks = breaks;
         var js = JSON.stringify(breaks);
-        if (js !== lastBreaks) { lastBreaks = js; markDirty(); }
+        // only save new breaks when fonts are loaded (otherwise text sizes are not final yet)
+        if (fontsReady && js !== lastBreaks) { lastBreaks = js; markDirty(); }
         // sheet counters in page bars / list
         var n = 0;
         S.pages.forEach(function (pg) {
@@ -1081,7 +1085,8 @@
     fitZoom();
     $(window).on('resize', function () { clearTimeout(window._rz); window._rz = setTimeout(fitZoom, 200); });
     renderAll().done(function () {
-        if (document.fonts && document.fonts.ready) document.fonts.ready.then(paginateSoon);
-        setTimeout(paginateSoon, 900);
+        var ready = function () { if (fontsReady) return; fontsReady = true; paginateSoon(); };
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { setTimeout(ready, 150); });
+        setTimeout(ready, 1500);
     });
 })(jQuery);

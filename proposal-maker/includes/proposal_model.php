@@ -1,9 +1,18 @@
 <?php
 /**
- * Proposal persistence helpers.
+ * PROPOSALS — loading, saving, copying and making the PDF.
+ *
+ *   pm_get($id)                 one proposal
+ *   pm_pages($id)               its pages and blocks
+ *   pm_save_pages($id, $pages)  save pages + blocks (and recalculate the total)
+ *   pm_create($data, $pages)    new proposal
+ *   pm_duplicate($id)           copy a proposal
+ *   pm_snapshot($id)            save a version (history)
+ *   pm_pdf($p, $pages)          make the PDF with Dompdf
+ *   pm_seed_defaults()          fill an empty database with the starter content
  */
 
-function pm_next_number(?string $prefix = null): string
+function pm_next_number($prefix = null)
 {
     $prefix = $prefix ?? (company()['proposal_prefix'] ?? 'PROP');
     $prefix = preg_replace('/[^A-Za-z0-9\-]/', '', $prefix) ?: 'PROP';
@@ -17,7 +26,7 @@ function pm_next_number(?string $prefix = null): string
     return sprintf('%s-%s-%03d', $prefix, $year, $max + 1);
 }
 
-function pm_new_token(): string
+function pm_new_token()
 {
     do {
         $t = bin2hex(random_bytes(8));
@@ -26,27 +35,27 @@ function pm_new_token(): string
 }
 
 /** Decode a proposal row's JSON columns. */
-function pm_decode_row(array $p): array
+function pm_decode_row($p)
 {
     $p['colors'] = jdecode($p['colors'] ?? '');
     $p['settings'] = jdecode($p['settings'] ?? '');
     return $p;
 }
 
-function pm_get(int $id): ?array
+function pm_get($id)
 {
     $p = db_row('SELECT * FROM proposals WHERE id = ?', [$id]);
     return $p ? pm_decode_row($p) : null;
 }
 
-function pm_get_by_token(string $token): ?array
+function pm_get_by_token($token)
 {
     if (!preg_match('/^[a-f0-9]{8,64}$/', $token)) return null;
     $p = db_row('SELECT * FROM proposals WHERE public_token = ?', [$token]);
     return $p ? pm_decode_row($p) : null;
 }
 
-function pm_pages(int $proposalId): array
+function pm_pages($proposalId)
 {
     $pages = db_all('SELECT * FROM proposal_pages WHERE proposal_id = ? ORDER BY sort_order, id', [$proposalId]);
     $blocks = db_all('SELECT * FROM proposal_blocks WHERE proposal_id = ? ORDER BY sort_order, id', [$proposalId]);
@@ -73,7 +82,7 @@ function pm_pages(int $proposalId): array
 }
 
 /** Sanitise a client-supplied page structure. */
-function pm_normalize_pages(array $pages): array
+function pm_normalize_pages($pages)
 {
     $types = pm_blocks();
     $out = [];
@@ -94,7 +103,12 @@ function pm_normalize_pages(array $pages): array
                 'hidden' => !empty($b['hidden']),
             ];
         }
-        if ($isCover && !array_filter($blocks, fn($b) => $b['type'] === 'cover')) {
+        // a cover page must always contain a cover block
+        $hasCoverBlock = false;
+        foreach ($blocks as $b) {
+            if ($b['type'] === 'cover') $hasCoverBlock = true;
+        }
+        if ($isCover && !$hasCoverBlock) {
             array_unshift($blocks, ['uid' => uid('b'), 'type' => 'cover', 'data' => pm_block_defaults('cover'), 'hidden' => false]);
         }
         $ps = is_array($pg['settings'] ?? null) ? $pg['settings'] : [];
@@ -115,7 +129,7 @@ function pm_normalize_pages(array $pages): array
 }
 
 /** Totals = sum of all visible pricing tables. */
-function pm_compute_totals(array $pages): array
+function pm_compute_totals($pages)
 {
     $t = ['subtotal' => 0.0, 'discount' => 0.0, 'tax' => 0.0, 'total' => 0.0];
     foreach ($pages as $pg) {
@@ -126,11 +140,14 @@ function pm_compute_totals(array $pages): array
             foreach ($t as $k => $v) $t[$k] += $x[$k];
         }
     }
-    return array_map(fn($v) => round($v, 2), $t);
+    foreach ($t as $k => $v) {
+        $t[$k] = round($v, 2);
+    }
+    return $t;
 }
 
 /** Replace all pages/blocks of a proposal (transaction). */
-function pm_save_pages(int $proposalId, array $pages): array
+function pm_save_pages($proposalId, $pages)
 {
     $pages = pm_normalize_pages($pages);
     $db = db();
@@ -169,7 +186,7 @@ function pm_save_pages(int $proposalId, array $pages): array
 }
 
 /** Build page structure from a service template structure (array of pages). */
-function pm_structure_instantiate(array $structure): array
+function pm_structure_instantiate($structure)
 {
     $pages = [];
     foreach ($structure as $pg) {
@@ -182,7 +199,7 @@ function pm_structure_instantiate(array $structure): array
     return $pages;
 }
 
-function pm_blank_structure(): array
+function pm_blank_structure()
 {
     return [
         ['title' => 'Cover', 'page_type' => 'cover', 'blocks' => [['type' => 'cover', 'data' => []]]],
@@ -194,7 +211,7 @@ function pm_blank_structure(): array
 }
 
 /** Snapshot the current proposal into proposal_versions. */
-function pm_snapshot(int $proposalId, string $label = 'Auto-save'): void
+function pm_snapshot($proposalId, $label = 'Auto-save')
 {
     $p = db_row('SELECT * FROM proposals WHERE id = ?', [$proposalId]);
     if (!$p) return;
@@ -211,7 +228,7 @@ function pm_snapshot(int $proposalId, string $label = 'Auto-save'): void
     foreach ($ids as $r) db_query('DELETE FROM proposal_versions WHERE id = ?', [(int) $r['id']]);
 }
 
-function pm_restore_version(int $versionId): ?int
+function pm_restore_version($versionId)
 {
     $v = db_row('SELECT * FROM proposal_versions WHERE id = ?', [$versionId]);
     if (!$v) return null;
@@ -230,7 +247,7 @@ function pm_restore_version(int $versionId): ?int
 }
 
 /** Create a proposal record + pages. Returns new id. */
-function pm_create(array $data, array $pages): int
+function pm_create($data, $pages)
 {
     $tpl = pm_template((int) ($data['template_id'] ?? 1));
     $co = company();
@@ -267,7 +284,7 @@ function pm_create(array $data, array $pages): int
     return $id;
 }
 
-function pm_duplicate(int $id): ?int
+function pm_duplicate($id)
 {
     $p = db_row('SELECT * FROM proposals WHERE id = ?', [$id]);
     if (!$p) return null;
@@ -310,19 +327,19 @@ function pm_duplicate(int $id): ?int
 }
 
 /** Mark proposals past their expiry date as expired. */
-function pm_refresh_expired(): void
+function pm_refresh_expired()
 {
     db_query("UPDATE proposals SET status = 'expired' WHERE expiry_date IS NOT NULL AND expiry_date < CURDATE() AND status IN ('draft','sent','viewed')");
 }
 
-function pm_filename(array $p): string
+function pm_filename($p)
 {
     $client = ($p['client_company'] ?? '') !== '' ? $p['client_company'] : ($p['client_name'] ?? '');
     return slugify(($p['title'] ?? 'Proposal') . ($client !== '' ? '_' . $client : '')) . '.pdf';
 }
 
 /** Generate PDF binary for a proposal. */
-function pm_pdf(array $p, array $pages): string
+function pm_pdf($p, $pages)
 {
     if (!is_file(APP_ROOT . '/vendor/autoload.php')) {
         throw new RuntimeException('Dompdf is not installed (vendor folder missing).');
@@ -330,8 +347,8 @@ function pm_pdf(array $p, array $pages): string
     require_once APP_ROOT . '/vendor/autoload.php';
     @set_time_limit(120);
     @ini_set('memory_limit', '512M');
-    $r = new ProposalRenderer($p, $pages, company(), 'pdf');
-    $html = $r->pdfDocument();
+    $doc = doc_create($p, $pages, company(), 'pdf');
+    $html = render_pdf_html($doc);
     $fontDir = APP_ROOT . '/storage/fonts';
     if (!is_dir($fontDir)) @mkdir($fontDir, 0755, true);
     $opt = new Dompdf\Options();
@@ -345,7 +362,7 @@ function pm_pdf(array $p, array $pages): string
     $opt->setChroot([APP_ROOT]);
     $opt->set('fontHeightRatio', 1.0);
     // register + normalise fonts with a throwaway instance (metrics are cached per instance)
-    pm_prepare_pdf_fonts(new Dompdf\Dompdf($opt), [$r->fontHeading(), $r->fontBody()]);
+    pm_prepare_pdf_fonts(new Dompdf\Dompdf($opt), [$doc['font_heading'], $doc['font_body']]);
     $dompdf = new Dompdf\Dompdf($opt);
     $dompdf->loadHtml($html, 'UTF-8');
     $dompdf->setPaper('A4', 'portrait');
@@ -361,7 +378,7 @@ function pm_pdf(array $p, array $pages): string
  * (ascender − descender) = 1 em makes Dompdf lay text out like Chrome, so
  * the PDF paginates exactly like the editor preview.
  */
-function pm_prepare_pdf_fonts(Dompdf\Dompdf $dompdf, array $families): void
+function pm_prepare_pdf_fonts($dompdf, $families)
 {
     $fm = $dompdf->getFontMetrics();
     $list = font_list();
@@ -381,7 +398,7 @@ function pm_prepare_pdf_fonts(Dompdf\Dompdf $dompdf, array $families): void
     }
 }
 
-function pm_normalize_font_metrics(string $base): void
+function pm_normalize_font_metrics($base)
 {
     $json = $base . '.ufm.json';
     if (is_file($json)) {
@@ -417,7 +434,7 @@ function pm_normalize_font_metrics(string $base): void
 /* ===================================================================
  *  Seeding (service templates, content library, presets)
  * ================================================================= */
-function pm_seed_defaults(bool $force = false): void
+function pm_seed_defaults($force = false)
 {
     require_once __DIR__ . '/prebuilt.php';
     if ($force || !(int) db_value('SELECT COUNT(*) FROM service_templates')) {

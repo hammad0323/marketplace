@@ -1,20 +1,24 @@
 <?php
 /**
- * The 10 proposal design templates.
+ * THE 10 PROPOSAL DESIGNS (templates).
  *
- * Every template provides:
- *   - meta (name, description, recommended use, fonts, default colours)
- *   - body geometry for internal A4 sheets (793 × 1122 px @ 96dpi)
- *   - a unique cover page layout   (tpl_cover_N)
- *   - internal page decoration     (tpl_deco_N)
- * Visual styles live in assets/css/templates.css, scoped by .tpl-N and
- * driven entirely by CSS variables, so colours are never hard-coded.
+ * For each template you will find:
+ *   - its name, fonts and default colours            (pm_templates)
+ *   - the size of the content area on inner pages    ('body')
+ *   - its cover page HTML                             (tpl_cover_1 ... tpl_cover_10)
+ *   - its inner page decoration (bars, frames...)     (tpl_deco)
+ *
+ * The look (colours, positions) is in assets/css/templates.css.
+ * Colours are never written in the HTML: they come from CSS variables
+ * like var(--primary), so every proposal can have its own colours.
+ *
+ * An A4 sheet is 793 × 1122 pixels.
  */
 
 const PM_SHEET_W = 793;
 const PM_SHEET_H = 1122;
 
-function pm_templates(): array
+function pm_templates()
 {
     static $t = null;
     if ($t !== null) return $t;
@@ -103,13 +107,13 @@ function pm_templates(): array
     return $t;
 }
 
-function pm_template(int $id): array
+function pm_template($id)
 {
     $all = pm_templates();
     return ($all[$id] ?? $all[1]) + ['id' => isset($all[$id]) ? $id : 1];
 }
 
-function color_keys(): array
+function color_keys()
 {
     return [
         'primary' => 'Primary', 'secondary' => 'Secondary', 'accent' => 'Accent', 'text' => 'Text',
@@ -122,16 +126,20 @@ function color_keys(): array
  *  $x = prepared cover context (all strings already escaped)
  * ================================================================= */
 
-function tpl_cover(ProposalRenderer $r, array $x): string
+function tpl_cover($doc, $x)
 {
-    $id = $r->tpl['id'];
-    if ($x['layout'] === 'centered') return tpl_cover_centered($r, $x);
-    if ($x['layout'] === 'split') return tpl_cover_split($r, $x);
-    $fn = 'tpl_cover_' . $id;
-    return function_exists($fn) ? $fn($r, $x) : tpl_cover_1($r, $x);
+    $id = $doc['tpl']['id'];
+    if ($x['layout'] === 'centered') return tpl_cover_centered($doc, $x);
+    if ($x['layout'] === 'split') return tpl_cover_split($doc, $x);
+    // every template has its own cover function: tpl_cover_1() ... tpl_cover_10()
+    $function = 'tpl_cover_' . $id;
+    if (function_exists($function)) {
+        return $function($doc, $x);
+    }
+    return tpl_cover_1($doc, $x);
 }
 
-function cover_meta_table(array $x, string $class = '', int $cols = 0, bool $skipClient = false): string
+function cover_meta_table($x, $class = '', $cols = 0, $skipClient = false)
 {
     $items = $skipClient && $x['client'] !== '' ? $x['meta_rest'] : $x['meta'];
     if (!$items) return '';
@@ -147,7 +155,7 @@ function cover_meta_table(array $x, string $class = '', int $cols = 0, bool $ski
     return $html;
 }
 
-function cover_title_block(array $x, string $prefix): string
+function cover_title_block($x, $prefix)
 {
     $h = '';
     if ($x['eyebrow'] !== '') $h .= '<div class="' . $prefix . '-eyebrow">' . $x['eyebrow'] . '</div>';
@@ -156,10 +164,10 @@ function cover_title_block(array $x, string $prefix): string
 }
 
 /* 01 — Modern Corporate */
-function tpl_cover_1(ProposalRenderer $r, array $x): string
+function tpl_cover_1($doc, $x)
 {
     $h = '';
-    $img = $x['image'] ? $r->coverImage($x['image_raw'], 330, 700) : '';
+    $img = $x['image'] ? doc_cover_image($doc, $x['image_raw'], 330, 700) : '';
     $h .= '<div class="c1-panel">' . ($img ? '<img src="' . $img . '" width="330" height="700" alt=""><div class="c1-panel-tint"></div>' : '') . '</div>';
     if ($x['shapes']) {
         $h .= '<div class="c1-sq"></div><div class="c1-sq2"></div><div class="c1-line"></div>';
@@ -177,11 +185,11 @@ function tpl_cover_1(ProposalRenderer $r, array $x): string
 }
 
 /* 02 — Dark Premium */
-function tpl_cover_2(ProposalRenderer $r, array $x): string
+function tpl_cover_2($doc, $x)
 {
     $h = '';
     if ($x['image']) {
-        $h .= '<div class="c2-img"><img src="' . $r->coverImage($x['image_raw'], 793, 520) . '" width="793" height="520" alt=""></div><div class="c2-img-tint"></div><div class="c2-img-fade"></div>';
+        $h .= '<div class="c2-img"><img src="' . doc_cover_image($doc, $x['image_raw'], 793, 520) . '" width="793" height="520" alt=""></div><div class="c2-img-tint"></div><div class="c2-img-fade"></div>';
     } elseif ($x['shapes']) {
         $h .= '<div class="c2-ring"></div><div class="c2-ring2"></div>';
     }
@@ -198,11 +206,11 @@ function tpl_cover_2(ProposalRenderer $r, array $x): string
 }
 
 /* 03 — Creative Agency */
-function tpl_cover_3(ProposalRenderer $r, array $x): string
+function tpl_cover_3($doc, $x)
 {
     $h = '<div class="c3-hero">';
     if ($x['image']) {
-        $h .= '<img src="' . $r->coverImage($x['image_raw'], 793, 560) . '" width="793" height="560" alt="">';
+        $h .= '<img src="' . doc_cover_image($doc, $x['image_raw'], 793, 560) . '" width="793" height="560" alt="">';
     } else {
         $h .= '<div class="c3-hero-c1"></div><div class="c3-hero-c2"></div><div class="c3-hero-c3"></div>';
     }
@@ -220,12 +228,12 @@ function tpl_cover_3(ProposalRenderer $r, array $x): string
 }
 
 /* 04 — Minimal White */
-function tpl_cover_4(ProposalRenderer $r, array $x): string
+function tpl_cover_4($doc, $x)
 {
     $h = '<div class="c4-logo">' . $x['logo'] . '</div>';
     $h .= '<div class="c4-num">' . $x['number'] . '</div>';
     if ($x['image']) {
-        $h .= '<div class="c4-img"><img src="' . $r->coverImage($x['image_raw'], 633, 250) . '" width="633" height="250" alt=""></div>';
+        $h .= '<div class="c4-img"><img src="' . doc_cover_image($doc, $x['image_raw'], 633, 250) . '" width="633" height="250" alt=""></div>';
     }
     $h .= '<div class="c4-head' . ($x['image'] ? ' c4-head-img' : '') . '">'
         . ($x['eyebrow'] !== '' ? '<div class="c4-eyebrow">' . ($x['shapes'] ? '<span class="c4-dot"></span>' : '') . $x['eyebrow'] . '</div>' : '')
@@ -236,11 +244,11 @@ function tpl_cover_4(ProposalRenderer $r, array $x): string
 }
 
 /* 05 — Tech / Digital */
-function tpl_cover_5(ProposalRenderer $r, array $x): string
+function tpl_cover_5($doc, $x)
 {
     $h = '';
     if ($x['shapes']) {
-        $line = $r->mix('secondary', 0.07);
+        $line = doc_mix($doc, 'secondary', 0.07);
         for ($i = 1; $i <= 7; $i++) {
             $h .= '<div class="c5-vl" style="left:' . ($i * 99) . 'px;background:' . $line . '"></div>';
         }
@@ -254,7 +262,7 @@ function tpl_cover_5(ProposalRenderer $r, array $x): string
         . '<div class="c5-title" style="font-size:' . $x['title_size'] . 'px">' . $x['title'] . '</div>'
         . ($x['subtitle'] !== '' ? '<div class="c5-sub">' . $x['subtitle'] . '</div>' : '') . '</div>';
     if ($x['image']) {
-        $h .= '<div class="c5-img"><img src="' . $r->coverImage($x['image_raw'], 665, 230) . '" width="665" height="230" alt=""></div>';
+        $h .= '<div class="c5-img"><img src="' . doc_cover_image($doc, $x['image_raw'], 665, 230) . '" width="665" height="230" alt=""></div>';
     }
     $h .= '<div class="c5-meta">' . cover_meta_table($x, '', min(4, max(1, count($x['meta'])))) . '</div>';
     $h .= '<div class="c5-bar"></div>';
@@ -262,13 +270,13 @@ function tpl_cover_5(ProposalRenderer $r, array $x): string
 }
 
 /* 06 — Elegant Business */
-function tpl_cover_6(ProposalRenderer $r, array $x): string
+function tpl_cover_6($doc, $x)
 {
     $h = '<div class="c6-frame"></div><div class="c6-frame2"></div>';
     $h .= '<div class="c6-logo">' . $x['logo'] . '</div>';
     if ($x['has_logo']) $h .= '<div class="c6-company">' . $x['company'] . '</div>';
     if ($x['image']) {
-        $h .= '<div class="c6-img"><img src="' . $r->coverImage($x['image_raw'], 230, 230) . '" width="230" height="230" alt=""></div>';
+        $h .= '<div class="c6-img"><img src="' . doc_cover_image($doc, $x['image_raw'], 230, 230) . '" width="230" height="230" alt=""></div>';
     } elseif ($x['shapes']) {
         $h .= '<div class="c6-orn"><span class="c6-orn-l"></span><span class="c6-orn-d"></span><span class="c6-orn-l"></span></div>';
     }
@@ -284,7 +292,7 @@ function tpl_cover_6(ProposalRenderer $r, array $x): string
 }
 
 /* 07 — Bold Creative */
-function tpl_cover_7(ProposalRenderer $r, array $x): string
+function tpl_cover_7($doc, $x)
 {
     $h = '<div class="c7-top">';
     if ($x['shapes']) $h .= '<div class="c7-big">' . $x['year_short'] . '</div><div class="c7-sq"></div>';
@@ -296,14 +304,14 @@ function tpl_cover_7(ProposalRenderer $r, array $x): string
     $h .= '<div class="c7-low' . ($x['image'] ? ' c7-low-img' : '') . '">' . ($x['subtitle'] !== '' ? '<div class="c7-sub">' . $x['subtitle'] . '</div>' : '')
         . cover_meta_table($x, '', 2, true) . '</div>';
     if ($x['image']) {
-        $h .= '<div class="c7-img"><img src="' . $r->coverImage($x['image_raw'], 300, 300) . '" width="300" height="300" alt=""></div>';
+        $h .= '<div class="c7-img"><img src="' . doc_cover_image($doc, $x['image_raw'], 300, 300) . '" width="300" height="300" alt=""></div>';
     }
     $h .= '<div class="c7-foot"></div>';
     return $h;
 }
 
 /* 08 — Startup */
-function tpl_cover_8(ProposalRenderer $r, array $x): string
+function tpl_cover_8($doc, $x)
 {
     $h = '';
     if ($x['shapes']) $h .= '<div class="c8-b1"></div><div class="c8-b2"></div><div class="c8-b3"></div>';
@@ -312,7 +320,7 @@ function tpl_cover_8(ProposalRenderer $r, array $x): string
         . '<div class="c8-title" style="font-size:' . $x['title_size'] . 'px">' . $x['title'] . '</div>'
         . ($x['subtitle'] !== '' ? '<div class="c8-sub">' . $x['subtitle'] . '</div>' : '');
     if ($x['image']) {
-        $h .= '<div class="c8-img"><img src="' . $r->coverImage($x['image_raw'], 577, 210) . '" width="577" height="210" alt=""></div>';
+        $h .= '<div class="c8-img"><img src="' . doc_cover_image($doc, $x['image_raw'], 577, 210) . '" width="577" height="210" alt=""></div>';
     }
     $h .= '</div>';
     $h .= '<div class="c8-meta">' . cover_meta_table($x, '', min(4, max(1, count($x['meta'])))) . '</div>';
@@ -320,7 +328,7 @@ function tpl_cover_8(ProposalRenderer $r, array $x): string
 }
 
 /* 09 — Professional Blue */
-function tpl_cover_9(ProposalRenderer $r, array $x): string
+function tpl_cover_9($doc, $x)
 {
     $h = '<div class="c9-band"><table><tr><td class="c9-logo">' . $x['logo'] . '</td><td class="c9-contact">' . implode('<br>', array_filter([$x['website'], $x['email']])) . '</td></tr></table></div>';
     $h .= '<div class="c9-side"><div class="c9-side-h">Proposal Details</div><table class="c9-dl">';
@@ -336,7 +344,7 @@ function tpl_cover_9(ProposalRenderer $r, array $x): string
         . '<div class="c9-title" style="font-size:' . $x['title_size'] . 'px">' . $x['title'] . '</div><div class="c9-rule"></div>'
         . ($x['subtitle'] !== '' ? '<div class="c9-sub">' . $x['subtitle'] . '</div>' : '');
     if ($x['image']) {
-        $h .= '<div class="c9-img"><img src="' . $r->coverImage($x['image_raw'], 420, 220) . '" width="420" height="220" alt=""></div>';
+        $h .= '<div class="c9-img"><img src="' . doc_cover_image($doc, $x['image_raw'], 420, 220) . '" width="420" height="220" alt=""></div>';
     }
     if ($x['toc']) {
         $h .= '<div class="c9-toc"><div class="c9-toc-h">Contents</div><table>';
@@ -350,12 +358,12 @@ function tpl_cover_9(ProposalRenderer $r, array $x): string
 }
 
 /* 10 — Luxury Minimal */
-function tpl_cover_10(ProposalRenderer $r, array $x): string
+function tpl_cover_10($doc, $x)
 {
     $h = '<div class="c10-frame"></div>';
     $h .= '<div class="c10-logo">' . $x['logo'] . '</div>';
     if ($x['image']) {
-        $h .= '<div class="c10-img"><img src="' . $r->coverImage($x['image_raw'], 300, 360) . '" width="300" height="360" alt=""></div>';
+        $h .= '<div class="c10-img"><img src="' . doc_cover_image($doc, $x['image_raw'], 300, 360) . '" width="300" height="360" alt=""></div>';
     }
     $h .= '<div class="c10-head' . ($x['image'] ? ' c10-head-img' : '') . '">'
         . ($x['eyebrow'] !== '' ? '<div class="c10-eyebrow">' . $x['eyebrow'] . '</div>' : '')
@@ -367,11 +375,11 @@ function tpl_cover_10(ProposalRenderer $r, array $x): string
 }
 
 /* Generic alternative layouts — still styled through each template's variables/fonts */
-function tpl_cover_centered(ProposalRenderer $r, array $x): string
+function tpl_cover_centered($doc, $x)
 {
     $h = '';
     if ($x['image']) {
-        $h .= '<div class="cx-bgimg"><img src="' . $r->coverImage($x['image_raw'], 793, 1122) . '" width="793" height="1122" alt=""></div><div class="cx-tint"></div>';
+        $h .= '<div class="cx-bgimg"><img src="' . doc_cover_image($doc, $x['image_raw'], 793, 1122) . '" width="793" height="1122" alt=""></div><div class="cx-tint"></div>';
     } elseif ($x['shapes']) {
         $h .= '<div class="cx-c1"></div><div class="cx-c2"></div>';
     }
@@ -383,11 +391,11 @@ function tpl_cover_centered(ProposalRenderer $r, array $x): string
     return $h;
 }
 
-function tpl_cover_split(ProposalRenderer $r, array $x): string
+function tpl_cover_split($doc, $x)
 {
     $h = '<div class="cs-side">';
     if ($x['image']) {
-        $h .= '<img src="' . $r->coverImage($x['image_raw'], 340, 1122) . '" width="340" height="1122" alt=""><div class="cs-tint"></div>';
+        $h .= '<img src="' . doc_cover_image($doc, $x['image_raw'], 340, 1122) . '" width="340" height="1122" alt=""><div class="cs-tint"></div>';
     } elseif ($x['shapes']) {
         $h .= '<div class="cs-c1"></div><div class="cs-c2"></div>';
     }
@@ -403,9 +411,9 @@ function tpl_cover_split(ProposalRenderer $r, array $x): string
 /* ===================================================================
  *  INTERNAL PAGE DECORATION (behind header/body/footer)
  * ================================================================= */
-function tpl_deco(ProposalRenderer $r): string
+function tpl_deco($doc)
 {
-    switch ($r->tpl['id']) {
+    switch ($doc['tpl']['id']) {
         case 1: return '<div class="d1-mark"></div><div class="d1-corner"></div>';
         case 2: return '<div class="d2-frame"></div>';
         case 3: return '<div class="d3-c1"></div><div class="d3-c2"></div><div class="d3-strip"></div>';

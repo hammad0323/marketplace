@@ -1,5 +1,9 @@
 <?php
-/** PDF download: pdf.php?id=… (admin) or pdf.php?token=… (client) */
+/**
+ * PDF DOWNLOAD
+ *   pdf.php?id=5        for logged-in users
+ *   pdf.php?token=abc   for clients (only if downloading is allowed)
+ */
 require __DIR__ . '/includes/bootstrap.php';
 
 if (!empty($_GET['token'])) {

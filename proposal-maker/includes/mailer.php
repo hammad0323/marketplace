@@ -1,9 +1,12 @@
 <?php
 /**
- * Email sending (PHPMailer via SMTP when configured, PHP mail() otherwise).
+ * EMAIL — sending proposals by email.
+ *
+ * Uses PHPMailer. If SMTP is turned on in Settings → Email, it sends through
+ * your mail server; otherwise it uses PHP's normal mail() function.
  */
 
-function pm_mailer(): PHPMailer\PHPMailer\PHPMailer
+function pm_mailer()
 {
     require_once APP_ROOT . '/vendor/autoload.php';
     $co = company();
@@ -33,7 +36,7 @@ function pm_mailer(): PHPMailer\PHPMailer\PHPMailer
     return $m;
 }
 
-function pm_send_mail(string $to, string $subject, string $html, array $attachments = [], array $cc = []): void
+function pm_send_mail($to, $subject, $html, $attachments = [], $cc = [])
 {
     $m = pm_mailer();
     $m->addAddress($to);
@@ -47,7 +50,7 @@ function pm_send_mail(string $to, string $subject, string $html, array $attachme
 }
 
 /** Branded HTML email wrapper. */
-function pm_email_html(string $bodyText, string $buttonText = '', string $buttonUrl = ''): string
+function pm_email_html($bodyText, $buttonText = '', $buttonUrl = '')
 {
     $co = company();
     $primary = clean_color($co['primary_color'] ?? '', '#015957');
@@ -66,13 +69,13 @@ function pm_email_html(string $bodyText, string $buttonText = '', string $button
         . '</table></td></tr></table></body></html>';
 }
 
-function pm_send_proposal_email(array $p, string $to, array $cc, string $subject, string $body, bool $attachPdf): void
+function pm_send_proposal_email($p, $to, $cc, $subject, $body, $attachPdf)
 {
     $pages = pm_pages((int) $p['id']);
-    $r = new ProposalRenderer($p, $pages, company(), 'screen');
+    $doc = doc_create($p, $pages, company(), 'screen');
     $link = public_url($p['public_token']);
-    $subject = $r->replaceVars($subject, false);
-    $body = $r->replaceVars($body, false);
+    $subject = replace_vars($doc, $subject, false);
+    $body = replace_vars($doc, $body, false);
     $body = str_replace('{{proposal_link}}', $link, $body);
     // the link is rendered as a button; drop a bare link line from the text
     $bodyNoLink = trim(str_replace($link, '', $body));
@@ -83,7 +86,7 @@ function pm_send_proposal_email(array $p, string $to, array $cc, string $subject
 }
 
 /** Notify the company when a client responds. Fails silently. */
-function pm_notify_response(array $p, string $response, string $name, string $comment): void
+function pm_notify_response($p, $response, $name, $comment)
 {
     $co = company();
     $to = $co['notify_email'] ?: $co['email'];

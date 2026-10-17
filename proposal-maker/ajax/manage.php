@@ -1,5 +1,7 @@
 <?php
-/** Content library / pre-built proposal management. */
+/**
+ * LIBRARY / PRE-BUILT PROPOSAL management (AJAX): rename, copy, delete, restore.
+ */
 require dirname(__DIR__) . '/includes/bootstrap.php';
 require_login();
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_out(['ok' => false, 'message' => 'Method not allowed'], 405);

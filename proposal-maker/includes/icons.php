@@ -1,11 +1,13 @@
 <?php
 /**
- * Proposal icon library (Bootstrap Icons, MIT licence — see assets/picons/LICENSE.txt).
- * Icons are emitted as coloured SVG data-URIs so they look identical in the
- * browser and in the Dompdf-generated PDF.
+ * ICONS — the icons used inside proposals.
+ *
+ * The icons are SVG files in assets/picons (Bootstrap Icons, MIT licence).
+ * We colour them and turn them into an <img> with a data: address, so they
+ * look the same in the browser and in the PDF.
  */
 
-function icon_names(): array
+function icon_names()
 {
     static $names = null;
     if ($names === null) {
@@ -18,7 +20,7 @@ function icon_names(): array
     return $names;
 }
 
-function icon_svg(string $name, string $color = '#000000'): string
+function icon_svg($name, $color = '#000000')
 {
     static $cache = [];
     $name = preg_replace('/[^a-z0-9\-]/', '', strtolower($name));
@@ -35,7 +37,7 @@ function icon_svg(string $name, string $color = '#000000'): string
 }
 
 /** <img> tag for an icon. */
-function icon_img(string $name, string $color, int $size = 24, string $class = 'pm-ico'): string
+function icon_img($name, $color, $size = 24, $class = 'pm-ico')
 {
     if ($name === '') return '';
     $data = 'data:image/svg+xml;base64,' . base64_encode(icon_svg($name, $color));
@@ -43,7 +45,7 @@ function icon_img(string $name, string $color, int $size = 24, string $class = '
 }
 
 /** Small shapes (check, cross, dot …) used in lists / tables. */
-function shape_img(string $shape, string $color, int $size = 14): string
+function shape_img($shape, $color, $size = 14)
 {
     $map = [
         'check'  => 'check-lg',

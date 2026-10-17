@@ -1,5 +1,7 @@
 <?php
-/** Client responses from the public proposal page (accept / reject). */
+/**
+ * CLIENT ANSWERS (AJAX) from the public page: accept (with signature) or reject.
+ */
 require dirname(__DIR__) . '/includes/bootstrap.php';
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_out(['ok' => false, 'message' => 'Method not allowed'], 405);
 csrf_check();

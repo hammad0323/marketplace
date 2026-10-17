@@ -1,4 +1,7 @@
 <?php
+/**
+ * PRE-BUILT PROPOSALS — manage the ready-made service proposals.
+ */
 require __DIR__ . '/includes/bootstrap.php';
 require_login();
 if (!(int) db_value('SELECT COUNT(*) FROM service_templates')) pm_seed_defaults();

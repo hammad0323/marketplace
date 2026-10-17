@@ -1,5 +1,9 @@
 <?php
-/** Admin presentation preview (no tracking). ?embed=1 for device frames, ?print=1 to print. */
+/**
+ * PREVIEW — shows the proposal exactly as the client sees it (views are not counted).
+ *   ?embed=1  used inside the device preview (desktop / tablet / mobile)
+ *   ?print=1  opens the print window
+ */
 require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/layouts/viewer.php';
 require_login();

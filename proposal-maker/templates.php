@@ -1,4 +1,7 @@
 <?php
+/**
+ * DESIGN TEMPLATES — gallery of the 10 designs.
+ */
 require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/layouts/partials.php';
 require_login();

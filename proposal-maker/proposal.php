@@ -1,4 +1,8 @@
 <?php
+/**
+ * PROPOSAL DETAILS — send by email, public link, status, client response,
+ * version history and activity log.
+ */
 require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/layouts/partials.php';
 require_login();
@@ -13,11 +17,11 @@ if (!$p) {
 $co = company();
 $link = public_url($p['public_token']);
 $responses = db_all('SELECT * FROM proposal_responses WHERE proposal_id = ? ORDER BY id DESC', [$id]);
-$activity = db_all('SELECT a.*, u.name uname FROM proposal_activity a LEFT JOIN users u ON u.id = a.user_id AND a.user_id > 0 WHERE a.proposal_id = ? ORDER BY a.id DESC LIMIT 100', [$id]);
+$activity = db_all('SELECT a.*, u.name uname FROM proposal_activity a LEFT JOIN users u ON u.id = a.user_id AND a.user_id > 0 WHERE a.proposal_id = ? ORDER BY a.created_at DESC, a.id DESC LIMIT 100', [$id]);
 $versions = db_all('SELECT v.id, v.label, v.created_at, u.name FROM proposal_versions v LEFT JOIN users u ON u.id = v.created_by WHERE proposal_id = ? ORDER BY v.id DESC LIMIT 30', [$id]);
 $pages = pm_pages($id);
 $tpl = pm_template((int) $p['template_id']);
-$r = new ProposalRenderer($p, $pages, $co, 'screen');
+$doc = doc_create($p, $pages, $co, 'screen');
 $defSubject = $co['email_subject'] ?: 'Proposal: {{proposal_title}} — {{company_name}}';
 $defBody = $co['email_body'] ?: "Hello {{client_name}},\n\nPlease find our proposal for {{project_name}}.\n\nYou can review the proposal using the link below.\n\n{{proposal_link}}\n\nRegards,\n{{company_name}}";
 $actIcons = ['created' => 'bi-plus-circle', 'viewed' => 'bi-eye', 'emailed' => 'bi-envelope', 'accepted' => 'bi-check-circle', 'rejected' => 'bi-x-circle', 'downloaded' => 'bi-download', 'duplicated' => 'bi-copy', 'status_changed' => 'bi-arrow-repeat'];
@@ -69,8 +73,8 @@ include __DIR__ . '/layouts/header.php';
           <div class="row g-3">
             <div class="col-md-6"><label class="form-label">To</label><input class="form-control" name="to" type="email" value="<?= e($p['client_email']) ?>" required></div>
             <div class="col-md-6"><label class="form-label">CC <span class="text-muted small">(comma separated)</span></label><input class="form-control" name="cc"></div>
-            <div class="col-12"><label class="form-label">Subject</label><input class="form-control" name="subject" value="<?= e($r->replaceVars($defSubject, false)) ?>"></div>
-            <div class="col-12"><label class="form-label">Message</label><textarea class="form-control" name="body" rows="8"><?= e($r->replaceVars($defBody, false)) ?></textarea>
+            <div class="col-12"><label class="form-label">Subject</label><input class="form-control" name="subject" value="<?= e(replace_vars($doc, $defSubject, false)) ?>"></div>
+            <div class="col-12"><label class="form-label">Message</label><textarea class="form-control" name="body" rows="8"><?= e(replace_vars($doc, $defBody, false)) ?></textarea>
               <div class="form-text">The link <code>{{proposal_link}}</code> is shown as a “View Proposal” button.</div></div>
             <div class="col-12 d-flex flex-wrap gap-3 align-items-center">
               <div class="form-check"><input class="form-check-input" type="checkbox" name="attach_pdf" value="1" id="attPdf"><label class="form-check-label" for="attPdf">Attach PDF</label></div>

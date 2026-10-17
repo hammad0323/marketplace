@@ -1,4 +1,7 @@
 <?php
+/**
+ * SETTINGS — 3 tabs: Company Profile, Brand & Colours (+ presets), Email / SMTP.
+ */
 require __DIR__ . '/includes/bootstrap.php';
 require_login();
 
@@ -89,8 +92,13 @@ $presets = db_all('SELECT * FROM brand_presets ORDER BY is_default DESC, name');
 $pageTitle = ['profile' => 'Company Profile', 'brand' => 'Brand & Colors', 'email' => 'Email / SMTP'][$tab];
 $activeNav = ['profile' => 'settings', 'brand' => 'brand', 'email' => 'email'][$tab];
 include __DIR__ . '/layouts/header.php';
-$val = fn($k) => e($co[$k] ?? '');
-function color_input(string $name, string $label, string $value): string
+// helper: a company setting, escaped for HTML
+function setting_value($key)
+{
+    $co = company();
+    return e($co[$key] ?? '');
+}
+function color_input($name, $label, $value)
 {
     return '<div class="color-field"><input type="color" value="' . e($value) . '"><span class="lbl">' . e($label) . '</span><input type="text" name="' . e($name) . '" value="' . e(strtoupper($value)) . '"></div>';
 }
@@ -120,20 +128,20 @@ function color_input(string $name, string $label, string $value): string
     </div>
     <div class="col-lg-8">
       <div class="card-x mb-3"><div class="card-head"><h6>Company information</h6></div><div class="card-body"><div class="row g-3">
-        <div class="col-md-6"><label class="form-label">Company name *</label><input class="form-control" name="company_name" value="<?= $val('company_name') ?>" required></div>
-        <div class="col-md-6"><label class="form-label">Tagline</label><input class="form-control" name="tagline" value="<?= $val('tagline') ?>"></div>
-        <div class="col-md-6"><label class="form-label">Phone</label><input class="form-control" name="phone" value="<?= $val('phone') ?>"></div>
-        <div class="col-md-6"><label class="form-label">WhatsApp</label><input class="form-control" name="whatsapp" value="<?= $val('whatsapp') ?>"></div>
-        <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" type="email" name="email" value="<?= $val('email') ?>"></div>
-        <div class="col-md-6"><label class="form-label">Website</label><input class="form-control" name="website" value="<?= $val('website') ?>" placeholder="www.yourcompany.com"></div>
-        <div class="col-12"><label class="form-label">Address</label><input class="form-control" name="address" value="<?= $val('address') ?>"></div>
-        <div class="col-md-4"><label class="form-label">City</label><input class="form-control" name="city" value="<?= $val('city') ?>"></div>
-        <div class="col-md-4"><label class="form-label">Country</label><input class="form-control" name="country" value="<?= $val('country') ?>"></div>
-        <div class="col-md-4"><label class="form-label">Postal code</label><input class="form-control" name="postal_code" value="<?= $val('postal_code') ?>"></div>
+        <div class="col-md-6"><label class="form-label">Company name *</label><input class="form-control" name="company_name" value="<?= setting_value('company_name') ?>" required></div>
+        <div class="col-md-6"><label class="form-label">Tagline</label><input class="form-control" name="tagline" value="<?= setting_value('tagline') ?>"></div>
+        <div class="col-md-6"><label class="form-label">Phone</label><input class="form-control" name="phone" value="<?= setting_value('phone') ?>"></div>
+        <div class="col-md-6"><label class="form-label">WhatsApp</label><input class="form-control" name="whatsapp" value="<?= setting_value('whatsapp') ?>"></div>
+        <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" type="email" name="email" value="<?= setting_value('email') ?>"></div>
+        <div class="col-md-6"><label class="form-label">Website</label><input class="form-control" name="website" value="<?= setting_value('website') ?>" placeholder="www.yourcompany.com"></div>
+        <div class="col-12"><label class="form-label">Address</label><input class="form-control" name="address" value="<?= setting_value('address') ?>"></div>
+        <div class="col-md-4"><label class="form-label">City</label><input class="form-control" name="city" value="<?= setting_value('city') ?>"></div>
+        <div class="col-md-4"><label class="form-label">Country</label><input class="form-control" name="country" value="<?= setting_value('country') ?>"></div>
+        <div class="col-md-4"><label class="form-label">Postal code</label><input class="form-control" name="postal_code" value="<?= setting_value('postal_code') ?>"></div>
       </div></div></div>
       <div class="card-x mb-3"><div class="card-head"><h6>Social media</h6></div><div class="card-body"><div class="row g-3">
         <?php foreach (['facebook' => 'Facebook', 'instagram' => 'Instagram', 'linkedin' => 'LinkedIn', 'youtube' => 'YouTube', 'twitter' => 'X / Twitter'] as $f => $l): ?>
-          <div class="col-md-6"><label class="form-label"><i class="bi bi-<?= $f === 'twitter' ? 'twitter-x' : $f ?>"></i> <?= $l ?></label><input class="form-control" name="<?= $f ?>" value="<?= $val($f) ?>" placeholder="https://"></div>
+          <div class="col-md-6"><label class="form-label"><i class="bi bi-<?= $f === 'twitter' ? 'twitter-x' : $f ?>"></i> <?= $l ?></label><input class="form-control" name="<?= $f ?>" value="<?= setting_value($f) ?>" placeholder="https://"></div>
         <?php endforeach; ?>
       </div></div></div>
       <div class="text-end"><button class="btn btn-brand btn-lg px-4"><i class="bi bi-check2"></i> Save profile</button></div>
@@ -158,7 +166,7 @@ function color_input(string $name, string $label, string $value): string
           <div class="col-md-6"><label class="form-label">Default (body) font</label><select class="form-select" name="default_font"><?php foreach (font_list() as $f => $x): ?><option <?= $co['default_font'] === $f ? 'selected' : '' ?>><?= e($f) ?></option><?php endforeach; ?></select></div>
           <div class="col-md-6"><label class="form-label">Default template</label><select class="form-select" name="default_template"><?php foreach (pm_templates() as $id => $t): ?><option value="<?= $id ?>" <?= (int) $co['default_template'] === $id ? 'selected' : '' ?>><?= sprintf('%02d', $id) ?> — <?= e($t['name']) ?></option><?php endforeach; ?></select></div>
           <div class="col-md-6"><label class="form-label">Default currency</label><select class="form-select" name="default_currency"><?php foreach (currencies() as $c => $x): ?><option value="<?= $c ?>" <?= $co['default_currency'] === $c ? 'selected' : '' ?>><?= $c ?> — <?= e($x['name']) ?></option><?php endforeach; ?></select></div>
-          <div class="col-md-6"><label class="form-label">Proposal number prefix</label><input class="form-control" name="proposal_prefix" value="<?= $val('proposal_prefix') ?>"><div class="form-text">Next: <?= e(pm_next_number()) ?></div></div>
+          <div class="col-md-6"><label class="form-label">Proposal number prefix</label><input class="form-control" name="proposal_prefix" value="<?= setting_value('proposal_prefix') ?>"><div class="form-text">Next: <?= e(pm_next_number()) ?></div></div>
           <div class="col-md-6"><label class="form-label">Default validity (days)</label><input type="number" class="form-control" name="default_validity_days" value="<?= (int) $co['default_validity_days'] ?>"></div>
         </div>
       </div>
@@ -204,22 +212,22 @@ function color_input(string $name, string $label, string $value): string
       <div class="card-x"><div class="card-head"><h6>SMTP server</h6>
         <div class="form-check form-switch ms-auto m-0"><input class="form-check-input" type="checkbox" name="smtp_enabled" value="1" id="smtpOn" <?= $co['smtp_enabled'] ? 'checked' : '' ?>><label class="form-check-label small fw-semibold" for="smtpOn">Use SMTP</label></div></div>
         <div class="card-body"><div class="row g-3">
-          <div class="col-8"><label class="form-label">Host</label><input class="form-control" name="smtp_host" value="<?= $val('smtp_host') ?>" placeholder="smtp.hostinger.com"></div>
-          <div class="col-4"><label class="form-label">Port</label><input class="form-control" name="smtp_port" value="<?= $val('smtp_port') ?>"></div>
-          <div class="col-6"><label class="form-label">Username</label><input class="form-control" name="smtp_user" value="<?= $val('smtp_user') ?>" autocomplete="off"></div>
+          <div class="col-8"><label class="form-label">Host</label><input class="form-control" name="smtp_host" value="<?= setting_value('smtp_host') ?>" placeholder="smtp.hostinger.com"></div>
+          <div class="col-4"><label class="form-label">Port</label><input class="form-control" name="smtp_port" value="<?= setting_value('smtp_port') ?>"></div>
+          <div class="col-6"><label class="form-label">Username</label><input class="form-control" name="smtp_user" value="<?= setting_value('smtp_user') ?>" autocomplete="off"></div>
           <div class="col-6"><label class="form-label">Password</label><input class="form-control" type="password" name="smtp_pass" placeholder="<?= $co['smtp_pass'] ? '•••••••• (unchanged)' : '' ?>" autocomplete="new-password"></div>
           <div class="col-6"><label class="form-label">Encryption</label><select class="form-select" name="smtp_secure"><?php foreach (['tls' => 'TLS (587)', 'ssl' => 'SSL (465)', 'none' => 'None'] as $k => $l): ?><option value="<?= $k ?>" <?= $co['smtp_secure'] === $k ? 'selected' : '' ?>><?= $l ?></option><?php endforeach; ?></select></div>
-          <div class="col-6"><label class="form-label">Notify me at</label><input class="form-control" name="notify_email" value="<?= $val('notify_email') ?>" placeholder="When clients accept/reject"></div>
-          <div class="col-6"><label class="form-label">From email</label><input class="form-control" name="smtp_from_email" value="<?= $val('smtp_from_email') ?>"></div>
-          <div class="col-6"><label class="form-label">From name</label><input class="form-control" name="smtp_from_name" value="<?= $val('smtp_from_name') ?>"></div>
+          <div class="col-6"><label class="form-label">Notify me at</label><input class="form-control" name="notify_email" value="<?= setting_value('notify_email') ?>" placeholder="When clients accept/reject"></div>
+          <div class="col-6"><label class="form-label">From email</label><input class="form-control" name="smtp_from_email" value="<?= setting_value('smtp_from_email') ?>"></div>
+          <div class="col-6"><label class="form-label">From name</label><input class="form-control" name="smtp_from_name" value="<?= setting_value('smtp_from_name') ?>"></div>
           <div class="col-12"><div class="input-group"><input class="form-control" name="test_to" placeholder="Send a test email to…" value="<?= e(current_user()['email']) ?>"><button class="btn btn-light border" name="send_test" value="1"><i class="bi bi-send"></i> Save & send test</button></div></div>
         </div></div>
       </div>
     </div>
     <div class="col-lg-6">
       <div class="card-x"><div class="card-head"><h6>Default proposal email</h6></div><div class="card-body">
-        <div class="mb-3"><label class="form-label">Subject</label><input class="form-control" name="email_subject" value="<?= $val('email_subject') ?>"></div>
-        <div class="mb-2"><label class="form-label">Message</label><textarea class="form-control" name="email_body" rows="10"><?= $val('email_body') ?></textarea></div>
+        <div class="mb-3"><label class="form-label">Subject</label><input class="form-control" name="email_subject" value="<?= setting_value('email_subject') ?>"></div>
+        <div class="mb-2"><label class="form-label">Message</label><textarea class="form-control" name="email_body" rows="10"><?= setting_value('email_body') ?></textarea></div>
         <div class="small text-muted">Variables: <?php foreach (['client_name', 'client_company', 'project_name', 'proposal_title', 'proposal_number', 'expiry_date', 'total_amount', 'company_name', 'proposal_link'] as $v): ?><span class="var-chip">{{<?= $v ?>}}</span><?php endforeach; ?></div>
       </div></div>
     </div>

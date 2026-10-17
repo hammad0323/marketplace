@@ -1,8 +1,17 @@
 <?php
 /**
- * Thin MySQLi wrapper with prepared statements.
+ * DATABASE — small helper functions for MySQLi.
+ *
+ * All queries use "prepared statements": the ? marks in the SQL are filled
+ * with your values safely, so nobody can inject SQL.
+ *
+ *   db_all('SELECT * FROM users')                     → list of rows
+ *   db_row('SELECT * FROM users WHERE id = ?', [5])   → one row (or null)
+ *   db_value('SELECT COUNT(*) FROM users')            → one value
+ *   db_insert('users', ['name' => 'Ali'])              → new id
+ *   db_update('users', ['name' => 'Ali'], 'id = ?', [5])
  */
-function db(): mysqli
+function db()
 {
     static $conn = null;
     if ($conn instanceof mysqli) {
@@ -20,7 +29,7 @@ function db(): mysqli
 }
 
 /** Run a query with bound params; returns mysqli_stmt. */
-function db_query(string $sql, array $params = []): mysqli_stmt
+function db_query($sql, $params = [])
 {
     $stmt = db()->prepare($sql);
     if ($params) {
@@ -34,26 +43,26 @@ function db_query(string $sql, array $params = []): mysqli_stmt
     return $stmt;
 }
 
-function db_all(string $sql, array $params = []): array
+function db_all($sql, $params = [])
 {
     $res = db_query($sql, $params)->get_result();
     return $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
 }
 
-function db_row(string $sql, array $params = []): ?array
+function db_row($sql, $params = [])
 {
     $res = db_query($sql, $params)->get_result();
     $row = $res ? $res->fetch_assoc() : null;
     return $row ?: null;
 }
 
-function db_value(string $sql, array $params = [])
+function db_value($sql, $params = [])
 {
     $row = db_row($sql, $params);
     return $row ? reset($row) : null;
 }
 
-function db_insert(string $table, array $data): int
+function db_insert($table, $data)
 {
     $cols = array_keys($data);
     $sql = 'INSERT INTO `' . $table . '` (`' . implode('`,`', $cols) . '`) VALUES (' . implode(',', array_fill(0, count($cols), '?')) . ')';
@@ -61,7 +70,7 @@ function db_insert(string $table, array $data): int
     return (int) db()->insert_id;
 }
 
-function db_update(string $table, array $data, string $where, array $whereParams = []): int
+function db_update($table, $data, $where, $whereParams = [])
 {
     $set = [];
     foreach (array_keys($data) as $c) {

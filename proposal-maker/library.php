@@ -1,4 +1,7 @@
 <?php
+/**
+ * CONTENT LIBRARY — saved sections you can insert into any proposal.
+ */
 require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/layouts/partials.php';
 require_login();
@@ -8,7 +11,12 @@ $pageTitle = 'Content Library';
 $activeNav = 'library';
 $extraHead = proposal_head_assets();
 include __DIR__ . '/layouts/header.php';
-$cats = array_unique(array_map(fn($i) => $i['category'] ?: 'General', $items));
+// list of categories for the filter buttons
+$cats = [];
+foreach ($items as $it) {
+    $cat = $it['category'] ?: 'General';
+    if (!in_array($cat, $cats)) $cats[] = $cat;
+}
 ?>
 <div class="page-head">
   <div><h1>Content Library</h1><p>Reusable sections you can insert into any proposal from the editor (Library tab).</p></div>

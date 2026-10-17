@@ -1,15 +1,16 @@
 <?php
 /**
- * Presentation viewer shared by preview.php (admin) and view.php (client link).
+ * PROPOSAL VIEWER — the page your client sees (and the admin preview).
  *
- * @param string $mode  'admin' | 'public'
+ * Shows all A4 sheets, the Download / Print buttons and, for clients,
+ * the Accept / Reject forms with the signature pad.
  */
-function render_viewer(array $p, array $pages, string $mode, array $opt = []): void
+function render_viewer($p, $pages, $mode, $opt = [])
 {
     $co = company();
-    $r = new ProposalRenderer($p, $pages, $co, 'screen');
-    $sheets = $r->renderSheets();
-    $settings = $r->settings;
+    $doc = doc_create($p, $pages, $co, 'screen');
+    $sheets = render_sheets($doc);
+    $settings = $doc['settings'];
     $token = $p['public_token'];
     $embed = !empty($opt['embed']);
     $print = !empty($opt['print']);
@@ -17,9 +18,9 @@ function render_viewer(array $p, array $pages, string $mode, array $opt = []): v
     $expired = $p['status'] === 'expired' || ($p['expiry_date'] && $p['expiry_date'] < date('Y-m-d') && !in_array($p['status'], ['accepted', 'rejected'], true));
     $canRespond = $mode === 'public' && !empty($settings['allow_accept']) && !$response && !$expired;
     $pdfUrl = $mode === 'public' ? url('pdf.php?token=' . $token) : url('pdf.php?id=' . (int) $p['id']);
-    $primary = $r->c('primary');
+    $primary = doc_color($doc, 'primary');
     $logo = !empty($co['logo']) ? '<img src="' . e(media_src($co['logo'])) . '" alt="" style="height:30px">' : '<b>' . e($co['company_name']) . '</b>';
-    $fonts = font_face_css([$r->fontHeading(), $r->fontBody(), 'Playfair Display', 'Inter']);
+    $fonts = font_face_css([$doc['font_heading'], $doc['font_body'], 'Playfair Display', 'Inter']);
     $client = $p['client_company'] ?: $p['client_name'];
     ?><!doctype html>
 <html lang="en">
@@ -32,7 +33,7 @@ function render_viewer(array $p, array $pages, string $mode, array $opt = []): v
 <link href="<?= asset('vendor/bootstrap/bootstrap.min.css') ?>" rel="stylesheet">
 <link href="<?= asset('vendor/bootstrap-icons/bootstrap-icons.min.css') ?>" rel="stylesheet">
 <link href="<?= asset('vendor/sweetalert2/sweetalert2.min.css') ?>" rel="stylesheet">
-<?= $r->headTags() ?>
+<?= doc_head_tags($doc) ?>
 <style>
 <?= $fonts ?>
 :root { --vp: <?= e($primary) ?>; }
@@ -44,8 +45,8 @@ body { background: #e7ebf1; font-family: Inter, system-ui, sans-serif; color: #3
 .vbar .tt small { color: #64748b; font-size: 12px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vbar img { max-width: 120px; object-fit: contain; }
 @media (max-width: 576px) { .vbar .tt small { display: none; } .vbar .in > b { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }
-.btn-vp { background: var(--vp); color: <?= e($r->on('primary')) ?>; border: 0; font-weight: 600; }
-.btn-vp:hover { background: var(--vp); color: <?= e($r->on('primary')) ?>; filter: brightness(1.1); }
+.btn-vp { background: var(--vp); color: <?= e(doc_on($doc, 'primary')) ?>; border: 0; font-weight: 600; }
+.btn-vp:hover { background: var(--vp); color: <?= e(doc_on($doc, 'primary')) ?>; filter: brightness(1.1); }
 .sheets { padding: 28px 12px 10px; }
 .sheet-wrap { margin: 0 auto 26px; position: relative; }
 .sheet-wrap .pm-sheet { transform-origin: top left; margin: 0 !important; }
@@ -88,7 +89,7 @@ body { background: #e7ebf1; font-family: Inter, system-ui, sans-serif; color: #3
   <?php elseif ($expired): ?>
     <div class="banner no-print" style="background:#fef3c7;color:#92400e"><i class="bi bi-hourglass-bottom fs-4"></i><div><b>This proposal has expired</b> (valid until <?= e(fmt_date($p['expiry_date'])) ?>). Please contact <?= e($co['company_name']) ?> for an updated proposal.</div></div>
   <?php endif; ?>
-  <div <?= $r->docAttrs() ?>>
+  <div <?= doc_attrs($doc) ?>>
     <?php foreach ($sheets as $s): ?><div class="sheet-wrap"><?= $s ?></div><?php endforeach; ?>
   </div>
 </div>

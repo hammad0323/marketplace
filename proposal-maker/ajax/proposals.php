@@ -1,6 +1,7 @@
 <?php
 /**
- * Proposal management AJAX endpoint (admin).
+ * PROPOSAL ACTIONS (AJAX): duplicate, delete, change status, restore a version,
+ * new public link, send by email.
  */
 require dirname(__DIR__) . '/includes/bootstrap.php';
 require_login();
@@ -50,7 +51,12 @@ try {
             if (!$p) json_out(['ok' => false, 'message' => 'Proposal not found.'], 404);
             $to = post('to');
             if (!filter_var($to, FILTER_VALIDATE_EMAIL)) json_out(['ok' => false, 'message' => 'Please enter a valid recipient email.'], 422);
-            $cc = array_filter(array_map('trim', explode(',', (string) post('cc'))), fn($x) => filter_var($x, FILTER_VALIDATE_EMAIL));
+            // CC: comma separated list, keep only valid emails
+            $cc = [];
+            foreach (explode(',', (string) post('cc')) as $email) {
+                $email = trim($email);
+                if (filter_var($email, FILTER_VALIDATE_EMAIL)) $cc[] = $email;
+            }
             $subject = mb_substr(post('subject'), 0, 250);
             $body = (string) post('body');
             $attach = post('attach_pdf') === '1';

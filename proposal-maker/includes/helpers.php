@@ -1,26 +1,34 @@
 <?php
 /**
- * General helpers.
+ * HELPERS — small functions used everywhere.
+ *
+ *   e()            make text safe to print in HTML
+ *   url(), asset() build links to pages and CSS/JS files
+ *   csrf_*()       security token for forms
+ *   json_out()     send an AJAX answer
+ *   money(), fmt_date()                   formatting
+ *   handle_image_upload(), image_cover()  upload, shrink and crop images
+ *   company()      the company settings row
  */
 
-function e($v): string
+function e($v)
 {
     return htmlspecialchars((string) ($v ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-function url(string $path = ''): string
+function url($path = '')
 {
     return APP_URL . '/' . ltrim($path, '/');
 }
 
-function asset(string $path): string
+function asset($path)
 {
     $file = APP_ROOT . '/assets/' . ltrim($path, '/');
     $v = is_file($file) ? filemtime($file) : APP_VERSION;
     return url('assets/' . ltrim($path, '/')) . '?v=' . $v;
 }
 
-function public_url(string $token): string
+function public_url($token)
 {
     if (!defined('PRETTY_URLS') || PRETTY_URLS) {
         return url('proposal/view/' . $token);
@@ -28,25 +36,25 @@ function public_url(string $token): string
     return url('view.php?token=' . $token);
 }
 
-function redirect(string $path): void
+function redirect($path)
 {
     header('Location: ' . (preg_match('#^https?://#', $path) ? $path : url($path)));
     exit;
 }
 
-function flash(string $type, string $msg): void
+function flash($type, $msg)
 {
     $_SESSION['flash'][] = ['type' => $type, 'msg' => $msg];
 }
 
-function take_flash(): array
+function take_flash()
 {
     $f = $_SESSION['flash'] ?? [];
     unset($_SESSION['flash']);
     return $f;
 }
 
-function csrf_token(): string
+function csrf_token()
 {
     if (empty($_SESSION['csrf'])) {
         $_SESSION['csrf'] = bin2hex(random_bytes(32));
@@ -54,12 +62,12 @@ function csrf_token(): string
     return $_SESSION['csrf'];
 }
 
-function csrf_field(): string
+function csrf_field()
 {
     return '<input type="hidden" name="_csrf" value="' . e(csrf_token()) . '">';
 }
 
-function csrf_check(): void
+function csrf_check()
 {
     $t = $_POST['_csrf'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
     if (!is_string($t) || !hash_equals(csrf_token(), $t)) {
@@ -71,13 +79,13 @@ function csrf_check(): void
     }
 }
 
-function is_ajax(): bool
+function is_ajax()
 {
     return strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest'
         || strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false;
 }
 
-function json_out(array $data, int $code = 200): void
+function json_out($data, $code = 200)
 {
     http_response_code($code);
     header('Content-Type: application/json; charset=utf-8');
@@ -85,7 +93,7 @@ function json_out(array $data, int $code = 200): void
     exit;
 }
 
-function post(string $key, $default = '')
+function post($key, $default = '')
 {
     $v = $_POST[$key] ?? $default;
     return is_string($v) ? trim($v) : $v;
@@ -103,17 +111,17 @@ function jdecode($json, $default = [])
     return is_array($d) ? $d : $default;
 }
 
-function jencode($data): string
+function jencode($data)
 {
     return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
 
-function uid(string $prefix = ''): string
+function uid($prefix = '')
 {
     return $prefix . bin2hex(random_bytes(5));
 }
 
-function client_ip(): string
+function client_ip()
 {
     foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR'] as $k) {
         if (!empty($_SERVER[$k])) {
@@ -126,18 +134,18 @@ function client_ip(): string
     return '0.0.0.0';
 }
 
-function is_hex_color($c): bool
+function is_hex_color($c)
 {
     return is_string($c) && preg_match('/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i', $c);
 }
 
-function clean_color($c, string $fallback = '#000000'): string
+function clean_color($c, $fallback = '#000000')
 {
     return is_hex_color($c) ? strtolower($c) : $fallback;
 }
 
 /** Hex → [r,g,b] */
-function hex_rgb(string $hex): array
+function hex_rgb($hex)
 {
     $hex = ltrim($hex, '#');
     if (strlen($hex) === 3) {
@@ -147,22 +155,25 @@ function hex_rgb(string $hex): array
 }
 
 /** Mix a color with white (amount>0) or black (amount<0). */
-function color_mix(string $hex, float $amount): string
+function color_mix($hex, $amount)
 {
-    [$r, $g, $b] = hex_rgb($hex);
+    list($r, $g, $b) = hex_rgb($hex);
     $t = $amount > 0 ? 255 : 0;
     $p = abs($amount);
-    $f = fn($c) => (int) round($c + ($t - $c) * $p);
-    return sprintf('#%02x%02x%02x', $f($r), $f($g), $f($b));
+    // move each channel (red, green, blue) towards white or black
+    $r = (int) round($r + ($t - $r) * $p);
+    $g = (int) round($g + ($t - $g) * $p);
+    $b = (int) round($b + ($t - $b) * $p);
+    return sprintf('#%02x%02x%02x', $r, $g, $b);
 }
 
-function color_is_dark(string $hex): bool
+function color_is_dark($hex)
 {
-    [$r, $g, $b] = hex_rgb($hex);
+    list($r, $g, $b) = hex_rgb($hex);
     return (0.299 * $r + 0.587 * $g + 0.114 * $b) < 140;
 }
 
-function currencies(): array
+function currencies()
 {
     return [
         'USD' => ['symbol' => '$', 'name' => 'US Dollar'],
@@ -177,7 +188,7 @@ function currencies(): array
     ];
 }
 
-function money($amount, string $symbol = '$'): string
+function money($amount, $symbol = '$')
 {
     $amount = (float) $amount;
     $neg = $amount < 0;
@@ -185,7 +196,7 @@ function money($amount, string $symbol = '$'): string
     return $neg ? '-' . $s : $s;
 }
 
-function fmt_date($date, string $format = 'M j, Y'): string
+function fmt_date($date, $format = 'M j, Y')
 {
     if (!$date || $date === '0000-00-00' || $date === '0000-00-00 00:00:00') {
         return '';
@@ -194,7 +205,7 @@ function fmt_date($date, string $format = 'M j, Y'): string
     return $t ? date($format, $t) : '';
 }
 
-function time_ago($datetime): string
+function time_ago($datetime)
 {
     if (!$datetime) {
         return '—';
@@ -208,7 +219,7 @@ function time_ago($datetime): string
 }
 
 /** Fonts bundled in assets/fonts — usable in browser AND PDF. */
-function font_list(): array
+function font_list()
 {
     return [
         'Inter'              => ['file' => 'Inter', 'type' => 'sans-serif'],
@@ -222,7 +233,7 @@ function font_list(): array
     ];
 }
 
-function valid_font($f, string $fallback = 'Inter'): string
+function valid_font($f, $fallback = 'Inter')
 {
     return array_key_exists((string) $f, font_list()) ? $f : $fallback;
 }
@@ -230,7 +241,7 @@ function valid_font($f, string $fallback = 'Inter'): string
 /**
  * @font-face rules. $mode 'pdf' uses filesystem paths for Dompdf.
  */
-function font_face_css(array $families, string $mode = 'screen'): string
+function font_face_css($families, $mode = 'screen')
 {
     $css = '';
     $list = font_list();
@@ -251,7 +262,7 @@ function font_face_css(array $families, string $mode = 'screen'): string
     return $css;
 }
 
-function font_stack(string $fam): string
+function font_stack($fam)
 {
     $type = font_list()[$fam]['type'] ?? 'sans-serif';
     return "'{$fam}', " . ($type === 'serif' ? "'DejaVu Serif', Georgia, serif" : "'DejaVu Sans', Arial, sans-serif");
@@ -260,7 +271,7 @@ function font_stack(string $fam): string
 /* ---------------------------------------------------------------
  *  Company settings
  * ------------------------------------------------------------- */
-function company(bool $refresh = false): array
+function company($refresh = false)
 {
     static $c = null;
     if ($c === null || $refresh) {
@@ -278,7 +289,7 @@ function company(bool $refresh = false): array
  * ------------------------------------------------------------- */
 
 /** Turn a stored media path (uploads/...) or URL into a URL (screen) or local path (pdf). */
-function media_src(?string $path, string $mode = 'screen'): string
+function media_src($path, $mode = 'screen')
 {
     $path = trim((string) $path);
     if ($path === '') return '';
@@ -304,7 +315,7 @@ function media_src(?string $path, string $mode = 'screen'): string
  * Handle an uploaded image: validates, resizes (max $maxW px) and compresses.
  * Returns relative path (uploads/...) or throws RuntimeException.
  */
-function handle_image_upload(array $file, string $folder = 'images', int $maxW = 1800): string
+function handle_image_upload($file, $folder = 'images', $maxW = 1800)
 {
     if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
         throw new RuntimeException('Upload failed (error code ' . ($file['error'] ?? '?') . ').');
@@ -375,7 +386,7 @@ function handle_image_upload(array $file, string $folder = 'images', int $maxW =
  * Crop a local image to an exact aspect ratio (object-fit: cover substitute,
  * so the browser and the PDF engine show the same crop). Returns new relative path.
  */
-function image_cover(?string $path, int $w, int $h): string
+function image_cover($path, $w, $h)
 {
     $path = (string) $path;
     if ($path === '' || !function_exists('imagecreatefromstring')) return $path;
@@ -422,7 +433,7 @@ function image_cover(?string $path, int $w, int $h): string
 }
 
 /** Save a base64 PNG (signature pad) to uploads/signatures. */
-function save_data_png(string $dataUrl, string $folder = 'signatures'): ?string
+function save_data_png($dataUrl, $folder = 'signatures')
 {
     if (!preg_match('#^data:image/png;base64,([A-Za-z0-9+/=]+)$#', $dataUrl, $m)) {
         return null;
@@ -437,7 +448,7 @@ function save_data_png(string $dataUrl, string $folder = 'signatures'): ?string
     return "uploads/$folder/$name";
 }
 
-function status_meta(): array
+function status_meta()
 {
     return [
         'draft'    => ['label' => 'Draft',    'color' => 'secondary', 'icon' => 'bi-pencil'],
@@ -449,14 +460,14 @@ function status_meta(): array
     ];
 }
 
-function status_badge(string $status): string
+function status_badge($status)
 {
     $m = status_meta()[$status] ?? ['label' => ucfirst($status), 'color' => 'secondary', 'icon' => 'bi-circle'];
     return '<span class="badge-status bs-' . e($status) . '"><i class="bi ' . $m['icon'] . '"></i> ' . e($m['label']) . '</span>';
 }
 
 /** Allow-list HTML sanitiser for rich text fields. */
-function clean_html(?string $html): string
+function clean_html($html)
 {
     $html = (string) $html;
     if ($html === '') return '';
@@ -470,7 +481,7 @@ function clean_html(?string $html): string
     return $html;
 }
 
-function log_activity(int $proposalId, string $action, string $details = '', ?int $userId = null): void
+function log_activity($proposalId, $action, $details = '', $userId = null)
 {
     db_insert('proposal_activity', [
         'proposal_id' => $proposalId,
@@ -482,7 +493,7 @@ function log_activity(int $proposalId, string $action, string $details = '', ?in
     ]);
 }
 
-function slugify(string $s): string
+function slugify($s)
 {
     $s = preg_replace('/[^A-Za-z0-9]+/', '_', $s);
     return trim($s, '_') ?: 'Proposal';

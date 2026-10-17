@@ -1,4 +1,7 @@
 <?php
+/**
+ * MY PROFILE — change your name, email and password.
+ */
 require __DIR__ . '/includes/bootstrap.php';
 $me = require_login();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

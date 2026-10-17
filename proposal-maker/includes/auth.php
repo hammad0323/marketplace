@@ -1,9 +1,12 @@
 <?php
 /**
- * Authentication helpers.
+ * LOGIN — who is logged in, and page protection.
+ *
+ *   require_login()  put at the top of an admin page: sends visitors to login.php
+ *   require_admin()  same, but only for users with the "admin" role
  */
 
-function current_user(): ?array
+function current_user()
 {
     static $user = false;
     if ($user === false) {
@@ -15,12 +18,12 @@ function current_user(): ?array
     return $user;
 }
 
-function is_logged_in(): bool
+function is_logged_in()
 {
     return current_user() !== null;
 }
 
-function require_login(): array
+function require_login()
 {
     $u = current_user();
     if (!$u) {
@@ -33,7 +36,7 @@ function require_login(): array
     return $u;
 }
 
-function require_admin(): array
+function require_admin()
 {
     $u = require_login();
     if ($u['role'] !== 'admin') {
@@ -46,11 +49,16 @@ function require_admin(): array
     return $u;
 }
 
-function attempt_login(string $email, string $password): bool
+function attempt_login($email, $password)
 {
     // basic brute-force throttling per session
     $_SESSION['login_attempts'] = $_SESSION['login_attempts'] ?? [];
-    $_SESSION['login_attempts'] = array_filter($_SESSION['login_attempts'], fn($t) => $t > time() - 600);
+    // keep only the failed attempts of the last 10 minutes
+    $recent = array();
+    foreach ($_SESSION['login_attempts'] as $time) {
+        if ($time > time() - 600) $recent[] = $time;
+    }
+    $_SESSION['login_attempts'] = $recent;
     if (count($_SESSION['login_attempts']) >= 8) {
         return false;
     }
@@ -69,7 +77,7 @@ function attempt_login(string $email, string $password): bool
     return false;
 }
 
-function logout(): void
+function logout()
 {
     $_SESSION = [];
     if (ini_get('session.use_cookies')) {

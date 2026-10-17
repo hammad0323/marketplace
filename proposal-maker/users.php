@@ -1,4 +1,7 @@
 <?php
+/**
+ * USERS — add, edit and delete team members (admins only).
+ */
 require __DIR__ . '/includes/bootstrap.php';
 $me = require_admin();
 

@@ -1,7 +1,10 @@
 <?php
-/** Reusable admin UI fragments. */
+/**
+ * SMALL PIECES OF HTML used on several admin pages
+ * (action buttons, proposal table rows, template thumbnails).
+ */
 
-function proposal_actions(array $p): string
+function proposal_actions($p)
 {
     $id = (int) $p['id'];
     $link = public_url($p['public_token']);
@@ -15,7 +18,7 @@ function proposal_actions(array $p): string
         . '</div>';
 }
 
-function proposal_rows(array $rows): string
+function proposal_rows($rows)
 {
     if (!$rows) {
         return '<tr><td colspan="7"><div class="empty"><i class="bi bi-file-earmark-plus"></i>No proposals yet.<div class="mt-3"><a href="' . url('proposal-create.php') . '" class="btn btn-brand"><i class="bi bi-plus-lg"></i> Create your first proposal</a></div></div></td></tr>';
@@ -37,7 +40,7 @@ function proposal_rows(array $rows): string
 }
 
 /** Scaled live thumbnail of a template cover (rendered with sample data). */
-function template_thumb(int $tplId, array $colors = [], bool $withInner = true): string
+function template_thumb($tplId, $colors = [], $withInner = true)
 {
     static $cache = [];
     $key = $tplId . md5(json_encode($colors)) . (int) $withInner;
@@ -59,14 +62,14 @@ function template_thumb(int $tplId, array $colors = [], bool $withInner = true):
             ['type' => 'pricing_table', 'data' => []],
         ]],
     ]);
-    $r = new ProposalRenderer($p, $pages, company(), 'screen');
-    $sheets = $r->renderSheets();
-    $h = '<div class="mini-wrap"><div ' . $r->docAttrs('mini') . '>' . $sheets[0] . '</div></div>';
-    if ($withInner && isset($sheets[1])) $h .= '<div class="mini-wrap"><div ' . $r->docAttrs('mini') . '>' . $sheets[1] . '</div></div>';
+    $doc = doc_create($p, $pages, company(), 'screen');
+    $sheets = render_sheets($doc);
+    $h = '<div class="mini-wrap"><div ' . doc_attrs($doc, 'mini') . '>' . $sheets[0] . '</div></div>';
+    if ($withInner && isset($sheets[1])) $h .= '<div class="mini-wrap"><div ' . doc_attrs($doc, 'mini') . '>' . $sheets[1] . '</div></div>';
     return $cache[$key] = $h;
 }
 
-function proposal_head_assets(): string
+function proposal_head_assets()
 {
     $fonts = [];
     foreach (pm_templates() as $t) {
@@ -77,14 +80,14 @@ function proposal_head_assets(): string
 }
 
 /** Mini preview sheet of a list of blocks (content library). */
-function blocks_thumb(array $blocks, int $tplId = 1): string
+function blocks_thumb($blocks, $tplId = 1)
 {
     $tpl = pm_template($tplId);
     $p = ['id' => 0, 'title' => 'Sample Proposal', 'proposal_number' => 'PROP-0000', 'client_name' => 'Client Name', 'client_company' => 'Client Company',
         'template_id' => $tplId, 'colors' => $tpl['colors'], 'settings' => [], 'currency_symbol' => '$', 'total' => 0,
         'proposal_date' => date('Y-m-d'), 'expiry_date' => date('Y-m-d', strtotime('+30 days')), 'public_token' => ''];
     $pages = pm_structure_instantiate([['title' => 'Preview', 'blocks' => $blocks]]);
-    $r = new ProposalRenderer($p, $pages, company(), 'screen');
-    $sheets = $r->renderSheets();
-    return '<div class="mini-wrap"><div ' . $r->docAttrs('mini') . '>' . ($sheets[0] ?? '') . '</div></div>';
+    $doc = doc_create($p, $pages, company(), 'screen');
+    $sheets = render_sheets($doc);
+    return '<div class="mini-wrap"><div ' . doc_attrs($doc, 'mini') . '>' . ($sheets[0] ?? '') . '</div></div>';
 }

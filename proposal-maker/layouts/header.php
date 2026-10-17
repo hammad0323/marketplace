@@ -1,6 +1,7 @@
 <?php
 /**
- * Admin layout header. Expects $pageTitle and optionally $activeNav, $bodyClass, $extraHead.
+ * ADMIN LAYOUT (top part) — sidebar menu + top bar.
+ * A page sets $pageTitle and $activeNav, then includes this file.
  */
 $user = current_user();
 $co = company();

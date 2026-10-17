@@ -1,6 +1,12 @@
 <?php
 /**
- * Application bootstrap: config, session, database, helpers.
+ * START-UP FILE — every page includes this first.
+ *
+ * It does 4 things:
+ *   1. loads config.php (database login). If it is missing, it sends you to install.php
+ *   2. works out the website address (APP_URL) so links and images work
+ *   3. starts the PHP session (used for login)
+ *   4. loads all the other files in this folder
  */
 define('PM_APP', true);
 define('APP_ROOT', dirname(__DIR__));

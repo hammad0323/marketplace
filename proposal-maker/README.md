@@ -1,141 +1,178 @@
 # Proposal Maker
 
-A proposal builder for digital agencies, written in **Core PHP + MySQL (MySQLi)**, **Bootstrap 5**, **jQuery/AJAX**, **SweetAlert2**, **SortableJS** and **Summernote**. It needs no framework, Node or build step, and runs on ordinary cPanel / Hostinger shared hosting.
+A website for making professional proposals for your clients.
+
+It is built with **simple Core PHP** (plain functions, no classes, no framework), plus **MySQL**, **Bootstrap 5**, **jQuery/AJAX** and **SweetAlert2**.
+It runs on normal cPanel / Hostinger shared hosting, and everything it needs is already inside the folder, so you don't need Composer, npm or a CDN.
 
 ---
 
-## Features
+## 1. Installation (5 minutes)
 
-| Area | What you get |
-|---|---|
-| **Dashboard** | Total / draft / sent / viewed / accepted / rejected / expired counts, total and won value, win rate, 6‑month chart, status chart, recent proposals with View · Edit · Duplicate · PDF · Share · Delete, and an activity feed |
-| **Company settings** | Logo (normal + light version for dark templates), name, tagline, phone, WhatsApp, email, website, address, city, country, postal code, Facebook, Instagram, LinkedIn, YouTube, X |
-| **Brand settings** | Primary / secondary / accent / heading / text / background / button colours, fonts, default template, currency, number prefix, validity. Unlimited **colour presets** (Webanza Default, Blue Corporate, Dark Premium, Green Modern and Red Creative are included) |
-| **Create wizard** | Client info → auto proposal number (`PROP-2026-001`, editable) → choose one of 10 templates (live thumbnails) → choose a pre-built service proposal or start blank |
-| **10 templates** | Modern Corporate, Dark Premium, Creative Agency, Minimal White, Tech/Digital, Elegant Business, Bold Creative, Startup, Professional Blue, Luxury Minimal. Each has its own **cover layout** and matching **internal page design**, and every colour comes from CSS variables |
-| **Visual editor** | Canva‑style three-panel layout: widgets on the left, A4 pages in the centre, settings on the right. Drag & drop, move up/down, duplicate, hide/show, delete, keyboard shortcuts (Ctrl+S, Del), zoom, and autosave |
-| **31 widgets** | Text, Heading, Image, Image + Text, Logo, Button, Divider, Spacer, Icon, Bullet List, Numbered List, Quote, Feature Cards, Service Cards, Pricing Table, Comparison Table, Table, Statistics, Testimonial, Team Member, Timeline, Process Steps, FAQ, Signature, Terms & Conditions, Contact Info, Social Links, Call To Action, Page Break, Custom HTML, Cover |
-| **Rich text** | Bold, italic, underline, font size, headings, alignment, text colour, highlight, links, bullet/numbered lists, line height, tables |
-| **Pages** | Add, rename, duplicate, delete, reorder (drag), hide, header/footer on/off per page, background colour per page |
-| **Header & footer** | Logo, custom text, company / website / email / phone, page numbers (`Page {n} of {total}`, `{nn}`), and 4 styles |
-| **Pricing** | Line items with qty × price, subtotal, % or fixed discount, tax, total; USD, CAD, AED, GBP, EUR, PKR (+AUD, INR, SAR) or a custom currency |
-| **Variables** | `{{client_name}}`, `{{client_company}}`, `{{client_email}}`, `{{proposal_number}}`, `{{proposal_date}}`, `{{expiry_date}}`, `{{company_name}}`, `{{company_email}}`, `{{company_phone}}`, `{{company_website}}`, `{{total_amount}}`, `{{project_name}}`, `{{proposal_link}}` … |
-| **Pre-built proposals** | Web Development (20 sections), Web Design, SEO, Graphic Design, Video Editing, Mobile App, Social Media Marketing. You can save any proposal as a new pre-built one |
-| **Content library** | Save any block or a whole page as a reusable section and insert it into any proposal |
-| **Preview** | Full presentation mode plus desktop, tablet and mobile previews |
-| **PDF** | A4 output from Dompdf with fonts, colours, backgrounds, images, tables, headers/footers and page numbers. File names look like `Website_Development_Proposal_ABC_Company.pdf` |
-| **Public link** | `/proposal/view/8f73a9c21…`, works on mobile, with Accept / Reject / Download PDF / Print |
-| **Tracking** | Draft → Sent → Viewed, first/last viewed, view count, automatic **Expired**, full activity log |
-| **Accept / Reject** | Name, email, comment, reason. Signature can be **typed, drawn or uploaded**, and is stored with the date and IP |
-| **Sharing** | Copy link, open email client, send by **SMTP** (PHPMailer) with optional PDF attachment, email templates with variables, and a notification email when the client responds |
-| **History** | Automatic versions (every 10 minutes while editing), named versions, one-click restore |
-| **Users** | Multiple users (admin / editor) and a profile page with password change |
+1. **Upload** the zip to your hosting (for example `public_html/proposals/`) and **extract** it.
+2. In cPanel → **MySQL Databases**, create a **database** and a **user**, and give the user **all privileges**.
+3. Open `https://your-domain.com/proposals/install.php` in your browser.
+4. Fill in:
+   * the database name, user and password
+   * your company name, and your admin email and password
+   * ✅ **Install demo data** (ticked by default). This adds 11 sample proposals so you can try everything.
+5. Click **Install**, then **delete `install.php`** from your server.
 
----
+### Other way: phpMyAdmin
+1. Create an empty database and import **`database.sql`** (tables + starter content + demo data).
+2. Copy `config.sample.php` to `config.php` and enter your database details.
+3. Log in with **admin@demo.com / admin123**.
 
-## Requirements
+### Demo logins (only when demo data is installed)
 
-* PHP **7.4+** (8.x recommended) with the `mysqli`, `mbstring`, `gd`, `dom` and `fileinfo` extensions
-* MySQL 5.7+ or MariaDB 10.3+
-* Apache with `mod_rewrite` for the pretty public URL (optional; see below)
+| Email | Password | Role |
+|---|---|---|
+| admin@demo.com | admin123 | Admin |
+| editor@demo.com | editor123 | Editor |
 
-All PHP libraries (`vendor/`) and front-end libraries (`assets/vendor/`) are **included**, so you do **not** need Composer, npm or any CDN.
+> Change these passwords (or delete these users in **Users**) before you go live.
 
----
+### What the demo data contains
+* The company profile **Webanza Tech** with a logo, contact details and social links.
+* **11 proposals** for different clients, covering all 7 services, the 10 templates and 5 currencies (USD, CAD, GBP, AED, PKR):
 
-## Installation (cPanel / Hostinger)
+| # | Proposal | Client | Template | Status |
+|---|---|---|---|---|
+| 1 | Website Development | ABC Company | Modern Corporate | Accepted (with signature) |
+| 2 | SEO Growth | Bright Dental Clinic | Professional Blue | Viewed |
+| 3 | Mobile App Development | FitLife Studio | Startup | Sent |
+| 4 | Social Media Marketing | Bella Boutique | Creative Agency | Draft |
+| 5 | Brand Identity | Nova Labs | Dark Premium | Rejected (with reason) |
+| 6 | Website Redesign | Green Leaf Organics | Elegant Business | Viewed |
+| 7 | Video Production | Peak Fitness | Bold Creative | Expired |
+| 8 | E-commerce Website | Al Noor Trading LLC | Tech / Digital | Draft |
+| 9 | Local SEO | Maple Realty | Luxury Minimal | Sent |
+| 10 | Corporate Website Design | Luxe Interiors | Minimal White | Accepted |
+| 11 | Food Delivery App | QuickBite PK | Startup | Viewed |
 
-1. **Upload** the contents of the zip to your hosting, e.g. `public_html/proposals/`, and extract it.
-2. **Create a MySQL database and user** in cPanel → *MySQL Databases* (or hPanel → *Databases*), and give the user all privileges.
-3. Open **`https://yourdomain.com/proposals/install.php`** in your browser.
-4. Enter the database details, your company name and an admin email and password, then click **Install**.
-   The installer creates `config.php` and the tables, and loads the 7 pre-built proposals, the content library and the colour presets.
-5. **Delete `install.php`** from the server.
-6. Log in, then go to **Settings → Company Profile** to upload your logo and fill in your details.
-
-**Manual installation (no installer):** import `database.sql` in phpMyAdmin, copy `config.sample.php` to `config.php`, fill in your credentials, and create the admin user by inserting a row into `users` with a `password_hash()` value. The pre-built proposals are loaded automatically the first time you log in.
+* Views, downloads, emails, accept/reject answers and the activity history.
+* The dates move forward automatically, so the demo always looks recent.
 
 ### Folder permissions
-`uploads/` and `storage/` (including `storage/fonts` and `storage/tmp`) must be writable by PHP, usually `755` (or `775`).
+`uploads/` and `storage/` must be writable (usually `755`).
 
-### Pretty public URLs
-`.htaccess` rewrites `/proposal/view/{token}` to `view.php?token={token}`.
-If your host does not support `mod_rewrite`, set `define('PRETTY_URLS', false);` in `config.php` and links will use `view.php?token=…`.
-If the app is in a sub-folder and the pretty links return 404, uncomment `RewriteBase` in `.htaccess` and set it to your folder.
+### Public links
+Client links look like `/proposal/view/abc123…`. They need Apache `mod_rewrite` (on almost every host it is on).
+If those links show "404", either set `define('PRETTY_URLS', false);` in `config.php` (links become `view.php?token=…`), or set `RewriteBase` in `.htaccess`.
 
-### Email (SMTP)
-Go to **Settings → Email / SMTP**. For Hostinger use `smtp.hostinger.com`, port `465` with SSL (or `587` with TLS), and your full mailbox address and password. Use **Save & send test** to check it works.
-
----
-
-## How the PDF matches the preview
-
-The same PHP renderer (`includes/renderer.php`) produces the HTML for the editor, the preview, the public link and the PDF.
-
-* Templates and blocks use **tables and absolute positioning** (no flexbox/grid), which Dompdf renders faithfully.
-* Each proposal's colours are injected as **CSS variables**, so changing one proposal never affects another.
-* The fonts (Inter, Poppins, Montserrat, DM Sans, Space Grotesk, Playfair Display, Lora, Cormorant Garamond) are **bundled TTF files** used by both the browser and Dompdf. Their line metrics are normalised at PDF time so text wraps and spaces the same way as in Chrome.
-* The editor **measures every block** and stores where each A4 page must break (`settings.breaks`). The preview and the PDF use the same break points, and long text, lists, tables, FAQs and timelines split cleanly across pages. Blocks that are taller than a whole page are flagged in red in the editor.
-* Cover / hero images are **cropped server-side** (GD), so they look identical everywhere. Uploads are resized to 1800 px and compressed.
-
-Gradients (Tech and Startup templates) appear in the browser; in the PDF they fall back to the solid base colour.
+### Email
+Go to **Settings → Email / SMTP**.
+For Hostinger use host `smtp.hostinger.com`, port `465` with SSL, and your full email address and its password.
+Use **Save & send test** to check it works.
 
 ---
 
-## Project structure
+## 2. What it can do
 
-```
-index.php               Dashboard
-proposals.php           Proposal list (search, filters, sort, pagination)
-proposal-create.php     3-step creation wizard
-editor.php              Visual proposal builder
-proposal.php            Details: send email, tracking, responses, versions, activity
-preview.php             Admin presentation preview (?embed=1, ?print=1)
-view.php                Public client page  (/proposal/view/{token})
-pdf.php                 PDF download (?id= for admin, ?token= for client)
-settings.php            Company profile · Brand & presets · Email/SMTP
-templates.php           Design template gallery
-service-templates.php   Pre-built proposals
-library.php             Content library
-users.php / profile.php User management / own profile
-install.php             Web installer (delete after use)
-ajax/                   AJAX endpoints (editor, proposals, public responses, management)
-includes/
-  bootstrap.php         Config, session, autoload of the modules below
-  db.php                MySQLi prepared-statement helpers
-  helpers.php           Escaping, CSRF, uploads, image compression/cropping, fonts …
-  auth.php              Login / roles
-  templates.php         10 template definitions + cover/page designs
-  blocks.php            Widget registry (defaults + form schema) and renderers
-  renderer.php          ProposalRenderer (variables, pagination, sheets, PDF HTML)
-  proposal_model.php    Save/load, duplicate, versions, totals, PDF generation
-  prebuilt.php          Pre-built service proposals + default library sections
-  mailer.php            PHPMailer/SMTP sending
-  icons.php             Icon library (SVG → coloured data URIs)
-layouts/                Admin layout, viewer, shared partials
-assets/css              app.css (admin), editor.css, proposal.css (blocks), templates.css (10 designs)
-assets/js               app.js, editor.js, viewer.js
-assets/fonts            Bundled TTF fonts (SIL Open Font License)
-assets/picons           Proposal icons (Bootstrap Icons, MIT)
-assets/vendor           Bootstrap, Bootstrap Icons, jQuery, SweetAlert2, SortableJS, Summernote, Chart.js
-vendor/                 Dompdf, PHPMailer (Composer)
-database.sql            Database schema
+* **Dashboard:** counts of total, draft, sent, viewed, accepted, rejected and expired proposals; the total value (per currency); a 6-month chart; a status chart; recent proposals; and recent activity.
+* **Company settings:** logo (plus a light version for dark designs), name, tagline, phone, WhatsApp, email, website, address, city, country, postal code and social media links.
+* **Brand settings:** your colours and fonts, the default template, currency and number prefix, and saved **colour presets**.
+* **Create proposal:** client details, then an automatic number (`PROP-2026-001`) that you can change, then one of **10 templates**, then a **pre-built proposal** (Web Development, Web Design, SEO, Graphics, Video, Mobile App, Social Media) or a blank one.
+* **Editor (like Canva):** widgets on the left, pages in the middle, settings on the right.
+  * 31 widgets: text, heading, image, image+text, logo, button, divider, spacer, icon, lists, quote, feature cards, service cards, pricing table, comparison table, table, statistics, testimonials, team, timeline, process, FAQ, signature, terms, contact, social links, call to action, page break and custom HTML.
+  * Drag & drop, move up/down, duplicate, hide/show and delete.
+  * Pages: add, rename, copy, delete, reorder and hide.
+  * Change colours, fonts and the template at any time (only for that proposal).
+  * Header/footer with page numbers.
+  * `{{variables}}` such as `{{client_name}}`.
+  * Content library, autosave, version history, and desktop/tablet/mobile preview.
+* **Pricing table:** qty × price, subtotal, discount (% or fixed), tax and total, in any currency.
+* **PDF:** A4, looks the same as the preview. The file name looks like `Website_Development_Proposal_ABC_Company.pdf`.
+* **Client page:** view, download, print, **Accept** (with a typed, drawn or uploaded signature) or **Reject** (with a reason).
+* **Tracking:** Draft → Sent → Viewed → Accepted/Rejected, Expired, number of views, first/last view, and the full history.
+* **Send:** copy the link, open your email app, or send by SMTP with the PDF attached.
+
+---
+
+## 3. How the code works (for beginners)
+
+Every page is a normal `.php` file. It starts like this:
+
+```php
+require __DIR__ . '/includes/bootstrap.php';   // load config, database, functions
+require_login();                                 // only logged-in users
+$p = pm_get($id);                                // get data from the database
+include __DIR__ . '/layouts/header.php';         // print the page...
 ```
 
-### Database tables
-`users`, `company_settings`, `brand_presets`, `proposals`, `proposal_pages`, `proposal_blocks`, `proposal_responses`, `proposal_activity`, `proposal_versions`, `content_library`, `service_templates`.
+### Files you will touch most
+
+| File | What it does |
+|---|---|
+| `index.php` | Dashboard |
+| `proposals.php` | List of proposals |
+| `proposal-create.php` | Create a proposal (3 steps) |
+| `editor.php` + `assets/js/editor.js` | The visual editor |
+| `proposal.php` | One proposal: send, link, status, history |
+| `view.php` | The page your client opens |
+| `pdf.php` | Download the PDF |
+| `settings.php` | Company, brand colours, email |
+| `ajax/*.php` | Small files that answer the JavaScript (AJAX) calls |
+
+### The `includes/` folder
+
+| File | What it does |
+|---|---|
+| `bootstrap.php` | Loads everything (always included first) |
+| `db.php` | Database helpers: `db_all()`, `db_row()`, `db_insert()`, `db_update()` |
+| `helpers.php` | Small helpers: `e()` (safe HTML), `url()`, `money()`, image upload/resize |
+| `auth.php` | Login: `require_login()`, `require_admin()` |
+| `templates.php` | The 10 designs: names, colours, and the cover page of each |
+| `blocks.php` | The 31 widgets: their settings and the HTML of each one |
+| `renderer.php` | Turns a proposal into HTML pages (for the editor, preview and PDF) |
+| `proposal_model.php` | Save, load, copy, versions and make the PDF |
+| `prebuilt.php` | The text of the 7 ready-made proposals |
+| `mailer.php` | Sending emails |
+
+### How a proposal is stored
+* `proposals`: one row per proposal (client, template, colours, totals, status…).
+* `proposal_pages`: the pages of a proposal.
+* `proposal_blocks`: the widgets on each page. The settings of a widget are saved as JSON in the `data` column.
+
+### How the HTML is made (renderer.php)
+1. `doc_create($proposal, $pages, $company, 'screen')` puts everything into one array, `$doc`.
+2. `render_sheets($doc)` returns the A4 pages as HTML.
+3. Each widget has its own function, e.g. `pm_render_text($doc, $data, $block)`.
+
+The **same code** makes the editor, the preview, the client page and the PDF, which is why they all look the same.
+
+### Why the PDF looks like the preview
+* The designs use `<table>` and fixed positions instead of flexbox/grid, because the PDF engine (Dompdf) doesn't support flexbox/grid.
+* The fonts are inside the app (`assets/fonts`), so the browser and the PDF use the exact same fonts.
+* The editor measures every widget and saves where each A4 page must end. The PDF uses the same page ends.
+
+### Adding things
+* **A new widget:** add it to the list in `pm_blocks()` (`includes/blocks.php`) and write a function `pm_render_yourname($doc, $d, $b)`. The editor builds the settings form for you from the `fields` list.
+* **A new template:** add it to `pm_templates()`, write `tpl_cover_11()` in `includes/templates.php`, and add CSS for `.tpl-11` in `assets/css/templates.css`.
 
 ---
 
-## Security notes
+## 4. Database files
 
-* Every query uses prepared statements, and every form or AJAX call is CSRF-protected.
-* Passwords are stored with `password_hash()`, and there is basic login throttling.
-* Rich text and custom HTML are sanitised (scripts and event handlers are removed).
-* Uploads are checked by MIME type, re-encoded with GD, and blocked from executing (`uploads/.htaccess`).
-* `includes/`, `layouts/`, `storage/`, `vendor/`, `config.php` and `database.sql` are blocked from web access.
-* Public links use random 16-character tokens. You can regenerate a link from the proposal details page.
+| File | Contents |
+|---|---|
+| `sql/schema.sql` | Tables only |
+| `sql/starter.sql` | Colour presets, the 7 pre-built proposals and the content library |
+| `sql/demo.sql` | Demo company, demo users and the 11 demo proposals |
+| `database.sql` | All three together (for a phpMyAdmin import) |
 
-## Customising
-* **Add a template:** add an entry in `pm_templates()` (`includes/templates.php`), a `tpl_cover_N()` function and a `tpl_deco()` case, then style `.tpl-N` in `assets/css/templates.css`.
-* **Add a widget:** add it to `pm_blocks()` with `defaults` and `fields`, and write a `pm_render_<type>()` function. The editor builds its settings form from the `fields` schema automatically.
+Tables: `users`, `company_settings`, `brand_presets`, `proposals`, `proposal_pages`, `proposal_blocks`, `proposal_responses`, `proposal_activity`, `proposal_versions`, `content_library`, `service_templates`.
+
+---
+
+## 5. Security
+* All SQL uses prepared statements (`?` placeholders).
+* All forms have a CSRF token.
+* Passwords use `password_hash()`.
+* Uploaded images are checked, re-saved and resized. PHP files cannot run inside `uploads/`.
+* Text from the editor is cleaned (no `<script>`).
+* `includes/`, `config.php`, `vendor/` and the `.sql` files cannot be opened from the browser.
+
+## 6. Libraries included
+Dompdf (PDF), PHPMailer (email), Bootstrap 5, Bootstrap Icons, jQuery, SweetAlert2, SortableJS (drag & drop), Summernote (text editor) and Chart.js.
+Fonts: Inter, Poppins, Montserrat, DM Sans, Space Grotesk, Playfair Display, Lora and Cormorant Garamond (all free, SIL Open Font License).

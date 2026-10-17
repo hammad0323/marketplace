@@ -1,4 +1,7 @@
 <?php
+/**
+ * LOGOUT
+ */
 require __DIR__ . '/includes/bootstrap.php';
 logout();
 session_start();

@@ -1,18 +1,20 @@
 <?php
 /**
- * Content block (widget) registry + server-side renderers.
+ * WIDGETS (content blocks) — the things you drag onto a page.
  *
- * Each block type defines:
- *   label, icon (Bootstrap Icons class for the editor), group,
- *   defaults  — default data
- *   fields    — settings form schema (consumed by assets/js/editor.js)
- * and a renderer function  pm_render_<type>(ProposalRenderer $r, array $d, array $b): string
+ * Part 1: pm_blocks()  the list of all widgets. For each widget:
+ *           'defaults' = starting content
+ *           'fields'   = the settings form shown in the editor's right panel
+ *                        (t = field type: text, textarea, rich, select, toggle, image, icon, repeater...)
  *
- * Markup intentionally avoids flexbox/grid (tables are used for columns) so
- * the Dompdf PDF output matches the browser preview.
+ * Part 2: pm_render_<name>()  one function per widget that returns its HTML,
+ *           e.g. pm_render_text(), pm_render_pricing_table().
+ *
+ * Note: we use <table> for columns instead of CSS flexbox/grid, because the
+ * PDF engine (Dompdf) does not understand flexbox/grid.
  */
 
-function pm_blocks(): array
+function pm_blocks()
 {
     static $b = null;
     if ($b !== null) return $b;
@@ -429,13 +431,13 @@ function pm_blocks(): array
     return $b;
 }
 
-function pm_block_defaults(string $type): array
+function pm_block_defaults($type)
 {
     return pm_blocks()[$type]['defaults'] ?? [];
 }
 
 /** Default common style values for every block. */
-function pm_style_defaults(): array
+function pm_style_defaults()
 {
     return ['bg' => '', 'color' => '', 'pad' => 0, 'mb' => 18, 'mt' => 0, 'align' => '', 'radius' => 0, 'border' => false];
 }
@@ -444,7 +446,7 @@ function pm_style_defaults(): array
  *  Rendering helpers
  * ================================================================= */
 
-function pm_wrap(ProposalRenderer $r, array $b, string $inner, string $extraClass = ''): string
+function pm_wrap($doc, $b, $inner, $extraClass = '')
 {
     $s = array_merge(pm_style_defaults(), is_array($b['data']['_s'] ?? null) ? $b['data']['_s'] : []);
     $st = [];
@@ -456,11 +458,11 @@ function pm_wrap(ProposalRenderer $r, array $b, string $inner, string $extraClas
     if ((int) $s['mt']) $st[] = 'margin-top:' . max(0, min(200, (int) $s['mt'])) . 'px';
     if (in_array($s['align'], ['left', 'center', 'right'], true)) $st[] = 'text-align:' . $s['align'];
     if ((int) $s['radius']) $st[] = 'border-radius:' . (int) $s['radius'] . 'px';
-    if (!empty($s['border'])) $st[] = 'border:1px solid ' . $r->c('border');
+    if (!empty($s['border'])) $st[] = 'border:1px solid ' . doc_color($doc, 'border');
 
     $cls = 'pm-block pm-b-' . $b['type'] . ($extraClass ? ' ' . $extraClass : '');
     $attr = '';
-    if ($r->mode === 'editor') {
+    if ($doc['mode'] === 'editor') {
         $attr = ' data-uid="' . e($b['uid']) . '" data-type="' . e($b['type']) . '"';
         if (!empty($b['hidden'])) $cls .= ' pm-is-hidden';
     }
@@ -468,21 +470,21 @@ function pm_wrap(ProposalRenderer $r, array $b, string $inner, string $extraClas
 }
 
 /** Inner width available for a block (body width minus block padding). */
-function pm_inner_width(ProposalRenderer $r, array $b): int
+function pm_inner_width($doc, $b)
 {
     $pad = (int) ($b['data']['_s']['pad'] ?? 0);
-    return $r->bodyWidth() - 2 * $pad;
+    return $doc['body_w'] - 2 * $pad;
 }
 
 /**
  * Render cells into an equal-width table grid (Dompdf-friendly).
  * $cells = [ ['html'=>..., 'class'=>..., 'style'=>...], ... ]
  */
-function pm_grid(ProposalRenderer $r, array $b, array $cells, int $cols, int $gap = 16, string $class = ''): string
+function pm_grid($doc, $b, $cells, $cols, $gap = 16, $class = '')
 {
     $cols = max(1, min(6, $cols));
     if (!$cells) return '';
-    $w = pm_inner_width($r, $b);
+    $w = pm_inner_width($doc, $b);
     $html = '';
     $rows = array_chunk($cells, $cols);
     foreach ($rows as $ri => $row) {
@@ -496,7 +498,7 @@ function pm_grid(ProposalRenderer $r, array $b, array $cells, int $cols, int $ga
     return $html;
 }
 
-function pm_t($s): string
+function pm_t($s)
 {
     return nl2br(e($s));
 }
@@ -505,7 +507,7 @@ function pm_t($s): string
  *  Block renderers
  * ================================================================= */
 
-function pm_render_heading(ProposalRenderer $r, array $d, array $b): string
+function pm_render_heading($doc, $d, $b)
 {
     $lvl = in_array($d['level'] ?? 'h2', ['h1', 'h2', 'h3', 'h4'], true) ? $d['level'] : 'h2';
     $style = $d['style'] ?? 'template';
@@ -518,161 +520,171 @@ function pm_render_heading(ProposalRenderer $r, array $d, array $b): string
     if ($style === 'template' && in_array($lvl, ['h1', 'h2'], true)) $h .= '<div class="pm-hbar"></div>';
     if (($d['subtitle'] ?? '') !== '') $h .= '<div class="pm-hsub">' . pm_t($d['subtitle']) . '</div>';
     if ($style === 'numbered' && ($d['number'] ?? '') !== '') $h .= '</td></tr></table>';
-    return pm_wrap($r, $b, $h, 'pm-hs-' . $style);
+    return pm_wrap($doc, $b, $h, 'pm-hs-' . $style);
 }
 
-function pm_render_text(ProposalRenderer $r, array $d, array $b): string
+function pm_render_text($doc, $d, $b)
 {
     $st = [];
     if ((int) ($d['size'] ?? 0) > 0) $st[] = 'font-size:' . (int) $d['size'] . 'px';
     if ((float) ($d['line_height'] ?? 0) > 0) $st[] = 'line-height:' . (float) $d['line_height'];
     $html = clean_html($d['html'] ?? '');
-    return pm_wrap($r, $b, '<div class="pm-rich pm-flow" style="' . implode(';', $st) . '">' . $html . '</div>');
+    return pm_wrap($doc, $b, '<div class="pm-rich pm-flow" style="' . implode(';', $st) . '">' . $html . '</div>');
 }
 
-function pm_render_image(ProposalRenderer $r, array $d, array $b): string
+function pm_render_image($doc, $d, $b)
 {
     $src = $d['src'] ?? '';
     $w = max(10, min(100, (int) ($d['width'] ?? 100)));
-    $px = (int) round(pm_inner_width($r, $b) * $w / 100);
+    $px = (int) round(pm_inner_width($doc, $b) * $w / 100);
     $hpx = (int) ($d['height'] ?? 0);
     $align = in_array($d['align'] ?? 'center', ['left', 'center', 'right'], true) ? $d['align'] : 'center';
     if ($src === '') {
         $img = '<div class="pm-img-ph" style="width:' . $px . 'px;height:' . ($hpx ?: 200) . 'px;border-radius:' . (int) $d['radius'] . 'px">'
-            . icon_img('image', $r->c('primary'), 40) . '<div>Click to add an image</div></div>';
-        if ($r->mode !== 'editor') $img = '';
+            . icon_img('image', doc_color($doc, 'primary'), 40) . '<div>Click to add an image</div></div>';
+        if ($doc['mode'] !== 'editor') $img = '';
     } else {
-        $path = $hpx ? $r->cropped($src, $px, $hpx) : $src;
-        $img = '<img class="pm-img" src="' . e($r->media($path)) . '" alt="' . e($d['alt'] ?? '') . '" style="width:' . $px . 'px;' . ($hpx ? 'height:' . $hpx . 'px;' : '')
-            . 'border-radius:' . (int) $d['radius'] . 'px;' . (!empty($d['border']) ? 'border:1px solid ' . $r->c('border') . ';' : '') . '">';
+        $path = $hpx ? image_cover($src, $px, $hpx) : $src;
+        $img = '<img class="pm-img" src="' . e(doc_media($doc, $path)) . '" alt="' . e($d['alt'] ?? '') . '" style="width:' . $px . 'px;' . ($hpx ? 'height:' . $hpx . 'px;' : '')
+            . 'border-radius:' . (int) $d['radius'] . 'px;' . (!empty($d['border']) ? 'border:1px solid ' . doc_color($doc, 'border') . ';' : '') . '">';
     }
     $cap = ($d['caption'] ?? '') !== '' ? '<div class="pm-caption">' . e($d['caption']) . '</div>' : '';
-    return pm_wrap($r, $b, '<div class="pm-img-wrap" style="text-align:' . $align . '">' . $img . $cap . '</div>');
+    return pm_wrap($doc, $b, '<div class="pm-img-wrap" style="text-align:' . $align . '">' . $img . $cap . '</div>');
 }
 
-function pm_render_image_text(ProposalRenderer $r, array $d, array $b): string
+function pm_render_image_text($doc, $d, $b)
 {
     $iw = max(25, min(60, (int) ($d['img_width'] ?? 42)));
-    $W = pm_inner_width($r, $b);
+    $W = pm_inner_width($doc, $b);
     $gap = 28;
     $imgPx = (int) round(($W - $gap) * $iw / 100);
     $h = (int) ($d['img_height'] ?? 0);
     $src = $d['src'] ?? '';
     if ($src !== '') {
-        $path = $h ? $r->cropped($src, $imgPx, $h) : $src;
-        $img = '<img class="pm-img" src="' . e($r->media($path)) . '" style="width:' . $imgPx . 'px;' . ($h ? 'height:' . $h . 'px;' : '') . 'border-radius:' . (int) $d['radius'] . 'px" alt="">';
+        $path = $h ? image_cover($src, $imgPx, $h) : $src;
+        $img = '<img class="pm-img" src="' . e(doc_media($doc, $path)) . '" style="width:' . $imgPx . 'px;' . ($h ? 'height:' . $h . 'px;' : '') . 'border-radius:' . (int) $d['radius'] . 'px" alt="">';
     } else {
-        $img = '<div class="pm-img-ph" style="width:' . $imgPx . 'px;height:' . ($h ?: 240) . 'px;border-radius:' . (int) $d['radius'] . 'px">' . icon_img('image', $r->c('primary'), 36) . '<div>Add an image</div></div>';
+        $img = '<div class="pm-img-ph" style="width:' . $imgPx . 'px;height:' . ($h ?: 240) . 'px;border-radius:' . (int) $d['radius'] . 'px">' . icon_img('image', doc_color($doc, 'primary'), 36) . '<div>Add an image</div></div>';
     }
     $text = (($d['title'] ?? '') !== '' ? '<div class="pm-h pm-h3 pm-it-title">' . e($d['title']) . '</div>' : '') . '<div class="pm-rich">' . clean_html($d['html'] ?? '') . '</div>';
     $imgTd = '<td class="pm-it-img" style="width:' . $imgPx . 'px">' . $img . '</td>';
     $gapTd = '<td style="width:' . $gap . 'px"></td>';
     $txtTd = '<td class="pm-it-txt">' . $text . '</td>';
     $row = ($d['side'] ?? 'left') === 'right' ? $txtTd . $gapTd . $imgTd : $imgTd . $gapTd . $txtTd;
-    return pm_wrap($r, $b, '<table class="pm-it" style="width:' . $W . 'px"><tr>' . $row . '</tr></table>');
+    return pm_wrap($doc, $b, '<table class="pm-it" style="width:' . $W . 'px"><tr>' . $row . '</tr></table>');
 }
 
-function pm_render_logo(ProposalRenderer $r, array $d, array $b): string
+function pm_render_logo($doc, $d, $b)
 {
     $variant = $d['variant'] ?? 'auto';
-    $light = $variant === 'light' || ($variant === 'auto' && color_is_dark($r->c('background')));
+    $light = $variant === 'light' || ($variant === 'auto' && color_is_dark(doc_color($doc, 'background')));
     $align = in_array($d['align'] ?? 'left', ['left', 'center', 'right'], true) ? $d['align'] : 'left';
-    return pm_wrap($r, $b, '<div style="text-align:' . $align . '">' . $r->logo((int) ($d['height'] ?? 56), $light) . '</div>');
+    return pm_wrap($doc, $b, '<div style="text-align:' . $align . '">' . doc_logo($doc, (int) ($d['height'] ?? 56), $light) . '</div>');
 }
 
-function pm_render_button(ProposalRenderer $r, array $d, array $b): string
+function pm_render_button($doc, $d, $b)
 {
     $align = in_array($d['align'] ?? 'left', ['left', 'center', 'right'], true) ? $d['align'] : 'left';
     $style = in_array($d['style'] ?? 'solid', ['solid', 'outline', 'accent'], true) ? $d['style'] : 'solid';
     $size = in_array($d['size'] ?? 'md', ['sm', 'md', 'lg'], true) ? $d['size'] : 'md';
-    $url = $r->linkUrl($d['url'] ?? '#');
-    return pm_wrap($r, $b, '<div style="text-align:' . $align . '"><a class="pm-btn pm-btn-' . $style . ' pm-btn-' . $size . '" href="' . e($url) . '">' . e($d['text'] ?? '') . '</a></div>');
+    $url = doc_link($doc, $d['url'] ?? '#');
+    return pm_wrap($doc, $b, '<div style="text-align:' . $align . '"><a class="pm-btn pm-btn-' . $style . ' pm-btn-' . $size . '" href="' . e($url) . '">' . e($d['text'] ?? '') . '</a></div>');
 }
 
-function pm_render_divider(ProposalRenderer $r, array $d, array $b): string
+function pm_render_divider($doc, $d, $b)
 {
     $style = $d['style'] ?? 'solid';
     $t = max(1, min(12, (int) ($d['thickness'] ?? 1)));
     $w = max(5, min(100, (int) ($d['width'] ?? 100)));
-    $color = $r->c(in_array($d['color'] ?? 'border', ['border', 'primary', 'accent', 'heading'], true) ? $d['color'] : 'border');
+    $color = doc_color($doc, in_array($d['color'] ?? 'border', ['border', 'primary', 'accent', 'heading'], true) ? $d['color'] : 'border');
     $align = $d['align'] ?? 'center';
     $ml = $align === 'center' ? 'auto' : ($align === 'right' ? 'auto' : '0');
     $mr = $align === 'center' ? 'auto' : ($align === 'right' ? '0' : 'auto');
-    $px = (int) round(pm_inner_width($r, $b) * $w / 100);
+    $px = (int) round(pm_inner_width($doc, $b) * $w / 100);
     if ($style === 'accent') {
-        $line = '<div style="width:' . $px . 'px;height:' . max(3, $t) . 'px;background:' . $r->c('primary') . ';margin-left:' . $ml . ';margin-right:' . $mr . ';border-radius:4px"></div>';
+        $line = '<div style="width:' . $px . 'px;height:' . max(3, $t) . 'px;background:' . doc_color($doc, 'primary') . ';margin-left:' . $ml . ';margin-right:' . $mr . ';border-radius:4px"></div>';
     } else {
         $bs = in_array($style, ['solid', 'dashed', 'dotted', 'double'], true) ? $style : 'solid';
         if ($bs === 'double') $t = max(3, $t);
         $line = '<div style="width:' . $px . 'px;height:0;border-top:' . $t . 'px ' . $bs . ' ' . $color . ';margin-left:' . $ml . ';margin-right:' . $mr . '"></div>';
     }
-    return pm_wrap($r, $b, $line);
+    return pm_wrap($doc, $b, $line);
 }
 
-function pm_render_spacer(ProposalRenderer $r, array $d, array $b): string
+function pm_render_spacer($doc, $d, $b)
 {
     $h = max(4, min(400, (int) ($d['height'] ?? 32)));
-    return pm_wrap($r, $b, '<div class="pm-spacer" style="height:' . $h . 'px"></div>');
+    return pm_wrap($doc, $b, '<div class="pm-spacer" style="height:' . $h . 'px"></div>');
 }
 
-function pm_render_icon(ProposalRenderer $r, array $d, array $b): string
+function pm_render_icon($doc, $d, $b)
 {
     $size = max(16, min(120, (int) ($d['size'] ?? 40)));
-    $color = $r->ref($d['color'] ?? 'primary');
+    $color = doc_ref($doc, $d['color'] ?? 'primary');
     $align = in_array($d['align'] ?? 'left', ['left', 'center', 'right'], true) ? $d['align'] : 'left';
     $ico = icon_img($d['icon'] ?? 'star', $color, $size);
     if (!empty($d['circle'])) {
         $box = (int) round($size * 1.9);
         $pad = (int) round(($box - $size) / 2);
-        $ico = '<div class="pm-icon-circle" style="width:' . $box . 'px;height:' . $box . 'px;border-radius:' . $box . 'px;background:' . $r->soft($d['color'] ?? 'primary') . ';text-align:center;' . ($align === 'center' ? 'margin:0 auto;' : ($align === 'right' ? 'margin-left:auto;' : '')) . '"><div style="padding-top:' . $pad . 'px;line-height:0">' . $ico . '</div></div>';
+        $ico = '<div class="pm-icon-circle" style="width:' . $box . 'px;height:' . $box . 'px;border-radius:' . $box . 'px;background:' . doc_soft($doc, $d['color'] ?? 'primary') . ';text-align:center;' . ($align === 'center' ? 'margin:0 auto;' : ($align === 'right' ? 'margin-left:auto;' : '')) . '"><div style="padding-top:' . $pad . 'px;line-height:0">' . $ico . '</div></div>';
     }
     $h = '<div style="text-align:' . $align . '">' . $ico;
     if (($d['label'] ?? '') !== '') $h .= '<div class="pm-h pm-h4" style="margin-top:12px">' . e($d['label']) . '</div>';
     if (($d['text'] ?? '') !== '') $h .= '<div class="pm-muted">' . pm_t($d['text']) . '</div>';
-    return pm_wrap($r, $b, $h . '</div>');
+    return pm_wrap($doc, $b, $h . '</div>');
 }
 
-function pm_list_item(ProposalRenderer $r, string $marker, string $text): string
+/** Only the list items that have some text. */
+function pm_non_empty_items($items)
 {
-    return '<table class="pm-li"><tr><td class="pm-li-m">' . shape_img($marker, $r->c('primary'), 15) . '</td><td class="pm-li-t">' . pm_t($text) . '</td></tr></table>';
+    $out = array();
+    foreach ((array) $items as $item) {
+        if (trim((string) ($item['text'] ?? '')) !== '') $out[] = $item;
+    }
+    return $out;
 }
 
-function pm_render_list(ProposalRenderer $r, array $d, array $b): string
+function pm_list_item($doc, $marker, $text)
 {
-    $items = array_values(array_filter($d['items'] ?? [], fn($i) => trim((string) ($i['text'] ?? '')) !== ''));
+    return '<table class="pm-li"><tr><td class="pm-li-m">' . shape_img($marker, doc_color($doc, 'primary'), 15) . '</td><td class="pm-li-t">' . pm_t($text) . '</td></tr></table>';
+}
+
+function pm_render_list($doc, $d, $b)
+{
+    $items = pm_non_empty_items($d['items'] ?? array());
     $marker = $d['marker'] ?? 'check';
     $cols = max(1, min(3, (int) ($d['columns'] ?? 1)));
     $h = ($d['title'] ?? '') !== '' ? '<div class="pm-h pm-h4 pm-chrome-top pm-list-title">' . e($d['title']) . '</div>' : '';
     if ($cols === 1) {
         $h .= '<div class="pm-flow">';
-        foreach ($items as $i) $h .= pm_list_item($r, $marker, $i['text']);
+        foreach ($items as $i) $h .= pm_list_item($doc, $marker, $i['text']);
         $h .= '</div>';
     } else {
         $per = (int) ceil(count($items) / $cols);
         $cells = [];
         foreach (array_chunk($items, max(1, $per)) as $chunk) {
             $c = '';
-            foreach ($chunk as $i) $c .= pm_list_item($r, $marker, $i['text']);
+            foreach ($chunk as $i) $c .= pm_list_item($doc, $marker, $i['text']);
             $cells[] = ['html' => $c];
         }
-        $h .= pm_grid($r, $b, $cells, $cols, 12, 'pm-grid-plain');
+        $h .= pm_grid($doc, $b, $cells, $cols, 12, 'pm-grid-plain');
     }
-    return pm_wrap($r, $b, $h);
+    return pm_wrap($doc, $b, $h);
 }
 
-function pm_render_numbered_list(ProposalRenderer $r, array $d, array $b): string
+function pm_render_numbered_list($doc, $d, $b)
 {
-    $items = array_values(array_filter($d['items'] ?? [], fn($i) => trim((string) ($i['text'] ?? '')) !== ''));
+    $items = pm_non_empty_items($d['items'] ?? array());
     $style = $d['style'] ?? 'circle';
     $h = ($d['title'] ?? '') !== '' ? '<div class="pm-h pm-h4 pm-chrome-top pm-list-title">' . e($d['title']) . '</div>' : '';
     $h .= '<div class="pm-flow">';
     foreach ($items as $n => $i) {
         $h .= '<table class="pm-nli pm-nli-' . e($style) . '"><tr><td class="pm-nli-n"><span>' . ($n + 1) . '</span></td><td class="pm-nli-t">' . pm_t($i['text']) . '</td></tr></table>';
     }
-    return pm_wrap($r, $b, $h . '</div>');
+    return pm_wrap($doc, $b, $h . '</div>');
 }
 
-function pm_render_quote(ProposalRenderer $r, array $d, array $b): string
+function pm_render_quote($doc, $d, $b)
 {
     $style = in_array($d['style'] ?? 'bar', ['bar', 'big', 'card'], true) ? $d['style'] : 'bar';
     $h = '<div class="pm-quote pm-quote-' . $style . '">';
@@ -681,14 +693,14 @@ function pm_render_quote(ProposalRenderer $r, array $d, array $b): string
     if (($d['author'] ?? '') !== '') {
         $h .= '<div class="pm-quote-a">— ' . e($d['author']) . (($d['role'] ?? '') !== '' ? '<span>, ' . e($d['role']) . '</span>' : '') . '</div>';
     }
-    return pm_wrap($r, $b, $h . '</div>');
+    return pm_wrap($doc, $b, $h . '</div>');
 }
 
-function pm_render_feature_cards(ProposalRenderer $r, array $d, array $b): string
+function pm_render_feature_cards($doc, $d, $b)
 {
     $style = in_array($d['style'] ?? 'card', ['card', 'bordered', 'filled', 'plain'], true) ? $d['style'] : 'card';
     $align = in_array($d['align'] ?? 'left', ['left', 'center', 'right'], true) ? $d['align'] : 'left';
-    $icoColor = $style === 'filled' ? $r->on('primary') : $r->c('primary');
+    $icoColor = $style === 'filled' ? doc_on($doc, 'primary') : doc_color($doc, 'primary');
     $cells = [];
     foreach ($d['items'] ?? [] as $it) {
         $c = '';
@@ -698,14 +710,14 @@ function pm_render_feature_cards(ProposalRenderer $r, array $d, array $b): strin
         $c .= '<div class="pm-fc-title">' . e($it['title'] ?? '') . '</div><div class="pm-fc-text">' . pm_t($it['text'] ?? '') . '</div>';
         $cells[] = ['html' => $c, 'class' => 'pm-fc pm-fc-' . $style, 'style' => 'text-align:' . $align];
     }
-    return pm_wrap($r, $b, pm_grid($r, $b, $cells, (int) ($d['columns'] ?? 3), 16));
+    return pm_wrap($doc, $b, pm_grid($doc, $b, $cells, (int) ($d['columns'] ?? 3), 16));
 }
 
-function pm_render_service_cards(ProposalRenderer $r, array $d, array $b): string
+function pm_render_service_cards($doc, $d, $b)
 {
     $cells = [];
     foreach ($d['items'] ?? [] as $it) {
-        $acc = is_hex_color($it['color'] ?? '') ? $it['color'] : $r->c('primary');
+        $acc = is_hex_color($it['color'] ?? '') ? $it['color'] : doc_color($doc, 'primary');
         $bg = is_hex_color($it['bg'] ?? '') ? $it['bg'] : '';
         $c = '<div class="pm-sc-ico" style="background:' . color_mix($acc, 0.86) . '">' . icon_img($it['icon'] ?? 'briefcase', $acc, 26) . '</div>';
         $c .= '<div class="pm-sc-title">' . e($it['title'] ?? '') . '</div>';
@@ -719,15 +731,15 @@ function pm_render_service_cards(ProposalRenderer $r, array $d, array $b): strin
             $c .= '</div>';
         }
         if (!empty($d['show_price']) && ($it['price'] ?? '') !== '') {
-            $c .= '<div class="pm-sc-price" style="color:' . $acc . ';border-top-color:' . $r->c('border') . '">' . e($it['price']) . '</div>';
+            $c .= '<div class="pm-sc-price" style="color:' . $acc . ';border-top-color:' . doc_color($doc, 'border') . '">' . e($it['price']) . '</div>';
         }
         $cells[] = ['html' => $c, 'class' => 'pm-sc', 'style' => ($bg ? 'background:' . $bg . ';' : '') . 'border-top-color:' . $acc];
     }
-    return pm_wrap($r, $b, pm_grid($r, $b, $cells, (int) ($d['columns'] ?? 2), 16));
+    return pm_wrap($doc, $b, pm_grid($doc, $b, $cells, (int) ($d['columns'] ?? 2), 16));
 }
 
 /** Calculates pricing totals for a pricing_table block's data. */
-function pm_pricing_totals(array $d): array
+function pm_pricing_totals($d)
 {
     $sub = 0.0;
     foreach ($d['rows'] ?? [] as $row) {
@@ -745,9 +757,9 @@ function pm_pricing_totals(array $d): array
     ];
 }
 
-function pm_render_pricing_table(ProposalRenderer $r, array $d, array $b): string
+function pm_render_pricing_table($doc, $d, $b)
 {
-    $sym = $r->currencySymbol();
+    $sym = $doc['symbol'];
     $showDesc = !empty($d['show_description']);
     $showQty = !empty($d['show_qty']);
     $t = pm_pricing_totals($d);
@@ -773,24 +785,24 @@ function pm_render_pricing_table(ProposalRenderer $r, array $d, array $b): strin
     }
     $h .= '<tr class="pm-pt-total"><td>Total</td><td class="pm-num">' . e(money($t['total'], $sym)) . '</td></tr>';
     $h .= '</table></td></tr></table>';
-    return pm_wrap($r, $b, $h);
+    return pm_wrap($doc, $b, $h);
 }
 
-function pm_yes_no(ProposalRenderer $r, string $v): string
+function pm_yes_no($doc, $v)
 {
     $l = strtolower(trim($v));
-    if (in_array($l, ['yes', 'y', 'true', '✓', 'included'], true)) return shape_img('circle-check', $r->c('primary'), 16);
-    if (in_array($l, ['no', 'n', 'false', '✗', 'x', '-'], true)) return shape_img('cross', $r->mix('text', 0.55), 16);
+    if (in_array($l, ['yes', 'y', 'true', '✓', 'included'], true)) return shape_img('circle-check', doc_color($doc, 'primary'), 16);
+    if (in_array($l, ['no', 'n', 'false', '✗', 'x', '-'], true)) return shape_img('cross', doc_mix($doc, 'text', 0.55), 16);
     return e(trim($v));
 }
 
 /** Split on "|" (or on commas when no "|" is present). */
-function pm_split_list(string $s): array
+function pm_split_list($s)
 {
     return array_map('trim', explode(strpos($s, '|') !== false ? '|' : ',', $s));
 }
 
-function pm_render_comparison_table(ProposalRenderer $r, array $d, array $b): string
+function pm_render_comparison_table($doc, $d, $b)
 {
     $heads = array_values(array_filter(pm_split_list((string) ($d['headers'] ?? '')), 'strlen'));
     $prices = pm_split_list((string) ($d['prices'] ?? ''));
@@ -805,14 +817,14 @@ function pm_render_comparison_table(ProposalRenderer $r, array $d, array $b): st
         $vals = array_map('trim', explode('|', (string) ($row['values'] ?? '')));
         $h .= '<tr><td class="pm-strong">' . e($row['feature'] ?? '') . '</td>';
         foreach ($heads as $i => $hd) {
-            $h .= '<td class="pm-c' . ($hl === $i + 1 ? ' pm-hl' : '') . '">' . pm_yes_no($r, $vals[$i] ?? '') . '</td>';
+            $h .= '<td class="pm-c' . ($hl === $i + 1 ? ' pm-hl' : '') . '">' . pm_yes_no($doc, $vals[$i] ?? '') . '</td>';
         }
         $h .= '</tr>';
     }
-    return pm_wrap($r, $b, $h . '</tbody></table>');
+    return pm_wrap($doc, $b, $h . '</tbody></table>');
 }
 
-function pm_render_table(ProposalRenderer $r, array $d, array $b): string
+function pm_render_table($doc, $d, $b)
 {
     $heads = array_values(array_filter(pm_split_list((string) ($d['headers'] ?? '')), 'strlen'));
     $h = ($d['title'] ?? '') !== '' ? '<div class="pm-h pm-h4 pm-chrome-top">' . e($d['title']) . '</div>' : '';
@@ -827,16 +839,16 @@ function pm_render_table(ProposalRenderer $r, array $d, array $b): string
     foreach ($d['rows'] ?? [] as $row) {
         $cells = array_map('trim', explode('|', (string) ($row['cells'] ?? '')));
         $h .= '<tr>';
-        for ($i = 0; $i < max($n, count($cells)); $i++) $h .= '<td>' . pm_yes_no($r, $cells[$i] ?? '') . '</td>';
+        for ($i = 0; $i < max($n, count($cells)); $i++) $h .= '<td>' . pm_yes_no($doc, $cells[$i] ?? '') . '</td>';
         $h .= '</tr>';
     }
-    return pm_wrap($r, $b, $h . '</tbody></table>');
+    return pm_wrap($doc, $b, $h . '</tbody></table>');
 }
 
-function pm_render_stats(ProposalRenderer $r, array $d, array $b): string
+function pm_render_stats($doc, $d, $b)
 {
     $style = in_array($d['style'] ?? 'card', ['card', 'filled', 'plain', 'divided'], true) ? $d['style'] : 'card';
-    $icoColor = $style === 'filled' ? $r->on('primary') : $r->c('primary');
+    $icoColor = $style === 'filled' ? doc_on($doc, 'primary') : doc_color($doc, 'primary');
     $cells = [];
     $items = $d['items'] ?? [];
     foreach ($items as $i => $it) {
@@ -844,13 +856,13 @@ function pm_render_stats(ProposalRenderer $r, array $d, array $b): string
             . '<div class="pm-st-v">' . e($it['value'] ?? '') . '</div><div class="pm-st-l">' . e($it['label'] ?? '') . '</div>';
         $cells[] = ['html' => $c, 'class' => 'pm-st pm-st-' . $style . ($i ? '' : ' pm-first')];
     }
-    return pm_wrap($r, $b, pm_grid($r, $b, $cells, (int) ($d['columns'] ?? 4), $style === 'divided' ? 0 : 14));
+    return pm_wrap($doc, $b, pm_grid($doc, $b, $cells, (int) ($d['columns'] ?? 4), $style === 'divided' ? 0 : 14));
 }
 
-function pm_avatar(ProposalRenderer $r, string $photo, string $name, int $size): string
+function pm_avatar($doc, $photo, $name, $size)
 {
     if ($photo !== '') {
-        return '<img class="pm-avatar" src="' . e($r->media($r->cropped($photo, $size, $size))) . '" style="width:' . $size . 'px;height:' . $size . 'px;border-radius:' . $size . 'px" alt="">';
+        return '<img class="pm-avatar" src="' . e(doc_media($doc, image_cover($photo, $size, $size))) . '" style="width:' . $size . 'px;height:' . $size . 'px;border-radius:' . $size . 'px" alt="">';
     }
     $ini = '';
     foreach (preg_split('/\s+/', trim($name)) as $p) {
@@ -859,32 +871,32 @@ function pm_avatar(ProposalRenderer $r, string $photo, string $name, int $size):
     return '<div class="pm-avatar pm-avatar-i" style="width:' . $size . 'px;height:' . $size . 'px;line-height:' . $size . 'px;border-radius:' . $size . 'px;font-size:' . round($size * 0.36) . 'px">' . e(mb_substr($ini, 0, 2)) . '</div>';
 }
 
-function pm_render_testimonial(ProposalRenderer $r, array $d, array $b): string
+function pm_render_testimonial($doc, $d, $b)
 {
     $cells = [];
     foreach ($d['items'] ?? [] as $it) {
         $stars = '';
-        for ($i = 0; $i < max(0, min(5, (int) ($it['rating'] ?? 0))); $i++) $stars .= shape_img('star', $r->c('accent'), 13) . ' ';
+        for ($i = 0; $i < max(0, min(5, (int) ($it['rating'] ?? 0))); $i++) $stars .= shape_img('star', doc_color($doc, 'accent'), 13) . ' ';
         $c = ($stars ? '<div class="pm-ts-stars">' . $stars . '</div>' : '') . '<div class="pm-ts-q">&ldquo;' . pm_t($it['quote'] ?? '') . '&rdquo;</div>'
-            . '<table class="pm-ts-who"><tr><td style="width:52px">' . pm_avatar($r, (string) ($it['photo'] ?? ''), (string) ($it['name'] ?? ''), 42) . '</td><td><div class="pm-ts-n">' . e($it['name'] ?? '') . '</div><div class="pm-ts-r">' . e($it['role'] ?? '') . '</div></td></tr></table>';
+            . '<table class="pm-ts-who"><tr><td style="width:52px">' . pm_avatar($doc, (string) ($it['photo'] ?? ''), (string) ($it['name'] ?? ''), 42) . '</td><td><div class="pm-ts-n">' . e($it['name'] ?? '') . '</div><div class="pm-ts-r">' . e($it['role'] ?? '') . '</div></td></tr></table>';
         $cells[] = ['html' => $c, 'class' => 'pm-ts'];
     }
-    return pm_wrap($r, $b, pm_grid($r, $b, $cells, (int) ($d['columns'] ?? 2), 16));
+    return pm_wrap($doc, $b, pm_grid($doc, $b, $cells, (int) ($d['columns'] ?? 2), 16));
 }
 
-function pm_render_team(ProposalRenderer $r, array $d, array $b): string
+function pm_render_team($doc, $d, $b)
 {
     $cells = [];
     foreach ($d['items'] ?? [] as $it) {
-        $c = '<div class="pm-tm-photo">' . pm_avatar($r, (string) ($it['photo'] ?? ''), (string) ($it['name'] ?? ''), 92) . '</div>'
+        $c = '<div class="pm-tm-photo">' . pm_avatar($doc, (string) ($it['photo'] ?? ''), (string) ($it['name'] ?? ''), 92) . '</div>'
             . '<div class="pm-tm-n">' . e($it['name'] ?? '') . '</div><div class="pm-tm-r">' . e($it['role'] ?? '') . '</div>'
             . (($it['bio'] ?? '') !== '' ? '<div class="pm-tm-b">' . pm_t($it['bio']) . '</div>' : '');
         $cells[] = ['html' => $c, 'class' => 'pm-tm'];
     }
-    return pm_wrap($r, $b, pm_grid($r, $b, $cells, (int) ($d['columns'] ?? 3), 16));
+    return pm_wrap($doc, $b, pm_grid($doc, $b, $cells, (int) ($d['columns'] ?? 3), 16));
 }
 
-function pm_render_timeline(ProposalRenderer $r, array $d, array $b): string
+function pm_render_timeline($doc, $d, $b)
 {
     $items = $d['items'] ?? [];
     $h = '<div class="pm-flow">';
@@ -892,42 +904,42 @@ function pm_render_timeline(ProposalRenderer $r, array $d, array $b): string
     foreach ($items as $i => $it) {
         $h .= '<table class="pm-tl' . ($i === $n - 1 ? ' pm-tl-last' : '') . '"><tr><td class="pm-tl-date">' . e($it['date'] ?? '') . '</td><td class="pm-tl-axis"><div class="pm-tl-dot"></div></td><td class="pm-tl-body"><div class="pm-tl-title">' . e($it['title'] ?? '') . '</div><div class="pm-tl-text">' . pm_t($it['text'] ?? '') . '</div></td></tr></table>';
     }
-    return pm_wrap($r, $b, $h . '</div>');
+    return pm_wrap($doc, $b, $h . '</div>');
 }
 
-function pm_render_process(ProposalRenderer $r, array $d, array $b): string
+function pm_render_process($doc, $d, $b)
 {
     $cells = [];
     foreach ($d['items'] ?? [] as $i => $it) {
         $c = '<div class="pm-ps-top"><span class="pm-ps-num">' . sprintf('%02d', $i + 1) . '</span></div>'
-            . (($it['icon'] ?? '') !== '' ? '<div class="pm-ps-ico">' . icon_img($it['icon'], $r->c('primary'), 28) . '</div>' : '')
+            . (($it['icon'] ?? '') !== '' ? '<div class="pm-ps-ico">' . icon_img($it['icon'], doc_color($doc, 'primary'), 28) . '</div>' : '')
             . '<div class="pm-ps-title">' . e($it['title'] ?? '') . '</div><div class="pm-ps-text">' . pm_t($it['text'] ?? '') . '</div>';
         $cells[] = ['html' => $c, 'class' => 'pm-ps'];
     }
-    return pm_wrap($r, $b, pm_grid($r, $b, $cells, (int) ($d['columns'] ?? 4), 14));
+    return pm_wrap($doc, $b, pm_grid($doc, $b, $cells, (int) ($d['columns'] ?? 4), 14));
 }
 
-function pm_render_faq(ProposalRenderer $r, array $d, array $b): string
+function pm_render_faq($doc, $d, $b)
 {
     $h = '<div class="pm-flow">';
     foreach ($d['items'] ?? [] as $it) {
         $h .= '<div class="pm-faq"><table class="pm-faq-q"><tr><td class="pm-faq-m">Q</td><td>' . e($it['q'] ?? '') . '</td></tr></table><div class="pm-faq-a">' . pm_t($it['a'] ?? '') . '</div></div>';
     }
-    return pm_wrap($r, $b, $h . '</div>');
+    return pm_wrap($doc, $b, $h . '</div>');
 }
 
-function pm_render_signature(ProposalRenderer $r, array $d, array $b): string
+function pm_render_signature($doc, $d, $b)
 {
     $h = '';
     if (($d['title'] ?? '') !== '') $h .= '<div class="pm-h pm-h3">' . e($d['title']) . '</div>';
     if (($d['text'] ?? '') !== '') $h .= '<div class="pm-muted" style="margin-bottom:22px">' . pm_t($d['text']) . '</div>';
     $left = '<div class="pm-sig-l">' . e($d['left_label'] ?? '') . '</div><div class="pm-sig-box">'
-        . (($d['left_signature'] ?? '') !== '' ? '<img src="' . e($r->media($d['left_signature'])) . '" style="max-height:60px;max-width:220px" alt="">' : '&nbsp;')
+        . (($d['left_signature'] ?? '') !== '' ? '<img src="' . e(doc_media($doc, $d['left_signature'])) . '" style="max-height:60px;max-width:220px" alt="">' : '&nbsp;')
         . '</div><div class="pm-sig-n">' . e($d['left_name'] ?? '') . '</div><div class="pm-sig-r">' . e($d['left_role'] ?? '') . '</div>'
-        . '<div class="pm-sig-d">Date: ' . e($r->fmtDate($r->p['proposal_date'] ?? '')) . '</div>';
+        . '<div class="pm-sig-d">Date: ' . e(doc_date($doc, $doc['p']['proposal_date'] ?? '')) . '</div>';
     $cells = [['html' => $left, 'class' => 'pm-sig']];
     if (!empty($d['show_client'])) {
-        $acc = $r->acceptance();
+        $acc = $doc['acceptance'];
         $sigHtml = '&nbsp;';
         $name = '';
         $date = '';
@@ -935,35 +947,35 @@ function pm_render_signature(ProposalRenderer $r, array $d, array $b): string
             if ($acc['signature_type'] === 'typed' || ($acc['signature_type'] === '' && $acc['signature_text'])) {
                 $sigHtml = '<span class="pm-sig-typed">' . e($acc['signature_text']) . '</span>';
             } elseif ($acc['signature_data']) {
-                $sigHtml = '<img src="' . e($r->media($acc['signature_data'])) . '" style="max-height:60px;max-width:220px" alt="">';
+                $sigHtml = '<img src="' . e(doc_media($doc, $acc['signature_data'])) . '" style="max-height:60px;max-width:220px" alt="">';
             }
             $name = $acc['name'];
-            $date = $r->fmtDate($acc['created_at']);
+            $date = doc_date($doc, $acc['created_at']);
         }
         $right = '<div class="pm-sig-l">' . e($d['right_label'] ?? '') . '</div><div class="pm-sig-box">' . $sigHtml . '</div>'
-            . '<div class="pm-sig-n">' . e($name !== '' ? $name : $r->p['client_name'] ?? '') . '</div><div class="pm-sig-r">' . e($r->p['client_company'] ?? '') . '</div>'
+            . '<div class="pm-sig-n">' . e($name !== '' ? $name : $doc['p']['client_name'] ?? '') . '</div><div class="pm-sig-r">' . e($doc['p']['client_company'] ?? '') . '</div>'
             . '<div class="pm-sig-d">Date: ' . e($date) . '</div>'
             . ($acc ? '<div class="pm-sig-ok">' . shape_img('circle-check', '#16a34a', 13) . ' Accepted electronically · IP ' . e($acc['ip_address']) . '</div>' : '');
         $cells[] = ['html' => $right, 'class' => 'pm-sig'];
     }
-    $h .= pm_grid($r, $b, $cells, 2, 24);
-    return pm_wrap($r, $b, $h);
+    $h .= pm_grid($doc, $b, $cells, 2, 24);
+    return pm_wrap($doc, $b, $h);
 }
 
-function pm_render_terms(ProposalRenderer $r, array $d, array $b): string
+function pm_render_terms($doc, $d, $b)
 {
     $size = max(9, min(18, (int) ($d['size'] ?? 12)));
     $h = ($d['title'] ?? '') !== '' ? '<div class="pm-h pm-h3 pm-chrome-top">' . e($d['title']) . '</div>' : '';
     $h .= '<div class="pm-rich pm-terms pm-flow" style="font-size:' . $size . 'px">' . clean_html($d['html'] ?? '') . '</div>';
-    return pm_wrap($r, $b, $h);
+    return pm_wrap($doc, $b, $h);
 }
 
-function pm_render_contact(ProposalRenderer $r, array $d, array $b): string
+function pm_render_contact($doc, $d, $b)
 {
-    $co = $r->company;
+    $co = $doc['company'];
     $style = in_array($d['style'] ?? 'card', ['card', 'list', 'columns'], true) ? $d['style'] : 'card';
     $onDark = $style === 'card';
-    $icoColor = $onDark ? $r->on('primary') : $r->c('primary');
+    $icoColor = $onDark ? doc_on($doc, 'primary') : doc_color($doc, 'primary');
     $rows = [];
     $addr = trim(implode(', ', array_filter([$co['address'] ?? '', $co['city'] ?? '', $co['postal_code'] ?? '', $co['country'] ?? ''])));
     if (!empty($d['show_phone']) && !empty($co['phone'])) $rows[] = ['telephone', 'Phone', $co['phone']];
@@ -980,7 +992,7 @@ function pm_render_contact(ProposalRenderer $r, array $d, array $b): string
         foreach ($rows as $row) {
             $cells[] = ['html' => '<div class="pm-ct-ico">' . icon_img($row[0], $icoColor, 22) . '</div><div class="pm-ct-l">' . $row[1] . '</div><div class="pm-ct-v">' . e($row[2]) . '</div>', 'class' => 'pm-ct-col'];
         }
-        $h .= pm_grid($r, $b, $cells, max(1, min(4, count($rows))), 12);
+        $h .= pm_grid($doc, $b, $cells, max(1, min(4, count($rows))), 12);
     } else {
         $h .= '<table class="pm-ct-list">';
         foreach ($rows as $row) {
@@ -988,10 +1000,10 @@ function pm_render_contact(ProposalRenderer $r, array $d, array $b): string
         }
         $h .= '</table>';
     }
-    return pm_wrap($r, $b, '<div class="pm-ct pm-ct-' . $style . '">' . $h . '</div>');
+    return pm_wrap($doc, $b, '<div class="pm-ct pm-ct-' . $style . '">' . $h . '</div>');
 }
 
-function pm_social_links(array $co): array
+function pm_social_links($co)
 {
     $map = ['facebook' => 'facebook', 'instagram' => 'instagram', 'linkedin' => 'linkedin', 'youtube' => 'youtube', 'twitter' => 'twitter-x'];
     $out = [];
@@ -1002,46 +1014,46 @@ function pm_social_links(array $co): array
     return $out;
 }
 
-function pm_render_social(ProposalRenderer $r, array $d, array $b): string
+function pm_render_social($doc, $d, $b)
 {
-    $links = pm_social_links($r->company);
+    $links = pm_social_links($doc['company']);
     $size = max(12, min(40, (int) ($d['size'] ?? 18)));
     $align = in_array($d['align'] ?? 'left', ['left', 'center', 'right'], true) ? $d['align'] : 'left';
     if (!$links) {
-        return $r->mode === 'editor' ? pm_wrap($r, $b, '<div class="pm-muted">Add social media links in Settings → Company Profile.</div>') : '';
+        return $doc['mode'] === 'editor' ? pm_wrap($doc, $b, '<div class="pm-muted">Add social media links in Settings → Company Profile.</div>') : '';
     }
     $h = '<div class="pm-social" style="text-align:' . $align . '">';
     foreach ($links as $l) {
         if (($d['style'] ?? 'icons') === 'list') {
-            $h .= '<a href="' . e($l['url']) . '" class="pm-social-l">' . icon_img($l['icon'], $r->c('primary'), $size) . ' <span>' . e($l['name']) . '</span></a> ';
+            $h .= '<a href="' . e($l['url']) . '" class="pm-social-l">' . icon_img($l['icon'], doc_color($doc, 'primary'), $size) . ' <span>' . e($l['name']) . '</span></a> ';
         } else {
             $box = $size + 18;
-            $h .= '<a href="' . e($l['url']) . '" class="pm-social-i" style="width:' . $box . 'px;height:' . $box . 'px;border-radius:' . $box . 'px;background:' . $r->c('primary') . '"><span style="display:block;padding-top:9px;line-height:0">' . icon_img($l['icon'], $r->on('primary'), $size) . '</span></a> ';
+            $h .= '<a href="' . e($l['url']) . '" class="pm-social-i" style="width:' . $box . 'px;height:' . $box . 'px;border-radius:' . $box . 'px;background:' . doc_color($doc, 'primary') . '"><span style="display:block;padding-top:9px;line-height:0">' . icon_img($l['icon'], doc_on($doc, 'primary'), $size) . '</span></a> ';
         }
     }
-    return pm_wrap($r, $b, $h . '</div>');
+    return pm_wrap($doc, $b, $h . '</div>');
 }
 
-function pm_render_cta(ProposalRenderer $r, array $d, array $b): string
+function pm_render_cta($doc, $d, $b)
 {
     $style = in_array($d['style'] ?? 'primary', ['primary', 'dark', 'soft'], true) ? $d['style'] : 'primary';
     $h = '<div class="pm-cta pm-cta-' . $style . '"><div class="pm-cta-t">' . e($d['title'] ?? '') . '</div>';
     if (($d['text'] ?? '') !== '') $h .= '<div class="pm-cta-x">' . pm_t($d['text']) . '</div>';
-    if (($d['button'] ?? '') !== '') $h .= '<a class="pm-cta-b" href="' . e($r->linkUrl($d['url'] ?? '#')) . '">' . e($d['button']) . '</a>';
-    return pm_wrap($r, $b, $h . '</div>');
+    if (($d['button'] ?? '') !== '') $h .= '<a class="pm-cta-b" href="' . e(doc_link($doc, $d['url'] ?? '#')) . '">' . e($d['button']) . '</a>';
+    return pm_wrap($doc, $b, $h . '</div>');
 }
 
-function pm_render_page_break(ProposalRenderer $r, array $d, array $b): string
+function pm_render_page_break($doc, $d, $b)
 {
-    if ($r->mode !== 'editor') return '';
-    return pm_wrap($r, $b, '<div class="pm-pagebreak"><span>Page break — content below starts on a new page</span></div>');
+    if ($doc['mode'] !== 'editor') return '';
+    return pm_wrap($doc, $b, '<div class="pm-pagebreak"><span>Page break — content below starts on a new page</span></div>');
 }
 
-function pm_render_html(ProposalRenderer $r, array $d, array $b): string
+function pm_render_html($doc, $d, $b)
 {
     $code = (string) ($d['code'] ?? '');
     $code = preg_replace('#<script\b[^>]*>.*?</script>#is', '', $code);
     $code = preg_replace('/\s+on[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $code);
     $code = preg_replace('/(href|src)\s*=\s*(["\'])\s*javascript:[^"\']*\2/i', '$1="#"', $code);
-    return pm_wrap($r, $b, '<div class="pm-html">' . $code . '</div>');
+    return pm_wrap($doc, $b, '<div class="pm-html">' . $code . '</div>');
 }

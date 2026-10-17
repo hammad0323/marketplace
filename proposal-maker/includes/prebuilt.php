@@ -1,78 +1,102 @@
 <?php
 /**
- * Pre-built service proposals + default content library.
- * Seeded into the database on install (service_templates / content_library),
- * after which they can be edited, duplicated or extended from the admin.
+ * PRE-BUILT PROPOSALS — ready-made content for each service.
+ *
+ * Web Development, Web Design, SEO, Graphic Design, Video Editing,
+ * Mobile App and Social Media Marketing, plus the default content library.
+ *
+ * Small helper functions at the top (_h, _t, _l ...) keep the content
+ * short to write:  _h() = heading, _t() = text, _l() = bullet list, etc.
  */
 
 /* ---------- tiny builders ---------- */
-function _h(string $eyebrow, string $text, string $sub = '', string $level = 'h2'): array
+function _h($eyebrow, $text, $sub = '', $level = 'h2')
 {
     return ['type' => 'heading', 'data' => ['eyebrow' => $eyebrow, 'text' => $text, 'subtitle' => $sub, 'level' => $level]];
 }
-function _h3(string $text, string $sub = ''): array
+function _h3($text, $sub = '')
 {
     return ['type' => 'heading', 'data' => ['eyebrow' => '', 'text' => $text, 'subtitle' => $sub, 'level' => 'h3', 'style' => 'plain', '_s' => ['mb' => 8, 'mt' => 6]]];
 }
-function _t(string $html): array
+function _t($html)
 {
     return ['type' => 'text', 'data' => ['html' => $html]];
 }
-function _l(array $items, string $marker = 'check', int $cols = 1, string $title = ''): array
+function _l($items, $marker = 'check', $cols = 1, $title = '')
 {
-    return ['type' => 'list', 'data' => ['title' => $title, 'marker' => $marker, 'columns' => (string) $cols, 'items' => array_map(fn($t) => ['text' => $t], $items)]];
+    $list = array();
+    foreach ($items as $text) $list[] = array('text' => $text);
+    return ['type' => 'list', 'data' => ['title' => $title, 'marker' => $marker, 'columns' => (string) $cols, 'items' => $list]];
 }
-function _nl(array $items, string $title = ''): array
+function _nl($items, $title = '')
 {
-    return ['type' => 'numbered_list', 'data' => ['title' => $title, 'items' => array_map(fn($t) => ['text' => $t], $items)]];
+    $list = array();
+    foreach ($items as $text) $list[] = array('text' => $text);
+    return ['type' => 'numbered_list', 'data' => ['title' => $title, 'items' => $list]];
 }
-function _fc(array $items, int $cols = 3, string $style = 'card'): array
+function _fc($items, $cols = 3, $style = 'card')
 {
-    return ['type' => 'feature_cards', 'data' => ['columns' => (string) $cols, 'style' => $style, 'items' => array_map(fn($i) => ['icon' => $i[0], 'title' => $i[1], 'text' => $i[2]], $items)]];
+    $cards = array();
+    foreach ($items as $i) $cards[] = array('icon' => $i[0], 'title' => $i[1], 'text' => $i[2]);
+    return ['type' => 'feature_cards', 'data' => ['columns' => (string) $cols, 'style' => $style, 'items' => $cards]];
 }
-function _sc(array $items, int $cols = 2): array
+function _sc($items, $cols = 2)
 {
-    return ['type' => 'service_cards', 'data' => ['columns' => (string) $cols, 'show_price' => true, 'items' => array_map(fn($i) => ['icon' => $i[0], 'title' => $i[1], 'description' => $i[2], 'features' => $i[3], 'price' => $i[4] ?? '', 'bg' => '', 'color' => ''], $items)]];
+    $cards = array();
+    foreach ($items as $i) {
+        $cards[] = array('icon' => $i[0], 'title' => $i[1], 'description' => $i[2], 'features' => $i[3], 'price' => $i[4] ?? '', 'bg' => '', 'color' => '');
+    }
+    return ['type' => 'service_cards', 'data' => ['columns' => (string) $cols, 'show_price' => true, 'items' => $cards]];
 }
-function _stats(array $items): array
+function _stats($items)
 {
-    return ['type' => 'stats', 'data' => ['columns' => (string) count($items), 'style' => 'card', 'items' => array_map(fn($i) => ['value' => $i[0], 'label' => $i[1], 'icon' => $i[2] ?? ''], $items)]];
+    $stats = array();
+    foreach ($items as $i) $stats[] = array('value' => $i[0], 'label' => $i[1], 'icon' => $i[2] ?? '');
+    return ['type' => 'stats', 'data' => ['columns' => (string) count($items), 'style' => 'card', 'items' => $stats]];
 }
-function _tl(array $items): array
+function _tl($items)
 {
-    return ['type' => 'timeline', 'data' => ['items' => array_map(fn($i) => ['date' => $i[0], 'title' => $i[1], 'text' => $i[2]], $items)]];
+    $steps = array();
+    foreach ($items as $i) $steps[] = array('date' => $i[0], 'title' => $i[1], 'text' => $i[2]);
+    return ['type' => 'timeline', 'data' => ['items' => $steps]];
 }
-function _ps(array $items, int $cols = 4): array
+function _ps($items, $cols = 4)
 {
-    return ['type' => 'process', 'data' => ['columns' => (string) $cols, 'items' => array_map(fn($i) => ['icon' => $i[0], 'title' => $i[1], 'text' => $i[2]], $items)]];
+    $steps = array();
+    foreach ($items as $i) $steps[] = array('icon' => $i[0], 'title' => $i[1], 'text' => $i[2]);
+    return ['type' => 'process', 'data' => ['columns' => (string) $cols, 'items' => $steps]];
 }
-function _price(string $title, array $rows, float $tax = 0, string $note = 'All prices are in {{currency}}. This quotation is valid until {{expiry_date}}.'): array
+function _price($title, $rows, $tax = 0, $note = 'All prices are in {{currency}}. This quotation is valid until {{expiry_date}}.')
 {
-    return ['type' => 'pricing_table', 'data' => ['title' => $title, 'rows' => array_map(fn($r) => ['service' => $r[0], 'description' => $r[1], 'qty' => $r[2], 'price' => $r[3]], $rows), 'tax_rate' => $tax, 'note' => $note]];
+    $lines = array();
+    foreach ($rows as $r) $lines[] = array('service' => $r[0], 'description' => $r[1], 'qty' => $r[2], 'price' => $r[3]);
+    return ['type' => 'pricing_table', 'data' => ['title' => $title, 'rows' => $lines, 'tax_rate' => $tax, 'note' => $note]];
 }
-function _table(string $headers, array $rows, string $title = ''): array
+function _table($headers, $rows, $title = '')
 {
-    return ['type' => 'table', 'data' => ['title' => $title, 'headers' => $headers, 'striped' => true, 'rows' => array_map(fn($r) => ['cells' => $r], $rows)]];
+    $lines = array();
+    foreach ($rows as $r) $lines[] = array('cells' => $r);
+    return ['type' => 'table', 'data' => ['title' => $title, 'headers' => $headers, 'striped' => true, 'rows' => $lines]];
 }
-function _sp(int $h = 16): array
+function _sp($h = 16)
 {
     return ['type' => 'spacer', 'data' => ['height' => $h]];
 }
-function _div(): array
+function _div()
 {
     return ['type' => 'divider', 'data' => ['style' => 'solid', 'thickness' => 1, 'width' => 100, 'color' => 'border']];
 }
-function _page(string $title, array $blocks): array
+function _page($title, $blocks)
 {
     return ['title' => $title, 'page_type' => 'content', 'blocks' => $blocks];
 }
-function _cover(string $eyebrow, string $subtitle): array
+function _cover($eyebrow, $subtitle)
 {
     return ['title' => 'Cover', 'page_type' => 'cover', 'blocks' => [['type' => 'cover', 'data' => ['eyebrow' => $eyebrow, 'title' => '{{proposal_title}}', 'subtitle' => $subtitle]]]];
 }
 
 /* ---------- shared sections ---------- */
-function _about_page(): array
+function _about_page()
 {
     return _page('About Us', [
         _h('About Us', 'Who We Are'),
@@ -88,7 +112,7 @@ function _about_page(): array
     ]);
 }
 
-function _terms_page(string $extra = ''): array
+function _terms_page($extra = '')
 {
     return _page('Terms & Conditions', [
         _h('The Fine Print', 'Terms & Conditions'),
@@ -107,7 +131,7 @@ function _terms_page(string $extra = ''): array
     ]);
 }
 
-function _contact_page(): array
+function _contact_page()
 {
     return _page('Contact', [
         _h('Next Steps', 'Let\'s Get Started', 'Accepting this proposal is simple — review the details, click "Accept Proposal" and we will schedule your kick-off call within 48 hours.'),
@@ -119,13 +143,13 @@ function _contact_page(): array
     ]);
 }
 
-function _payment_schedule(array $rows): array
+function _payment_schedule($rows)
 {
     return _table('Milestone, Percentage, Due', $rows, 'Payment Schedule');
 }
 
 /* ---------- proposals ---------- */
-function pm_prebuilt_proposals(): array
+function pm_prebuilt_proposals()
 {
     $p = [];
 
@@ -464,7 +488,7 @@ function pm_prebuilt_proposals(): array
 }
 
 /** Default content library sections. */
-function pm_prebuilt_library(): array
+function pm_prebuilt_library()
 {
     $about = _about_page()['blocks'];
     return [

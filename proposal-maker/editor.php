@@ -1,4 +1,11 @@
 <?php
+/**
+ * PROPOSAL EDITOR — the visual builder.
+ *
+ * This file only prints the empty editor screen and gives the proposal data
+ * to JavaScript (window.PMED). Everything interactive is in assets/js/editor.js,
+ * which talks to ajax/editor.php to render and save.
+ */
 require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/layouts/partials.php';
 require_login();
@@ -24,6 +31,11 @@ $state = [
     ],
     'pages' => $pages,
 ];
+// colour presets for the Design panel
+$presets = [];
+foreach (db_all('SELECT * FROM brand_presets ORDER BY name') as $row) {
+    $presets[] = ['id' => (int) $row['id'], 'name' => $row['name'], 'colors' => jdecode($row['colors'])];
+}
 $templatesMeta = [];
 foreach (pm_templates() as $tid => $t) {
     $templatesMeta[$tid] = ['name' => $t['name'], 'colors' => $t['colors'], 'fonts' => $t['fonts'], 'body' => $t['body']];
@@ -37,7 +49,7 @@ $boot = [
     'fonts' => array_keys(font_list()),
     'icons' => icon_names(),
     'currencies' => currencies(),
-    'presets' => array_map(fn($r) => ['id' => (int) $r['id'], 'name' => $r['name'], 'colors' => jdecode($r['colors'])], db_all('SELECT * FROM brand_presets ORDER BY name')),
+    'presets' => $presets,
     'publicUrl' => public_url($p['public_token']),
     'company' => ['name' => company()['company_name'], 'logo' => media_src(company()['logo'] ?? '')],
     'vars' => ['client_name', 'client_company', 'client_email', 'client_phone', 'client_address', 'client_website', 'proposal_title', 'project_name', 'proposal_number', 'proposal_date', 'expiry_date', 'company_name', 'company_email', 'company_phone', 'company_whatsapp', 'company_website', 'company_address', 'company_tagline', 'total_amount', 'subtotal', 'currency', 'today', 'proposal_link'],

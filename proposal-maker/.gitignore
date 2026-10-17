@@ -3,6 +3,7 @@ uploads/**/*
 !uploads/.htaccess
 !uploads/*/
 !uploads/*/.gitkeep
+!uploads/demo/*
 storage/fonts/*
 storage/tmp/*
 !storage/**/.gitkeep

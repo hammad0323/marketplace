@@ -1,6 +1,10 @@
 <?php
 /**
- * Editor AJAX endpoint: live rendering, saving, uploads, library, versions.
+ * EDITOR AJAX — the editor (assets/js/editor.js) calls this file for:
+ *   render   HTML of the pages            save          save everything
+ *   upload   upload an image              media         list uploaded images
+ *   library_list / library_get / library_save          content library
+ *   versions / save_version / save_as_template / preset_save
  */
 require dirname(__DIR__) . '/includes/bootstrap.php';
 require_login();
@@ -11,7 +15,7 @@ $action = $_POST['action'] ?? '';
 $id = (int) ($_POST['id'] ?? 0);
 
 /** Merge client-side proposal fields over the stored row (sanitised). */
-function editor_proposal(array $row, array $in): array
+function editor_proposal($row, $in)
 {
     $p = pm_decode_row($row);
     foreach (['title', 'proposal_number', 'client_name', 'client_company', 'client_email', 'client_phone', 'client_address', 'client_website', 'currency', 'currency_symbol'] as $k) {
@@ -48,7 +52,7 @@ function editor_proposal(array $row, array $in): array
     return $p;
 }
 
-function editor_state(): array
+function editor_state()
 {
     $st = json_decode($_POST['state'] ?? '', true);
     return is_array($st) ? $st : [];
@@ -69,14 +73,14 @@ try {
             $pages = pm_normalize_pages($st['pages'] ?? []);
             $t = pm_compute_totals($pages);
             $p = array_merge($p, $t);
-            $r = new ProposalRenderer($p, $pages, company(), 'editor');
+            $doc = doc_create($p, $pages, company(), 'editor');
             $only = isset($_POST['only']) ? (array) json_decode($_POST['only'], true) : null;
             $out = [];
             foreach ($pages as $i => $pg) {
                 if ($only && !in_array($pg['uid'], $only, true)) continue;
-                $out[$pg['uid']] = $r->editorPage($pg, $i);
+                $out[$pg['uid']] = render_editor_page($doc, $pg, $i);
             }
-            json_out(['ok' => true, 'pages' => $out, 'docClass' => 'pm-doc pm-screen pm-editing tpl-' . $r->tpl['id'], 'docStyle' => $r->cssVars(), 'totals' => $t, 'symbol' => $r->currencySymbol()]);
+            json_out(['ok' => true, 'pages' => $out, 'docClass' => 'pm-doc pm-screen pm-editing tpl-' . $doc['tpl']['id'], 'docStyle' => doc_css_vars($doc), 'totals' => $t, 'symbol' => $doc['symbol']]);
 
         case 'save':
             $st = editor_state();
@@ -110,13 +114,25 @@ try {
 
         case 'versions':
             $rows = db_all('SELECT v.id, v.label, v.created_at, u.name FROM proposal_versions v LEFT JOIN users u ON u.id = v.created_by WHERE v.proposal_id = ? ORDER BY v.id DESC', [$id]);
-            json_out(['ok' => true, 'versions' => array_map(fn($v) => ['id' => (int) $v['id'], 'label' => $v['label'], 'when' => fmt_date($v['created_at'], 'M j, Y H:i'), 'ago' => time_ago($v['created_at']), 'by' => $v['name']], $rows)]);
+            $versions = [];
+            foreach ($rows as $v) {
+                $versions[] = ['id' => (int) $v['id'], 'label' => $v['label'], 'when' => fmt_date($v['created_at'], 'M j, Y H:i'), 'ago' => time_ago($v['created_at']), 'by' => $v['name']];
+            }
+            json_out(['ok' => true, 'versions' => $versions]);
 
         case 'save_as_template':
             $name = post('name');
             if ($name === '') json_out(['ok' => false, 'message' => 'Name is required.'], 422);
             $pages = pm_pages($id);
-            $structure = array_map(fn($pg) => ['title' => $pg['title'], 'page_type' => $pg['page_type'], 'settings' => $pg['settings'], 'blocks' => array_map(fn($b) => ['type' => $b['type'], 'data' => $b['data'], 'hidden' => $b['hidden']], $pg['blocks'])], $pages);
+            // copy pages + blocks without their ids
+            $structure = [];
+            foreach ($pages as $pg) {
+                $blocks = [];
+                foreach ($pg['blocks'] as $b) {
+                    $blocks[] = ['type' => $b['type'], 'data' => $b['data'], 'hidden' => $b['hidden']];
+                }
+                $structure[] = ['title' => $pg['title'], 'page_type' => $pg['page_type'], 'settings' => $pg['settings'], 'blocks' => $blocks];
+            }
             db_insert('service_templates', ['name' => $name, 'slug' => slugify(strtolower($name)), 'service' => post('service') ?: ($row['service_type'] ?: $name), 'description' => post('description'), 'icon' => 'file-earmark-text', 'structure' => jencode($structure), 'is_system' => 0, 'created_at' => date('Y-m-d H:i:s')]);
             json_out(['ok' => true]);
 
@@ -138,11 +154,19 @@ try {
             }
             arsort($files);
             $files = array_slice(array_keys($files), 0, 200);
-            json_out(['ok' => true, 'items' => array_map(fn($p) => ['path' => $p, 'url' => media_src($p)], $files)]);
+            $items = [];
+            foreach ($files as $path) {
+                $items[] = ['path' => $path, 'url' => media_src($path)];
+            }
+            json_out(['ok' => true, 'items' => $items]);
 
         case 'library_list':
             $rows = db_all('SELECT id, name, category, description, blocks FROM content_library ORDER BY category, name');
-            json_out(['ok' => true, 'items' => array_map(fn($r) => ['id' => (int) $r['id'], 'name' => $r['name'], 'category' => $r['category'], 'count' => count(jdecode($r['blocks']))], $rows)]);
+            $items = [];
+            foreach ($rows as $r) {
+                $items[] = ['id' => (int) $r['id'], 'name' => $r['name'], 'category' => $r['category'], 'count' => count(jdecode($r['blocks']))];
+            }
+            json_out(['ok' => true, 'items' => $items]);
 
         case 'library_get':
             $row = db_row('SELECT * FROM content_library WHERE id = ?', [(int) post('lib_id')]);
