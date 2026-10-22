@@ -1,2 +1,8 @@
-logs/*.log
+/config/config.php
+/logs/*
+!/logs/.htaccess
+!/logs/.gitkeep
+/uploads/*
+!/uploads/.htaccess
+!/uploads/.gitkeep
 .DS_Store

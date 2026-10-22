@@ -1,17 +1,64 @@
-# Optional hardening — the site works without this file (every page is
-# a real .php file, no URL rewriting is needed). This just adds a
-# couple of extra safety nets.
+# Urban Collections — Apache configuration (cPanel / shared hosting)
 
 Options -Indexes
+DirectoryIndex index.php
 
-# config.php already refuses direct access on its own (see the guard
-# at the top of the file), this is just a second layer.
-<FilesMatch "^(config|functions)\.php$">
-    Require all denied
-</FilesMatch>
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # If the store is installed in a sub-folder, set RewriteBase to that folder, e.g. /store/
+    RewriteBase /
 
-# database.sql contains your schema and demo data (including a
-# password hash) — no reason for it to be downloadable once imported.
-<FilesMatch "\.sql$">
+    # Force HTTPS (uncomment once your SSL certificate is active)
+    # RewriteCond %{HTTPS} !=on
+    # RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+    # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Force www (optional — pick one host and keep it consistent with SITE_URL)
+    # RewriteCond %{HTTP_HOST} !^www\. [NC]
+    # RewriteRule ^ https://www.%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Block internal folders and files
+    RewriteRule ^(config|includes|database|docs|tools|logs|pages)(/|$) - [F,L]
+    RewriteRule (^|/)\.(?!well-known) - [F,L]
+    RewriteRule \.(sql|md|log|ini|sh|lock)$ - [F,L,NC]
+
+    # Remove ".php" from old-style links: /about.php → /about
+    RewriteCond %{THE_REQUEST} \s/+([^?\s]*?)\.php[\s?] [NC]
+    RewriteCond %{REQUEST_URI} !^/(admin|ajax|api)/ [NC]
+    RewriteCond %{REQUEST_URI} !/index\.php [NC]
+    RewriteRule ^ /%1 [R=301,L,NE]
+
+    # Everything that is not a real file or folder goes to the front controller
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+ErrorDocument 404 /index.php
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    <FilesMatch "\.(css|js|webp|jpg|jpeg|png|gif|svg|woff2?)$">
+        Header set Cache-Control "public, max-age=2592000"
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml application/javascript application/json application/xml image/svg+xml
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/webp "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+</IfModule>
+
+<FilesMatch "\.(sql|md|log|ini|sh|lock|dist)$">
     Require all denied
 </FilesMatch>
