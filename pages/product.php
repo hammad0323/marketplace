@@ -30,6 +30,8 @@ $canReview = $customer && !db_val('SELECT 1 FROM reviews WHERE customer_id = ? A
 if ($canReview && setting_bool('reviews_require_purchase')) {
     $canReview = customer_purchased_product((int) $customer['id'], $pid);
 }
+$studioGarment = $product['custom_garment_id'] ? studio_garment((int) $product['custom_garment_id']) : null;
+$urgentCities = ((int) $product['allow_urgent'] && !(int) $product['made_to_order']) ? urgent_cities() : [];
 $quote = shipping_quote('', '', $pi['final'], 'standard', (int) $product['made_to_order'] ? (int) $product['lead_time_days'] : 0);
 
 $crumbs = [['Home', url()]];
@@ -138,6 +140,14 @@ require UC_ROOT . '/includes/header.php';
 
             <?php partial('components/product-buy', ['product' => $product, 'variants' => $variants, 'groups' => $groups, 'context' => 'page']); ?>
 
+            <?php if ($studioGarment): ?>
+                <a class="uc-studio-cta" href="<?= e(url('custom-size/' . $product['slug'])) ?>">
+                    <i class="bi bi-rulers"></i>
+                    <span><strong>Get it in your exact size</strong><small><?= (float) $studioGarment['fee'] > 0 ? 'Made to measure for + ' . e(money($studioGarment['fee'])) : 'Same ready-made price' ?> · choose colour, collar, cuffs &amp; <?= $studioGarment['def']['gender'] === 'women' ? 'neckline' : 'shalwar style' ?></small></span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            <?php endif; ?>
+
             <ul class="uc-pdp-perks">
                 <li><i class="bi bi-truck"></i><div><strong>Estimated delivery: <?= e($quote['estimate']) ?></strong>
                     <span><?= $quote['free_threshold'] ? 'Free standard delivery on orders over ' . e(money($quote['free_threshold'])) . '.' : 'Delivery charges shown at checkout.' ?></span>
@@ -152,6 +162,18 @@ require UC_ROOT . '/includes/header.php';
                         <p class="small mt-2 mb-0" data-delivery-result></p>
                     </div>
                 </div></li>
+                <?php if ($urgentCities): ?>
+                    <li data-urgent-box><i class="bi bi-lightning-charge"></i><div><strong>Need it urgently?</strong>
+                        <span>Urgent delivery available in <?= count($urgentCities) ?> cities. Choose yours:</span>
+                        <select class="form-select form-select-sm mt-1" data-urgent-city aria-label="Your city for urgent delivery">
+                            <option value="">Select city…</option>
+                            <?php foreach ($urgentCities as $uc): $ur = urgent_rate_for($uc['city']); ?>
+                                <option value="<?= e($uc['city']) ?>" data-fee="<?= e(money($uc['fee'])) ?>" data-label="<?= e($uc['label']) ?>" data-eta="<?= e($ur['estimate'] ?? '') ?>"<?= ($_SESSION['urgent_city'] ?? '') === $uc['city'] ? ' selected' : '' ?>><?= e($uc['city']) ?> — <?= e(money($uc['fee'])) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <span class="d-block mt-1" data-urgent-result></span>
+                        <span class="d-block small">Select “Urgent” as the delivery method at checkout.</span></div></li>
+                <?php endif; ?>
                 <?php if (payment_method_get('cod') && payment_method_state(payment_method_get('cod')) === 'ready'): ?>
                     <li><i class="bi bi-cash-coin"></i><div><strong>Cash on Delivery available</strong><span><?= e(setting('cod_note')) ?></span></div></li>
                 <?php endif; ?>

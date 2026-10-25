@@ -16,6 +16,10 @@ function admin_menu(): array
         ['Customers', 'admin/customers/', 'people', 'customers'],
         ['Reviews', 'admin/reviews/', 'star', 'reviews'],
         ['Coupons', 'admin/coupons/', 'ticket-perforated', 'coupons'],
+        ['__', 'Services'],
+        ['Alteration Requests', 'admin/alterations/', 'scissors', 'alterations'],
+        ['Alteration Price List', 'admin/alterations/services.php', 'tags', 'alterations'],
+        ['Custom Size Studio', 'admin/studio/', 'rulers', 'custom_studio'],
         ['__', 'Storefront'],
         ['Homepage Builder', 'admin/homepage/', 'layout-text-window', 'homepage'],
         ['Hero Slides', 'admin/homepage/slides.php', 'images', 'homepage'],
@@ -38,6 +42,7 @@ function admin_header(string $title, array $opts = []): void
     $admin = current_admin();
     $uri = strtok($_SERVER['REQUEST_URI'] ?? '', '?');
     $pending = $admin && admin_can('orders') ? (int) db_val("SELECT COUNT(*) FROM orders WHERE status = 'pending'") : 0;
+    $newAlt = $admin && admin_can('alterations') ? (int) db_val("SELECT COUNT(*) FROM alteration_requests WHERE status = 'new'") : 0;
     ?><!doctype html>
 <html lang="en">
 <head>
@@ -68,7 +73,8 @@ function admin_header(string $title, array $opts = []): void
             $active = $path === $uri || ($path !== BASE_PATH . '/admin/' && str_ends_with($path, '/') && str_starts_with($uri, $path));
         ?>
             <a href="<?= e($href) ?>" class="<?= $active ? 'is-active' : '' ?>"><i class="bi bi-<?= e($m[2]) ?>"></i><span><?= e($m[0]) ?></span>
-                <?php if ($m[3] === 'orders' && $pending): ?><em class="a-pill"><?= $pending ?></em><?php endif; ?></a>
+                <?php if ($m[3] === 'orders' && $pending): ?><em class="a-pill"><?= $pending ?></em><?php endif; ?>
+                <?php if ($m[1] === 'admin/alterations/' && $newAlt): ?><em class="a-pill"><?= $newAlt ?></em><?php endif; ?></a>
         <?php endforeach; ?>
     </nav>
 </aside>

@@ -55,10 +55,42 @@ function delivery_estimate_label(int $daysMin, int $daysMax): string
 }
 
 /**
- * Returns the delivery fee and estimate for a destination.
- * $leadDays: production lead time of made-to-order items (added to the estimate).
+ * Urgent (city-wise) delivery rate for a city, or null. Orders after the cut-off time
+ * move one day later.
  */
-function shipping_quote(string $city, string $region, float $subtotal, string $method = 'standard', int $leadDays = 0): array
+function urgent_rate_for(string $city): ?array
+{
+    if (!setting_bool('urgent_enabled', true) || trim($city) === '') {
+        return null;
+    }
+    $r = db_row('SELECT * FROM urgent_delivery_rates WHERE is_active = 1 AND LOWER(city) = LOWER(?)', [trim($city)]);
+    if (!$r) {
+        return null;
+    }
+    $late = $r['cutoff_time'] && date('H:i:s') > $r['cutoff_time'];
+    $min = (int) $r['days_min'];
+    $max = max((int) $r['days_max'], $min);
+    $r['days_min'] = $min + ($late ? 1 : 0);
+    $r['days_max'] = $max + ($late ? 1 : 0);
+    $r['late'] = $late;
+    $r['estimate'] = $r['days_max'] === 0 ? 'Today' : delivery_estimate_label($r['days_min'], $r['days_max']);
+    if ($late) {
+        $r['estimate'] .= ' (order before ' . date('g:i a', strtotime($r['cutoff_time'])) . ' for ' . ($min === 0 ? 'same-day' : 'faster') . ' delivery)';
+    }
+    return $r;
+}
+
+function urgent_cities(): array
+{
+    return setting_bool('urgent_enabled', true) ? db_all('SELECT * FROM urgent_delivery_rates WHERE is_active = 1 ORDER BY sort_order, city') : [];
+}
+
+/**
+ * Returns the delivery fee and estimate for a destination.
+ * $leadDays: production lead time of made-to-order / custom items (added to the estimate).
+ * $urgentAllowed: every item in the order may ship urgently (no custom / made-to-order items).
+ */
+function shipping_quote(string $city, string $region, float $subtotal, string $method = 'standard', int $leadDays = 0, bool $urgentAllowed = false): array
 {
     $zone = shipping_zone_for($city, $region);
     $globalFree = (float) setting('free_shipping_threshold', 0);
@@ -76,11 +108,13 @@ function shipping_quote(string $city, string $region, float $subtotal, string $m
         'days_max' => 5 + $leadDays,
         'methods' => [],
         'free_threshold' => $globalFree ?: null,
+        'free_above' => null,
     ];
     if ($zone) {
-        $rates = shipping_rates_for_zone((int) $zone['id']);
-        $chosen = null;
-        foreach ($rates as $r) {
+        foreach (shipping_rates_for_zone((int) $zone['id']) as $r) {
+            if ($r['method'] === 'express' && !setting_bool('express_enabled', true)) {
+                continue;
+            }
             $fee = (float) $r['fee'];
             $freeAbove = $r['free_above'] !== null ? (float) $r['free_above'] : null;
             $isFree = ($freeAbove !== null && $subtotal >= $freeAbove) || ($r['method'] === 'standard' && $globalFree > 0 && $subtotal >= $globalFree);
@@ -91,25 +125,27 @@ function shipping_quote(string $city, string $region, float $subtotal, string $m
             ];
             $entry['estimate'] = delivery_estimate_label($entry['days_min'], $entry['days_max']);
             $result['methods'][$r['method']] = $entry;
-            if ($r['method'] === $method || ($chosen === null && $r['method'] === 'standard')) {
-                $chosen = $entry;
-            }
-        }
-        if (!$chosen && $result['methods']) {
-            $chosen = reset($result['methods']);
-        }
-        if ($chosen) {
-            $result = array_merge($result, $chosen);
-            $result['free_threshold'] = $chosen['free_above'] ?? ($globalFree ?: null);
         }
     } elseif ($globalFree > 0 && $subtotal >= $globalFree) {
         $result['fee'] = 0.0;
         $result['free'] = true;
     }
-    if (!(int) setting('express_enabled', 1)) {
-        unset($result['methods']['express']);
+    if ($urgentAllowed && ($u = urgent_rate_for($city))) {
+        // Urgent delivery is a paid service: the free-delivery threshold does not apply.
+        $result['methods']['urgent'] = [
+            'method' => 'urgent', 'label' => $u['label'], 'fee' => (float) $u['fee'], 'base_fee' => (float) $u['fee'], 'free' => false,
+            'days_min' => $u['days_min'], 'days_max' => $u['days_max'], 'min_order' => null, 'free_above' => null, 'estimate' => $u['estimate'],
+        ];
     }
-    $result['estimate'] = delivery_estimate_label($result['days_min'], $result['days_max']);
+    $chosen = $result['methods'][$method] ?? ($result['methods']['standard'] ?? ($result['methods'] ? reset($result['methods']) : null));
+    if ($chosen) {
+        $result = array_merge($result, $chosen);
+        $result['free_threshold'] = $chosen['method'] === 'urgent' ? null : ($chosen['free_above'] ?? ($globalFree ?: null));
+    }
+    $result['estimate'] = $result['estimate'] ?? delivery_estimate_label($result['days_min'], $result['days_max']);
+    if (($result['method'] ?? '') !== 'urgent') {
+        $result['estimate'] = delivery_estimate_label($result['days_min'], $result['days_max']);
+    }
     return $result;
 }
 

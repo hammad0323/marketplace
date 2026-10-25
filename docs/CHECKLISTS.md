@@ -52,6 +52,18 @@
 - [ ] Payment method states behave as documented in PAYMENTS.md.
 - [ ] Audit log records the changes above.
 
+### Custom Size, Alterations & Urgent delivery
+- [ ] Homepage shows the *Custom Size* and *Alterations* cards; menu has both links.
+- [ ] Studio: pick a size (fields fill), size finder suggests a size, change colour/collar/cuffs (mannequin
+      and price update), front/back/360° view, add to bag; spec shows in bag, order and admin order view.
+- [ ] Out-of-range measurement or a missing option is rejected; custom item does not reduce stock.
+- [ ] Measurement guide opens from the studio and the footer.
+- [ ] Alteration request: estimate updates with quantities and pickup; reference page and
+      `/alterations/track` work; admin sets final price & status → customer page updates.
+- [ ] Urgent delivery: shown at checkout for a rate city (e.g. Karachi), hidden for other cities and when
+      the bag has a custom item; after the cut-off time the estimate moves to the next day.
+- [ ] Admin price changes (garment fee, style extra, alteration prices, urgent fee) take effect on the store.
+
 ### Online payments (per gateway, in sandbox)
 - [ ] Successful payment → order *Paid* + *Confirmed*; transaction log shows valid signature.
 - [ ] Declined / cancelled payment → *Failed*; customer can retry with *Pay now*.

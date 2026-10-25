@@ -86,7 +86,7 @@ switch ($mode) {
         break;
     default:
         $title = 'Shop All';
-        $intro = "Modern menswear, footwear and accessories — curated for confidence and everyday style.";
+        $intro = "Modern menswear, ladies fashion, footwear and accessories — curated for confidence and everyday style.";
 }
 if (in_array($mode, ['shop', 'new-arrivals', 'sale', 'search'], true)) {
     $crumbs[] = [$title, url($canonicalPath)];

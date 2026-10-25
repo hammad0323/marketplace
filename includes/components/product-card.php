@@ -57,6 +57,7 @@ $extraColors = count($p['colors']) - count($colors);
                 <span class="uc-card-rating"><?= render_stars((float) $p['rating_avg']) ?><small>(<?= (int) $p['rating_count'] ?>)</small></span>
             <?php endif; ?>
         </div>
+        <?php if (!empty($p['custom_garment_id'])): ?><p class="uc-card-custom"><i class="bi bi-rulers"></i> Custom size available</p><?php endif; ?>
         <?php if ($p['low_stock']): ?><p class="uc-stock-note">Only a few left</p><?php endif; ?>
     </div>
 </article>

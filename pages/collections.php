@@ -1,5 +1,5 @@
 <?php
-seo_set(['title' => 'Collections', 'description' => "Shop men's fashion by style: everyday essentials, smart casual, business & formal, streetwear, traditional and more.", 'breadcrumbs' => [['Home', url()], ['Collections', url('collections')]]]);
+seo_set(['title' => 'Collections', 'description' => "Shop men's and women's fashion by style: everyday essentials, office wear, traditional, bridal, party wear and more.", 'breadcrumbs' => [['Home', url()], ['Collections', url('collections')]]]);
 $items = collections_list(false, 100);
 $bodyClass = 'page-collections';
 require UC_ROOT . '/includes/header.php';

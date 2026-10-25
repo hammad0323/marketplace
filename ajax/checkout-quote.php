@@ -2,7 +2,12 @@
 /** Live checkout totals for the selected city / region / delivery method / payment method. */
 require __DIR__ . '/_init.php';
 ajax_require_post();
-$method = input('shipping_method', 'standard', 'post') === 'express' ? 'express' : 'standard';
+$method = input('shipping_method', '', 'post');
+if ($method === '') {
+    // First load: pre-select urgent when the shopper chose it for this city on a product page
+    $method = (!empty($_SESSION['urgent_city']) && strcasecmp($_SESSION['urgent_city'], trim(input('city', '', 'post'))) === 0) ? 'urgent' : 'standard';
+}
+$method = in_array($method, ['express', 'urgent'], true) ? $method : 'standard';
 $ctx = [
     'city' => mb_substr(input('city', '', 'post'), 0, 100), 'region' => mb_substr(input('region', '', 'post'), 0, 100),
     'shipping_method' => $method, 'payment_method' => preg_replace('/[^a-z]/', '', input('payment_method', '', 'post')),
@@ -31,10 +36,13 @@ $methods = $q['methods'] ?: ['standard' => ['method' => 'standard', 'label' => $
 foreach ($methods as $m): ?>
     <label class="uc-ship-opt">
         <input type="radio" name="shipping_method" value="<?= e($m['method']) ?>"<?= $m['method'] === $q['method'] ? ' checked' : '' ?>>
-        <span><strong><?= e($m['label']) ?></strong><small>Arrives <?= e($m['estimate']) ?></small></span>
+        <span><strong><?= $m['method'] === 'urgent' ? '<i class="bi bi-lightning-charge-fill text-warning"></i> ' : '' ?><?= e($m['label']) ?></strong><small>Arrives <?= e($m['estimate']) ?></small></span>
         <em><?= $m['fee'] > 0 ? e(money($m['fee'])) : 'Free' ?></em>
     </label>
 <?php endforeach;
+if (!$t['urgent_allowed'] && urgent_rate_for($ctx['city'])) {
+    echo '<p class="small text-muted mb-0"><i class="bi bi-info-circle"></i> Urgent delivery is not available for custom-made or made-to-order items in your bag.</p>';
+}
 $methodsHtml = ob_get_clean();
 $cod = payment_method_get('cod');
 json_response([

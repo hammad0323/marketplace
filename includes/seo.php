@@ -36,7 +36,7 @@ function seo_title(): string
     $t = seo_get('title');
     $site = setting('seo_site_title', store_name());
     if (!$t) {
-        return $site . ' — ' . setting('seo_tagline', "Premium Men's Fashion");
+        return $site . ' — ' . setting('seo_tagline', 'Premium Men & Women Fashion');
     }
     $tpl = setting('seo_title_template', '{title} | {site}');
     return str_replace(['{title}', '{site}'], [$t, $site], $tpl);

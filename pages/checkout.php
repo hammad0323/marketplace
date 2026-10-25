@@ -22,7 +22,7 @@ if (is_post()) {
         'postal_code' => mb_substr(input('postal_code', '', 'post'), 0, 20),
         'notes' => mb_substr(input('notes', '', 'post'), 0, 1000),
         'payment_method' => input('payment_method', '', 'post'),
-        'shipping_method' => input('shipping_method', 'standard', 'post') === 'express' ? 'express' : 'standard',
+        'shipping_method' => in_array(input('shipping_method', 'standard', 'post'), ['express', 'urgent'], true) ? input('shipping_method', 'standard', 'post') : 'standard',
         'idempotency_key' => input('idempotency_key', '', 'post'),
     ];
     remember_input($_POST);

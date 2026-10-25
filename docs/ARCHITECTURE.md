@@ -65,7 +65,13 @@ Main tables (see `database/schema.sql`):
 - **Shopping:** `carts`, `cart_items`, `wishlists`, `wishlist_items`, `coupons`, `coupon_usage`
 - **Orders:** `orders`, `order_items` (immutable snapshots: name, SKU, variant, price, customisation),
   `order_addresses`, `order_status_history`, `payments`, `payment_transactions`, `payment_methods`
-- **Delivery:** `shipping_zones`, `shipping_zone_locations`, `shipping_rates`
+- **Delivery:** `shipping_zones`, `shipping_zone_locations`, `shipping_rates`, `urgent_delivery_rates` (city-wise)
+- **Custom Size Studio:** `custom_garments`, `custom_size_chart`, `custom_size_fit`, `custom_style_options`,
+  `customer_measurements`; measurement fields and style groups are defined in `includes/studio.php`, the
+  chosen spec is stored as JSON in `cart_items.custom_spec` / `order_items.custom_spec` (`is_custom = 1`) and
+  re-validated and re-priced server-side on every cart read
+- **Alterations:** `alteration_services` (price list), `alteration_requests`, `alteration_request_items`,
+  `alteration_request_photos`, `alteration_status_history` (see `includes/alterations.php`)
 - **Content & SEO:** `homepage_sections`, `banner_slides`, `navigation_items`, `pages`, `site_settings`,
   `redirects`, `newsletter_subscribers`, `contact_messages`, `rate_limits`
 

@@ -61,7 +61,8 @@ require UC_ROOT . '/includes/header.php';
                             <span class="uc-summary-img"><img src="<?= e(img_sized($it['image'], 200)) ?>" alt="" loading="lazy"><em><?= (int) $it['qty'] ?></em></span>
                             <span class="uc-summary-name"><?= e($it['product_name']) ?>
                                 <?php if ($it['variant_label']): ?><small><?= e($it['variant_label']) ?></small><?php endif; ?>
-                                <?php if ($it['custom_measurements'] || $it['personalization'] || $it['custom_color'] || $it['custom_instructions']): ?><small>Customised<?= $it['personalization'] ? ': “' . e($it['personalization']) . '”' : '' ?></small><?php endif; ?>
+                                <?php if ((int) $it['is_custom']): ?><small><i class="bi bi-rulers"></i> Made to your measurements · <?= e($it['custom_color']) ?></small>
+                                <?php elseif ($it['custom_measurements'] || $it['personalization'] || $it['custom_color'] || $it['custom_instructions']): ?><small>Customised<?= $it['personalization'] ? ': “' . e($it['personalization']) . '”' : '' ?></small><?php endif; ?>
                             </span>
                             <span><?= e(money($it['line_total'])) ?></span>
                         </li>

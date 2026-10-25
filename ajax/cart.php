@@ -13,6 +13,10 @@ if ($action !== 'drawer' && $action !== 'page') {
 }
 
 switch ($action) {
+    case 'urgent_pref':
+        // Remembered so checkout pre-selects urgent delivery for this city.
+        $_SESSION['urgent_city'] = mb_substr(input('city', '', 'post'), 0, 100);
+        json_response(['ok' => true]);
     case 'add':
         $custom = [
             'custom_measurements' => $_POST['custom_measurements'] ?? '', 'custom_color' => $_POST['custom_color'] ?? '',

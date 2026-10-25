@@ -603,7 +603,7 @@
             if (quoteXhr) { quoteXhr.abort(); }
             quoteXhr = $.post(endpoint('ajax/checkout-quote.php'), {
                 city: $co.find('[name=city]').val(), region: $co.find('[name=region]').val(),
-                shipping_method: $co.find('[name=shipping_method]:checked').val() || 'standard',
+                shipping_method: $co.find('[name=shipping_method]:checked').val() || '',
                 payment_method: $co.find('[name=payment_method]:checked').val() || '', email: $co.find('[name=email]').val()
             }).done(function (r) {
                 $('[data-checkout-totals]').html(r.totals_html);
@@ -658,6 +658,52 @@
             $co.off('submit').on('submit', function (ev) { ev.preventDefault(); });
         });
     }
+
+
+    // ------------------------------------------------------------ alterations estimate
+    var $alt = $('[data-alteration-form]');
+    if ($alt.length) {
+        var fmtMoney = function (n) { return (UC.currency || 'Rs.') + ' ' + Math.round(n).toLocaleString('en-US'); };
+        var recalc = function () {
+            var min = 0, max = 0, dmin = 0, dmax = 0, list = [];
+            $alt.find('[data-alt-row]').each(function () {
+                var q = parseInt($(this).find('input').val(), 10) || 0;
+                $(this).toggleClass('is-on', q > 0);
+                if (!q) { return; }
+                min += q * +$(this).data('min'); max += q * +$(this).data('max');
+                dmin = Math.max(dmin, +$(this).data('dmin')); dmax = Math.max(dmax, +$(this).data('dmax'));
+                list.push('<li><span>' + $('<i>').text($(this).data('label')).html() + '</span><em>× ' + q + '</em></li>');
+            });
+            var pickup = $alt.find('[name=service_method]:checked').val() === 'pickup';
+            var fee = +$alt.data('pickup-fee') || 0;
+            $alt.find('[data-alt-chosen]').html(list.length ? list.join('') : '<li class="text-muted small">No services selected yet.</li>');
+            $alt.find('[data-alt-price]').text(list.length ? (max > min ? fmtMoney(min) + ' – ' + fmtMoney(max) : (max ? fmtMoney(max) : 'Quote on inspection')) : '—');
+            $alt.find('[data-alt-pickup]').text(pickup ? (fee ? fmtMoney(fee) : 'Free') : 'Drop off');
+            $alt.find('[data-alt-days]').text(list.length ? (dmax ? (dmax > dmin ? dmin + '–' : '') + dmax + ' working day' + (dmax === 1 ? '' : 's') : 'Same day') : '—');
+            $alt.find('[data-alt-address]').prop('hidden', !pickup);
+        };
+        $alt.on('click', '[data-alt-step]', function () {
+            var $in = $(this).closest('.uc-qty').find('input');
+            $in.val(Math.max(0, Math.min(10, (parseInt($in.val(), 10) || 0) + parseInt($(this).data('alt-step'), 10))));
+            recalc();
+        });
+        $alt.on('change input', 'input, select', recalc);
+        $alt.on('submit', function (e) {
+            if (!$alt.find('[data-alt-row].is-on').length && !$.trim($alt.find('[name=notes]').val())) {
+                e.preventDefault(); toast('Please choose at least one alteration service.', 'warning'); return;
+            }
+            $alt.find('[type=submit]').addClass('is-loading').prop('disabled', true);
+        });
+        recalc();
+    }
+
+    // ------------------------------------------------------------ urgent delivery (product page)
+    $(document).on('change', '[data-urgent-city]', function () {
+        var $o = $(this).find(':selected'), $box = $(this).closest('[data-urgent-box]');
+        if (!this.value) { $box.find('[data-urgent-result]').text(''); return; }
+        $box.find('[data-urgent-result]').html('<strong>' + $('<i>').text($o.data('label')).html() + ':</strong> ' + $('<i>').text($o.data('fee')).html() + ' · arrives ' + $('<i>').text($o.data('eta')).html());
+        $.post(endpoint('ajax/cart.php'), { action: 'urgent_pref', city: this.value });
+    });
 
     // payment redirect forms
     $('[data-auto-submit-form]').each(function () { var f = this; setTimeout(function () { f.submit(); }, 600); });

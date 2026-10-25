@@ -163,8 +163,9 @@ function order_place(array $in): array
                 'custom_measurements' => $l['custom_measurements'], 'custom_color' => $l['custom_color'],
                 'personalization' => $l['personalization'], 'custom_instructions' => $l['custom_instructions'],
                 'made_to_order' => $l['made_to_order'], 'lead_time_days' => $l['lead_time_days'],
+                'is_custom' => $l['is_custom'], 'custom_spec' => $l['custom_spec'] ? json_encode($l['custom_spec'], JSON_UNESCAPED_UNICODE) : null,
             ]);
-            if ((int) $l['product']['track_stock']) {
+            if ((int) $l['product']['track_stock'] && !$l['is_custom']) { // custom pieces are cut to order, not taken from stock
                 inventory_adjust($l['product_id'], $l['variant_id'], -$l['qty'], 'order', $orderNumber);
             }
         }
@@ -238,7 +239,7 @@ function order_restore_stock(array $order, string $reason, ?int $adminId = null)
         return;
     }
     foreach (order_items((int) $order['id']) as $it) {
-        if (!$it['product_id']) {
+        if (!$it['product_id'] || (int) $it['is_custom']) {
             continue;
         }
         $tracks = (int) db_val('SELECT track_stock FROM products WHERE id = ?', [(int) $it['product_id']]);

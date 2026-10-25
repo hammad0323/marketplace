@@ -37,6 +37,8 @@ if (is_post()) {
         'is_customizable' => input_bool('is_customizable'),
         'custom_fields' => nullable(implode(',', array_intersect((array) ($_POST['custom_fields'] ?? []), ['measurements', 'color', 'personalization', 'instructions']))),
         'customization_fee' => (float) input_float('customization_fee', 0),
+        'custom_garment_id' => input_int('custom_garment_id') && studio_garment(input_int('custom_garment_id'), false) ? input_int('custom_garment_id') : null,
+        'allow_urgent' => input_bool('allow_urgent'),
         'is_featured' => input_bool('is_featured'),
         'is_new' => input_bool('is_new'),
         'is_bestseller' => input_bool('is_bestseller'),
@@ -235,7 +237,7 @@ if (is_post()) {
     $product = array_merge($product ?? [], $d, ['id' => $id]);
 }
 
-$p = $product ?? ['status' => 'draft', 'track_stock' => 1, 'low_stock_threshold' => 5, 'ready_to_ship' => 1, 'brand' => 'Urban Collections'];
+$p = $product ?? ['status' => 'draft', 'track_stock' => 1, 'low_stock_threshold' => 5, 'ready_to_ship' => 1, 'brand' => 'Urban Collections', 'allow_urgent' => 1];
 $v = fn($k, $def = '') => $p[$k] ?? $def;
 $images = $id ? db_all('SELECT * FROM product_images WHERE product_id = ? ORDER BY is_main DESC, sort_order, id', [$id]) : [];
 $variants = $id ? product_variants($id, false) : [];
@@ -399,7 +401,13 @@ admin_header($id ? 'Edit product' : 'Add product', ['editor' => true]);
             <div class="col-md-4"><?= a_check('made_to_order', 'Made to order (always available, ships after lead time)', (int) $v('made_to_order')) ?></div>
             <div class="col-md-4"><?= a_input('lead_time_days', 'Production lead time (days)', $v('lead_time_days', 0), 'number', ['min' => 0, 'max' => 120]) ?></div>
         </div>
+        <?= a_check('allow_urgent', 'Allow urgent (city-wise) delivery for this product', (int) $v('allow_urgent', 1), 'Urgent rates are set under Delivery & Shipping. Never offered for made-to-order or custom-size items.') ?>
         <hr>
+        <h3 class="h6">Custom Size Studio</h3>
+        <?php $gOpts = ['' => '— Not available —']; foreach (studio_garments(false) as $sg) { $gOpts[$sg['id']] = $sg['name'] . ((int) $sg['is_active'] ? '' : ' (garment switched off)'); } ?>
+        <?= a_select('custom_garment_id', 'Let customers order this design in their own measurements as', $gOpts, $v('custom_garment_id'), [], 'Adds a “Get it in your exact size” button and the interactive mannequin. Charges, size charts and style options: <a href="' . e(url('admin/studio/')) . '">Custom Size Studio</a>.') ?>
+        <hr>
+        <h3 class="h6">Simple personalisation</h3>
         <?= a_check('is_customizable', 'Offer customisation on this product', (int) $v('is_customizable')) ?>
         <?php $cf = array_filter(explode(',', (string) $v('custom_fields'))); ?>
         <div class="mb-3"><label class="form-label">Fields shown to customers</label><div class="d-flex flex-wrap gap-3">

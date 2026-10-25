@@ -88,12 +88,32 @@ switch (true) {
         break;
     case $s0 === 'account':
         $sub = $seg[1] ?? 'dashboard';
-        $allowed = ['login', 'register', 'logout', 'forgot-password', 'reset-password', 'dashboard', 'orders', 'addresses', 'profile'];
+        $allowed = ['login', 'register', 'logout', 'forgot-password', 'reset-password', 'dashboard', 'orders', 'addresses', 'profile', 'measurements', 'alterations'];
         if (!in_array($sub, $allowed, true) || $n > 3 || ($n === 3 && $sub !== 'orders')) {
             route_not_found($path);
         }
         $ROUTE['params']['number'] = $seg[2] ?? null;
         $page = 'account/' . $sub;
+        break;
+    case $n === 1 && $s0 === 'custom-size':
+        $page = 'custom-size';
+        break;
+    case $n === 2 && $s0 === 'custom-size':
+        $ROUTE['params']['slug'] = $seg[1];
+        $page = 'studio';
+        break;
+    case $n === 1 && $s0 === 'measurement-guide':
+        $page = 'measurement-guide';
+        break;
+    case $n === 1 && $s0 === 'alterations':
+        $page = 'alterations';
+        break;
+    case $n === 2 && $s0 === 'alterations' && $seg[1] === 'track':
+        $page = 'alteration-track';
+        break;
+    case $n === 3 && $s0 === 'alterations' && $seg[1] === 'request':
+        $ROUTE['params']['ref'] = $seg[2];
+        $page = 'alteration-view';
         break;
     case $n === 1 && $s0 === 'contact':
         $page = 'contact';

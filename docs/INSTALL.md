@@ -100,6 +100,12 @@ It re-checks pending online payments with the gateways, cancels unpaid online or
 configured timeout (releasing their reserved stock) and cleans old guest carts. Without cron, the
 unpaid-order cleanup still runs whenever an admin opens the dashboard.
 
+## Upgrading an existing installation
+
+After replacing the files, import the SQL files in `database/migrations/` that are newer than
+your install, in date order (back up first). Each migration's header explains what it does —
+see [SERVICES.md](SERVICES.md#upgrading-an-existing-store) for the 2026-10-25 update.
+
 ## 7. Make it yours
 
 1. *Store Settings* — name, logo, favicon, contact details, WhatsApp, social links, announcement bar.
@@ -108,7 +114,9 @@ unpaid-order cleanup still runs whenever an admin opens the dashboard.
 4. *Homepage Builder* and *Hero Slides* — headlines, images, sections, order.
 5. *Content Pages* — review every policy page.
 6. *Delivery & Shipping* — your real courier rates and delivery times.
-7. *Payment Methods* — see [PAYMENTS.md](PAYMENTS.md).
-8. *SEO* — Search Console verification, analytics, then submit `/sitemap.xml`.
+7. *Services* — Custom Size Studio size charts and style prices, alteration price list, urgent
+   delivery city rates (see [SERVICES.md](SERVICES.md)).
+8. *Payment Methods* — see [PAYMENTS.md](PAYMENTS.md).
+9. *SEO* — Search Console verification, analytics, then submit `/sitemap.xml`.
 
 Finally work through [CHECKLISTS.md](CHECKLISTS.md).

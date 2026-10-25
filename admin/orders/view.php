@@ -171,7 +171,13 @@ admin_header('Order ' . $order['order_number']);
             <td><?= $it['product_id'] ? '<a href="' . e(url('admin/products/edit.php?id=' . $it['product_id'])) . '">' . e($it['product_name']) . '</a>' : e($it['product_name']) ?>
                 <?php if ($it['variant_label']): ?><div class="small text-muted"><?= e($it['variant_label']) ?></div><?php endif; ?>
                 <?php if ($it['made_to_order']): ?><div class="small text-warning"><i class="bi bi-hourglass-split"></i> Made to order — <?= (int) $it['lead_time_days'] ?> days</div><?php endif; ?>
-                <?php if ($it['custom_measurements'] || $it['custom_color'] || $it['personalization'] || $it['custom_instructions']): ?>
+                <?php if ((int) $it['is_custom'] && ($spec = json_decode((string) $it['custom_spec'], true))): ?>
+                    <div class="a-help mt-2 small"><strong><i class="bi bi-rulers"></i> Custom Size Studio — stitch to these measurements<?= (float) $it['customization_fee'] > 0 ? ' (+' . e(money($it['customization_fee'])) . ' each)' : '' ?></strong>
+                        <table class="table table-sm table-borderless mb-0 mt-1"><?php foreach (studio_summary($spec) as $k => $v): if ($k === 'Measurements') continue; ?><tr><td class="text-muted ps-0" style="width:120px"><?= e($k) ?></td><td><?= e($v) ?></td></tr><?php endforeach; ?></table>
+                        <table class="table table-sm table-bordered mb-0 mt-1 bg-white"><tr><?php foreach ((array) $spec['measurements'] as $mk => $mv): ?><th class="small fw-normal text-muted"><?= e(studio_definitions()[$spec['garment']]['measurements'][$mk]['label'] ?? $mk) ?></th><?php endforeach; ?></tr>
+                            <tr><?php foreach ((array) $spec['measurements'] as $mv): ?><td class="fw-bold"><?= e($mv) ?>"</td><?php endforeach; ?></tr></table>
+                        <div class="text-muted mt-1">Body measurements in inches — add standard ease. Confirm with the customer if anything looks unusual.</div></div>
+                <?php elseif ($it['custom_measurements'] || $it['custom_color'] || $it['personalization'] || $it['custom_instructions']): ?>
                     <div class="a-help mt-2 small"><strong><i class="bi bi-scissors"></i> Customisation (+<?= e(money($it['customization_fee'])) ?> each)</strong>
                         <?php if ($it['custom_measurements']): ?><div>Measurements: <?= e($it['custom_measurements']) ?></div><?php endif; ?>
                         <?php if ($it['custom_color']): ?><div>Colour: <?= e($it['custom_color']) ?></div><?php endif; ?>

@@ -47,7 +47,8 @@ $perms = [
     ['products', 'Manage products', 'Catalogue'], ['products.cost', 'View & edit cost prices', 'Catalogue'],
     ['categories', 'Manage categories', 'Catalogue'], ['collections', 'Manage collections', 'Catalogue'],
     ['attributes', 'Manage sizes & colours', 'Catalogue'], ['inventory', 'Manage inventory', 'Catalogue'],
-    ['reviews', 'Moderate reviews & testimonials', 'Catalogue'],
+    ['reviews', 'Moderate reviews & testimonials', 'Catalogue'], ['custom_studio', 'Custom Size Studio settings', 'Catalogue'],
+    ['alterations', 'Alteration requests & price list', 'Sales'],
     ['orders', 'View & process orders', 'Sales'], ['orders.refund', 'Cancel & refund orders', 'Sales'], ['orders.export', 'Export orders', 'Sales'],
     ['customers', 'Manage customers', 'Sales'], ['coupons', 'Manage coupons', 'Sales'],
     ['shipping', 'Manage delivery zones & rates', 'Sales'], ['payments', 'Configure payment methods', 'Sales'],
@@ -69,8 +70,8 @@ $insert('admin_roles', [
     ['id' => 4, 'name' => 'Content Manager', 'slug' => 'content-manager', 'description' => 'Homepage, banners, collections, pages and testimonials', 'is_system' => 1],
 ]);
 $rolePerms = [
-    2 => ['dashboard', 'products', 'categories', 'collections', 'attributes', 'inventory', 'reviews', 'orders', 'orders.refund', 'orders.export', 'customers', 'coupons'],
-    3 => ['dashboard', 'orders', 'orders.export', 'shipping', 'customers'],
+    2 => ['dashboard', 'products', 'categories', 'collections', 'attributes', 'inventory', 'reviews', 'orders', 'orders.refund', 'orders.export', 'customers', 'coupons', 'custom_studio', 'alterations'],
+    3 => ['dashboard', 'orders', 'orders.export', 'shipping', 'customers', 'alterations'],
     4 => ['dashboard', 'homepage', 'navigation', 'collections', 'content', 'reviews', 'newsletter'],
 ];
 $rp = [];
@@ -122,7 +123,7 @@ $addCat = function (string $name, string $slug, ?string $parent, array $extra = 
         'sort_order' => $id, 'is_active' => 1, 'show_on_home' => 0, 'show_in_menu' => 1,
     ], $extra);
 };
-$addCat('Clothing', 'clothing', null, ['description' => 'Modern menswear essentials — from everyday tees to tailored suits.', 'image' => $img('1489987707025-afc232f7ea0f'), 'banner_image' => $img('1441984904996-e0b6ba687e04', 1920)]);
+$addCat("Men's Clothing", 'clothing', null, ['description' => 'Modern menswear essentials — from everyday tees and office shirts to shalwar qameez and tailored suits.', 'image' => $img('1489987707025-afc232f7ea0f'), 'banner_image' => $img('1441984904996-e0b6ba687e04', 1920)]);
 $addCat('T-Shirts & Polos', 't-shirts-polos', 'clothing', ['show_on_home' => 1, 'description' => 'Premium cotton tees and polos cut for a sharp, comfortable fit.', 'image' => $img('1521572163474-6864f9cf17ab')]);
 $addCat('T-Shirts', 't-shirts', 't-shirts-polos');
 $addCat('Polo Shirts', 'polo-shirts', 't-shirts-polos');
@@ -134,7 +135,7 @@ $addCat('Jeans', 'jeans', 'jeans-trousers');
 $addCat('Chinos', 'chinos', 'jeans-trousers');
 $addCat('Trousers', 'trousers', 'jeans-trousers');
 $addCat('Shorts', 'shorts', 'jeans-trousers');
-$addCat('Jackets & Outerwear', 'jackets-outerwear', 'clothing', ['show_on_home' => 1, 'description' => 'Leather, bomber and layering pieces built for the season.', 'image' => $img('1551028719-00167b16eac5')]);
+$addCat('Jackets & Outerwear', 'jackets-outerwear', 'clothing', ['show_on_home' => 0, 'description' => 'Leather, bomber and layering pieces built for the season.', 'image' => $img('1551028719-00167b16eac5')]);
 $addCat('Jackets', 'jackets', 'jackets-outerwear');
 $addCat('Sweaters', 'sweaters', 'jackets-outerwear');
 $addCat('Hoodies', 'hoodies', 'jackets-outerwear');
@@ -145,6 +146,10 @@ $addCat('Traditional Wear', 'traditional-wear', 'clothing', ['show_on_home' => 1
 $addCat('Kurtas', 'kurtas', 'traditional-wear');
 $addCat('Shalwar Kameez', 'shalwar-kameez', 'traditional-wear');
 $addCat('Waistcoats', 'waistcoats', 'traditional-wear');
+$addCat('Women', 'women', null, ['show_on_home' => 1, 'description' => 'Bridal dresses, party wear and everyday shalwar kameez — crafted with care and available in your size.', 'image' => $img('1610030469983-98e550d6193c'), 'banner_image' => $img('1583391733956-3750e0ff4e8b', 1920)]);
+$addCat('Bridal Dresses', 'bridal-dresses', 'women', ['description' => 'Lehengas, ghararas and bridal ensembles made to order for your big day.', 'image' => $img('1583391733956-3750e0ff4e8b')]);
+$addCat('Party Wear', 'party-wear', 'women', ['description' => 'Embellished maxis, shirts and formal outfits for weddings and evenings.', 'image' => $img('1515372039744-b8f02a3ae446')]);
+$addCat('Women Shalwar Kameez', 'womens-shalwar-kameez', 'women', ['description' => 'Everyday lawn, cotton and khaddar suits — ready-made or stitched to your size.', 'image' => $img('1610030469983-98e550d6193c')]);
 $addCat('Footwear', 'footwear', null, ['show_on_home' => 1, 'description' => 'Sneakers, loafers, formal shoes and boots.', 'image' => $img('1549298916-b41d501d3772'), 'banner_image' => $img('1460353581641-37baddab0fa2', 1920)]);
 foreach (['Sneakers' => 'sneakers', 'Formal Shoes' => 'formal-shoes', 'Loafers' => 'loafers', 'Boots' => 'boots', 'Sandals' => 'sandals', 'Casual Shoes' => 'casual-shoes'] as $n => $s) {
     $addCat($n, $s, 'footwear');
@@ -170,7 +175,7 @@ $product = function (array $p) use (&$products, &$images, &$variants, &$values, 
     $p += ['sale_price' => null, 'badge' => null, 'is_new' => 0, 'is_bestseller' => 0, 'is_featured' => 0, 'options' => [], 'stock' => 25,
         'fit' => null, 'fabric' => null, 'pattern' => null, 'sleeve_type' => null, 'collar_type' => null, 'waist_type' => null, 'length_type' => null,
         'season' => 'All Season', 'occasion' => null, 'care' => null, 'made_to_order' => 0, 'lead_time_days' => 0, 'is_customizable' => 0,
-        'custom_fields' => null, 'customization_fee' => 0, 'brand' => 'Urban Collections', 'attrs' => [], 'weight' => 0.4, 'days_ago' => 30];
+        'custom_fields' => null, 'customization_fee' => 0, 'brand' => 'Urban Collections', 'attrs' => [], 'weight' => 0.4, 'days_ago' => 30, 'garment' => null, 'urgent' => 1];
     $hasVariants = $p['options'] ? 1 : 0;
     $products[] = [
         'id' => $pid, 'category_id' => $catId[$p['cat']], 'name' => $p['name'], 'slug' => $p['slug'], 'sku' => $p['sku'],
@@ -181,6 +186,7 @@ $product = function (array $p) use (&$products, &$images, &$variants, &$values, 
         'length_type' => $p['length_type'], 'season' => $p['season'], 'occasion' => $p['occasion'], 'care_instructions' => $p['care'],
         'ready_to_ship' => $p['made_to_order'] ? 0 : 1, 'made_to_order' => $p['made_to_order'], 'lead_time_days' => $p['lead_time_days'],
         'is_customizable' => $p['is_customizable'], 'custom_fields' => $p['custom_fields'], 'customization_fee' => $p['customization_fee'],
+        'custom_garment_id' => $p['garment'], 'allow_urgent' => $p['made_to_order'] ? 0 : $p['urgent'],
         'is_featured' => $p['is_featured'], 'is_new' => $p['is_new'], 'is_bestseller' => $p['is_bestseller'], 'badge' => $p['badge'],
         'status' => 'published', 'seo_title' => null, 'meta_description' => $p['short'],
         'published_at' => date('Y-m-d H:i:s', strtotime('-' . $p['days_ago'] . ' days')),
@@ -247,7 +253,7 @@ $P['oxford'] = $product(['name' => 'Oxford Button-Down Shirt', 'slug' => 'oxford
     'desc' => '<p>An enduring classic. Oxford cotton with a natural texture, button-down collar and a tailored body that works tucked or untucked.</p>',
     'images' => ['1596755094514-f87e34085b2c', '1602810318383-e386cc2a3ccf', '1598033129183-c4f50c736f10'], 'options' => ['Color' => ['Light Blue', 'White'], 'Size' => $apparel],
     'fit' => 'Tailored Fit', 'fabric' => 'Oxford Cotton', 'pattern' => 'Solid', 'sleeve_type' => 'Long Sleeve', 'collar_type' => 'Button-Down', 'occasion' => 'Smart Casual',
-    'care' => $cottonCare, 'is_featured' => 1, 'is_bestseller' => 1, 'days_ago' => 50]);
+    'care' => $cottonCare, 'is_featured' => 1, 'is_bestseller' => 1, 'days_ago' => 50, 'garment' => 2]);
 $P['linen'] = $product(['name' => 'Relaxed Linen Shirt', 'slug' => 'relaxed-linen-shirt', 'sku' => 'UC-SH-002', 'cat' => 'casual-shirts', 'price' => 4990,
     'short' => 'Airy linen-blend shirt with a camp collar for warm days.',
     'desc' => '<p>Made for summer evenings. A breathable linen blend with a relaxed camp collar and straight hem.</p>',
@@ -259,7 +265,7 @@ $P['blackshirt'] = $product(['name' => 'Premium Black Shirt', 'slug' => 'premium
     'desc' => '<p>A wardrobe essential for after dark. Fine cotton poplin with a subtle sheen, a spread collar and mother-of-pearl effect buttons.</p>',
     'images' => ['1598033129183-c4f50c736f10', '1602810318383-e386cc2a3ccf'], 'options' => ['Size' => $apparel],
     'fit' => 'Slim Fit', 'fabric' => 'Cotton Poplin', 'pattern' => 'Solid', 'sleeve_type' => 'Long Sleeve', 'collar_type' => 'Spread Collar', 'occasion' => 'Formal',
-    'care' => $cottonCare, 'badge' => 'Premium', 'is_featured' => 1, 'days_ago' => 20]);
+    'care' => $cottonCare, 'badge' => 'Premium', 'is_featured' => 1, 'days_ago' => 20, 'garment' => 2]);
 $P['denim'] = $product(['name' => 'Slim Fit Denim Jeans', 'slug' => 'slim-fit-denim-jeans', 'sku' => 'UC-JN-001', 'cat' => 'jeans', 'price' => 5990,
     'short' => 'Stretch denim with a slim leg and a clean mid-indigo wash.',
     'desc' => '<p>Everyday denim with a modern slim leg. Comfort stretch keeps its recovery, and the mid-rise sits comfortably all day.</p>',
@@ -322,7 +328,7 @@ $P['kurta'] = $product(['name' => 'Classic Cotton Kurta Shalwar', 'slug' => 'cla
     'images' => ['1622519407650-3df9883f76a5', '1597983073493-88cd35cf93b0'], 'options' => ['Color' => ['White', 'Off White', 'Charcoal'], 'Size' => ['S', 'M', 'L', 'XL', 'XXL']],
     'fit' => 'Regular Fit', 'fabric' => 'Cotton', 'pattern' => 'Solid', 'sleeve_type' => 'Long Sleeve', 'collar_type' => 'Band Collar', 'occasion' => 'Festive',
     'season' => 'All Season', 'care' => 'Machine wash cold, gentle. Iron while slightly damp for a crisp finish.', 'is_customizable' => 1,
-    'custom_fields' => 'measurements,color,instructions', 'customization_fee' => 1500, 'is_bestseller' => 1, 'days_ago' => 55]);
+    'custom_fields' => null, 'customization_fee' => 0, 'is_customizable' => 0, 'garment' => 1, 'is_bestseller' => 1, 'days_ago' => 55]);
 $P['waistcoat'] = $product(['name' => 'Textured Waistcoat', 'slug' => 'textured-waistcoat', 'sku' => 'UC-WC-001', 'cat' => 'waistcoats', 'price' => 6990,
     'short' => 'A structured waistcoat to layer over kurta or shirt for festive occasions.',
     'desc' => '<p>Finish your traditional look with a tailored, textured waistcoat. Made to order in your size.</p>',
@@ -400,6 +406,50 @@ $P['shorts'] = $product(['name' => 'Tailored Chino Shorts', 'slug' => 'tailored-
     'desc' => '<p>Smart shorts for warm weekends. Stretch twill, 7" inseam and a clean flat front.</p>',
     'images' => ['1591195853828-11db59a44f6b', '1473966968600-fa801b869a1a'], 'options' => ['Color' => ['Khaki', 'Navy'], 'Waist' => ['30', '32', '34', '36']],
     'fit' => 'Slim Fit', 'fabric' => 'Cotton Twill', 'pattern' => 'Solid', 'occasion' => 'Weekend', 'season' => 'Summer', 'care' => $cottonCare, 'days_ago' => 14]);
+$P['washwear'] = $product(['name' => 'Wash & Wear Shalwar Qameez', 'slug' => 'wash-and-wear-shalwar-qameez', 'sku' => 'UC-SQ-002', 'cat' => 'shalwar-kameez', 'price' => 4990,
+    'short' => 'Easy-care wash & wear suit — ready-made in S–XXL or stitched to your measurements at the same price.',
+    'desc' => '<p>A dependable everyday shalwar qameez in soft, wrinkle-resistant wash &amp; wear fabric. Choose your size off the rack, or open the Custom Size Studio to pick your collar, cuffs, daman and shalwar or pajama — and get it stitched to your exact measurements.</p>',
+    'images' => ['1597983073493-88cd35cf93b0', '1622519407650-3df9883f76a5'], 'options' => ['Color' => ['Off White', 'Sand', 'Charcoal', 'Navy', 'Olive'], 'Size' => ['S', 'M', 'L', 'XL', 'XXL']],
+    'fit' => 'Regular Fit', 'fabric' => 'Wash & Wear', 'pattern' => 'Solid', 'sleeve_type' => 'Long Sleeve', 'collar_type' => 'Band Collar', 'occasion' => 'Everyday',
+    'care' => 'Machine wash cold, hang dry. Minimal ironing needed.', 'garment' => 1, 'is_new' => 1, 'badge' => 'Custom Size', 'days_ago' => 3]);
+$P['officewhite'] = $product(['name' => 'Classic White Office Shirt', 'slug' => 'classic-white-office-shirt', 'sku' => 'UC-SH-004', 'cat' => 'formal-shirts', 'price' => 3990,
+    'short' => 'Crisp cotton-blend office shirt — ready-made or tailored to your neck, chest and sleeve.',
+    'desc' => '<p>The essential office shirt in an easy-iron cotton blend. Order your collar size off the rack, or customise the collar, cuffs and fit in the Custom Size Studio.</p>',
+    'images' => ['1602810318383-e386cc2a3ccf', '1596755094514-f87e34085b2c'], 'options' => ['Color' => ['White', 'Light Blue', 'Grey'], 'Size' => $apparel],
+    'fit' => 'Regular Fit', 'fabric' => 'Cotton Blend', 'pattern' => 'Solid', 'sleeve_type' => 'Long Sleeve', 'collar_type' => 'Classic Collar', 'occasion' => 'Business',
+    'care' => $cottonCare, 'garment' => 2, 'is_bestseller' => 1, 'days_ago' => 26]);
+$bridalCare = 'Professional dry clean only. Store folded in muslin cloth away from moisture.';
+$P['lehenga'] = $product(['name' => 'Embroidered Bridal Lehenga — Crimson', 'slug' => 'embroidered-bridal-lehenga-crimson', 'sku' => 'UC-BR-001', 'cat' => 'bridal-dresses', 'price' => 165000,
+    'short' => 'Hand-embellished crimson bridal lehenga with choli and net dupatta — made to order in your measurements.',
+    'desc' => '<p>A traditional crimson bridal lehenga with zardozi, dabka and sequin work, paired with a fitted choli and a scalloped net dupatta. Each piece is made to order — add your measurements and wedding date when ordering and our team will confirm the details with you.</p>',
+    'images' => ['1583391733956-3750e0ff4e8b', '1610030469983-98e550d6193c'], 'stock' => 0, 'fabric' => 'Raw Silk & Net', 'pattern' => 'Embroidered', 'occasion' => 'Bridal', 'brand' => 'Urban Collections Women',
+    'care' => $bridalCare, 'made_to_order' => 1, 'lead_time_days' => 30, 'is_customizable' => 1, 'custom_fields' => 'measurements,color,instructions', 'badge' => 'Made to Order', 'is_featured' => 1, 'days_ago' => 12,
+    'attrs' => [['Includes', 'Lehenga, choli, dupatta'], ['Production time', 'About 4–6 weeks']], 'weight' => 4.5]);
+$P['gharara'] = $product(['name' => 'Bridal Gharara Set — Antique Gold', 'slug' => 'bridal-gharara-set-antique-gold', 'sku' => 'UC-BR-002', 'cat' => 'bridal-dresses', 'price' => 145000,
+    'short' => 'Antique-gold gharara with short kurti and organza dupatta, finished with gota and kora work.',
+    'desc' => '<p>A regal gharara ensemble for baraat, nikkah or walima. Made to order with your measurements and colour preferences.</p>',
+    'images' => ['1610030469983-98e550d6193c', '1583391733956-3750e0ff4e8b'], 'stock' => 0, 'fabric' => 'Organza & Silk', 'pattern' => 'Embroidered', 'occasion' => 'Bridal', 'brand' => 'Urban Collections Women',
+    'care' => $bridalCare, 'made_to_order' => 1, 'lead_time_days' => 28, 'is_customizable' => 1, 'custom_fields' => 'measurements,color,instructions', 'badge' => 'Made to Order', 'days_ago' => 16, 'weight' => 4]);
+$P['maxi'] = $product(['name' => 'Chiffon Embellished Party Maxi', 'slug' => 'chiffon-embellished-party-maxi', 'sku' => 'UC-PW-001', 'cat' => 'party-wear', 'price' => 18500, 'sale_price' => 15900,
+    'short' => 'Flowing chiffon maxi with embellished bodice — for mehndi, dholki and evening events.',
+    'desc' => '<p>A graceful floor-length chiffon maxi with a hand-embellished bodice and soft cancan for flare. Comes with matching trouser and dupatta.</p>',
+    'images' => ['1515372039744-b8f02a3ae446', '1583391733956-3750e0ff4e8b'], 'options' => ['Color' => ['Burgundy', 'Olive', 'Beige'], 'Size' => ['S', 'M', 'L', 'XL']],
+    'fabric' => 'Chiffon', 'pattern' => 'Embellished', 'fit' => 'Flared', 'occasion' => 'Party', 'brand' => 'Urban Collections Women', 'care' => 'Dry clean only.', 'is_new' => 1, 'days_ago' => 5, 'weight' => 1.2]);
+$P['partyset'] = $product(['name' => 'Embroidered Party Wear Shirt & Trouser', 'slug' => 'embroidered-party-wear-shirt-trouser', 'sku' => 'UC-PW-002', 'cat' => 'party-wear', 'price' => 12900,
+    'short' => 'Three-piece organza party suit with embroidered neckline and straight trouser.',
+    'desc' => '<p>Elegant three-piece party wear: embroidered organza shirt, raw-silk trouser and printed organza dupatta. Available ready-made or stitched to your measurements.</p>',
+    'images' => ['1583391733956-3750e0ff4e8b', '1515372039744-b8f02a3ae446'], 'options' => ['Color' => ['Black', 'Navy', 'Burgundy'], 'Size' => ['S', 'M', 'L', 'XL']],
+    'fabric' => 'Organza', 'pattern' => 'Embroidered', 'fit' => 'Regular Fit', 'occasion' => 'Party', 'brand' => 'Urban Collections Women', 'care' => 'Dry clean recommended.', 'garment' => 3, 'days_ago' => 9, 'weight' => 0.9]);
+$P['lawn'] = $product(['name' => 'Printed Lawn 3-Piece Suit', 'slug' => 'printed-lawn-3-piece-suit', 'sku' => 'UC-WS-001', 'cat' => 'womens-shalwar-kameez', 'price' => 5990,
+    'short' => 'Breathable printed lawn shirt, dyed trouser and chiffon dupatta — ready-made or stitched to your size.',
+    'desc' => '<p>Everyday comfort in soft lawn. Choose a ready-made size or open the Custom Size Studio to choose your neckline, sleeves, daman and shalwar, trouser or palazzo — stitched to your measurements at the same price.</p>',
+    'images' => ['1610030469983-98e550d6193c', '1515372039744-b8f02a3ae446'], 'options' => ['Color' => ['Light Blue', 'Beige', 'Olive'], 'Size' => ['S', 'M', 'L', 'XL', 'XXL']],
+    'fabric' => 'Lawn', 'pattern' => 'Printed', 'fit' => 'Regular Fit', 'occasion' => 'Everyday', 'season' => 'Summer', 'brand' => 'Urban Collections Women', 'care' => 'Machine wash cold, gentle. Iron on reverse.', 'garment' => 3, 'is_new' => 1, 'badge' => 'Custom Size', 'days_ago' => 2]);
+$P['kurti'] = $product(['name' => 'Cotton Kurti Shalwar Set', 'slug' => 'cotton-kurti-shalwar-set', 'sku' => 'UC-WS-002', 'cat' => 'womens-shalwar-kameez', 'price' => 4490,
+    'short' => 'Easy cotton kurti with shalwar — a wardrobe staple for daily wear.',
+    'desc' => '<p>A soft cotton kurti with a classic shalwar, ideal for daily wear and work. Available ready-made or in your measurements.</p>',
+    'images' => ['1515372039744-b8f02a3ae446', '1610030469983-98e550d6193c'], 'options' => ['Color' => ['White', 'Burgundy', 'Navy', 'Sand'], 'Size' => ['S', 'M', 'L', 'XL', 'XXL']],
+    'fabric' => 'Cotton', 'pattern' => 'Solid', 'fit' => 'Regular Fit', 'occasion' => 'Everyday', 'brand' => 'Urban Collections Women', 'care' => 'Machine wash cold.', 'garment' => 3, 'days_ago' => 21]);
 
 $insert('products', $products);
 $insert('product_images', $images);
@@ -423,6 +473,98 @@ $relate('sneaker', ['runner', 'loafer'], 'related');
 $relate('blazer', ['suit'], 'upsell');
 $insert('product_relations', $rel);
 
+// ---------------------------------------------------------------- custom size studio
+$insert('custom_garments', [
+    ['id' => 1, 'code' => 'mens_shalwar_qameez', 'name' => "Men's Shalwar Qameez & Kurta", 'gender' => 'men', 'intro' => 'Shalwar qameez and kurta pajama with your choice of collar, cuffs, daman, pockets and shalwar or pajama.', 'fee' => 0, 'production_days_min' => 4, 'production_days_max' => 7, 'is_active' => 1, 'sort_order' => 1],
+    ['id' => 2, 'code' => 'mens_shirt', 'name' => "Men's Office Shirt", 'gender' => 'men', 'intro' => 'Office and formal shirts tailored to your neck, chest and sleeve, with your choice of collar, cuffs and fit.', 'fee' => 0, 'production_days_min' => 3, 'production_days_max' => 6, 'is_active' => 1, 'sort_order' => 2],
+    ['id' => 3, 'code' => 'womens_shalwar_kameez', 'name' => "Women's Shalwar Kameez", 'gender' => 'women', 'intro' => 'Ladies suits with your choice of neckline, sleeves, daman and shalwar, trouser, palazzo or churidar.', 'fee' => 0, 'production_days_min' => 5, 'production_days_max' => 8, 'is_active' => 1, 'sort_order' => 3],
+]);
+$charts = [
+    1 => ['height' => [65, 67, 69, 70, 71], 'neck' => [14.5, 15, 15.5, 16.5, 17.5], 'chest' => [36, 38, 41, 44, 47], 'shoulder' => [17, 17.5, 18, 19, 19.5], 'sleeve' => [23, 23.5, 24, 24.5, 25],
+          'qameez_length' => [38, 39, 40, 41, 42], 'waist' => [30, 32, 35, 38, 41], 'hip' => [37, 39, 42, 45, 48], 'shalwar_length' => [38, 39, 40, 40.5, 41], 'bottom' => [8, 8.5, 9, 9, 9.5]],
+    2 => ['height' => [65, 67, 69, 70, 71], 'neck' => [14.5, 15, 15.5, 16.5, 17.5], 'chest' => [36, 38, 41, 44, 47], 'shoulder' => [17, 17.5, 18, 19, 19.5], 'sleeve' => [24, 24.5, 25, 25.5, 26],
+          'shirt_length' => [28, 29, 30, 31, 32], 'waist' => [30, 32, 35, 38, 41]],
+    3 => ['height' => [61, 62.5, 64, 65, 66], 'bust' => [33, 35, 37.5, 40, 43], 'shoulder' => [13.5, 14, 14.5, 15, 15.5], 'armhole' => [7.5, 8, 8.5, 9, 9.5], 'sleeve' => [20, 20.5, 21, 21.5, 22],
+          'kameez_length' => [40, 41, 42, 43, 43], 'waist' => [27, 29, 31.5, 34, 37], 'hip' => [36, 38, 40.5, 43, 46], 'trouser_length' => [37, 38, 38.5, 39, 39.5], 'bottom' => [7, 7, 7.5, 7.5, 8]],
+];
+$sizesList = ['S', 'M', 'L', 'XL', 'XXL'];
+$chartRows = [];
+foreach ($charts as $gid => $keys) {
+    foreach ($keys as $k => $vals) {
+        foreach ($vals as $i => $v) {
+            $chartRows[] = ['garment_id' => $gid, 'size_label' => $sizesList[$i], 'measure_key' => $k, 'value' => $v];
+        }
+    }
+}
+$insert('custom_size_chart', $chartRows);
+$fits = [
+    1 => [[62, 66, 50, 62], [65, 68, 60, 72], [67, 70, 70, 82], [68, 72, 80, 94], [69, 76, 92, 115]],
+    3 => [[58, 62, 42, 52], [60, 64, 50, 60], [62, 66, 58, 68], [63, 67, 66, 78], [64, 69, 76, 92]],
+];
+$fits[2] = $fits[1];
+ksort($fits);
+$fitRows = [];
+foreach ($fits as $gid => $list) {
+    foreach ($list as $i => [$h1, $h2, $w1, $w2]) {
+        $fitRows[] = ['garment_id' => $gid, 'size_label' => $sizesList[$i], 'height_min_in' => $h1, 'height_max_in' => $h2, 'weight_min_kg' => $w1, 'weight_max_kg' => $w2, 'sort_order' => $i];
+    }
+}
+$insert('custom_size_fit', $fitRows);
+$opt = [];
+$addOpt = function (int $gid, string $group, array $items) use (&$opt) {
+    foreach ($items as $i => $it) {
+        [$key, $label, $price] = $it + [2 => 0];
+        $opt[] = ['garment_id' => $gid, 'option_group' => $group, 'value_key' => $key, 'label' => $label, 'extra_price' => $price, 'is_default' => $i === 0 ? 1 : 0, 'is_active' => 1, 'sort_order' => $i];
+    }
+};
+$addOpt(1, 'collar', [['band', 'Ban (band) collar'], ['shirt', 'Shirt collar'], ['sherwani', 'Sherwani collar', 500], ['round', 'Round neck (no collar)']]);
+$addOpt(1, 'cuff', [['plain', 'Plain sleeve (kurta style)'], ['round', 'Round cuff'], ['square', 'Square cuff'], ['french', 'French cuff with cufflinks', 400]]);
+$addOpt(1, 'daman', [['straight', 'Straight daman'], ['round', 'Round daman']]);
+$addOpt(1, 'pocket', [['side', 'Side pockets'], ['none', 'No pockets'], ['chest', 'Chest pocket'], ['both', 'Chest + side pockets']]);
+$addOpt(1, 'bottom', [['shalwar', 'Shalwar'], ['pajama', 'Pajama'], ['trouser', 'Trouser']]);
+$addOpt(2, 'collar', [['classic', 'Classic point collar'], ['cutaway', 'Cutaway collar'], ['button_down', 'Button-down collar'], ['mandarin', 'Mandarin collar']]);
+$addOpt(2, 'cuff', [['button', 'Single button cuff'], ['round', 'Round cuff'], ['french', 'French cuff', 400]]);
+$addOpt(2, 'pocket', [['chest', 'Chest pocket'], ['none', 'No pocket']]);
+$addOpt(2, 'fit', [['regular', 'Regular fit'], ['slim', 'Slim fit'], ['relaxed', 'Relaxed fit']]);
+$addOpt(3, 'neck', [['round', 'Round neck'], ['v_neck', 'V-neck'], ['boat', 'Boat neck'], ['band', 'Band collar'], ['sweetheart', 'Sweetheart']]);
+$addOpt(3, 'sleeve', [['full', 'Full sleeves'], ['three_quarter', '3/4 sleeves'], ['short', 'Short sleeves'], ['sleeveless', 'Sleeveless']]);
+$addOpt(3, 'daman', [['straight', 'Straight'], ['a_line', 'A-line flare', 300], ['round', 'Round (curved)']]);
+$addOpt(3, 'bottom', [['shalwar', 'Shalwar'], ['trouser', 'Straight trouser'], ['palazzo', 'Palazzo', 300], ['churidar', 'Churidar']]);
+$insert('custom_style_options', $opt);
+
+// ---------------------------------------------------------------- alterations
+$alt = [];
+$addAlt = function (string $cat, string $garment, array $items) use (&$alt) {
+    foreach ($items as $it) {
+        [$name, $min, $max, $d1, $d2, $desc] = $it + [5 => null];
+        $alt[] = ['category' => $cat, 'garment' => $garment, 'name' => $name, 'description' => $desc, 'price_min' => $min, 'price_max' => $max, 'days_min' => $d1, 'days_max' => $d2, 'is_active' => 1, 'sort_order' => count($alt)];
+    }
+};
+$addAlt('Men', 'Coat Pant / Suit', [['Full suit fitting', 2500, 4500, 3, 5, 'Jacket body, sleeves and trouser adjusted to fit'], ['Jacket sleeve shortening / lengthening', 800, 1500, 2, 3], ['Jacket taking in (sides & back)', 1500, 2500, 3, 4], ['Trouser waist in / out', 500, 900, 1, 2], ['Trouser length / hemming', 300, 600, 1, 2]]);
+$addAlt('Men', 'Sherwani', [['Full sherwani fitting', 3000, 6000, 4, 6, 'Chest, waist, sleeves and length'], ['Sleeve length adjustment', 1000, 2000, 2, 3], ['Length shortening', 1500, 3000, 3, 5]]);
+$addAlt('Men', 'Prince Coat', [['Full prince coat fitting', 2500, 5000, 3, 5], ['Sleeve adjustment', 900, 1800, 2, 3]]);
+$addAlt('Men', 'Waistcoat', [['Waistcoat fitting', 800, 1500, 2, 3]]);
+$addAlt('Men', 'Shalwar Qameez / Kurta', [['Qameez fitting (sides & sleeves)', 400, 800, 1, 2], ['Qameez length shortening', 300, 600, 1, 2], ['Shalwar / pajama waist or length', 250, 500, 1, 2], ['Collar or cuff change', 500, 1000, 2, 3]]);
+$addAlt('Men', 'Shirt / Trouser / Jeans', [['Shirt taking in', 400, 800, 1, 2], ['Shirt sleeve shortening', 400, 700, 1, 2], ['Jeans / trouser hemming', 300, 500, 1, 1]]);
+$addAlt('Women', 'Shalwar Kameez', [['Kameez fitting', 500, 1000, 1, 3], ['Kameez length adjustment', 400, 800, 1, 2], ['Shalwar / trouser fitting', 300, 600, 1, 2], ['Sleeves change (length / style)', 500, 1200, 2, 3]]);
+$addAlt('Women', 'Party Wear', [['Party wear fitting', 1500, 3500, 3, 5, 'Embellished shirts, peplums and formal suits'], ['Maxi / gown fitting', 2000, 4000, 3, 6], ['Lining or cancan adjustment', 800, 1800, 2, 4]]);
+$addAlt('Bridal', 'Bridal Lehenga / Gharara', [['Bridal lehenga full fitting', 5000, 15000, 7, 10, 'Choli, lehenga waist and length — careful handling of embellishment'], ['Choli / blouse fitting', 2000, 5000, 4, 6], ['Lehenga waist or length', 2500, 6000, 5, 7], ['Gharara fitting', 4000, 10000, 6, 9], ['Dupatta finishing / lace', 1500, 4000, 3, 5]]);
+$addAlt('General', 'Repairs', [['Zip replacement', 300, 800, 1, 2], ['Buttons / hooks replacement', 150, 400, 0, 1], ['Darning & small repairs', 300, 1000, 2, 3]]);
+$insert('alteration_services', $alt);
+
+// ---------------------------------------------------------------- urgent delivery
+$insert('urgent_delivery_rates', [
+    ['city' => 'Karachi', 'fee' => 600, 'label' => 'Same-day Urgent Delivery', 'days_min' => 0, 'days_max' => 0, 'cutoff_time' => '13:00:00', 'is_active' => 1, 'sort_order' => 1],
+    ['city' => 'Lahore', 'fee' => 700, 'label' => 'Same-day Urgent Delivery', 'days_min' => 0, 'days_max' => 0, 'cutoff_time' => '12:00:00', 'is_active' => 1, 'sort_order' => 2],
+    ['city' => 'Islamabad', 'fee' => 700, 'label' => 'Same-day Urgent Delivery', 'days_min' => 0, 'days_max' => 0, 'cutoff_time' => '12:00:00', 'is_active' => 1, 'sort_order' => 3],
+    ['city' => 'Rawalpindi', 'fee' => 700, 'label' => 'Same-day Urgent Delivery', 'days_min' => 0, 'days_max' => 0, 'cutoff_time' => '12:00:00', 'is_active' => 1, 'sort_order' => 4],
+    ['city' => 'Faisalabad', 'fee' => 800, 'label' => 'Next-day Urgent Delivery', 'days_min' => 1, 'days_max' => 1, 'cutoff_time' => '16:00:00', 'is_active' => 1, 'sort_order' => 5],
+    ['city' => 'Multan', 'fee' => 800, 'label' => 'Next-day Urgent Delivery', 'days_min' => 1, 'days_max' => 1, 'cutoff_time' => '16:00:00', 'is_active' => 1, 'sort_order' => 6],
+    ['city' => 'Peshawar', 'fee' => 900, 'label' => 'Next-day Urgent Delivery', 'days_min' => 1, 'days_max' => 1, 'cutoff_time' => '15:00:00', 'is_active' => 1, 'sort_order' => 7],
+    ['city' => 'Hyderabad', 'fee' => 700, 'label' => 'Next-day Urgent Delivery', 'days_min' => 1, 'days_max' => 1, 'cutoff_time' => '16:00:00', 'is_active' => 1, 'sort_order' => 8],
+]);
+
+
 // ---------------------------------------------------------------- collections
 $colls = [
     ['Everyday Essentials', 'everyday-essentials', 'Refined basics you will reach for every day.', '1521572163474-6864f9cf17ab', ['tee', 'oversized', 'polo', 'denim', 'chino', 'sneaker', 'cap', 'wallet']],
@@ -430,15 +572,16 @@ $colls = [
     ['Business & Formal', 'formal', 'Sharp tailoring and finishing touches for business and occasions.', '1507679799987-c73779587ccf', ['suit', 'blackshirt', 'trouser', 'oxfordshoe', 'tie', 'watch']],
     ['Weekend Style', 'weekend-style', 'Easy layers and relaxed fits for your days off.', '1602810318383-e386cc2a3ccf', ['linen', 'shorts', 'runner', 'sunglasses', 'cap', 'hoodie']],
     ['Streetwear', 'streetwear', 'Oversized silhouettes, bold layers and fresh sneakers.', '1503341504253-dff4815485f1', ['oversized', 'bomber', 'hoodie', 'runner', 'cap']],
-    ['Traditional Collection', 'traditional-collection', 'Kurtas, shalwar kameez and waistcoats for festive days.', '1622519407650-3df9883f76a5', ['kurta', 'waistcoat', 'perfume']],
+    ['Traditional Collection', 'traditional-collection', 'Kurtas, shalwar kameez and waistcoats for festive days.', '1622519407650-3df9883f76a5', ['kurta', 'washwear', 'waistcoat', 'lawn', 'kurti', 'perfume']],
     ['Premium Accessories', 'premium-accessories', 'Watches, leather goods and fragrance to complete the look.', '1523275335684-37898b6baf30', ['watch', 'wallet', 'belt', 'sunglasses', 'backpack', 'perfume', 'tie']],
     ['Summer Collection', 'summer-collection', 'Breathable fabrics and lighter tones for the warm months.', '1511499767150-a48a237f0083', ['linen', 'polo', 'tee', 'shorts', 'sunglasses', 'blazer']],
+    ['Bridal & Party Wear', 'bridal-party-wear', 'Bridal lehengas, ghararas and party wear for every celebration.', '1583391733956-3750e0ff4e8b', ['lehenga', 'gharara', 'maxi', 'partyset']],
     ['Winter Collection', 'winter-collection', 'Leather, wool and layering pieces for colder days.', '1551028719-00167b16eac5', ['leather', 'bomber', 'sweater', 'hoodie', 'boot', 'trouser']],
 ];
 $cRows = $cpRows = [];
 foreach ($colls as $i => [$n, $s, $d, $im, $prods]) {
     $cRows[] = ['id' => $i + 1, 'name' => $n, 'slug' => $s, 'description' => $d, 'image' => $img($im), 'banner_image' => $img($im, 1920),
-        'sort_order' => $i, 'is_active' => 1, 'show_on_home' => in_array($s, ['everyday-essentials', 'smart-casual', 'formal', 'streetwear', 'traditional-collection', 'premium-accessories'], true) ? 1 : 0];
+        'sort_order' => $i, 'is_active' => 1, 'show_on_home' => in_array($s, ['everyday-essentials', 'smart-casual', 'formal', 'bridal-party-wear', 'traditional-collection', 'premium-accessories'], true) ? 1 : 0];
     foreach ($prods as $j => $k) {
         $cpRows[] = ['collection_id' => $i + 1, 'product_id' => $P[$k], 'sort_order' => $j];
     }
@@ -499,10 +642,24 @@ $insert('banner_slides', [
         'text_align' => 'center', 'text_position' => 'bottom', 'overlay_opacity' => 35, 'image_position' => 'center center', 'sort_order' => 3],
 ]);
 
+$insert('banner_slides', [
+    ['image_desktop' => $img('1583391733956-3750e0ff4e8b', 2000), 'image_mobile' => $img('1583391733956-3750e0ff4e8b', 900), 'eyebrow' => 'Women · Bridal & Party Wear', 'heading' => 'Crafted for Your Celebrations',
+        'subheading' => 'Bridal. Party. Everyday.', 'description' => 'Made-to-order bridal wear, party outfits and shalwar kameez — available in your exact size.',
+        'btn1_text' => 'Shop Women', 'btn1_url' => 'category/women', 'btn2_text' => 'Custom Size', 'btn2_url' => 'custom-size',
+        'text_align' => 'right', 'text_position' => 'middle', 'overlay_opacity' => 40, 'image_position' => 'center 25%', 'sort_order' => 4],
+]);
+
 // ---------------------------------------------------------------- homepage sections
 $sections = [
     ['hero', 'Hero carousel', []],
-    ['usp', 'Service highlights', ['items' => "truck | Free Delivery | On orders over Rs. 5,000\ncash-coin | Cash on Delivery | Pay when your order arrives\narrow-repeat | Easy Exchanges | Within 7 days of delivery\nshield-check | Secure Checkout | Your details stay protected", 'bg_color' => '#E9E1D5', 'padding_top' => '28', 'padding_bottom' => '28', 'animation' => 'fade']],
+    ['usp', 'Service highlights', ['items' => "rulers | Custom Size | Your measurements, ready-made price\nscissors | Alterations | Suits, sherwani, bridal & more\nlightning-charge | Urgent Delivery | Same day in major cities\ncash-coin | Cash on Delivery | Pay when your order arrives", 'bg_color' => '#E9E1D5', 'padding_top' => '28', 'padding_bottom' => '28', 'animation' => 'fade']],
+    ['services', 'Services — Custom Size & Alterations', ['eyebrow' => 'Tailored For You', 'title' => 'Your Size. Your Style.', 'subtitle' => 'Two services that make Urban Collections different.',
+        'card1_image' => $img('1593030761757-71fae45fa0e7', 1400), 'card1_eyebrow' => 'Custom Size Studio', 'card1_title' => 'Ready-made, made to your measurements',
+        'card1_text' => 'Design your shalwar qameez, kurta, office shirt or ladies suit on our interactive mannequin — at the ready-made price.',
+        'card1_points' => "Pick colour, collar, cuffs, daman & shalwar style\nStart from S–XXL or our height & weight size finder\nStep-by-step guide to measure yourself", 'card1_button_text' => 'Customise your size', 'card1_button_url' => 'custom-size',
+        'card2_image' => $img('1441984904996-e0b6ba687e04', 1400), 'card2_eyebrow' => 'Alteration Service', 'card2_title' => 'Perfect fit for every outfit',
+        'card2_text' => 'Coat pant fitting, sherwani and prince coat, bridal and party wear — bought from us or anywhere else.',
+        'card2_points' => "See estimated price & time before you send it\nDrop off at our store or courier pickup\nTrack your request online", 'card2_button_text' => 'Request an alteration', 'card2_button_url' => 'alterations', 'bg_color' => '#F7F6F2']],
     ['categories', 'Shop by category', ['eyebrow' => 'Discover', 'title' => 'Shop by Category', 'subtitle' => 'From sharp tailoring to everyday essentials — find the pieces that define your style.', 'source' => 'home', 'limit' => '8', 'layout' => 'editorial', 'button_text' => 'View all', 'button_url' => 'shop']],
     ['new_arrivals', 'New arrivals', ['eyebrow' => 'Just Landed', 'title' => 'New Arrivals', 'subtitle' => 'The latest additions to the Urban Collections wardrobe.', 'mode' => 'latest', 'limit' => '10', 'button_text' => 'Shop new arrivals', 'button_url' => 'new-arrivals']],
     ['editorial', 'Editorial — Style made for the modern man', ['eyebrow' => 'The Urban Edit', 'title' => 'Style Made for the Modern Man',
@@ -541,23 +698,22 @@ $navAdd = function (string $menu, string $label, ?string $url, array $extra = []
     return $nid;
 };
 $navAdd('header', 'Home', '/');
-$navAdd('header', 'Shop', 'shop');
-$navAdd('header', 'New Arrivals', 'new-arrivals', ['highlight' => 1]);
-$navAdd('header', 'Clothing', 'category/clothing', ['category_id' => $catId['clothing'], 'is_mega' => 1, 'mega_image' => $img('1596755094514-f87e34085b2c', 700)]);
+$navAdd('header', 'New Arrivals', 'new-arrivals');
+$navAdd('header', 'Women', 'category/women', ['category_id' => $catId['women'], 'is_mega' => 1, 'mega_image' => $img('1583391733956-3750e0ff4e8b', 700)]);
+$navAdd('header', 'Men', 'category/clothing', ['category_id' => $catId['clothing'], 'is_mega' => 1, 'mega_image' => $img('1596755094514-f87e34085b2c', 700)]);
 $navAdd('header', 'Footwear', 'category/footwear', ['category_id' => $catId['footwear'], 'is_mega' => 1, 'mega_image' => $img('1549298916-b41d501d3772', 700)]);
 $navAdd('header', 'Accessories', 'category/accessories', ['category_id' => $catId['accessories'], 'is_mega' => 1, 'mega_image' => $img('1523275335684-37898b6baf30', 700)]);
-$navAdd('header', 'Formal', 'category/formal-wear');
-$navAdd('header', 'Traditional', 'category/traditional-wear');
 $cid = $navAdd('header', 'Collections', 'collections');
 foreach ([['Everyday Essentials', 'collections/everyday-essentials'], ['Smart Casual', 'collections/smart-casual'], ['Business & Formal', 'collections/formal'],
           ['Streetwear', 'collections/streetwear'], ['Traditional Collection', 'collections/traditional-collection'], ['Premium Accessories', 'collections/premium-accessories']] as [$l, $u]) {
     $navAdd('header', $l, $u, [], $cid);
 }
-$navAdd('header', 'About', 'about-us');
-foreach ([['New Arrivals', 'new-arrivals'], ['Clothing', 'category/clothing'], ['Footwear', 'category/footwear'], ['Accessories', 'category/accessories'], ['Collections', 'collections'], ['Shop All', 'shop']] as [$l, $u]) {
+$navAdd('header', 'Custom Size', 'custom-size', ['highlight' => 1]);
+$navAdd('header', 'Alterations', 'alterations');
+foreach ([['New Arrivals', 'new-arrivals'], ["Men's Clothing", 'category/clothing'], ['Women', 'category/women'], ['Footwear', 'category/footwear'], ['Accessories', 'category/accessories'], ['Collections', 'collections'], ['Shop All', 'shop']] as [$l, $u]) {
     $navAdd('footer_shop', $l, $u);
 }
-foreach ([['Contact Us', 'contact'], ['Track Your Order', 'track-order'], ['Shipping Policy', 'shipping-policy'], ['Returns & Exchanges', 'returns-and-exchanges'], ['Size Guide', 'size-guide'], ['Care Guide', 'care-guide'], ['FAQs', 'faqs']] as [$l, $u]) {
+foreach ([['Contact Us', 'contact'], ['Track Your Order', 'track-order'], ['Custom Size Studio', 'custom-size'], ['Measurement Guide', 'measurement-guide'], ['Alterations', 'alterations'], ['Shipping Policy', 'shipping-policy'], ['Returns & Exchanges', 'returns-and-exchanges'], ['Size Guide', 'size-guide'], ['Care Guide', 'care-guide'], ['FAQs', 'faqs']] as [$l, $u]) {
     $navAdd('footer_help', $l, $u);
 }
 foreach ([['About Us', 'about-us'], ["Men's Fashion Guide", 'mens-fashion-guide'], ['Delivery Information', 'delivery-information'], ['Payment Information', 'payment-information'], ['Privacy Policy', 'privacy-policy'], ['Terms & Conditions', 'terms-and-conditions']] as [$l, $u]) {
@@ -568,7 +724,7 @@ $insert('navigation_items', $nav);
 // ---------------------------------------------------------------- pages
 $review = '<p><em>Store owner: review and adapt this page to your actual business practices before launch.</em></p>';
 $pages = [
-    ['About Urban Collections', 'about-us', 'wide', "Urban Collections is a men's fashion and lifestyle brand bringing together modern urban style and timeless masculine classics.",
+    ['About Urban Collections', 'about-us', 'wide', "Urban Collections is a Pakistani fashion and lifestyle brand for men and women, bringing together modern urban style, traditional wear and bridal classics.",
         '<h2>Style that speaks for you</h2><p>Urban Collections was founded for the modern man who wants to look sharp and feel confident — without overthinking it. We curate and design clothing, footwear and accessories that work across your whole life: the office, the weekend, festive gatherings and the moments that matter.</p><h3>What we stand for</h3><ul><li><strong>Modern design</strong> — contemporary cuts with timeless details.</li><li><strong>Considered quality</strong> — fabrics and finishes chosen to last.</li><li><strong>Versatility</strong> — pieces that pair easily and earn their place in your wardrobe.</li><li><strong>Service</strong> — straightforward delivery, Cash on Delivery and easy exchanges.</li></ul><h3>Find us</h3><p>Follow <a href="https://www.instagram.com/urban_collection11/" target="_blank">@urban_collection11</a> on Instagram and <a href="https://www.facebook.com/profile.php?id=61595441786815" target="_blank">Urban Collections on Facebook</a> for new arrivals and styling inspiration.</p>',
         $img('1441984904996-e0b6ba687e04', 1920)],
     ['Contact Us', 'contact', 'contact', 'Questions about an order, sizing or styling? We are here to help.',
@@ -608,16 +764,16 @@ $insert('redirects', [
 // ---------------------------------------------------------------- settings
 $settings = [
     'general' => [
-        'store_name' => 'Urban Collections', 'store_tagline' => "Premium Men's Fashion", 'store_email' => 'info@urbancollections.pk',
+        'store_name' => 'Urban Collections', 'store_tagline' => 'Premium Fashion for Men & Women', 'store_email' => 'info@urbancollections.pk',
         'store_phone' => '+92 300 0000000', 'store_whatsapp' => '', 'store_address' => 'Pakistan', 'store_country' => 'Pakistan',
         'store_hours' => 'Mon – Sat, 10:00am – 8:00pm', 'logo' => 'assets/images/brand/logo-round.webp', 'logo_light' => '', 'favicon' => 'assets/images/brand/favicon.png',
         'show_brand_text' => '1', 'currency_symbol' => 'Rs.', 'currency_code' => 'PKR', 'currency_position' => 'before', 'currency_decimals' => '0',
         'copyright_text' => '© {year} Urban Collections. All rights reserved.',
-        'footer_about' => "Premium modern men's fashion — contemporary urban style and timeless classics for every part of your life.",
+        'footer_about' => 'Premium fashion for men and women — contemporary urban style, traditional wear and bridal, in ready-made or your own custom size.',
     ],
     'announcement' => [
         'announcement_enabled' => '1',
-        'announcement_items' => "Free delivery on orders over Rs. 5,000\nCash on Delivery available nationwide\nEasy 7-day size exchanges",
+        'announcement_items' => "New: Custom Size Studio — your measurements, ready-made price\nFree delivery on orders over Rs. 5,000 · Cash on Delivery nationwide\nUrgent same-day delivery in Karachi, Lahore & Islamabad",
         'announcement_link' => 'shipping-policy',
     ],
     'social' => [
@@ -632,10 +788,14 @@ $settings = [
         'delivery_note' => 'Orders placed before 2pm on working days are usually dispatched the same or next working day.',
         'returns_note' => 'Easy exchanges within 7 days of delivery on unworn items with tags.',
     ],
+    'services' => [
+        'urgent_enabled' => '1', 'alteration_pickup_fee' => '400', 'alteration_notify_email' => '',
+        'alteration_dropoff_note' => 'Drop off at our store, Mon – Sat 11am – 8pm. Bring the outfit and any accessories (belt, dupatta).',
+    ],
     'mail' => ['mail_enabled' => '0', 'mail_driver' => 'smtp', 'mail_from_email' => '', 'mail_from_name' => 'Urban Collections', 'smtp_host' => '', 'smtp_port' => '465', 'smtp_secure' => 'ssl', 'smtp_user' => ''],
     'seo' => [
-        'seo_site_title' => 'Urban Collections', 'seo_tagline' => "Premium Men's Fashion in Pakistan", 'seo_title_template' => '{title} | {site}',
-        'seo_default_description' => "Urban Collections — premium modern men's fashion: shirts, tees, jeans, tailoring, traditional wear, footwear and accessories. Cash on Delivery across Pakistan.",
+        'seo_site_title' => 'Urban Collections', 'seo_tagline' => 'Premium Men & Women Fashion in Pakistan', 'seo_title_template' => '{title} | {site}',
+        'seo_default_description' => "Urban Collections — premium fashion for men and women in Pakistan: shalwar qameez, office shirts, tees, bridal dresses, party wear, footwear and watches. Custom sizing, alterations and Cash on Delivery.",
         'seo_og_image' => 'assets/images/brand/og-default.jpg', 'seo_google_verification' => '', 'seo_bing_verification' => '', 'seo_noindex_site' => '0',
         'robots_txt' => "User-agent: *\nDisallow: /admin/\nDisallow: /ajax/\nDisallow: /api/\nDisallow: /cart\nDisallow: /checkout\nDisallow: /account/\nDisallow: /search\n",
         'ads_txt' => '', 'analytics_ga4_id' => '', 'analytics_gtm_id' => '', 'analytics_fb_pixel' => '', 'analytics_exclude_admins' => '1',

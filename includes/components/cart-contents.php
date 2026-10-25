@@ -35,7 +35,12 @@ $merch = $totals['subtotal'] + $totals['customization_total'] - $totals['discoun
                 <?php if ($l['options']): ?>
                     <p class="uc-cart-opts"><?php foreach ($l['options'] as $k => $v): ?><span><?= e($k === 'Color' ? 'Colour' : $k) ?>: <?= e($v) ?></span><?php endforeach; ?></p>
                 <?php endif; ?>
-                <?php if (cart_has_customization($l)): ?>
+                <?php if ($l['is_custom']): ?>
+                    <details class="uc-cart-custom" open><summary><i class="bi bi-rulers"></i> Made to your measurements<?= $l['customization_fee'] > 0 ? ' (+' . e(money($l['customization_fee'])) . ' each)' : '' ?></summary>
+                        <?php foreach ($l['spec_summary'] as $k => $v): ?><p><strong><?= e($k) ?>:</strong> <?= e($v) ?></p><?php endforeach; ?>
+                        <a class="small" href="<?= e(url('custom-size/' . $l['slug'])) ?>">Customise another</a>
+                    </details>
+                <?php elseif (cart_has_customization($l)): ?>
                     <details class="uc-cart-custom"><summary>Customisation (+<?= e(money($l['customization_fee'])) ?> each)</summary>
                         <?php if ($l['custom_measurements']): ?><p><strong>Measurements:</strong> <?= e($l['custom_measurements']) ?></p><?php endif; ?>
                         <?php if ($l['custom_color']): ?><p><strong>Colour:</strong> <?= e($l['custom_color']) ?></p><?php endif; ?>
@@ -43,7 +48,7 @@ $merch = $totals['subtotal'] + $totals['customization_total'] - $totals['discoun
                         <?php if ($l['custom_instructions']): ?><p><strong>Instructions:</strong> <?= e($l['custom_instructions']) ?></p><?php endif; ?>
                     </details>
                 <?php endif; ?>
-                <?php if ($l['made_to_order']): ?><p class="uc-cart-note"><i class="bi bi-hourglass-split"></i> Made to order — <?= (int) $l['lead_time_days'] ?> days production</p><?php endif; ?>
+                <?php if ($l['made_to_order']): ?><p class="uc-cart-note"><i class="bi bi-hourglass-split"></i> <?= $l['is_custom'] ? 'Stitched for you' : 'Made to order' ?> — up to <?= (int) $l['lead_time_days'] ?> days production</p><?php endif; ?>
                 <?php if ($l['error']): ?><p class="uc-cart-error"><i class="bi bi-exclamation-triangle"></i> <?= e($l['error']) ?></p><?php endif; ?>
                 <div class="uc-cart-row">
                     <div class="uc-qty uc-qty--sm" data-qty>

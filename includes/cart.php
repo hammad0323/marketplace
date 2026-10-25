@@ -156,6 +156,41 @@ function cart_add(int $productId, ?int $variantId, int $qty, array $customIn = [
     return ['ok' => true, 'message' => $product['name'] . ' added to your bag.'];
 }
 
+/**
+ * Adds a made-to-measure (Custom Size Studio) item. The spec is validated server-side and stored
+ * as JSON; its price is recalculated from the catalogue every time the cart is read.
+ */
+function cart_add_custom(int $productId, array $in, int $qty = 1): array
+{
+    $qty = max(1, min(5, $qty));
+    $product = db_row("SELECT * FROM products WHERE id = ? AND status = 'published'", [$productId]);
+    if (!$product) {
+        return ['ok' => false, 'message' => 'This product is no longer available.', 'errors' => []];
+    }
+    $res = studio_validate($product, $in);
+    if (!$res['ok']) {
+        return ['ok' => false, 'message' => $res['errors'][0], 'errors' => $res['errors']];
+    }
+    $spec = $res['spec'];
+    $json = json_encode($spec, JSON_UNESCAPED_UNICODE);
+    $hash = md5($json);
+    $cartId = cart_id(true);
+    $existing = db_row('SELECT id, qty FROM cart_items WHERE cart_id = ? AND product_id = ? AND is_custom = 1 AND custom_hash = ?', [$cartId, $productId, $hash]);
+    if ($existing) {
+        db_exec('UPDATE cart_items SET qty = LEAST(5, qty + ?) WHERE id = ?', [$qty, (int) $existing['id']]);
+    } else {
+        db_insert('cart_items', [
+            'cart_id' => $cartId, 'product_id' => $productId, 'variant_id' => null, 'qty' => $qty, 'is_custom' => 1, 'custom_spec' => $json,
+            'custom_color' => $spec['color'], 'custom_measurements' => mb_substr(studio_summary_text($spec), 0, 2000),
+            'custom_instructions' => $spec['notes'] ?: null, 'custom_hash' => $hash,
+        ]);
+    }
+    if (!empty($in['save_profile']) && customer_id()) {
+        studio_save_profile($spec['garment'], (string) ($in['profile_name'] ?? ''), $spec['measurements']);
+    }
+    return ['ok' => true, 'message' => $product['name'] . ' (made to your measurements) added to your bag.', 'errors' => []];
+}
+
 function cart_update_qty(int $itemId, int $qty): array
 {
     $cartId = cart_id();
@@ -168,6 +203,10 @@ function cart_update_qty(int $itemId, int $qty): array
         return ['ok' => true, 'message' => 'Item removed.'];
     }
     $qty = min(UC_CART_MAX_QTY, $qty);
+    if ((int) $line['is_custom']) {
+        db_exec('UPDATE cart_items SET qty = ? WHERE id = ?', [min(5, $qty), $itemId]);
+        return ['ok' => $qty <= 5, 'message' => $qty <= 5 ? 'Bag updated.' : 'Up to 5 custom-made pieces per design.'];
+    }
     $product = db_row('SELECT * FROM products WHERE id = ?', [(int) $line['product_id']]);
     $variant = $line['variant_id'] ? db_row('SELECT * FROM product_variants WHERE id = ?', [(int) $line['variant_id']]) : null;
     $available = $product ? available_qty($product, $variant) : 0;
@@ -229,10 +268,16 @@ function cart_lines(bool $lock = false): array
             }
         }
         $price = price_info($product, $variant);
-        $available = available_qty($product, $variant);
+        $isCustom = (int) $l['is_custom'] === 1;
+        $spec = $isCustom ? (json_decode((string) $l['custom_spec'], true) ?: null) : null;
+        $available = $isCustom ? 50 : available_qty($product, $variant);
         $error = null;
         if ($product['status'] !== 'published') {
             $error = 'No longer available';
+        } elseif ($isCustom) {
+            if (!$spec || (int) ($spec['garment_id'] ?? 0) !== (int) $product['custom_garment_id'] || !studio_garment((int) $spec['garment_id'])) {
+                $error = 'Custom sizing is no longer offered for this product';
+            }
         } elseif ((int) $product['has_variants'] && (!$variant || !(int) $variant['is_active'] || (int) $variant['product_id'] !== (int) $product['id'])) {
             $error = 'Selected option unavailable';
         } elseif ($available <= 0) {
@@ -240,10 +285,12 @@ function cart_lines(bool $lock = false): array
         } elseif ((int) $l['qty'] > $available) {
             $error = 'Only ' . $available . ' left';
         }
-        $customFee = cart_has_customization($l) ? (float) $product['customization_fee'] : 0.0;
+        $customFee = $isCustom ? ($spec ? studio_spec_extra($spec) : 0.0) : (cart_has_customization($l) ? (float) $product['customization_fee'] : 0.0);
+        $leadDays = $isCustom && $spec ? studio_spec_lead_days($spec) : (int) $product['lead_time_days'];
         $img = db_row('SELECT image FROM product_images WHERE product_id = ? ORDER BY is_main DESC, sort_order, id LIMIT 1', [(int) $product['id']]);
-        if (!empty($optValues['Color'])) {
-            $colorImg = db_row('SELECT image FROM product_images WHERE product_id = ? AND color_name = ? ORDER BY is_main DESC, sort_order LIMIT 1', [(int) $product['id'], $optValues['Color']]);
+        $colorFor = $optValues['Color'] ?? ($spec['color'] ?? null);
+        if ($colorFor) {
+            $colorImg = db_row('SELECT image FROM product_images WHERE product_id = ? AND color_name = ? ORDER BY is_main DESC, sort_order LIMIT 1', [(int) $product['id'], $colorFor]);
             $img = $colorImg ?: $img;
         }
         $out[] = [
@@ -266,8 +313,12 @@ function cart_lines(bool $lock = false): array
             'line_total' => round(($price['final'] + $customFee) * (int) $l['qty'], 2),
             'available' => $available,
             'error' => $error,
-            'made_to_order' => (int) $product['made_to_order'],
-            'lead_time_days' => (int) $product['lead_time_days'],
+            'made_to_order' => $isCustom ? 1 : (int) $product['made_to_order'],
+            'lead_time_days' => $leadDays,
+            'is_custom' => $isCustom ? 1 : 0,
+            'custom_spec' => $spec,
+            'spec_summary' => $spec ? studio_summary($spec) : [],
+            'allow_urgent' => !$isCustom && (int) $product['allow_urgent'] && !(int) $product['made_to_order'],
             'custom_measurements' => $l['custom_measurements'],
             'custom_color' => $l['custom_color'],
             'personalization' => $l['personalization'],
@@ -299,6 +350,7 @@ function cart_totals(array $lines, array $ctx = []): array
     $customTotal = 0.0;
     $errors = [];
     $maxLead = 0;
+    $urgentAllowed = (bool) $lines;
     foreach ($lines as $l) {
         $subtotal += $l['unit_price'] * $l['qty'];
         $customTotal += $l['customization_fee'] * $l['qty'];
@@ -307,6 +359,9 @@ function cart_totals(array $lines, array $ctx = []): array
         }
         if ($l['made_to_order']) {
             $maxLead = max($maxLead, $l['lead_time_days']);
+        }
+        if (empty($l['allow_urgent'])) {
+            $urgentAllowed = false;
         }
     }
     $subtotal = round($subtotal, 2);
@@ -330,7 +385,7 @@ function cart_totals(array $lines, array $ctx = []): array
     }
 
     // Delivery
-    $shipping = shipping_quote($ctx['city'] ?? '', $ctx['region'] ?? '', $merch - $discount, $ctx['shipping_method'] ?? 'standard', $maxLead);
+    $shipping = shipping_quote($ctx['city'] ?? '', $ctx['region'] ?? '', $merch - $discount, $ctx['shipping_method'] ?? 'standard', $maxLead, $urgentAllowed);
     $shippingFee = $freeShipCoupon ? 0.0 : $shipping['fee'];
 
     // Minimum order
@@ -363,6 +418,7 @@ function cart_totals(array $lines, array $ctx = []): array
         'total' => $total,
         'errors' => $errors,
         'max_lead_days' => $maxLead,
+        'urgent_allowed' => $urgentAllowed,
         'item_count' => array_sum(array_column($lines, 'qty')),
     ];
 }

@@ -1,4 +1,4 @@
-# Urban Collections — Premium Men's Fashion Store
+# Urban Collections — Premium Men & Women Fashion Store
 
 A complete, database-backed ecommerce platform for **Urban Collections**, built with procedural
 **Core PHP + MySQLi**, Bootstrap 5, jQuery, AJAX and SweetAlert2. It runs on standard cPanel
@@ -11,6 +11,10 @@ shared hosting — no framework, no Composer, no build step.
   customers, reviews, coupons, homepage builder & hero slides, navigation, content pages, delivery
   zones, payment methods, SEO & redirects, store settings, theme designer, admin users & roles,
   audit log.
+- Services: **Custom Size Studio** (ready-made shalwar qameez, kurta, office shirts and ladies suits
+  stitched to the customer's measurements on an interactive mannequin, with S–XXL suggestions and a
+  measuring guide), **Alteration Service** (instant estimated price & time, admin quotes and status
+  tracking) and **city-wise Urgent Delivery** — see [docs/SERVICES.md](docs/SERVICES.md).
 
 ## Quick start (local)
 
@@ -34,6 +38,7 @@ Full deployment instructions: **[docs/INSTALL.md](docs/INSTALL.md)**.
 | Document | Contents |
 |---|---|
 | [docs/INSTALL.md](docs/INSTALL.md) | Requirements, local setup, cPanel deployment, sub-folder installs, admin setup, email, cron |
+| [docs/SERVICES.md](docs/SERVICES.md) | Custom Size Studio, Measurement Guide, Alterations, city-wise urgent delivery, upgrading an existing store |
 | [docs/PAYMENTS.md](docs/PAYMENTS.md) | Cash on Delivery, JazzCash, Easypaisa and card (Stripe) configuration, testing and go-live |
 | [docs/CHECKLISTS.md](docs/CHECKLISTS.md) | Functional testing checklist and launch checklist |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Folder structure, request flow, database tables, security model, customising |
@@ -43,6 +48,7 @@ Full deployment instructions: **[docs/INSTALL.md](docs/INSTALL.md)**.
 | Area | Status |
 |---|---|
 | Catalogue, variants, inventory, cart, coupons, delivery zones, checkout, orders, customer accounts, reviews, wishlist, newsletter, CMS, SEO, homepage builder, theme, admin roles | **Complete and working** out of the box |
+| Custom Size Studio, Alterations, Urgent delivery | **Complete** — size charts, style prices, alteration prices and urgent city rates are sample values to adjust in admin |
 | Cash on Delivery | **Complete** — enabled by default; COD availability per delivery zone, optional COD fee, cash-collected recording |
 | JazzCash (hosted checkout) | **Implemented, awaiting merchant credentials + sandbox testing.** Disabled until you enter credentials, test in sandbox and tick *Testing completed* |
 | Easypaisa / Easypay (hosted checkout) | **Implemented, awaiting merchant credentials + sandbox testing** (same go-live gate) |
