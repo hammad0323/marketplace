@@ -156,9 +156,9 @@ $actions = [
     'tafsirs'          => 'Available tafsirs (use their id). Optional: language',
     'tafsir'           => 'Tafsir of one ayah. Required: id, key',
     'languages'        => 'Available languages',
-    'recitations'      => 'Reciters for ayah-by-ayah audio (use id as audio=)',
-    'chapter_reciters' => 'Reciters for full-surah audio',
-    'chapter_audio'    => 'Full-surah MP3. Required: reciter, chapter',
+    'recitations'      => 'Small list of reciters with ayah-by-ayah audio (use id as audio= on verse actions)',
+    'chapter_reciters' => 'Full list of reciters (as on Quran.com) with full-surah audio (use id with chapter_audio)',
+    'chapter_audio'    => 'Full-surah MP3. Required: reciter (from chapter_reciters), chapter. Optional: timestamps=1 for per-ayah times in ms',
     'ayah_audio'       => 'Per-ayah MP3s of a surah. Required: recitation, chapter',
     'search'           => 'Search. Required: q. Optional: mode (quick|advanced), translations, size (1-50)',
 ];
@@ -270,7 +270,11 @@ try {
             api_send(200, ['ok' => true, 'data' => ['reciters' => $qf->chapterReciters($lang)]], $day);
 
         case 'chapter_audio':
-            $file = $qf->chapterAudio(p_int('reciter', null, 1, 100000), p_int('chapter', null, 1, 114));
+            $file = $qf->chapterAudio(
+                p_int('reciter', null, 1, 100000),
+                p_int('chapter', null, 1, 114),
+                in_array($_GET['timestamps'] ?? '', ['1', 'true'], true)
+            );
             if (isset($file['audio_url'])) {
                 $file['audio_url'] = QuranClient::audioUrl($file['audio_url']);
             }

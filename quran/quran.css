@@ -86,3 +86,7 @@ a { color: var(--accent); }
 .qf-results { list-style: none; padding: 0; }
 .qf-results li { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: .7rem 1rem; margin-bottom: .5rem; display: flex; gap: .8rem; align-items: baseline; flex-wrap: wrap; }
 .qf-results .ar-uthmani { font-size: 1.4rem; }
+
+.qf-player { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: .5rem 0; margin-bottom: .5rem; }
+.qf-player audio { width: 100%; }
+.qf-controls optgroup { font-style: normal; font-weight: 700; }

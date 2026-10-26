@@ -27,7 +27,7 @@ It needs only PHP 7.4+ with cURL: no Composer and no database.
 | URL | Shows | API endpoints used |
 |---|---|---|
 | `index.php` | All 114 surahs | `GET /chapters` |
-| `surah.php?id=1` | Arabic (Uthmani/IndoPak), translation, ayah-by-ayah audio with auto-play | `/chapters/{id}`, `/verses/by_chapter/{id}`, `/resources/translations`, `/resources/recitations` |
+| `surah.php?id=1` | Arabic (Uthmani/IndoPak), up to two translations, all reciters (full-surah with ayah highlighting, or ayah-by-ayah) | `/chapters/{id}`, `/verses/by_chapter/{id}`, `/resources/translations`, `/resources/recitations` |
 | `ayah.php?key=2:255` | One ayah with tafsir | `/verses/by_key/{key}`, `/resources/tafsirs`, `/tafsirs/{id}/by_ayah/{key}` |
 | `info.php?id=1` | Background of a surah | `/chapters/{id}/info` |
 | `search.php?q=mercy` | Search results | Search API `GET /search/api/v1/search` |
@@ -50,7 +50,7 @@ $fatiha   = qf()->versesByChapter(1, [                  // verses + translation 
 $kursi    = qf()->verseByKey('2:255', ['translations' => '131']);
 $arabic   = qf()->arabicText('indopak_nastaleeq', ['chapter_number' => 1]);
 $tafsir   = qf()->tafsirByAyah(169, '1:1');             // IDs from qf()->tafsirs()
-$mp3      = qf()->chapterAudio(3, 1)['audio_url'];      // full surah audio
+$mp3      = qf()->chapterAudio(3, 1)['audio_url'];      // full surah audio (IDs from qf()->chapterReciters())
 $random   = qf()->randomVerse(['translations' => '131']);
 $results  = qf()->search('mercy');
 
@@ -115,7 +115,7 @@ the app as the `X-App-Key` header. Every response looks like this:
 | `juzs`, `languages` | — | — |
 | `translations`, `tafsirs`, `recitations`, `chapter_reciters` | — | `language` |
 | `tafsir` | `id`, `key` | — |
-| `chapter_audio` | `reciter`, `chapter` | — |
+| `chapter_audio` | `reciter` (from `chapter_reciters`), `chapter` | `timestamps=1` (per-ayah start/end in ms) |
 | `ayah_audio` | `recitation`, `chapter` | — |
 | `search` | `q` | `mode` (`quick`/`advanced`), `translations`, `size` |
 
@@ -130,6 +130,15 @@ GET /quran/api.php?action=tafsir&id=169&key=1:1
 GET /quran/api.php?action=chapter_audio&reciter=3&chapter=1
 GET /quran/api.php?action=search&q=mercy
 ```
+
+**Reciters:** there are two lists. `chapter_reciters` is the full list (the one Quran.com's
+player uses) with full-surah MP3s, and `chapter_audio&timestamps=1` returns each ayah's start
+and end time so you can highlight or seek. `recitations` is a smaller list with one MP3 per
+ayah (used through `audio=` on verse actions). Their IDs are different, so don't mix them.
+
+**Translations:** `translations` returns every translation your app may use, in all
+languages (`language` only changes the display names). Pass up to 10 IDs at once:
+`translations=131,97`.
 
 Audio URLs in responses are already full `https://` links, ready for an audio player.
 Error codes: `400` missing parameter, `401` wrong app key, `404` not found,

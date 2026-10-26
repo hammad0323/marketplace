@@ -373,16 +373,21 @@ class QuranClient
         return $this->content('/resources/recitations', ['language' => $language])['recitations'] ?? [];
     }
 
-    /** Reciters with full-surah audio files. */
+    /** Reciters with full-surah audio files: the larger list Quran.com's player uses. */
     public function chapterReciters(string $language = 'en'): array
     {
         return $this->content('/resources/chapter_reciters', ['language' => $language])['reciters'] ?? [];
     }
 
-    /** Full-surah MP3: ['audio_url' => ..., 'file_size' => ..., ...]. */
-    public function chapterAudio(int $reciterId, int $chapter): array
+    /**
+     * Full-surah MP3 of a chapter reciter: ['audio_url' => ..., 'file_size' => ..., ...].
+     * With $timestamps = true it also returns 'timestamps': per-ayah
+     * [verse_key, timestamp_from, timestamp_to (ms), segments] for highlighting.
+     */
+    public function chapterAudio(int $reciterId, int $chapter, bool $timestamps = false): array
     {
-        return $this->content("/chapter_recitations/$reciterId/$chapter")['audio_file'] ?? [];
+        $query = $timestamps ? ['segments' => 'true'] : [];
+        return $this->content("/chapter_recitations/$reciterId/$chapter", $query)['audio_file'] ?? [];
     }
 
     /** Per-ayah audio files of a surah: [['verse_key' => '1:1', 'url' => absolute URL], ...]. */
