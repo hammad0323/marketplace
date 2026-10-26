@@ -42,3 +42,15 @@ define('QF_USER_AGENT', 'MyQuranSite/1.0 (PHP)');
 
 // Set to true only while debugging: shows full API error details on pages.
 define('QF_DEBUG', false);
+
+/* ---- JSON API for your mobile app (api.php) ---- */
+
+// Key your app must send in the "X-App-Key" header. Use a long random string,
+// e.g. from https://www.random.org/strings/ . Leave '' to allow calls without a key.
+define('QF_APP_API_KEY', getenv('QF_APP_API_KEY') ?: '');
+
+// Max requests per minute from one IP address to api.php (0 = unlimited).
+define('QF_API_RATE_LIMIT', 120);
+
+// Websites allowed to call api.php from a browser ('*' = any). Mobile apps ignore this.
+define('QF_API_CORS_ORIGIN', '*');

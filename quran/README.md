@@ -31,6 +31,7 @@ It needs only PHP 7.4+ with cURL: no Composer and no database.
 | `ayah.php?key=2:255` | One ayah with tafsir | `/verses/by_key/{key}`, `/resources/tafsirs`, `/tafsirs/{id}/by_ayah/{key}` |
 | `info.php?id=1` | Background of a surah | `/chapters/{id}/info` |
 | `search.php?q=mercy` | Search results | Search API `GET /search/api/v1/search` |
+| `api.php` | JSON API for mobile apps (see section 5) | all of the above |
 | `test.php` | Connection diagnostics (only when `QF_DEBUG` is true) | token + `/quran/verses/uthmani` |
 
 ## 4. Using the client in your own pages
@@ -80,7 +81,62 @@ so wrap calls in `try { … } catch (Throwable $e) { … }`.
 `$opts` for verse methods: `translations`, `tafsirs`, `audio`, `words` (bool),
 `fields`, `translation_fields`, `word_fields`, `language`, `page`, `per_page` (max 50).
 
-## 5. How it works (and the QF rules it follows)
+## 5. JSON API for a mobile app (`api.php`)
+
+A mobile app must **never** contain the QF `client_secret` (QF rule, and anyone can
+extract it from an APK/IPA). The app calls `api.php` on your server instead, and
+`api.php` calls Quran Foundation with the secret kept server-side.
+
+```
+Mobile app ──HTTPS──▶ https://your-site.com/quran/api.php ──▶ apis.quran.foundation
+             (X-App-Key)                                     (token + secret)
+```
+
+Set `QF_APP_API_KEY` in `qf-config.php` to a long random string, and send it from
+the app as the `X-App-Key` header. Every response looks like this:
+
+```json
+{ "ok": true,  "data": { ... } }
+{ "ok": false, "error": { "code": "invalid_parameter", "message": "..." } }
+```
+
+`GET api.php` with no parameters lists all actions.
+
+| Action | Required | Optional |
+|---|---|---|
+| `chapters` | — | `language` |
+| `chapter`, `chapter_info` | `id` (1–114) | `language` |
+| `verses` | `chapter` (1–114) | `translations`, `tafsirs`, `audio`, `words`, `fields`, `word_fields`, `translation_fields`, `language`, `page`, `per_page` (≤50) |
+| `verses_by_page` | `page_number` (1–604) | same as `verses` |
+| `verses_by_juz` | `juz` (1–30) | same as `verses` |
+| `verse` | `key` (`2:255`) | same as `verses` except paging |
+| `random` | — | `translations`, `fields`, `language` |
+| `arabic` | `script` + one of `chapter`, `key`, `page_number`, `juz` | — |
+| `juzs`, `languages` | — | — |
+| `translations`, `tafsirs`, `recitations`, `chapter_reciters` | — | `language` |
+| `tafsir` | `id`, `key` | — |
+| `chapter_audio` | `reciter`, `chapter` | — |
+| `ayah_audio` | `recitation`, `chapter` | — |
+| `search` | `q` | `mode` (`quick`/`advanced`), `translations`, `size` |
+
+Examples:
+
+```
+GET /quran/api.php?action=chapters
+GET /quran/api.php?action=verses&chapter=1&translations=131&audio=7&fields=text_uthmani,text_indopak_nastaleeq&per_page=50
+GET /quran/api.php?action=verse&key=2:255&translations=131
+GET /quran/api.php?action=arabic&script=indopak_nastaleeq&chapter=1
+GET /quran/api.php?action=tafsir&id=169&key=1:1
+GET /quran/api.php?action=chapter_audio&reciter=3&chapter=1
+GET /quran/api.php?action=search&q=mercy
+```
+
+Audio URLs in responses are already full `https://` links, ready for an audio player.
+Error codes: `400` missing parameter, `401` wrong app key, `404` not found,
+`422` invalid parameter, `429` too many requests (limit: `QF_API_RATE_LIMIT` per
+minute per IP), `502` Quran Foundation error.
+
+## 6. How it works (and the QF rules it follows)
 
 - **Token:** `POST {auth}/oauth2/token` with `grant_type=client_credentials&scope=content`
   and HTTP Basic `client_id:client_secret`. The token lasts 3600 s and is cached
@@ -103,7 +159,7 @@ so wrap calls in `try { … } catch (Throwable $e) { … }`.
 | Pre-live | `https://prelive-oauth2.quran.foundation` | `https://apis-prelive.quran.foundation` |
 | Production | `https://oauth2.quran.foundation` | `https://apis.quran.foundation` |
 
-## 6. Troubleshooting
+## 7. Troubleshooting
 
 | Error | Fix |
 |---|---|
