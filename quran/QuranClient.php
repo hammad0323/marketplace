@@ -448,6 +448,17 @@ class QuranClient
         return trim(html_entity_decode(strip_tags((string)$html), ENT_QUOTES, 'UTF-8'));
     }
 
+    /**
+     * Tajweed text with only its <tajweed class=…> and <span class=end> tags kept;
+     * everything else is escaped, so the result is safe to echo as HTML.
+     */
+    public static function tajweedHtml(string $text): string
+    {
+        $html = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+        $html = preg_replace('#&lt;(tajweed|span) class=(?:&quot;|&\#039;)?([a-z_]+)(?:&quot;|&\#039;)?&gt;#', '<$1 class="$2">', $html);
+        return (string)preg_replace('#&lt;/(tajweed|span)&gt;#', '</$1>', (string)$html);
+    }
+
     /** Keeps basic formatting tags of API HTML (tafsir, chapter info) and drops all attributes. */
     public static function safeHtml(string $html): string
     {

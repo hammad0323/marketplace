@@ -74,9 +74,9 @@ a { color: var(--accent); }
 .qf-verse-tools { display: flex; gap: .6rem; align-items: center; }
 .qf-verse-tools .key { font-size: .85rem; font-weight: 600; text-decoration: none; }
 .qf-verse-tools .play { border: 1px solid var(--line); background: transparent; color: var(--accent); border-radius: 50%; width: 2rem; height: 2rem; cursor: pointer; }
-.qf-arabic { font-size: 1.9rem; line-height: 2.4; text-align: right; margin: .4rem 0; }
+.qf-arabic { font-size: var(--ar-size, 32px); line-height: 2.4; text-align: right; margin: .4rem 0; }
 .qf-arabic.ar-indopak { line-height: 2.8; }
-.qf-translation { color: var(--text); margin: .3rem 0 0; }
+.qf-translation { color: var(--text); margin: .3rem 0 0; font-size: var(--tr-size, 16px); }
 .qf-meta { color: var(--muted); font-size: .85rem; }
 
 .qf-tafsir { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.4rem; }
@@ -87,6 +87,71 @@ a { color: var(--accent); }
 .qf-results li { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: .7rem 1rem; margin-bottom: .5rem; display: flex; gap: .8rem; align-items: baseline; flex-wrap: wrap; }
 .qf-results .ar-uthmani { font-size: 1.4rem; }
 
-.qf-player { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: .5rem 0; margin-bottom: .5rem; }
-.qf-player audio { width: 100%; }
 .qf-controls optgroup { font-style: normal; font-weight: 700; }
+
+/* Settings panel */
+.qf-settings { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: .6rem 1rem; margin: 1rem 0; }
+.qf-settings summary { cursor: pointer; font-weight: 700; }
+.qf-settings .qf-controls { margin: .7rem 0; }
+.qf-tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; margin-top: .7rem; }
+.qf-tabs label { padding: .35rem 1rem; cursor: pointer; }
+.qf-tabs input { position: absolute; opacity: 0; pointer-events: none; }
+.qf-tabs label:has(input:checked) { background: var(--accent); color: #fff; }
+.qf-controls .qf-check { flex-direction: row; align-items: center; gap: .35rem; font-size: .9rem; color: var(--text); }
+.qf-controls input[type=range] { width: 140px; padding: 0; }
+.qf-controls input[type=number] { width: 110px; }
+.qf-controls button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+
+/* Row tools */
+.qf-verse-tools { flex-wrap: wrap; }
+.qf-verse-tools .key { font-size: .85rem; font-weight: 700; color: var(--accent); }
+.qf-verse-tools .tool { font-size: .8rem; border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 999px; padding: .15rem .6rem; text-decoration: none; cursor: pointer; font-family: inherit; }
+.qf-verse-tools .tool:hover { color: var(--accent); border-color: var(--accent); }
+.qf-verse-tools .qf-meta { margin-left: auto; }
+.qf-verse.jumped { outline: 2px solid var(--accent); }
+
+/* Word by word */
+.qf-words { display: flex; flex-wrap: wrap; gap: .4rem .9rem; margin: .6rem 0; }
+.qf-word { display: inline-flex; flex-direction: column; align-items: center; text-align: center; }
+.qf-word .ar { font-size: var(--ar-size, 32px); line-height: 1.8; }
+.qf-word.end { font-size: calc(var(--ar-size, 32px) * .8); align-self: flex-start; }
+.qf-word small { font-size: .78rem; color: var(--muted); max-width: 9rem; }
+.qf-word .w-tl { font-style: italic; }
+.hide-wtr .w-tr, .hide-wtl .w-tl { display: none; }
+
+/* Reading view */
+.qf-reading { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1.2rem 1.5rem; font-size: var(--ar-size, 32px); line-height: 2.4; text-align: justify; }
+.qf-reading.ar-indopak { line-height: 2.8; }
+.qf-inline { cursor: pointer; border-radius: 6px; padding: 0 .1rem; }
+.qf-inline:hover { background: var(--highlight); }
+.qf-inline.playing { background: var(--highlight); color: var(--accent); }
+.qf-inline.jumped { outline: none; background: var(--highlight); }
+.qf-ayah-no { font-family: 'UthmanicHafs', serif; color: var(--accent); font-size: .8em; }
+
+/* Tajweed colours (Quran.com rule classes) */
+.ar-tajweed tajweed { color: inherit; }
+.ar-tajweed .ham_wasl, .ar-tajweed .slnt, .ar-tajweed .laam_shamsiyah { color: #aaaaaa; }
+.ar-tajweed .madda_normal { color: #537fff; }
+.ar-tajweed .madda_permissible { color: #4050ff; }
+.ar-tajweed .madda_necessary { color: #000ebc; }
+.ar-tajweed .madda_obligatory { color: #2144c1; }
+.ar-tajweed .qalaqah { color: #dd0008; }
+.ar-tajweed .ikhafa_shafawi { color: #d500b7; }
+.ar-tajweed .ikhafa { color: #9400a8; }
+.ar-tajweed .iqlab { color: #26bffd; }
+.ar-tajweed .idgham_shafawi { color: #58b800; }
+.ar-tajweed .idgham_ghunnah { color: #169777; }
+.ar-tajweed .idgham_wo_ghunnah { color: #169200; }
+.ar-tajweed .idgham_mutajanisayn, .ar-tajweed .idgham_mutaqaribayn { color: #a1a1a1; }
+.ar-tajweed .ghunnah { color: #ff7e1e; }
+.ar-tajweed .end { color: var(--accent); }
+@media (prefers-color-scheme: dark) {
+    .ar-tajweed .madda_necessary { color: #6b78ff; }
+    .ar-tajweed .madda_obligatory { color: #5f86ff; }
+}
+
+@media (max-width: 600px) {
+    .qf-controls select { max-width: 100%; }
+    .qf-controls label { flex: 1 1 45%; }
+    .qf-verse-tools .qf-meta { margin-left: 0; width: 100%; }
+}

@@ -54,4 +54,5 @@ function qf_error_box(Throwable $e): string
 const QF_SCRIPTS = [
     'uthmani' => ['label' => 'Uthmani', 'field' => 'text_uthmani', 'class' => 'ar-uthmani'],
     'indopak' => ['label' => 'IndoPak', 'field' => 'text_indopak_nastaleeq', 'class' => 'ar-indopak'],
+    'tajweed' => ['label' => 'Uthmani Tajweed (colour)', 'field' => 'text_uthmani_tajweed', 'class' => 'ar-uthmani ar-tajweed'],
 ];

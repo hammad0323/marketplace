@@ -27,7 +27,7 @@ It needs only PHP 7.4+ with cURL: no Composer and no database.
 | URL | Shows | API endpoints used |
 |---|---|---|
 | `index.php` | All 114 surahs | `GET /chapters` |
-| `surah.php?id=1` | Arabic (Uthmani/IndoPak), up to two translations, all reciters (full-surah with ayah highlighting, or ayah-by-ayah) | `/chapters/{id}`, `/verses/by_chapter/{id}`, `/resources/translations`, `/resources/recitations` |
+| `surah.php?id=1` | Quran.com-style reader: Translation/Reading view, Uthmani/IndoPak/Tajweed script, two translations, word-by-word (with language), all reciters, play/stop on every ayah, repeat, speed, auto-scroll, font sizes, go to ayah, copy | `/chapters/{id}`, `/verses/by_chapter/{id}`, `/resources/translations`, `/resources/recitations` |
 | `ayah.php?key=2:255` | One ayah with tafsir | `/verses/by_key/{key}`, `/resources/tafsirs`, `/tafsirs/{id}/by_ayah/{key}` |
 | `info.php?id=1` | Background of a surah | `/chapters/{id}/info` |
 | `search.php?q=mercy` | Search results | Search API `GET /search/api/v1/search` |
