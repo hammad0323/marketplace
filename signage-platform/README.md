@@ -1,30 +1,86 @@
 # Signal Signage: Mobile-First Digital Signage Platform
 
-Signal Signage is a SaaS platform for designing digital signage on a phone and playing it on Android TV.
+Signal Signage is a complete digital-signage system:
 
-* **Management app**: Flutter, Material 3, mobile-first. It has a user experience and a super-admin experience.
-* **Signage player**: Flutter for Android TV, Android boxes and tablets. It plays offline, follows schedules and syncs automatically.
-* **Backend**: procedural PHP 8 with MySQLi and a JSON REST API, on MySQL 8.
+* Business owners design screens on their phone, combine them into playlists and schedule them.
+* Android TV players show the content, keep playing when offline, and update automatically.
+* A super admin controls users, plans, limits and devices.
 
-> **Status: Phase 1 of 7 is complete.** This covers the architecture, database, seed data and documentation. The roadmap is in `docs/ARCHITECTURE.md §10`.
+| Part | Technology | Location |
+|---|---|---|
+| REST API (107 endpoints) | Procedural PHP 8.1+ with MySQLi prepared statements, JSON | `backend/` |
+| Database (39 tables, 2 views) | MySQL 8 / MariaDB, InnoDB, utf8mb4 | `backend/database/` |
+| Management app (users + super admin) | Flutter 3, Material 3, Riverpod, go_router, Dio | `flutter_app/lib/main.dart` |
+| TV player | Flutter, the same codebase, built as a separate app (flavor) | `flutter_app/lib/main_player.dart` |
 
-## Contents
+![Home](docs/screenshots/02_home.png)
 
-| Path | What |
+## Status
+
+| Check | Result |
 |---|---|
-| `docs/ARCHITECTURE.md` | System architecture, auth model, data flows, schedule priority algorithm, sync and offline design, the **layout JSON contract**, widget system, security, Flutter structure, roadmap |
-| `docs/ER_DIAGRAM.md` | Mermaid ER diagram and relationship table |
-| `docs/DATABASE.md` | Conventions, limit resolution, cross-user protection, publication JSON, seed overview, full column reference |
-| `docs/API_STRUCTURE.md` | Endpoint map for Phase 2, response envelope, status and error codes |
-| `backend/database/schema.sql` | 39 tables and 2 views: InnoDB, utf8mb4, 59 foreign keys, CHECK constraints |
-| `backend/database/seed.sql` | Plans, roles, permissions, 26 templates, 36 widget types, demo users, screens, playlists, schedules and devices |
-| `backend/database/tools/generate_seed.php` | Regenerates `seed.sql` and the sample images |
-| `backend/database/tests/verify_database.sh` | 57 automated checks: structure, seed, JSON, limits, pairing, cross-user guards, cascades |
-| `backend/uploads/images/samples/` | Sample media referenced by the seed |
+| Database suite | **57/57** checks pass |
+| End-to-end API suite (workflows A–E, limits, IDOR, uploads, pairing, sync, rate limits) | **225/225** checks pass |
+| Flutter unit tests | **15/15** pass |
+| `flutter analyze` | No issues |
+| Web build of both apps | Done |
+| Live player test (register → pair → sync → play → command → emergency) | Done |
 
-## Install the database (local)
+Full details and the list of things that were **not** tested in this environment (native Android/iOS builds, MySQL 8, real devices) are in **[docs/TESTING.md](docs/TESTING.md)**.
 
-You need MySQL 8.0.16+ or MariaDB 10.6+.
+## Screens
+
+| Area | Screenshots |
+|---|---|
+| Management app (412×915) | `docs/screenshots/01_login.png` … `22_admin_plans.png`: dashboard, My Screens, template library, editor (select, drag, settings, layers, add widget), playlists, playlist builder, schedules, devices, device detail, media library, profile, admin dashboard, users, create user, plans |
+| TV player (1920×1080) | `23_player_pairing.png`, `24`–`26_player_playing_*.png` (automatic rotation), `27_player_emergency.png` |
+
+## Features
+
+**User app**
+* Dashboard with plan usage and quick actions.
+* Screens: create from **26 templates in 14 categories** or a blank canvas (landscape, portrait, square or custom size). Also folders, search, filters, favourites, duplicate and save-as-template.
+* Visual editor:
+  * drag, resize handles, snapping guides, zoom
+  * layers, lock, front/back, align, multi-select
+  * copy/paste, undo/redo, autosave with conflict detection
+  * preview, publish
+* Widgets: **31 renderable types**, each with a settings panel generated from its configuration:
+  * media: image, carousel, video, logo, background image, shape
+  * text: heading, rich text, ticker
+  * time: digital and analog clock, world clock, countdown, count-up, calendar, daily schedule
+  * data: weather (Open-Meteo), RSS, live JSON data, QR code
+  * business: menu board, price list, product showcase, contact, opening hours, location
+  * messages: announcements, quotes, daily motivation, emergency
+  * embeds: web page and custom HTML (WebView on Android/iOS)
+* Backgrounds: colour, gradient, image, video or preset, with opacity, blur, overlay, fit and position.
+* Media library: uploads with progress, folders, rename, move, delete with in-use protection, storage meter.
+* Playlists ("screen carousels"): pick screens, drag to reorder, set durations, 8 transitions, loop, shuffle, priority, preview, publish, assign to displays.
+* Scheduling: time slots, days, date ranges, overnight slots, time zones, priorities and special events, plus a day timeline.
+* Devices: pair with a 6-character code, assign playlists and a default, remote restart/pause/resume/sync/identify/clear cache, logs, live status, locations, emergency broadcast, reports.
+
+**Super admin**
+* Dashboard (users, screens, playlists, devices, storage, offline list, activity).
+* Users: create with a generated password and share sheet, edit, reset password, suspend, delete. Per-user limits (`∞` / number / follow the plan) and permission overrides.
+* Plans: Free, Starter, Professional, Business and Enterprise, all editable.
+* Content overview, widget availability, all devices, media (shared library), audit log, app settings.
+
+**TV player**
+* Registration and pairing screen with code and QR.
+* Version-based sync with **SHA-256-verified** media cache. A new version goes live only when all its media is ready.
+* Offline playback from the persisted cache.
+* Schedule engine identical to the server's (unit tested).
+* Transitions, heartbeats, command queue, proof-of-play and logs queued offline.
+* Emergency override, idle clock screen, info panel on the remote's OK button, boot auto-start, wakelock.
+
+**Security**
+* bcrypt passwords. Tokens, reset codes and pairing codes are stored only as SHA-256 hashes.
+* Role and permission checks on the server, ownership checks on every query, plus composite foreign keys that prevent cross-tenant links.
+* Rate limits, MIME-sniffed uploads, signed expiring media URLs, generic error messages, audit log.
+
+## Quick start
+
+See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for full and production instructions.
 
 1. Create the database:
 
@@ -44,57 +100,48 @@ You need MySQL 8.0.16+ or MariaDB 10.6+.
    mysql -u root -p signage < backend/database/seed.sql
    ```
 
-4. Optional: run the verification suite. It uses its own throw-away database.
+4. Start the API:
 
    ```bash
-   MYSQL="mysql -u root -p<password>" backend/database/tests/verify_database.sh
+   DB_NAME=signage DB_USER=root DB_PASS=secret php -S 0.0.0.0:8080 -t backend backend/router.php
    ```
 
-On shared hosting (phpMyAdmin), import `schema.sql` first and then `seed.sql`.
+5. Run the management app (from `flutter_app/`):
 
-### Development credentials
+   ```bash
+   flutter run --flavor manager -t lib/main.dart --dart-define=API_BASE_URL=http://10.0.2.2:8080
+   ```
 
-These are for local use only. Delete or change them before going to production.
+6. Run the TV player (from `flutter_app/`):
+
+   ```bash
+   flutter run --flavor player -t lib/main_player.dart --dart-define=API_BASE_URL=http://10.0.2.2:8080
+   ```
+
+Development logins (delete them before production):
 
 | Role | Email | Password |
 |---|---|---|
 | Super admin | admin@signage.local | Admin@12345 |
-| User A (2 screens max, at limit) | aisha@demo.local | Demo@12345 |
-| User B (5 screens, full demo data) | bilal@demo.local | Demo@12345 |
+| User A (2 screens, at limit) | aisha@demo.local | Demo@12345 |
+| User B (full demo data) | bilal@demo.local | Demo@12345 |
 | User C (10 screens) | chloe@demo.local | Demo@12345 |
 | User D (unlimited) | daniel@demo.local | Demo@12345 |
 
-The unpaired demo TV accepts pairing code **K7Q4ZP**.
+## Documentation
 
-## Regenerating the seed
-
-```bash
-php backend/database/tools/generate_seed.php
-```
-
-Run it after changing templates or widget defaults. It needs the PHP GD extension to generate the sample images.
-
-## Design system
-
-| Name | Hex |
+| File | Contents |
 |---|---|
-| Teal | `#008C86` |
-| Dark Teal | `#006B66` |
-| Light Teal | `#E5F5F3` |
-| Charcoal | `#202124` |
-| Dark Background | `#17191C` |
-| White | `#FFFFFF` |
-| Light Grey | `#F5F6F7` |
-| Medium Grey | `#858B93` |
-| Border Grey | `#E6E8EB` |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, auth, data flows, schedule priority, sync and offline, the layout JSON contract, widget system, security |
+| [docs/ER_DIAGRAM.md](docs/ER_DIAGRAM.md) | Mermaid ER diagram and relationships |
+| [docs/DATABASE.md](docs/DATABASE.md) | Every table and column, limit rules, cross-user protection, publication format, seed data |
+| [docs/API.md](docs/API.md) | All 107 endpoints with request and response formats |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Local setup, Apache/Nginx, cron, hardening, building and signing the apps, installing on TVs |
+| [docs/TESTING.md](docs/TESTING.md) | Test results and coverage, and what still needs on-device testing |
 
-Both light and dark themes are supported.
+## Known limitations
 
-## Next: Phase 2, the PHP backend
-
-Phase 2 will add:
-
-* `config/`, `includes/` and every endpoint in `docs/API_STRUCTURE.md`
-* the upload pipeline and rate limiting
-* the publish and sync builders, which produce exactly the publication JSON already seeded here
-* an API test script and a Postman collection
+* **Widgets not yet available.** PDF viewer, PowerPoint, YouTube, social feeds and the battery indicator are registered but marked *planned* and hidden from users. They need the extra integrations described in the architecture before they can be enabled.
+* **Web-only widget behaviour.** The web page and custom HTML widgets play only on Android/iOS players (WebView); the management web app shows a placeholder for them. RSS feeds may be blocked by CORS in the web build, but they work on the player.
+* **Email.** Password-reset and credential emails use PHP `mail()` when `MAIL_ENABLED=1`, and are otherwise written to `backend/logs/mail.log`. Configure an SMTP relay for production.
+* **Media storage.** Media is stored on local disk. The schema already supports S3 (`storage_driver`), but there is no S3 adapter yet.

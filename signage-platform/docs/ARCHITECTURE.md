@@ -211,9 +211,9 @@ Packages: `flutter_riverpod`, `dio`, `go_router`, `flutter_secure_storage`, `hiv
 | Phase | Scope | Exit criteria |
 |---|---|---|
 | **1. Architecture and database** ✅ | Architecture, ER diagram, schema (39 tables + 2 views), 26 templates, 36 widget types, seed, docs | `tests/verify_database.sh` → 57/57 pass |
-| 2. PHP backend | config/includes, all endpoints in `API_STRUCTURE.md`, upload pipeline, rate limiting, API docs + Postman collection | API test script covers auth, limits, IDOR, pairing and sync |
-| 3. Flutter foundation | Theme, auth, navigation, Dio and Riverpod, user and admin dashboards | Login and the dashboard run against a live API |
-| 4. Screen builder | Template library, editor (drag, resize, guides, layers, undo/redo, zoom), widget panels, background, preview, publish | Workflows A and E end to end |
-| 5. Playlist builder | Screen multi-select, reorder, durations, transitions, schedules, preview | Workflow B end to end |
-| 6. Signage player | Register, pair, sync, cache, render, schedule engine, heartbeat, commands, offline | Workflow C, plus offline and reboot tests on Android TV |
-| 7. Admin and finalisation | Users, plans, templates, widgets, devices, settings, reports, hardening, deployment guide | Full test matrix (§22 of the brief) |
+| **2. PHP backend** ✅ | config/includes, all endpoints in `API.md`, upload pipeline, rate limiting, API reference (docs/API.md) + executable API test suite | API test script covers auth, limits, IDOR, pairing and sync |
+| **3. Flutter foundation** ✅ | Theme, auth, navigation, Dio and Riverpod, user and admin dashboards | Login and the dashboard run against a live API |
+| **4. Screen builder** ✅ | Template library, editor (drag, resize, guides, layers, undo/redo, zoom), widget panels, background, preview, publish | Workflows A and E end to end |
+| **5. Playlist builder** ✅ | Screen multi-select, reorder, durations, transitions, schedules, preview | Workflow B end to end |
+| **6. Signage player** ✅ | Register, pair, sync, cache, render, schedule engine, heartbeat, commands, offline | Workflow C, plus offline and reboot tests on Android TV |
+| **7. Admin and finalisation** ✅ | Users, plans, templates, widgets, devices, settings, reports, hardening, deployment guide | Full test matrix (§22 of the brief) |

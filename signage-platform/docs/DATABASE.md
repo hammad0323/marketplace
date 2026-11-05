@@ -113,7 +113,7 @@ Ownership checks in the application are the main defence. As a second layer, the
 | Plans | Free, Starter, Professional, Business, Enterprise |
 | Permissions | 32 permission keys. The `user` role has 22 of them. Two per-user overrides. |
 | Templates | 26 across all 14 categories: 16 landscape, 9 portrait, 1 square, 4 premium |
-| Widget types | 36 in total: 26 stable, 7 beta (network, WebView or device-API based), 3 planned (YouTube, social feed, PowerPoint), which are hidden from the editor |
+| Widget types | 36 in total: 26 stable, 5 beta (network or WebView based), 5 planned (YouTube, social feed, PowerPoint, PDF viewer, battery indicator), which are hidden from the editor until implemented |
 | Screens | Bilal: Welcome, Promotional, Product, Company Information and Contact (4 published, 1 draft). Aisha: 2 draft screens, which puts her at her limit. |
 | Playlists | "Store Front Loop" (all 5 screens) and "Evening Promotions", with morning, afternoon, evening and Black-Friday schedules |
 | Devices | 2 paired (Entrance TV online, Kiosk offline) and 1 unpaired TV with pairing code `K7Q4ZP` |

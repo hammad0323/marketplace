@@ -83,7 +83,7 @@ $WIDGETS = [
         'media_id' => null, 'fit' => 'contain', 'alignment' => 'center', 'opacity' => 1.0, 'placeholder' => 'Logo']],
     'background_image' => ['Background Image', 'media', 'wallpaper', 'stable', 0, 0, 1.0, 1.0, 'Full-zone decorative image with blur/overlay.', [
         'media_id' => null, 'fit' => 'cover', 'blur' => 0, 'overlay_color' => '#000000', 'overlay_opacity' => 0.0]],
-    'pdf_viewer' => ['PDF Viewer', 'media', 'picture_as_pdf', 'beta', 0, 0, 0.50, 0.70, 'Cycles through PDF pages.', [
+    'pdf_viewer' => ['PDF Viewer', 'media', 'picture_as_pdf', 'planned', 0, 0, 0.50, 0.70, 'Cycles through PDF pages.', [
         'media_id' => null, 'page_duration' => 10, 'fit' => 'contain', 'background_color' => '#FFFFFF']],
     'presentation' => ['Presentation', 'media', 'slideshow', 'planned', 0, 1, 0.60, 0.60, 'PowerPoint deck (server-side conversion to images required).', [
         'media_id' => null, 'slide_duration' => 10]],
@@ -152,7 +152,7 @@ $WIDGETS = [
     'live_data' => ['Live Data', 'data', 'monitoring', 'beta', 1, 1, 0.30, 0.20, 'Value from a JSON endpoint.', [
         'url' => '', 'json_path' => '$.value', 'refresh_seconds' => 60, 'label' => 'Live value', 'prefix' => '',
         'suffix' => '', 'font_family' => $FONT, 'font_size' => 96, 'color' => '#FFFFFF']],
-    'battery_indicator' => ['Battery Indicator', 'system', 'battery_full', 'beta', 0, 0, 0.12, 0.06, 'Device battery level (where supported).', [
+    'battery_indicator' => ['Battery Indicator', 'system', 'battery_full', 'planned', 0, 0, 0.12, 0.06, 'Device battery level (where supported).', [
         'show_percent' => true, 'color' => '#FFFFFF', 'low_color' => '#E53935']],
     'qr_code' => ['QR Code', 'data', 'qr_code_2', 'stable', 0, 0, 0.18, 0.30, 'QR code for any URL or text.', [
         'data' => 'https://example.com', 'foreground' => '#202124', 'background' => '#FFFFFF', 'label' => 'Scan me',
