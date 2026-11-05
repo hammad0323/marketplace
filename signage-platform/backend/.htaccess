@@ -1,0 +1,39 @@
+# Signage API — Apache configuration
+Options -Indexes
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Pass Authorization header to PHP (CGI/FastCGI)
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Block internal folders and helper files
+    RewriteRule ^(config|includes|database|cron|logs)(/|$) - [F,L]
+    RewriteRule (^|/)_[^/]*\.php$ - [F,L]
+    RewriteRule (^|/)\. - [F,L]
+
+    # Clean URLs: /api/screens/list  →  /api/screens/list.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}.php -f
+    RewriteRule ^(.+?)/?$ $1.php [L]
+</IfModule>
+
+# Uploaded files are only served through /api/media/file.php (signed URLs),
+# except avatars which are public.
+<IfModule mod_rewrite.c>
+    RewriteRule ^uploads/(?!images/avatars/) - [F,L]
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "no-referrer"
+</IfModule>
+
+<IfModule mod_php.c>
+    php_value upload_max_filesize 512M
+    php_value post_max_size 520M
+    php_value max_execution_time 300
+    php_flag display_errors off
+</IfModule>

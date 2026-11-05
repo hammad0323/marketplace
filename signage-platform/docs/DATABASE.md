@@ -78,7 +78,7 @@ Ownership checks in the application are the main defence. As a second layer, the
 
 **Unpair procedure** (`devices/unpair.php`), in a single transaction:
 1. `DELETE FROM device_playlists WHERE device_id=?`
-2. `UPDATE devices SET user_id=NULL, status='unpaired', device_token_hash=<new>, current_playlist_id=NULL …`
+2. `UPDATE devices SET user_id=NULL, status='unpaired', current_playlist_id=NULL …` (the player keeps its device token and shows a new pairing code)
 3. `UPDATE device_commands SET status='expired' WHERE device_id=? AND status='pending'`
 
 ## 5. Publication JSON

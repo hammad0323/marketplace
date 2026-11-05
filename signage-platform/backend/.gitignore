@@ -1,0 +1,7 @@
+logs/*.log
+config/config.local.php
+uploads/images/20*/
+uploads/videos/20*/
+uploads/documents/20*/
+uploads/thumbnails/20*/
+uploads/images/avatars/
