@@ -30,8 +30,11 @@ class AppTheme {
       primaryContainer: dark ? const Color(0xFF0D3B39) : AppColors.lightTeal,
       onPrimaryContainer: dark ? const Color(0xFF9FE3DE) : AppColors.darkTeal,
     );
+    // Use the Inter font family name only (works with every google_fonts
+    // version, unlike GoogleFonts.interTextTheme whose TextTheme type changed in v9).
     final baseText = dark ? ThemeData.dark().textTheme : ThemeData.light().textTheme;
-    final text = GoogleFonts.interTextTheme(baseText).apply(
+    final text = baseText.apply(
+      fontFamily: GoogleFonts.inter().fontFamily,
       bodyColor: scheme.onSurface,
       displayColor: scheme.onSurface,
     );
@@ -57,15 +60,6 @@ class AppTheme {
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-      ),
-      cardTheme: CardThemeData(
-        color: scheme.surface,
-        elevation: 0,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: scheme.outline),
-        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
