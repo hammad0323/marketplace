@@ -185,3 +185,16 @@ class AdminRepository {
   Future<void> saveSettings(Map<String, dynamic> s) => api.post('settings/app.php', {'settings': s});
   Future<List<Map<String, dynamic>>> permissions() async => asList((await api.get('admin/permissions.php')).data).map(asMap).toList();
 }
+
+/// Display codes: show a screen/playlist on any device by typing its code.
+class DisplayCodesRepository {
+  DisplayCodesRepository(this.api);
+  final ApiClient api;
+  Map<String, dynamic> _q(int? screenId, int? playlistId) => {'screen_id': ?screenId, 'playlist_id': ?playlistId};
+  Future<Map<String, dynamic>> get({int? screenId, int? playlistId}) async => asMap((await api.get('display-codes/get.php', query: _q(screenId, playlistId))).data);
+  Future<(Map<String, dynamic>, String)> set(String code, {int? screenId, int? playlistId}) async {
+    final r = await api.post('display-codes/set.php', {..._q(screenId, playlistId), 'code': code});
+    return (asMap(r.data), r.message);
+  }
+  Future<Map<String, dynamic>> regenerate({int? screenId, int? playlistId}) async => asMap((await api.post('display-codes/regenerate.php', _q(screenId, playlistId))).data);
+}

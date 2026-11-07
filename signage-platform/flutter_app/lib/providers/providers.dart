@@ -37,6 +37,7 @@ final playlistsRepoProvider = Provider((ref) => PlaylistsRepository(ref.watch(ap
 final devicesRepoProvider = Provider((ref) => DevicesRepository(ref.watch(apiClientProvider)));
 final miscRepoProvider = Provider((ref) => MiscRepository(ref.watch(apiClientProvider)));
 final adminRepoProvider = Provider((ref) => AdminRepository(ref.watch(apiClientProvider)));
+final displayCodesRepoProvider = Provider((ref) => DisplayCodesRepository(ref.watch(apiClientProvider)));
 
 // ---------------------------------------------------------------------------
 // Session

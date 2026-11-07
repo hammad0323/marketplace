@@ -226,6 +226,30 @@ expect('end before start date rejected', req('POST', '/api/schedules/create', ['
 expect('update schedule', req('POST', '/api/schedules/update', ['schedule_id' => $sch['schedule_id'], 'end_time' => '15:00'], $BILAL), 200);
 expect('list schedules', req('GET', "/api/schedules/list?playlist_id={$PID}", null, $BILAL), 200);
 
+
+section('Show Display — content by code (no pairing)');
+$dc = expect('public content by code (playlist)', req('GET', '/api/display/content?code=store1'), 200);
+check('playlist doc with items + signed media', ($dc['kind'] ?? '') === 'playlist' && count($dc['doc']['items'] ?? []) >= 3 && !empty($dc['doc']['media'][0]['url']) && !isset($dc['doc']['media'][0]['file_path']));
+$dc2 = expect('unchanged content omits doc', req('GET', '/api/display/content?code=STORE1&have=' . ($dc['content_hash'] ?? '')), 200);
+check('doc is null when hash matches', array_key_exists('doc', $dc2) && $dc2['doc'] === null);
+$ds = expect('public content by code (single screen)', req('GET', '/api/display/content?code=WELCOME'), 200);
+check('screen wrapped as one-item playlist', ($ds['kind'] ?? '') === 'screen' && count($ds['doc']['items'] ?? []) === 1);
+expect('unknown code → 404', req('GET', '/api/display/content?code=NOPE99'), 404, 'CODE_NOT_FOUND');
+$gc = expect('owner gets code for a screen (auto-created)', req('GET', '/api/display-codes/get?screen_id=' . $SID, null, $BILAL), 200);
+check('6-char generated code', strlen($gc['code'] ?? '') === 6);
+expect("Aisha cannot read Bilal's code", req('GET', '/api/display-codes/get?screen_id=' . $SID, null, $AISHA), 404);
+$sc = expect('choose own code (normalised)', req('POST', '/api/display-codes/set', ['screen_id' => $SID, 'code' => 'grand-open'], $BILAL), 200);
+check('stored upper-case without symbols', ($sc['code'] ?? '') === 'GRANDOPEN');
+expect('duplicate code rejected', req('POST', '/api/display-codes/set', ['screen_id' => $SID, 'code' => 'STORE1'], $BILAL), 409, 'CONFLICT');
+expect('too short code rejected', req('POST', '/api/display-codes/set', ['screen_id' => $SID, 'code' => 'ab'], $BILAL), 400, 'VALIDATION');
+$byCode = expect('new code plays the screen', req('GET', '/api/display/content?code=GRANDOPEN'), 200);
+check('right screen', ($byCode['doc']['items'][0]['screen_id'] ?? 0) === $SID);
+$rg = expect('regenerate', req('POST', '/api/display-codes/regenerate', ['screen_id' => $SID], $BILAL), 200);
+expect('old code stops working', req('GET', '/api/display/content?code=GRANDOPEN'), 404);
+$pc = expect('code for a playlist', req('GET', '/api/display-codes/get?playlist_id=' . $PID, null, $BILAL), 200);
+expect('playlist code plays', req('GET', '/api/display/content?code=' . $pc['code']), 200);
+$drafty = expect('draft screen code', req('GET', '/api/display-codes/get?screen_id=' . $blank['screen_id'], null, $BILAL), 404);
+
 // ---------------------------------------------------------------------------
 section('Workflow C — connect a TV');
 $uidDev = 'test-' . bin2hex(random_bytes(8));

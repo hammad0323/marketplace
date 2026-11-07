@@ -9,6 +9,7 @@ import '../features/authentication/login_screen.dart';
 import '../features/dashboard/home_screen.dart';
 import '../features/dashboard/main_shell.dart';
 import '../features/devices/devices_screens.dart';
+import '../features/display/display_screens.dart';
 import '../features/editor/editor_screen.dart';
 import '../features/media_library/media_library_screen.dart';
 import '../features/notifications/notifications_screen.dart';
@@ -27,15 +28,20 @@ class _RouterRefresh extends ChangeNotifier {
   void ping() => notifyListeners();
 }
 
+/// First location (set in main(): display mode survives restarts).
+final initialLocationProvider = Provider<String>((_) => '/home');
+
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = _RouterRefresh();
   ref.listen(sessionProvider, (_, _) => refresh.ping());
   ref.onDispose(refresh.dispose);
 
   return GoRouter(
-    initialLocation: '/home',
+    initialLocation: ref.read(initialLocationProvider),
     refreshListenable: refresh,
     redirect: (context, state) {
+      // Display mode needs no account.
+      if (state.matchedLocation.startsWith('/display')) return null;
       final session = ref.read(sessionProvider);
       if (session.isLoading && !session.hasValue) return state.matchedLocation == '/splash' ? null : '/splash';
       final s = session.value;
@@ -50,6 +56,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/splash', builder: (_, _) => const SplashScreen()),
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
       GoRoute(path: '/forgot', builder: (_, _) => const ForgotPasswordScreen()),
+      GoRoute(path: '/display', builder: (_, _) => const DisplayEntryScreen()),
+      GoRoute(path: '/display/play/:code', builder: (_, s) => DisplayPlayScreen(key: ValueKey('dp${s.pathParameters['code']}'), code: s.pathParameters['code']!)),
+      GoRoute(path: '/display/managed', builder: (_, _) => const ManagedDisplayScreen()),
 
       // ---------------- User experience (bottom navigation) ----------------
       StatefulShellRoute.indexedStack(

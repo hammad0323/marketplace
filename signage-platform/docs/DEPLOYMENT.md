@@ -231,7 +231,11 @@ flutter build web -t lib/main.dart --dart-define=API_BASE_URL=https://signage.ex
 
 Serve `build/web` from any static host.
 
-**Player installation on a TV box.**
+**Showing content on a TV (simplest).** Install the normal app (the `manager` build) on the TV or box. Open it, tap **Show Display**, and enter the display code of a screen or playlist. Users find the code in the app under *Show on a TV*. The device remembers the code, reopens after power loss, and updates within a minute of each publish.
+
+**Managed display (remote control, schedules, monitoring).** This works in the same app: **Show Display → Managed display** shows a pairing code, which you enter under **Devices → Add device**. The separate `player` build below is optional, for dedicated kiosk boxes.
+
+**Player installation on a TV box (optional dedicated build).**
 
 1. Install the APK, for example:
 

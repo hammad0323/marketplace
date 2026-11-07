@@ -1,6 +1,6 @@
 # API Reference
 
-The API is procedural PHP 8.1+ using MySQLi prepared statements, with JSON over HTTPS. It has **107 endpoints**, each implemented as one PHP file under `backend/api/`. Every example on this page is exercised by `backend/tests/api_test.php` (225 checks).
+The API is procedural PHP 8.1+ using MySQLi prepared statements, with JSON over HTTPS. It has **111 endpoints**, each implemented as one PHP file under `backend/api/`. Every example on this page is exercised by `backend/tests/api_test.php` (246 checks).
 
 ## Conventions
 
@@ -126,6 +126,17 @@ POST /api/auth/login.php
 | GET | `schedules/resolve.php?device_id=&at=ISO8601` | `{playlist_id, playlist_name, schedule_id, reason}`. Uses the same algorithm as the player. |
 
 Changes to a published playlist (its items, order or schedules) are **republished automatically**, so displays update without a separate publish step.
+
+## Display codes ("Show Display", no pairing)
+
+Every screen and playlist can have a short code. Open the app on any TV, box or tablet, tap **Show Display** on the sign-in page, enter the code, and the content plays. No account or pairing is needed on the TV. Only **published** content is served, and the display checks for updates every 60 seconds.
+
+| Method | Endpoint | Auth | |
+|---|---|---|---|
+| GET | `display-codes/get.php?screen_id= \| playlist_id=` | U | The item's code. A random 6-character code is created on first request. → `{code, kind, name, is_published, view_count, last_used_at}` |
+| POST | `display-codes/set.php` | U | `{screen_id \| playlist_id, code}`: choose your own code (4–12 letters or numbers, stored upper-case, unique; **409** if already taken) |
+| POST | `display-codes/regenerate.php` | U | New random code. The old one stops working immediately. |
+| GET | `display/content.php?code=&have=<content_hash>` | P | `{kind, name, content_hash, doc, emergency[], refresh_seconds}`. `doc` is a playable playlist document with signed media (a single screen is wrapped as a one-item playlist). It is `null` when `have` matches. Errors: **404** `CODE_NOT_FOUND`, **409** `NOT_PUBLISHED`, **403** `CODE_INACTIVE`. Rate limited per IP, with extra limits on unknown codes to slow guessing. |
 
 ## Devices: management side (U)
 

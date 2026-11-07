@@ -4,14 +4,22 @@ import 'package:timezone/data/latest_all.dart' as tzdata;
 
 import 'core/constants/app_config.dart';
 import 'core/theme/app_theme.dart';
+import 'features/display/code_display_service.dart';
 import 'providers/providers.dart';
 import 'routes/app_router.dart';
 
 /// Management app (phones & tablets). The TV player has its own entry point: lib/main_player.dart
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   tzdata.initializeTimeZones();
-  runApp(ProviderScope(retry: (_, _) => null, child: const SignageApp()));
+  // A device left in display mode (e.g. a TV) goes straight back to it after a restart.
+  final (mode, code) = await DisplayModePrefs.read();
+  final start = mode == 'managed' ? '/display/managed' : (mode == 'code' && code != null ? '/display/play/$code' : '/home');
+  runApp(ProviderScope(
+    retry: (_, _) => null,
+    overrides: [initialLocationProvider.overrideWithValue(start)],
+    child: const SignageApp(),
+  ));
 }
 
 class SignageApp extends ConsumerWidget {

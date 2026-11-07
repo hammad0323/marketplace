@@ -102,7 +102,10 @@ class StatusChip extends StatelessWidget {
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 6, height: 6, decoration: BoxDecoration(color: c, shape: BoxShape.circle)),
         const SizedBox(width: 5),
-        Text(label[0].toUpperCase() + label.substring(1), style: TextStyle(color: c, fontSize: 11.5, fontWeight: FontWeight.w600)),
+        Flexible(
+          child: Text(label[0].toUpperCase() + label.substring(1),
+              maxLines: 1, overflow: TextOverflow.ellipsis, softWrap: false, style: TextStyle(color: c, fontSize: 11.5, fontWeight: FontWeight.w600)),
+        ),
       ]),
     );
   }

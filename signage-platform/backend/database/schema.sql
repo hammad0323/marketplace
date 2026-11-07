@@ -23,6 +23,7 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS display_codes;
 DROP TABLE IF EXISTS emergency_messages;
 DROP TABLE IF EXISTS playback_logs;
 DROP TABLE IF EXISTS device_commands;
@@ -818,6 +819,29 @@ CREATE TABLE emergency_messages (
     PRIMARY KEY (message_id),
     KEY idx_em_user_status (user_id, status),
     CONSTRAINT fk_em_user FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Short codes that show a screen or playlist on any device running the app
+-- ("Show Display" on the login page). One code per screen / playlist, chosen
+-- by the user or generated. Codes are unique across both kinds (stored upper-case).
+CREATE TABLE display_codes (
+    code_id      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    code         VARCHAR(20)     NOT NULL,
+    user_id      BIGINT UNSIGNED NOT NULL,
+    screen_id    BIGINT UNSIGNED NULL,
+    playlist_id  BIGINT UNSIGNED NULL,
+    view_count   INT UNSIGNED    NOT NULL DEFAULT 0,
+    last_used_at DATETIME        NULL,
+    created_at   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (code_id),
+    UNIQUE KEY uq_dc_code (code),
+    UNIQUE KEY uq_dc_screen (screen_id),
+    UNIQUE KEY uq_dc_playlist (playlist_id),
+    KEY idx_dc_user (user_id),
+    CONSTRAINT fk_dcode_user  FOREIGN KEY (user_id)     REFERENCES users (user_id)         ON DELETE CASCADE,
+    CONSTRAINT fk_dcode_screen   FOREIGN KEY (screen_id)   REFERENCES screens (screen_id)     ON DELETE CASCADE,
+    CONSTRAINT fk_dcode_playlist FOREIGN KEY (playlist_id) REFERENCES playlists (playlist_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =============================================================================

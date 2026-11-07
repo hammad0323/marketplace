@@ -7,6 +7,7 @@ import '../../core/utils/formatters.dart';
 import '../../core/widgets/common.dart';
 import '../../models/playlist.dart';
 import '../../providers/providers.dart';
+import '../display/display_code_sheet.dart';
 
 class PlaylistsScreen extends ConsumerWidget {
   const PlaylistsScreen({super.key});
@@ -76,6 +77,7 @@ class _PlaylistCard extends ConsumerWidget {
             onSelected: (a) async {
               switch (a) {
                 case 'preview': context.push('/playlists/${p.playlistId}/preview');
+                case 'tv': showDisplayCodeSheet(context, ref, playlistId: p.playlistId);
                 case 'publish':
                   final m = await runWithProgress(context, () => repo.publish(p.playlistId));
                   if (m != null && context.mounted) showToast(context, m);
@@ -92,6 +94,7 @@ class _PlaylistCard extends ConsumerWidget {
             },
             itemBuilder: (_) => const [
               PopupMenuItem(value: 'preview', child: ListTile(leading: Icon(Icons.play_circle_outline), title: Text('Preview'))),
+              PopupMenuItem(value: 'tv', child: ListTile(leading: Icon(Icons.tv_rounded), title: Text('Show on a TV (code)'))),
               PopupMenuItem(value: 'publish', child: ListTile(leading: Icon(Icons.cloud_upload_outlined), title: Text('Publish'))),
               PopupMenuItem(value: 'duplicate', child: ListTile(leading: Icon(Icons.copy_rounded), title: Text('Duplicate'))),
               PopupMenuItem(value: 'delete', child: ListTile(leading: Icon(Icons.delete_outline, color: AppColors.danger), title: Text('Delete'))),

@@ -5,13 +5,17 @@ Every result below comes from a run in the development container. Nothing here i
 | Suite | Command | Result |
 |---|---|---|
 | Database: structure, seed, JSON, limits, pairing, cross-user guards, cascades | `backend/database/tests/verify_database.sh` | **57 / 57 passed** (MariaDB 10.11) |
-| API end to end: every workflow, security, uploads, sync | `php backend/tests/api_test.php http://127.0.0.1:8080` | **225 / 225 passed**, nothing written to `error.log` |
-| Flutter unit tests: schedule engine, layout model, feed parser, JSON path, playback items | `flutter test` | **15 / 15 passed** |
+| API end to end: every workflow, security, uploads, sync | `php backend/tests/api_test.php http://127.0.0.1:8080` | **246 / 246 passed**, nothing written to `error.log` |
+| Flutter tests: schedule engine, layout model, feed parser, JSON path, playback items, screen-card layout at 144/173/184/230 px and 130% font size | `flutter test` | **24 / 24 passed** |
 | Flutter static analysis | `flutter analyze` | **No issues found** |
 | Management app build (web) | `flutter build web` | Built |
 | Player build (web) and live run against the API | `flutter build web -t lib/main_player.dart` + Playwright | Registered → pairing code shown → paired → content downloaded → playlist rotating → remote command executed → emergency override shown → logs uploaded |
 
-## What the API suite covers (225 checks)
+| Show Display flow in a browser at TV size | Playwright | Login → Show Display → `STORE1` → playing. A restart reopens display mode. A wrong code shows a clear error. The remote menu works. |
+
+## What the API suite covers (246 checks)
+
+* **Display codes**: public content for a playlist code and a screen code (wrapped as one item), unchanged content returns no document, unknown code returns 404, code auto-created for the owner, another user cannot read it, choose-your-own code normalised (`grand-open` → `GRANDOPEN`), duplicate and too-short codes rejected, the new code plays, regenerating kills the old code, playlist codes, deleted screen.
 
 * **Auth**: wrong password, validation, suspended account, missing or garbage token, method not allowed, blocked internal paths (`/config`, `_common.php`, raw `/uploads`), logout revocation, sessions, password change, and the forgot/reset flow (code by email, weak password rejected, single-use code).
 * **Workflow A (create a screen)**: premium template blocked, screen limits enforced for User A (2) and User B (5), admin raises a limit, create from template / blank portrait / custom 3840×1080, save-layout with version check (409 conflict), unknown, planned and foreign-media widgets rejected, publish, duplicate (also limit-checked), delete, search, rename, favourite.

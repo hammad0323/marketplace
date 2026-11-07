@@ -520,6 +520,7 @@ $sql = <<<SQL
 --     Demo users  : *@demo.local          / Demo@12345
 --     Demo player : device_uid 'demo-lobby-tv-0001', bearer token 'dev-device-token-lobby-tv'
 --     Unpaired TV : pairing code  K7Q4ZP   (expires 2099 — dev only)
+--     Display codes: STORE1 (playlist), EVENING (playlist), WELCOME, PROMO1 (screens)
 -- =============================================================================
 
 SET NAMES utf8mb4;
@@ -815,6 +816,13 @@ foreach ($schedules as $si => [$spid, $sname, $stype, $st, $et, $days, $prio]) {
 }
 $sql .= insert('playlist_schedules', $schRows);
 $sql .= insert('playlist_publications', $plPub);
+// Display codes: type one of these on a TV → "Show Display".
+$sql .= insert('display_codes', [
+    ['code' => 'STORE1', 'user_id' => 3, 'screen_id' => null, 'playlist_id' => 1],
+    ['code' => 'EVENING', 'user_id' => 3, 'screen_id' => null, 'playlist_id' => 2],
+    ['code' => 'WELCOME', 'user_id' => 3, 'screen_id' => 1, 'playlist_id' => null],
+    ['code' => 'PROMO1', 'user_id' => 3, 'screen_id' => 2, 'playlist_id' => null],
+]);
 
 // locations & devices -------------------------------------------------------
 $sql .= insert('locations', [

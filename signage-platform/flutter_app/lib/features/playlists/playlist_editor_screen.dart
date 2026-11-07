@@ -8,6 +8,7 @@ import '../../core/widgets/common.dart';
 import '../../models/playlist.dart';
 import '../../models/screen.dart';
 import '../../providers/providers.dart';
+import '../display/display_code_sheet.dart';
 import '../scheduling/schedule_editor.dart';
 import '../widgets_library/layout_view.dart';
 import '../widgets_library/render_context.dart';
@@ -246,8 +247,14 @@ class _PlaylistEditorScreenState extends ConsumerState<PlaylistEditorScreen> {
             const Spacer(),
             TextButton.icon(onPressed: _offerAssign, icon: const Icon(Icons.cast_rounded), label: const Text('Show on displays')),
           ]),
+          OutlinedButton.icon(
+            onPressed: () => showDisplayCodeSheet(context, ref, playlistId: playlistId),
+            icon: const Icon(Icons.tv_rounded),
+            label: const Text('Show on any TV with a display code'),
+          ),
+          const SizedBox(height: 8),
           if (devices.isEmpty)
-            const Text('Not assigned to any display yet.', style: TextStyle(color: AppColors.mediumGrey))
+            const Text('Not assigned to any managed display yet.', style: TextStyle(color: AppColors.mediumGrey))
           else
             Wrap(spacing: 8, children: [for (final d in devices) Chip(avatar: const Icon(Icons.tv, size: 16), label: Text('${d['device_name']}'))]),
         ],

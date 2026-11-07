@@ -30,7 +30,7 @@ class DevicesScreen extends ConsumerWidget {
             if (items.isEmpty) {
               return ListView(children: [
                 const SizedBox(height: 60),
-                EmptyState(icon: Icons.tv_rounded, title: 'No displays connected', message: 'Install the Signal Player on your Android TV, then enter the code it shows.', action: 'Connect a TV', onAction: () => context.push('/devices/add')),
+                EmptyState(icon: Icons.tv_rounded, title: 'No managed displays', message: 'Quickest way: open Signal Signage on your TV, tap "Show Display" and enter the code of a screen or playlist ("Show on a TV").\n\nFor remote control, schedules and monitoring, pair the TV instead: choose "Managed display" on the TV and enter its pairing code here.', action: 'Pair a TV', onAction: () => context.push('/devices/add')),
               ]);
             }
             final online = items.where((d) => d.isOnline).length;
@@ -117,7 +117,7 @@ class _AddDeviceScreenState extends ConsumerState<AddDeviceScreen> {
             Text('How it works', style: t.titleMedium),
             const SizedBox(height: 8),
             for (final s in const [
-              '1. Install and open Signal Player on your Android TV or TV box.',
+              '1. Open Signal Signage on your Android TV or TV box → Show Display → Managed display.',
               '2. The TV shows a 6-character pairing code.',
               '3. Type the code below and choose what to show.',
             ])

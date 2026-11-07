@@ -20,6 +20,7 @@ require __DIR__ . '/upload.php';
 require __DIR__ . '/layout.php';
 require __DIR__ . '/publish.php';
 require __DIR__ . '/schedule.php';
+require __DIR__ . '/display_codes.php';
 
 set_exception_handler(function (Throwable $e) {
     $ref = substr(random_token(4), 0, 8);

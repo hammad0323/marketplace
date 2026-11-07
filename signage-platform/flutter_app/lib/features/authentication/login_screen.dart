@@ -108,6 +108,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     onPressed: busy ? null : submit,
                     child: busy ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white)) : const Text('Sign in'),
                   ),
+                  const SizedBox(height: 14),
+                  // TVs, TV boxes and tablets: show content with a display code, no account needed.
+                  OutlinedButton.icon(
+                    onPressed: () => context.push('/display'),
+                    icon: const Icon(Icons.tv_rounded),
+                    label: const Text('Show Display'),
+                  ),
+                  const SizedBox(height: 6),
+                  Text('Use this device as a screen — just enter a display code.', textAlign: TextAlign.center, style: t.bodySmall?.copyWith(color: AppColors.mediumGrey)),
                   const SizedBox(height: 24),
                   Text('Accounts are created by your administrator.', textAlign: TextAlign.center, style: t.bodySmall?.copyWith(color: AppColors.mediumGrey)),
                   const SizedBox(height: 4),

@@ -8,10 +8,10 @@ Signal Signage is a complete digital-signage system:
 
 | Part | Technology | Location |
 |---|---|---|
-| REST API (107 endpoints) | Procedural PHP 8.1+ with MySQLi prepared statements, JSON | `backend/` |
+| REST API (111 endpoints) | Procedural PHP 8.1+ with MySQLi prepared statements, JSON | `backend/` |
 | Database (39 tables, 2 views) | MySQL 8 / MariaDB, InnoDB, utf8mb4 | `backend/database/` |
 | Management app (users + super admin) | Flutter 3, Material 3, Riverpod, go_router, Dio | `flutter_app/lib/main.dart` |
-| TV player | Flutter, the same codebase, built as a separate app (flavor) | `flutter_app/lib/main_player.dart` |
+| TV display | **The same app**: tap *Show Display* on the sign-in page and enter a screen or playlist code | `flutter_app/lib/features/display/` |
 
 ![Home](docs/screenshots/02_home.png)
 
@@ -20,8 +20,8 @@ Signal Signage is a complete digital-signage system:
 | Check | Result |
 |---|---|
 | Database suite | **57/57** checks pass |
-| End-to-end API suite (workflows A–E, limits, IDOR, uploads, pairing, sync, rate limits) | **225/225** checks pass |
-| Flutter unit tests | **15/15** pass |
+| End-to-end API suite (workflows A–E, display codes, limits, IDOR, uploads, pairing, sync, rate limits) | **246/246** checks pass |
+| Flutter tests (incl. screen-card overflow at 144–230 px widths and 130% font size) | **24/24** pass |
 | `flutter analyze` | No issues |
 | Web build of both apps | Done |
 | Live player test (register → pair → sync → play → command → emergency) | Done |
@@ -65,7 +65,14 @@ Full details and the list of things that were **not** tested in this environment
 * Plans: Free, Starter, Professional, Business and Enterprise, all editable.
 * Content overview, widget availability, all devices, media (shared library), audit log, app settings.
 
-**TV player**
+**Show on a TV: one app, just a code**
+* Every screen and playlist has a display code (shown under ⋮ → *Show on a TV* and the 📺 button on each card). Users can choose their own code (for example `LOBBY`) or generate a new one.
+* On the TV, install the same app → *Show Display* on the sign-in page → type the code → it plays full screen.
+* Updates within a minute of publishing. Keeps playing from its cache when offline, and reopens straight into display mode after a reboot.
+* OK, Enter or Back on the remote (or a long press) opens a menu: continue, check for updates, change code, exit.
+* Emergency broadcasts sent to "all displays" also appear on code displays.
+
+**Managed displays (optional, same app)**
 * Registration and pairing screen with code and QR.
 * Version-based sync with **SHA-256-verified** media cache. A new version goes live only when all its media is ready.
 * Offline playback from the persisted cache.
@@ -112,11 +119,7 @@ See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for full and production instruc
    flutter run --flavor manager -t lib/main.dart --dart-define=API_BASE_URL=http://10.0.2.2:8080
    ```
 
-6. Run the TV player (from `flutter_app/`):
-
-   ```bash
-   flutter run --flavor player -t lib/main_player.dart --dart-define=API_BASE_URL=http://10.0.2.2:8080
-   ```
+6. On a TV (or a second emulator), run the same app, tap **Show Display** and enter a code. The demo data includes `STORE1` and `EVENING` (playlists) and `WELCOME` and `PROMO1` (screens).
 
 Development logins (delete them before production):
 
@@ -135,7 +138,7 @@ Development logins (delete them before production):
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, auth, data flows, schedule priority, sync and offline, the layout JSON contract, widget system, security |
 | [docs/ER_DIAGRAM.md](docs/ER_DIAGRAM.md) | Mermaid ER diagram and relationships |
 | [docs/DATABASE.md](docs/DATABASE.md) | Every table and column, limit rules, cross-user protection, publication format, seed data |
-| [docs/API.md](docs/API.md) | All 107 endpoints with request and response formats |
+| [docs/API.md](docs/API.md) | All 111 endpoints with request and response formats |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Local setup, Apache/Nginx, cron, hardening, building and signing the apps, installing on TVs |
 | [docs/TESTING.md](docs/TESTING.md) | Test results and coverage, and what still needs on-device testing |
 

@@ -88,7 +88,7 @@ class _ScreensListScreenState extends ConsumerState<ScreensListScreen> {
                     ])
                   : GridView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: cols, mainAxisSpacing: 12, crossAxisSpacing: 12, mainAxisExtent: 242),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: cols, mainAxisSpacing: 12, crossAxisSpacing: 12, mainAxisExtent: _cardHeight(context, width, cols)),
                       itemCount: list.length,
                       itemBuilder: (_, i) {
                         final s = list[i];
@@ -107,6 +107,15 @@ class _ScreensListScreenState extends ConsumerState<ScreensListScreen> {
         ),
       ]),
     );
+  }
+
+  /// Card height from the real card width: 16:10 thumbnail + text + action row
+  /// (text part grows with the user's font-size setting).
+  double _cardHeight(BuildContext context, double screenWidth, int cols) {
+    final cardWidth = (screenWidth - 32 - 12 * (cols - 1)) / cols;
+    final thumb = (cardWidth - 16) * 10 / 16 + 16;
+    final text = MediaQuery.textScalerOf(context).scale(76);
+    return thumb + text + 52;
   }
 
   Widget _chip(String label, bool on, VoidCallback tap) => Padding(

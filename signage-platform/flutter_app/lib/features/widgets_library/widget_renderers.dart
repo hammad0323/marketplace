@@ -649,22 +649,26 @@ class _TickerWidgetViewState extends State<TickerWidgetView> with SingleTickerPr
             ctrl.repeat();
           }
           final reverse = c['direction'] == 'right';
+          // Identical copies side by side, shifted by exactly one copy's share of the row.
+          // Uses the real laid-out width, so it stays seamless even if fonts load late.
+          final copies = math.max(2, (box.maxWidth / extent).ceil() + 1);
           return ClipRect(
-            child: AnimatedBuilder(
-              animation: ctrl,
-              builder: (_, _) {
-                final off = (scope.live ? ctrl.value : 0) * extent;
-                final copies = (box.maxWidth / extent).ceil() + 2;
-                return Stack(clipBehavior: Clip.none, children: [
-                  for (var i = 0; i < copies; i++)
-                    Positioned(
-                      left: reverse ? (i * extent + off - extent) : (i * extent - off),
-                      top: 0,
-                      bottom: 0,
-                      child: Center(child: Text(text, style: style, maxLines: 1, softWrap: false)),
-                    ),
-                ]);
-              },
+            child: OverflowBox(
+              maxWidth: double.infinity,
+              alignment: Alignment.centerLeft,
+              child: AnimatedBuilder(
+                animation: ctrl,
+                builder: (_, child) {
+                  final v = scope.live ? ctrl.value : 0.0;
+                  return FractionalTranslation(translation: Offset(-(reverse ? 1 - v : v) / copies, 0), child: child);
+                },
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  for (var i = 0; i < copies; i++) ...[
+                    Text(text, style: style, maxLines: 1, softWrap: false),
+                    SizedBox(width: gap),
+                  ],
+                ]),
+              ),
             ),
           );
         }

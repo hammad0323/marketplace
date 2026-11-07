@@ -9,6 +9,7 @@ import '../../models/screen.dart';
 import '../../providers/providers.dart';
 import '../widgets_library/layout_view.dart';
 import '../widgets_library/render_context.dart';
+import '../display/display_code_sheet.dart';
 
 /// Shared screen actions (used by cards, lists and the editor).
 class ScreenActions {
@@ -87,6 +88,7 @@ class ScreenActions {
             ListTile(leading: const Icon(Icons.edit_outlined), title: const Text('Edit'), onTap: () { Navigator.pop(c); context.push('/editor/${s.screenId}'); }),
             ListTile(leading: const Icon(Icons.play_circle_outline), title: const Text('Preview'), onTap: () { Navigator.pop(c); context.push('/preview/screen/${s.screenId}'); }),
             ListTile(leading: const Icon(Icons.cloud_upload_outlined), title: const Text('Publish'), onTap: () => go(() => publish(context, ref, s))),
+            ListTile(leading: const Icon(Icons.tv_rounded), title: const Text('Show on a TV (display code)'), onTap: () => go(() => showDisplayCodeSheet(context, ref, screenId: s.screenId))),
             ListTile(leading: const Icon(Icons.copy_rounded), title: const Text('Duplicate'), onTap: () => go(() => duplicate(context, ref, s))),
             ListTile(leading: const Icon(Icons.drive_file_rename_outline), title: const Text('Rename'), onTap: () => go(() => rename(context, ref, s))),
             ListTile(leading: const Icon(Icons.folder_open_outlined), title: const Text('Move to folder'), onTap: () => go(() => moveToFolder(context, ref, s))),
@@ -161,24 +163,28 @@ class ScreenCard extends ConsumerWidget {
         ),
         if (!selecting && !compact)
           Padding(
-            padding: const EdgeInsets.fromLTRB(4, 0, 4, 6),
-            child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+            padding: const EdgeInsets.fromLTRB(2, 0, 2, 6),
+            // Each action gets an equal share of the card width, so the row never overflows on narrow phones.
+            child: Row(children: [
               _mini(Icons.edit_outlined, 'Edit', () => context.push('/editor/${s.screenId}')),
               _mini(Icons.copy_rounded, 'Duplicate', () => ScreenActions.duplicate(context, ref, s)),
               _mini(Icons.play_circle_outline, 'Preview', () => context.push('/preview/screen/${s.screenId}')),
               _mini(Icons.cloud_upload_outlined, 'Publish', () => ScreenActions.publish(context, ref, s)),
-              _mini(Icons.delete_outline, 'Delete', () => ScreenActions.delete(context, ref, s)),
+              _mini(Icons.tv_rounded, 'Show on a TV', () => showDisplayCodeSheet(context, ref, screenId: s.screenId)),
             ]),
           ),
       ]),
     );
   }
 
-  Widget _mini(IconData i, String tip, VoidCallback f) => IconButton(
-        icon: Icon(i, size: 19),
-        tooltip: tip,
-        onPressed: f,
-        visualDensity: VisualDensity.compact,
-        style: IconButton.styleFrom(foregroundColor: AppColors.mediumGrey),
+  Widget _mini(IconData i, String tip, VoidCallback f) => Expanded(
+        child: IconButton(
+          icon: Icon(i, size: 19),
+          tooltip: tip,
+          onPressed: f,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minHeight: 40),
+          style: IconButton.styleFrom(foregroundColor: AppColors.mediumGrey),
+        ),
       );
 }
