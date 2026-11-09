@@ -11,6 +11,7 @@ Every result below comes from a run in the development container. Nothing here i
 | Management app build (web) | `flutter build web` | Built |
 | Player build (web) and live run against the API | `flutter build web -t lib/main_player.dart` + Playwright | Registered → pairing code shown → paired → content downloaded → playlist rotating → remote command executed → emergency override shown → logs uploaded |
 
+| Offline display (integration test on the Dart VM against the live API) | `SIGNAGE_API=http://127.0.0.1:8080 flutter test test/integration/offline_display_test.dart` | **Passed.** Content and media downloaded with checksums verified, offline mode switched on, then a "reboot" with the server unreachable plays from the device with no network request. Turning offline mode on with no internet and no saved content gives a clear error. |
 | Show Display flow in a browser at TV size | Playwright | Login → Show Display → `STORE1` → playing. A restart reopens display mode. A wrong code shows a clear error. The remote menu works. |
 
 ## What the API suite covers (246 checks)

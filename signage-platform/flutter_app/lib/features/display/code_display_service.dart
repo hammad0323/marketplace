@@ -34,6 +34,12 @@ class CodeDisplayService extends ChangeNotifier {
   DateTime? lastCheck;
   final Map<int, String> localPaths = {};
   final Map<int, String> urls = {};
+
+  /// Offline mode: after everything is downloaded once, the device never
+  /// contacts the server (zero internet use) until the user asks for updates.
+  bool offlineMode = false;
+  bool downloading = false;
+  int downloadedBytes = 0, totalBytes = 0, filesDone = 0, filesTotal = 0;
   Timer? _timer;
   Directory? _dir;
   bool _busy = false, _disposed = false;
@@ -46,19 +52,60 @@ class CodeDisplayService extends ChangeNotifier {
       await Directory('${_dir!.path}/media').create(recursive: true);
     }
     await _load();
+    offlineMode = await DisplayModePrefs.offline();
     if (doc != null) {
       loading = false;
       _notify();
     }
+    // Offline mode with everything saved: play from the device, no network at all.
+    if (offlineMode && doc != null && savedForOffline) return;
     await refresh();
+    if (!offlineMode) _startPolling();
+  }
+
+  void _startPolling() {
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 60), (_) => refresh());
+  }
+
+  /// Media items of the current content (id → size in bytes).
+  Map<int, int> get _manifest => {for (final m in asList(doc?['media']).map(asMap)) asInt(m['media_id']): asInt(m['file_size'])};
+
+  /// True when every file of the current content is stored on this device.
+  bool get savedForOffline => !kIsWeb && doc != null && _manifest.keys.every(localPaths.containsKey);
+
+  /// Offline caching needs the installed app (Android / iOS); browsers stream instead.
+  bool get offlineSupported => !kIsWeb;
+
+  int get savedBytes => _manifest.entries.where((e) => localPaths.containsKey(e.key)).fold(0, (a, e) => a + e.value);
+  int get savedFiles => _manifest.keys.where(localPaths.containsKey).length;
+
+  /// Turn offline mode on (downloads anything missing first) or off.
+  /// Returns an error message, or null on success.
+  Future<String?> setOfflineMode(bool on) async {
+    if (on) {
+      if (!offlineSupported) return 'Offline mode needs the installed app on a TV, box or tablet.';
+      await refresh(); // make sure we have the latest content and every file
+      if (!savedForOffline) return online ? 'Some files could not be downloaded. Check the connection and try again.' : 'No internet connection. Connect once to download the content.';
+      offlineMode = true;
+      _timer?.cancel();
+    } else {
+      offlineMode = false;
+      _startPolling();
+      refresh();
+    }
+    await DisplayModePrefs.setOffline(offlineMode);
+    _notify();
+    return null;
   }
 
   Future<void> refresh() async {
     if (_busy) return;
     _busy = true;
     try {
-      final r = await _api.get('display/content.php', query: {'code': code, 'have': contentHash});
+      // If any file is still missing, ask for the full document again so we get fresh download links.
+      final missing = !kIsWeb && doc != null && !savedForOffline;
+      final r = await _api.get('display/content.php', query: {'code': code, 'have': missing ? '' : contentHash});
       final d = asMap(r.data);
       online = true;
       errorMessage = null;
@@ -69,11 +116,12 @@ class CodeDisplayService extends ChangeNotifier {
       final newDoc = d['doc'] == null ? null : asMap(d['doc']);
       if (newDoc != null) {
         final ok = await _download(newDoc);
-        if (ok || doc == null) {
+        // Keep showing the old content until the new version is completely downloaded.
+        if (ok || doc == null || asString(d['content_hash']) == contentHash) {
           doc = newDoc;
           contentHash = asString(d['content_hash']);
           await _save();
-          _cleanup();
+          if (ok) _cleanup();
         }
       }
     } on ApiException catch (e) {
@@ -102,7 +150,14 @@ class CodeDisplayService extends ChangeNotifier {
 
   Future<bool> _download(Map<String, dynamic> d) async {
     var allOk = true;
-    for (final m in asList(d['media']).map(asMap)) {
+    final list = asList(d['media']).map(asMap).toList();
+    filesTotal = list.length;
+    filesDone = 0;
+    totalBytes = list.fold(0, (a, m) => a + asInt(m['file_size']));
+    downloadedBytes = 0;
+    downloading = true;
+    _notify();
+    for (final m in list) {
       final id = asInt(m['media_id']);
       final url = m['url']?.toString();
       if (url != null) urls[id] = url;
@@ -110,13 +165,22 @@ class CodeDisplayService extends ChangeNotifier {
       final sum = asString(m['checksum_sha256']);
       final ext = switch (asString(m['mime_type'])) { 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif', 'video/mp4' => 'mp4', _ => 'jpg' };
       final path = '${_dir!.path}/media/${id}_${sum.isEmpty ? 'x' : sum.substring(0, 16)}.$ext';
+      final size = asInt(m['file_size']);
       if (await File(path).exists()) {
         localPaths[id] = path;
+        filesDone++;
+        downloadedBytes += size;
         continue;
       }
       final tmp = File('$path.part');
       try {
-        await Dio().download(url, tmp.path, options: Options(receiveTimeout: const Duration(minutes: 30)));
+        final base = downloadedBytes;
+        await Dio().download(url, tmp.path, options: Options(receiveTimeout: const Duration(minutes: 30)), onReceiveProgress: (got, _) {
+          downloadedBytes = base + got;
+          _notify();
+        });
+        downloadedBytes = base + size;
+        filesDone++;
         if (sum.isNotEmpty && (await sha256.bind(tmp.openRead()).first).toString() != sum) throw Exception('checksum mismatch');
         await tmp.rename(path);
         localPaths[id] = path;
@@ -125,6 +189,8 @@ class CodeDisplayService extends ChangeNotifier {
         if (await tmp.exists()) await tmp.delete();
       }
     }
+    downloading = false;
+    _notify();
     return allOk;
   }
 
@@ -201,11 +267,15 @@ class DisplayModePrefs {
     await p.setString(_code, code);
   }
 
+  static Future<bool> offline() async => (await SharedPreferences.getInstance()).getBool('display_offline') ?? false;
+  static Future<void> setOffline(bool v) async => (await SharedPreferences.getInstance()).setBool('display_offline', v);
+
   static Future<void> setManaged() async => (await SharedPreferences.getInstance()).setString(_mode, 'managed');
 
   static Future<void> clear() async {
     final p = await SharedPreferences.getInstance();
     await p.remove(_mode);
     await p.remove(_code);
+    await p.remove('display_offline');
   }
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,6 +32,7 @@ class _DisplayEntryScreenState extends State<DisplayEntryScreen> {
   final code = TextEditingController();
   final focus = FocusNode();
   bool busy = false;
+  bool offline = !kIsWeb; // default: save everything on the device, play without internet
   String? error;
 
   @override
@@ -50,6 +52,7 @@ class _DisplayEntryScreenState extends State<DisplayEntryScreen> {
       // Check the code before switching into full-screen mode.
       await ApiClient().get('display/content.php', query: {'code': c, 'have': 'check'});
       await DisplayModePrefs.setCode(c);
+      await DisplayModePrefs.setOffline(offline);
       if (mounted) context.go('/display/play/$c');
     } on ApiException catch (e) {
       setState(() => error = e.isNetwork ? 'No internet connection. Check the network and try again.' : e.message);
@@ -98,7 +101,17 @@ class _DisplayEntryScreenState extends State<DisplayEntryScreen> {
                     padding: const EdgeInsets.only(top: 12),
                     child: Text(error!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.danger)),
                   ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 10),
+                if (!kIsWeb)
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: offline,
+                    onChanged: (v) => setState(() => offline = v),
+                    secondary: const Icon(Icons.offline_pin_rounded, color: AppColors.teal),
+                    title: const Text('Play offline'),
+                    subtitle: const Text('Download videos and images once, then play without using the internet. You can download updates any time from the menu.'),
+                  ),
+                const SizedBox(height: 8),
                 FilledButton.icon(
                   onPressed: busy ? null : _start,
                   icon: busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white)) : const Icon(Icons.play_arrow_rounded),
@@ -165,10 +178,28 @@ class _DisplayPlayScreenState extends State<DisplayPlayScreen> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           ListTile(
             title: Text(s.name ?? 'Display', style: const TextStyle(fontWeight: FontWeight.w700)),
-            subtitle: Text('Code ${widget.code} · ${s.online ? 'online' : 'offline (cached content)'} · checked ${timeAgo(s.lastCheck)}'),
+            subtitle: Text([
+              'Code ${widget.code}',
+              s.offlineMode ? 'Offline mode (no internet used)' : (s.online ? 'online' : 'no connection — playing saved content'),
+              if (s.offlineSupported) 'saved on device: ${s.savedFiles} files, ${formatBytes(s.savedBytes)}',
+              'last update ${timeAgo(s.lastCheck)}',
+            ].join(' · ')),
           ),
           ListTile(autofocus: true, leading: const Icon(Icons.play_arrow_rounded), title: const Text('Continue'), onTap: () => Navigator.pop(c)),
-          ListTile(leading: const Icon(Icons.refresh_rounded), title: const Text('Check for updates now'), onTap: () => Navigator.pop(c, 'refresh')),
+          if (s.offlineSupported)
+            SwitchListTile(
+              secondary: const Icon(Icons.offline_pin_rounded),
+              title: const Text('Offline mode'),
+              subtitle: const Text('Play from this device only, without internet'),
+              value: s.offlineMode,
+              onChanged: (v) => Navigator.pop(c, v ? 'offline_on' : 'offline_off'),
+            ),
+          ListTile(
+            leading: const Icon(Icons.download_rounded),
+            title: Text(s.offlineMode ? 'Download updates now' : 'Check for updates now'),
+            subtitle: s.offlineMode ? const Text('Uses the internet once to fetch the latest published version') : null,
+            onTap: () => Navigator.pop(c, 'refresh'),
+          ),
           ListTile(leading: const Icon(Icons.dialpad_rounded), title: const Text('Show a different code'), onTap: () => Navigator.pop(c, 'change')),
           ListTile(leading: const Icon(Icons.logout_rounded), title: const Text('Exit display mode'), onTap: () => Navigator.pop(c, 'exit')),
         ]),
@@ -176,6 +207,14 @@ class _DisplayPlayScreenState extends State<DisplayPlayScreen> {
     );
     if (!mounted) return;
     if (a == 'refresh') s.refresh();
+    if (a == 'offline_on' || a == 'offline_off') {
+      final err = await s.setOfflineMode(a == 'offline_on');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(err ?? (s.offlineMode ? 'Offline mode on — everything is saved on this device.' : 'Offline mode off — updates download automatically.')),
+        ));
+      }
+    }
     if (a == 'change') {
       await DisplayModePrefs.clear();
       if (mounted) context.go('/display');
@@ -227,12 +266,17 @@ class _DisplayPlayScreenState extends State<DisplayPlayScreen> {
         idle: _message(Icons.event_busy_rounded, 'Nothing to show right now', s.name ?? ''),
       );
     }
+    if (s.downloading) {
+      return _message(Icons.download_rounded, 'Downloading for offline playback…',
+          '${s.filesDone} of ${s.filesTotal} files · ${formatBytes(s.downloadedBytes)} of ${formatBytes(s.totalBytes)}',
+          progress: s.totalBytes == 0 ? null : s.downloadedBytes / s.totalBytes);
+    }
     if (s.loading) return _message(Icons.cast_connected_rounded, 'Loading…', 'Code ${widget.code}', spinner: true);
     if (s.errorMessage != null) return _message(Icons.info_outline_rounded, s.errorMessage!, 'Code ${widget.code} · press OK or long-press for options');
     return _message(Icons.wifi_off_rounded, 'Waiting for connection…', 'This display will start as soon as it is online · code ${widget.code}', spinner: true);
   }
 
-  Widget _message(IconData icon, String title, String sub, {bool spinner = false}) => Container(
+  Widget _message(IconData icon, String title, String sub, {bool spinner = false, double? progress}) => Container(
         decoration: const BoxDecoration(gradient: LinearGradient(colors: [AppColors.darkTeal, AppColors.darkBackground], begin: Alignment.topLeft, end: Alignment.bottomRight)),
         child: Center(
           child: FittedBox(
@@ -253,6 +297,11 @@ class _DisplayPlayScreenState extends State<DisplayPlayScreen> {
                 const SizedBox(height: 8),
                 Text(sub, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white54, fontSize: 20)),
                 if (spinner) const Padding(padding: EdgeInsets.only(top: 24), child: CircularProgressIndicator(color: AppColors.teal)),
+                if (progress != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 24),
+                    child: SizedBox(width: 520, child: LinearProgressIndicator(value: progress.clamp(0.0, 1.0), minHeight: 10, color: AppColors.teal, backgroundColor: Colors.white12)),
+                  ),
                 const SizedBox(height: 24),
                 Text(AppConfig.appName, style: const TextStyle(color: Colors.white24, fontSize: 18)),
               ]),

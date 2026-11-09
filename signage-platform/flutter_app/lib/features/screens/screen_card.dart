@@ -77,13 +77,16 @@ class ScreenActions {
   static void showMenu(BuildContext context, WidgetRef ref, ScreenModel s) {
     showModalBottomSheet(
       context: context,
+      // Scrollable + allowed to grow, so every action (incl. Delete) is reachable on small phones.
+      isScrollControlled: true,
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
       builder: (c) {
         void go(Future<void> Function() f) {
           Navigator.pop(c);
           f();
         }
         return SafeArea(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
+          child: ListView(shrinkWrap: true, children: [
             ListTile(title: Text(s.screenName, style: const TextStyle(fontWeight: FontWeight.w700)), subtitle: Text(orientationLabel(s.orientation))),
             ListTile(leading: const Icon(Icons.edit_outlined), title: const Text('Edit'), onTap: () { Navigator.pop(c); context.push('/editor/${s.screenId}'); }),
             ListTile(leading: const Icon(Icons.play_circle_outline), title: const Text('Preview'), onTap: () { Navigator.pop(c); context.push('/preview/screen/${s.screenId}'); }),
@@ -171,15 +174,16 @@ class ScreenCard extends ConsumerWidget {
               _mini(Icons.play_circle_outline, 'Preview', () => context.push('/preview/screen/${s.screenId}')),
               _mini(Icons.cloud_upload_outlined, 'Publish', () => ScreenActions.publish(context, ref, s)),
               _mini(Icons.tv_rounded, 'Show on a TV', () => showDisplayCodeSheet(context, ref, screenId: s.screenId)),
+              _mini(Icons.delete_outline, 'Delete', () => ScreenActions.delete(context, ref, s), color: AppColors.danger),
             ]),
           ),
       ]),
     );
   }
 
-  Widget _mini(IconData i, String tip, VoidCallback f) => Expanded(
+  Widget _mini(IconData i, String tip, VoidCallback f, {Color? color}) => Expanded(
         child: IconButton(
-          icon: Icon(i, size: 19),
+          icon: Icon(i, size: 19, color: color),
           tooltip: tip,
           onPressed: f,
           padding: EdgeInsets.zero,

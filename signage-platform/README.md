@@ -21,7 +21,7 @@ Signal Signage is a complete digital-signage system:
 |---|---|
 | Database suite | **57/57** checks pass |
 | End-to-end API suite (workflows A–E, display codes, limits, IDOR, uploads, pairing, sync, rate limits) | **246/246** checks pass |
-| Flutter tests (incl. screen-card overflow at 144–230 px widths and 130% font size) | **24/24** pass |
+| Flutter tests (incl. screen-card overflow at 144–230 px widths and 130% font size) | **24/24** pass, plus an offline-display integration test against the live API |
 | `flutter analyze` | No issues |
 | Web build of both apps | Done |
 | Live player test (register → pair → sync → play → command → emergency) | Done |
@@ -68,7 +68,8 @@ Full details and the list of things that were **not** tested in this environment
 **Show on a TV: one app, just a code**
 * Every screen and playlist has a display code (shown under ⋮ → *Show on a TV* and the 📺 button on each card). Users can choose their own code (for example `LOBBY`) or generate a new one.
 * On the TV, install the same app → *Show Display* on the sign-in page → type the code → it plays full screen.
-* Updates within a minute of publishing. Keeps playing from its cache when offline, and reopens straight into display mode after a reboot.
+* **Offline mode (on by default in the app):** videos and images download once with a progress bar and are checksum-verified. After that the TV plays from its own storage and **uses no internet at all**. Use *Download updates now* in the TV menu, or turn offline mode off to update automatically. It still works if the internet is cut and after a reboot.
+* Without offline mode, it updates within a minute of publishing. Even then, files are only downloaded when they change; each check is a tiny request.
 * OK, Enter or Back on the remote (or a long press) opens a menu: continue, check for updates, change code, exit.
 * Emergency broadcasts sent to "all displays" also appear on code displays.
 
