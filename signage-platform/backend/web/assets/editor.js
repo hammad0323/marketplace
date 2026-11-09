@@ -11,7 +11,7 @@
     'Amatic SC', 'Caveat', 'Pacifico', 'Lobster', 'Dancing Script', 'Anton', 'Archivo Black', 'Permanent Marker'];
   const ENUMS = {
     fit: ['cover', 'contain', 'fill'], align: ['left', 'center', 'right', 'justify'], vertical_align: ['top', 'center', 'bottom'], alignment: ['left', 'center', 'right'],
-    animation: ['none', 'fade_in', 'slide_up', 'slide_left', 'zoom_in'], text_effect: ['none', 'shadow', 'glow', 'outline'], style: ['digital', 'analog'], design: ['minimal', 'bold'],
+    text_effect: ['none', 'shadow', 'glow', 'outline'], style: ['digital', 'analog'], design: ['minimal', 'bold'],
     format: ['24h', '12h'], direction: ['left', 'right', 'up', 'down'], transition: ['fade', 'slide', 'zoom', 'none'], shape: ['rectangle', 'circle', 'line'], units: ['metric', 'imperial'],
     text_direction: ['ltr', 'rtl'], mode: ['rotate', 'daily'], unit: ['days', 'hours', 'minutes', 'hms'], error_correction: ['L', 'M', 'Q', 'H'], view: ['month'], layout: ['card'],
     provider: ['open_meteo'], font_weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'], font_family: FONTS, type: ['linear', 'radial'],
@@ -26,7 +26,7 @@
   const MULTILINE = new Set(['text', 'body', 'message', 'html', 'css', 'description', 'address', 'directions']);
   const CONTENT = ['text', 'spans', 'title', 'message', 'messages', 'media_id', 'items', 'sections', 'quotes', 'zones', 'days', 'events', 'data', 'label', 'url', 'phone', 'email', 'website',
     'address', 'directions', 'target', 'start', 'currency', 'location_name', 'latitude', 'longitude', 'html', 'css', 'prefix', 'suffix', 'json_path', 'finished_text', 'closed_text'];
-  const HIDDEN = new Set(['placeholder']);
+  const HIDDEN = new Set(['placeholder', 'animation', 'animation_duration_ms', 'animation_delay_ms', 'animation_replay_seconds', 'loop_animation', 'loop_duration_ms', 'loop_intensity']);
   const isColorKey = (k) => k.includes('color') || k === 'foreground' || k === 'background';
   const label = (k) => { const s = k.replace(/_json$/, '').replace(/_/g, ' '); return s.charAt(0).toUpperCase() + s.slice(1); };
   const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
@@ -67,6 +67,7 @@
   const zoomBox = el('div', { class: 'ed-zoom' },
     el('button', { class: 'btn icon sm', title: 'Zoom in', onclick: () => setZoom(st.zoom * 1.2) }, icon('add')),
     el('button', { class: 'btn icon sm', title: 'Fit', onclick: () => setZoom(1) }, icon('fit_screen')),
+    (st.playBtn = el('button', { class: 'btn icon sm', title: 'Play animations on the canvas', onclick: () => togglePlay() }, icon('animation'))),
     el('button', { class: 'btn icon sm', title: 'Zoom out', onclick: () => setZoom(st.zoom / 1.2) }, icon('remove')));
   const canvasArea = el('section', { class: 'ed-canvas' }, viewport, zoomBox);
   const bottom = el('nav', { class: 'ed-bottom' });
@@ -139,7 +140,7 @@
 
   function render() {
     if (st.built) st.built.destroy();
-    st.built = SignRender.buildStage(st.doc, { media: st.media, mode: 'editor' });
+    st.built = SignRender.buildStage(st.doc, { media: st.media, mode: st.playing ? 'preview' : 'editor' });
     const stage = st.built.stage;
     stage.style.boxShadow = '0 10px 40px rgba(0,0,0,.25)';
     stage.style.touchAction = 'none';
@@ -150,6 +151,22 @@
     layoutStage();
     SignRender.refit(stage);
     drawLeft(); drawRight();
+  }
+  function togglePlay(force) {
+    st.playing = force === undefined ? !st.playing : force;
+    st.playBtn.replaceChildren(icon(st.playing ? 'pause' : 'animation'));
+    st.playBtn.classList.toggle('primary', st.playing);
+    st.playBtn.title = st.playing ? 'Stop animations' : 'Play animations on the canvas';
+    render();
+  }
+  /** Replay one element's animation on the canvas (even when animations are paused). */
+  function playWidget(w) {
+    if (!st.built) return;
+    const old = st.built.stage.querySelector(`.sg-w[data-uid="${CSS.escape(w.widget_uid)}"]`); if (!old) return;
+    const ctx = { ...st.built.ctx, mode: 'preview', timers: [] };
+    const nw = SignRender.widgetBox(w, ctx);
+    old.replaceWith(nw); SignRender.refit(nw);
+    if (!st.playing) setTimeout(() => { ctx.timers.forEach((f) => f()); if (nw.isConnected) rerenderWidget(w); }, Math.min(30000, (Number(w.configuration.animation_delay_ms) || 0) + (Number(w.configuration.animation_duration_ms) || 800) + 4000));
   }
   /** Re-render one widget only (fast path while typing in the properties panel). */
   function rerenderWidget(w) {
@@ -543,6 +560,7 @@
         el('h3', {}, TEMPLATE ? 'Template' : 'Screen'),
         el('p', { class: 'muted small' }, `${st.doc.canvas.orientation} · ${W()} × ${H()} px · ${st.doc.widgets.length} elements`),
         el('p', { class: 'muted small' }, 'Select an element on the canvas to edit it. Double-click text to edit it, or an image to replace it.'),
+        screenAnimationPanel(),
         el('div', { class: 'wgroup' }, 'Shortcuts'),
         el('p', { class: 'small muted', html: 'Ctrl+Z / Ctrl+Y undo, redo · Ctrl+C / Ctrl+V copy, paste · Ctrl+D duplicate · Del delete · Arrows nudge (Shift ×10) · Shift-click multi-select · Alt disables snapping · Ctrl+wheel zoom' })));
       return;
@@ -602,11 +620,58 @@
           el('button', { class: 'btn icon sm', title: 'Fill canvas', onclick: () => { begin(); Object.assign(w, { position_x: 0, position_y: 0, width: 1, height: 1, rotation: 0 }); commit(); } }, icon('fullscreen'))))));
     }
     if (styleKeys.length) pane.append(el('details', { class: 'sect', open: TEMPLATE || !contentKeys.length }, el('summary', {}, 'Style & effects'), el('div', {}, ...styleKeys.map(ed))));
+    pane.append(animationSection(w));
     pane.append(el('div', { class: 'row', style: { marginTop: '14px' } },
       el('button', { class: 'btn sm', onclick: duplicateSelected }, icon('content_copy'), 'Duplicate'),
       TEMPLATE ? el('button', { class: 'btn sm', onclick: () => { begin(); w.is_locked = !w.is_locked; commit(); } }, icon(w.is_locked ? 'lock_open' : 'lock'), w.is_locked ? 'Unlock' : 'Lock') : null,
       !locked ? el('button', { class: 'btn sm danger', onclick: removeSelected }, icon('delete'), 'Delete') : null));
     right.replaceChildren(pane);
+  }
+
+  /** Animation settings — available on every element type. */
+  function animationSection(w) {
+    const c = w.configuration;
+    const R = SignRender;
+    const change = (k, v, full = false) => { begin(); c[k] = v; commit(false); if (st.playing) rerenderWidget(w); if (full) drawRight(); };
+    const sel = (k, opts, cur) => { const s2 = el('select', { 'data-key': k }, ...Object.entries(opts).map(([v, l]) => el('option', { value: v, selected: v === cur }, l))); s2.onchange = () => { change(k, s2.value, true); playWidget(w); }; return s2; };
+    const secs = (ms) => (ms / 1000).toFixed(1) + ' s';
+    const ent = R.ENTRANCES[c.animation] ? c.animation : 'none', loop = R.LOOPS[c.loop_animation] ? c.loop_animation : 'none';
+    const has = ent !== 'none' || loop !== 'none';
+    const box = el('div', {},
+      el('p', { class: 'muted small', style: { marginTop: 0 } }, 'Plays on the TV, in Preview and when ▶ animations are on. Use “Replay every” so the screen keeps playing like a video.'),
+      prop('Entrance', sel('animation', R.ENTRANCES, ent)));
+    if (ent !== 'none') {
+      box.append(prop('Duration (ms)', rangeRow(Number(c.animation_duration_ms) || 800, [200, 5000, 50], (v) => change('animation_duration_ms', v))),
+        prop('Delay (ms) — start after other elements', rangeRow(Number(c.animation_delay_ms) || 0, [0, 20000, 50], (v) => change('animation_delay_ms', v))),
+        prop('Replay every (s, 0 = once)', rangeRow(Number(c.animation_replay_seconds) || 0, [0, 120, 1], (v) => change('animation_replay_seconds', v))));
+    }
+    box.append(prop('Loop effect (continuous)', sel('loop_animation', R.LOOPS, loop)));
+    if (loop !== 'none') {
+      const def = R.LOOP_MS[loop] || 2000;
+      box.append(prop('One cycle (ms, 0 = default ' + secs(def) + ')', rangeRow(Number(c.loop_duration_ms) || 0, [0, 30000, 100], (v) => change('loop_duration_ms', v))),
+        prop('Intensity', rangeRow(c.loop_intensity ?? 1, [0.2, 3, 0.05], (v) => change('loop_intensity', v))));
+    }
+    box.append(el('div', { class: 'row', style: { marginTop: '6px' } },
+      el('button', { class: 'btn sm', disabled: !has, onclick: () => playWidget(w) }, icon('play_arrow'), 'Play'),
+      has ? el('button', { class: 'btn sm', onclick: () => { begin(); R.ANIM_KEYS.forEach((k) => delete c[k]); commit(); } }, icon('block'), 'Remove') : null));
+    return el('details', { class: 'sect', open: has }, el('summary', {}, '✨ Animation' + (has ? ' — ' + [ent !== 'none' ? R.ENTRANCES[ent] : '', loop !== 'none' ? R.LOOPS[loop] : ''].filter(Boolean).join(' + ') : '')), box);
+  }
+  function screenAnimationPanel() {
+    if (!st.anim) st.anim = { style: 'smooth', replay: 12 };
+    const A = st.anim;
+    const R = SignRender;
+    const chips = el('div', { class: 'row', style: { gap: '6px' } });
+    const drawChips = () => chips.replaceChildren(...Object.entries(R.SCREEN_STYLES).map(([k, l]) => el('button', { class: 'chip' + (A.style === k ? ' on' : ''), onclick: () => { A.style = k; drawChips(); } }, l)));
+    drawChips();
+    return el('div', { class: 'card', style: { padding: '12px', margin: '12px 0', background: 'var(--lteal)', border: '0' } },
+      el('h3', {}, '✨ Animate whole screen'),
+      el('p', { class: 'small muted' }, 'Elements appear one after another from top to bottom, badges pulse, photos float and decorations sway — like a short looping video.'),
+      chips,
+      prop('Replay scene every (s, 0 = once)', rangeRow(A.replay, [0, 60, 1], (v) => (A.replay = v))),
+      el('button', { class: 'btn primary block', onclick: () => {
+        begin(); R.applyScreenAnimation(st.doc.widgets, A.style, A.replay); commit();
+        if (A.style !== 'none') { togglePlay(true); toast('Animations applied — playing on the canvas. Fine-tune any element in its ✨ Animation section.'); } else toast('Animations removed');
+      } }, icon('auto_awesome'), 'Apply'));
   }
 
   /** One configuration field (recursive for lists / maps). */

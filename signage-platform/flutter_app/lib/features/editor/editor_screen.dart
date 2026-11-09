@@ -14,7 +14,9 @@ import '../../providers/providers.dart';
 import '../media_library/media_library_screen.dart';
 import '../widgets_library/layout_view.dart';
 import '../widgets_library/render_context.dart';
+import '../widgets_library/widget_animation.dart';
 import '../widgets_library/widget_renderers.dart';
+import 'animation_editor.dart';
 import 'background_sheet.dart';
 import 'config_editor.dart';
 import 'editor_controller.dart';
@@ -204,6 +206,16 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       actions: [
         IconButton(onPressed: c.canUndo ? c.undo : null, icon: const Icon(Icons.undo_rounded), tooltip: 'Undo'),
         IconButton(onPressed: c.canRedo ? c.redo : null, icon: const Icon(Icons.redo_rounded), tooltip: 'Redo'),
+        IconButton(
+          onPressed: () async {
+            final r = await showScreenAnimationSheet(context);
+            if (r == null) return;
+            c.mutate(() => applyScreenAnimation(c.layout.widgets, r.$1, r.$2));
+            if (mounted) showToast(context, r.$1 == 'none' ? 'Animations removed' : 'Animations applied — tap Preview to watch');
+          },
+          icon: const Icon(Icons.auto_awesome_outlined),
+          tooltip: 'Animate whole screen',
+        ),
         IconButton(onPressed: () => _preview(c), icon: const Icon(Icons.play_circle_outline_rounded), tooltip: 'Preview'),
         if (!narrow) IconButton(onPressed: () => c.save(), icon: const Icon(Icons.save_outlined), tooltip: 'Save draft'),
         Padding(
@@ -520,7 +532,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       builder: (s) => FractionallySizedBox(
         heightFactor: 0.58,
         child: DefaultTabController(
-          length: 2,
+          length: 3,
           child: ListenableBuilder(
             listenable: c,
             builder: (s, _) => Column(children: [
@@ -533,7 +545,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                   TextButton(onPressed: () => Navigator.pop(s), child: const Text('Done')),
                 ]),
               ),
-              const TabBar(tabs: [Tab(text: 'Content & style'), Tab(text: 'Position & size')]),
+              const TabBar(isScrollable: true, tabAlignment: TabAlignment.start, tabs: [Tab(text: 'Content & style'), Tab(text: 'Animation'), Tab(text: 'Position & size')]),
               Expanded(
                 child: TabBarView(children: [
                   ListView(padding: const EdgeInsets.all(16), children: [
@@ -543,6 +555,14 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                       widgetType: w.widgetType,
                       onMediaPicked: (m) => c.media[m.mediaId] = m,
                       onChanged: () => c.mutate(() {}, record: false),
+                    ),
+                  ]),
+                  ListView(padding: const EdgeInsets.all(16), children: [
+                    AnimationEditor(
+                      key: ValueKey('anim${w.widgetUid}'),
+                      config: w.configuration,
+                      onChanged: () => c.mutate(() {}, record: false),
+                      onPreview: () { Navigator.pop(s); _preview(c); },
                     ),
                   ]),
                   ListView(padding: const EdgeInsets.all(16), children: _layoutFields(c, w)),

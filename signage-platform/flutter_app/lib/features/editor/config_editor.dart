@@ -49,7 +49,7 @@ const Map<String, (double, double, int?)> configRanges = {
 };
 
 const _multiline = {'text', 'body', 'message', 'html', 'css', 'description', 'address', 'directions'};
-const _hidden = {'placeholder'};
+const _hidden = {'placeholder', 'animation', 'animation_duration_ms', 'animation_delay_ms', 'animation_replay_seconds', 'loop_animation', 'loop_duration_ms', 'loop_intensity'};
 
 String labelOf(String key) {
   final s = key.replaceAll('_json', '').replaceAll('_', ' ');

@@ -5,21 +5,23 @@ Every result below comes from a run in the development container. Nothing here i
 | Suite | Command | Result |
 |---|---|---|
 | Database: structure, seed, JSON, limits, pairing, cross-user guards, cascades | `backend/database/tests/verify_database.sh` | **59 / 59 passed** (MariaDB 10.11) |
-| API end to end: every workflow, security, uploads, sync | `php backend/tests/api_test.php http://127.0.0.1:8080` | **290 / 290 passed**, nothing written to `error.log` |
-| Flutter tests: schedule engine, layout model, feed parser, JSON path, playback items, screen-card layout at 144/173/184/230 px and 130% font size | `flutter test` | **24 / 24 passed** |
+| API end to end: every workflow, security, uploads, sync | `php backend/tests/api_test.php http://127.0.0.1:8080` | **299 / 299 passed**, nothing written to `error.log` |
+| Flutter tests: animation maths (every entrance ends at rest, loop ranges, replay timeline, typewriter steps, whole-screen preset), schedule engine, layout model, feed parser, JSON path, playback items, screen-card layout at 144/173/184/230 px and 130% font size | `flutter test` | **31 / 31 passed** |
 | Flutter static analysis | `flutter analyze` | **No issues found** |
 | Management app build (web) | `flutter build web` | Built |
 | Player build (web) and live run against the API | `flutter build web -t lib/main_player.dart` + Playwright | Registered → pairing code shown → paired → content downloaded → playlist rotating → remote command executed → emergency override shown → logs uploaded |
 
 | Offline display (integration test on the Dart VM against the live API) | `SIGNAGE_API=http://127.0.0.1:8080 flutter test test/integration/offline_display_test.dart` | **Passed.** Content and media downloaded with checksums verified, offline mode switched on, then a "reboot" with the server unreachable plays from the device with no network request. Turning offline mode on with no internet and no saved content gives a clear error. |
 | PHP web app in Chromium (Playwright) | `node web1.js / web2.js / web3.js` (scripts not shipped) | Restricted user sees only Restaurant & Menu templates (premium one locked, screen limit enforced) → create from a menu template → edit text, font, text shadow, drag, undo/redo, add widget → save & publish (live playlist republished) → layers/background panels → preview → display code with QR → playlist create/publish → browser TV player plays the code → media, displays, dashboard, profile. Admin: dashboard, templates gallery, new template (gradient, shape with shadow, heading, menu, lock design, save), edit an existing template, user form with template access, plans, settings, shared media. Phone (Pixel 7) layout: no horizontal overflow, editor drawers. **No console errors.** |
+| Animations (Playwright) | screenshots over time | Web TV player: elements enter one after another, hold, exit at the replay period and come back (`60`, `61`). App TV player (Flutter web build): badge pops in, dish floats, basil sways (`62`). Web editor: per-element animation section, ▶ play on canvas, Animate whole screen, save & publish. No console errors. |
 | Show Display flow in a browser at TV size | Playwright | Login → Show Display → `STORE1` → playing. A restart reopens display mode. A wrong code shows a clear error. The remote menu works. |
 
-## What the API suite covers (290 checks)
+## What the API suite covers (299 checks)
 
 * **Display codes**: public content for a playlist code and a screen code (wrapped as one item), unchanged content returns no document, unknown code returns 404, code auto-created for the owner, another user cannot read it, choose-your-own code normalised (`grand-open` → `GRANDOPEN`), duplicate and too-short codes rejected, the new code plays, regenerating kills the old code, playlist codes, deleted screen.
 
 * **Template access**: a restricted user lists, opens and creates only allowed templates (others 404), category counts follow the restriction, the admin sets access per category and per template, empty selection rejected, own templates always allowed, professional menu templates seeded with shared artwork, admin-only global uploads.
+* **Widget animations**: entrance, loop and replay settings survive save-layout and publishing, reach the TV feed of a display code, and the menu templates ship fully animated.
 * **Web app**: signed-out redirect, internal files blocked, public TV player page, CSRF on login, cookie login → API session, every user page loads, customers cannot open the admin area or the template designer, logout revokes the token, `categories?all=1` is admin-only.
 
 * **Auth**: wrong password, validation, suspended account, missing or garbage token, method not allowed, blocked internal paths (`/config`, `_common.php`, raw `/uploads`), logout revocation, sessions, password change, and the forgot/reset flow (code by email, weak password rejected, single-use code).

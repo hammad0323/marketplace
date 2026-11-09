@@ -658,6 +658,166 @@
     return f;
   };
 
+
+  // ---------------------------------------------------------------- animations
+  // Same contract and maths as flutter_app/lib/features/widgets_library/widget_animation.dart.
+  const ENTRANCES = { none: 'None', fade_in: 'Fade in', slide_up: 'Slide up', slide_down: 'Slide down', slide_left: 'Slide in from right', slide_right: 'Slide in from left',
+    zoom_in: 'Zoom in', zoom_out: 'Zoom out', pop: 'Pop', bounce_in: 'Drop & bounce', flip_x: 'Flip (vertical)', flip_y: 'Flip (horizontal)', rotate_in: 'Spin in',
+    blur_in: 'Blur in', wipe_right: 'Wipe right', wipe_up: 'Wipe up', typewriter: 'Typewriter' };
+  const LOOPS = { none: 'None', pulse: 'Pulse', breathe: 'Breathe', float: 'Float', bounce: 'Bounce', shake: 'Shake', wobble: 'Wobble', swing: 'Swing (hanging)',
+    sway: 'Sway (plant)', spin: 'Spin', heartbeat: 'Heartbeat', flash: 'Flash', tada: 'Tada', jello: 'Jello', rubber_band: 'Rubber band', ken_burns: 'Slow zoom (Ken Burns)',
+    glow: 'Glow', shine: 'Shine sweep', color_cycle: 'Colour cycle' };
+  const LOOP_MS = { pulse: 1600, breathe: 4000, float: 3000, bounce: 1400, shake: 2500, wobble: 2000, swing: 2400, sway: 3500, spin: 6000, heartbeat: 1500, flash: 1600,
+    tada: 3000, jello: 2500, rubber_band: 2500, ken_burns: 16000, glow: 2400, shine: 3500, color_cycle: 8000 };
+  const frame0 = () => ({ opacity: 1, tx: 0, ty: 0, scale: 1, sx: 1, sy: 1, rotate: 0, rotX: 0, rotY: 0, skewX: 0, blur: 0, clipX: 1, clipY: 1, brightness: 1, hue: 0, origin: 'center' });
+  const easeOut = (p) => 1 - Math.pow(1 - p, 3);
+  const backOut = (p) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); };
+  function bounceOut(x) { const n1 = 7.5625, d1 = 2.75; if (x < 1 / d1) return n1 * x * x; if (x < 2 / d1) { x -= 1.5 / d1; return n1 * x * x + 0.75; } if (x < 2.5 / d1) { x -= 2.25 / d1; return n1 * x * x + 0.9375; } x -= 2.625 / d1; return n1 * x * x + 0.984375; }
+  const wave = (t) => 0.5 - 0.5 * Math.cos(2 * Math.PI * t);
+  const gauss = (t, c, w) => Math.exp(-Math.pow((t - c) / w, 2));
+  function entranceFrame(name, p, chars = 20) {
+    const f = frame0(); p = clamp(p, 0, 1); const e = easeOut(p), ff = Math.min(1, p * 2.5);
+    switch (name) {
+      case 'fade_in': f.opacity = e; break;
+      case 'slide_up': f.ty = 0.6 * (1 - e); f.opacity = ff; break;
+      case 'slide_down': f.ty = -0.6 * (1 - e); f.opacity = ff; break;
+      case 'slide_left': f.tx = 0.6 * (1 - e); f.opacity = ff; break;
+      case 'slide_right': f.tx = -0.6 * (1 - e); f.opacity = ff; break;
+      case 'zoom_in': f.scale = 0.4 + 0.6 * e; f.opacity = e; break;
+      case 'zoom_out': f.scale = 1.6 - 0.6 * e; f.opacity = e; break;
+      case 'pop': f.scale = 0.2 + 0.8 * backOut(p); f.opacity = Math.min(1, p * 3); break;
+      case 'bounce_in': f.ty = -1.2 * (1 - bounceOut(p)); f.opacity = Math.min(1, p * 4); break;
+      case 'flip_x': f.rotX = 90 * (1 - e); f.opacity = ff; break;
+      case 'flip_y': f.rotY = 90 * (1 - e); f.opacity = ff; break;
+      case 'rotate_in': f.rotate = -180 * (1 - e); f.scale = 0.3 + 0.7 * e; f.opacity = e; break;
+      case 'blur_in': f.blur = 20 * (1 - e); f.opacity = e; break;
+      case 'wipe_right': f.clipX = e; break;
+      case 'wipe_up': f.clipY = e; break;
+      case 'typewriter': { const n = clamp(chars, 1, 200); f.clipX = Math.floor(p * n) / n; break; }
+    }
+    return f;
+  }
+  function loopFrame(name, t, k) {
+    const f = frame0(); t = t - Math.floor(t); const s2 = Math.sin(2 * Math.PI * t);
+    switch (name) {
+      case 'pulse': f.scale = 1 + 0.06 * k * wave(t); break;
+      case 'breathe': f.scale = 1 + 0.04 * k * wave(t); f.opacity = clamp(1 - 0.25 * k * wave(t), 0.1, 1); break;
+      case 'float': f.ty = -0.04 * k * wave(t); break;
+      case 'bounce': { const hh = t < 0.6 ? 4 * (t / 0.6) * (1 - t / 0.6) : 0; f.ty = -0.12 * k * hh; const land = gauss(t, 0.62, 0.04); f.sx = 1 + 0.06 * k * land; f.sy = 1 - 0.06 * k * land; f.origin = 'center bottom'; break; }
+      case 'shake': f.tx = t < 0.4 ? 0.03 * k * Math.sin(2 * Math.PI * t * 10) : 0; break;
+      case 'wobble': f.rotate = 6 * k * s2; break;
+      case 'swing': f.rotate = 10 * k * s2; f.origin = 'center top'; break;
+      case 'sway': f.rotate = 4 * k * s2; f.origin = 'center bottom'; break;
+      case 'spin': f.rotate = 360 * t; break;
+      case 'heartbeat': f.scale = 1 + 0.1 * k * (gauss(t, 0.12, 0.05) + 0.7 * gauss(t, 0.32, 0.05)); break;
+      case 'flash': f.opacity = 1 - Math.min(0.9, 0.7 * k) * wave(t); break;
+      case 'tada': if (t < 0.4) { const u = t / 0.4; f.scale = 1 + 0.08 * k * Math.sin(Math.PI * u); f.rotate = 3 * k * Math.sin(2 * Math.PI * u * 3) * Math.sin(Math.PI * u); } break;
+      case 'jello': f.skewX = t < 0.5 ? 8 * k * Math.sin(2 * Math.PI * t * 4) * (1 - t * 2) : 0; break;
+      case 'rubber_band': if (t < 0.5) { const d = 0.15 * k * Math.sin(2 * Math.PI * t * 3) * (1 - t * 2); f.sx = 1 + d; f.sy = 1 - d; } break;
+      case 'ken_burns': f.scale = 1 + 0.12 * k * wave(t); f.tx = 0.03 * k * s2; break;
+      case 'glow': f.brightness = 1 + 0.35 * k * wave(t); break;
+      case 'color_cycle': f.hue = 360 * t; break;
+    }
+    return f;
+  }
+  function frameCss(f) {
+    const persp = f.rotX || f.rotY ? 'perspective(833px) ' : '';
+    const filt = [f.blur > 0.01 ? `blur(${f.blur.toFixed(2)}px)` : '', f.brightness !== 1 ? `brightness(${f.brightness.toFixed(3)})` : '', f.hue ? `hue-rotate(${f.hue.toFixed(1)}deg)` : ''].filter(Boolean).join(' ');
+    return {
+      transform: `translate(${(f.tx * 100).toFixed(3)}%, ${(f.ty * 100).toFixed(3)}%) ${persp}rotate(${f.rotate.toFixed(2)}deg) rotateX(${f.rotX.toFixed(2)}deg) rotateY(${f.rotY.toFixed(2)}deg) skewX(${f.skewX.toFixed(2)}deg) scale(${(f.scale * f.sx).toFixed(4)}, ${(f.scale * f.sy).toFixed(4)})`,
+      opacity: String(clamp(f.opacity, 0, 1).toFixed(3)), filter: filt || 'none',
+      clipPath: `inset(${((1 - f.clipY) * 100).toFixed(2)}% ${((1 - f.clipX) * 100).toFixed(2)}% 0 0)`,
+    };
+  }
+  /** Same timeline as the app: hidden until delay → enter → hold → (replay) exit at the end of the period. */
+  function entranceProgressAt(ms, delay, dur, period = 0) {
+    if (ms < delay) return 0; if (ms < delay + dur) return (ms - delay) / dur;
+    if (period <= 0 || ms < period - dur) return 1;
+    return clamp(1 - (ms - (period - dur)) / dur, 0, 1);
+  }
+  const replayPeriodMs = (replay, delay, dur) => Math.max(replay * 1000, delay + dur * 2 + 500);
+  function animSpec(c) {
+    const loop = LOOPS[c.loop_animation] && c.loop_animation !== 'none' ? c.loop_animation : null;
+    const entrance = ENTRANCES[c.animation] && c.animation !== 'none' ? c.animation : null;
+    return { entrance, loop, dur: clamp(num(c.animation_duration_ms, 800), 100, 10000), delay: clamp(num(c.animation_delay_ms), 0, 60000), replay: clamp(num(c.animation_replay_seconds), 0, 3600),
+      loopMs: clamp(num(c.loop_duration_ms) > 0 ? num(c.loop_duration_ms) : (LOOP_MS[loop] || 2000), 200, 120000), k: clamp(num(c.loop_intensity, 1), 0.1, 3) };
+  }
+  function textLength(c) {
+    const spans = arr(c.spans);
+    if (spans.length) return spans.reduce((a, s) => a + str(obj(s).text).length, 0) || 1;
+    return clamp(str(c.text ?? c.title ?? c.message).length, 1, 200);
+  }
+  /** Wrap a widget's content in entrance + loop layers (Web Animations API, GPU-friendly transforms). */
+  function animate(content, w, ctx) {
+    const c = obj(w.configuration), sp = animSpec(c);
+    if (!sp.entrance && !sp.loop) return content;
+    const outer = h('div', { position: 'absolute', inset: '0' });
+    const inner = h('div', { position: 'absolute', inset: '0', overflow: sp.loop === 'ken_burns' ? 'hidden' : null });
+    inner.append(content); outer.append(inner);
+    const anims = [];
+    if (sp.entrance) {
+      const chars = textLength(c), steps = sp.entrance === 'typewriter' ? Math.min(120, chars) : 24;
+      const clips = ['wipe_right', 'wipe_up', 'typewriter'].includes(sp.entrance);
+      const fr = (p) => { const css = frameCss(entranceFrame(sp.entrance, p, chars)); if (!clips) delete css.clipPath; return css; };
+      const stepEase = sp.entrance === 'typewriter' ? 'step-end' : 'linear';
+      if (sp.replay > 0) {
+        const P = replayPeriodMs(sp.replay, sp.delay, sp.dur), kf = [];
+        const push = (ms, p) => kf.push({ ...fr(p), offset: Math.min(1, ms / P), easing: stepEase });
+        push(0, 0); if (sp.delay > 0) push(sp.delay, 0);
+        for (let i = 1; i <= steps; i++) push(sp.delay + sp.dur * i / steps, i / steps);
+        push(P - sp.dur, 1);
+        for (let i = 1; i <= steps; i++) push(P - sp.dur + sp.dur * i / steps, 1 - i / steps);
+        anims.push(outer.animate(kf, { duration: P, iterations: Infinity }));
+      } else {
+        const kf = []; for (let i = 0; i <= steps; i++) kf.push({ ...fr(i / steps), easing: stepEase });
+        anims.push(outer.animate(kf, { duration: sp.dur, delay: sp.delay, fill: 'both' }));
+      }
+    }
+    if (sp.loop) {
+      const wait = sp.entrance ? sp.delay + sp.dur : 0;
+      if (sp.loop === 'shine') {
+        const wrap = h('div', { position: 'absolute', inset: '0', overflow: 'hidden', pointerEvents: 'none', borderRadius: w.widget_type === 'shape' ? (c.shape === 'circle' ? '50%' : num(c.border_radius) + 'px') : num(c.border_radius) + 'px' });
+        const url = ['image', 'logo'].includes(w.widget_type) ? mediaUrl(ctx, c.media_id) : null;
+        if (url) Object.assign(wrap.style, { maskImage: `url("${url}")`, webkitMaskImage: `url("${url}")`, maskSize: c.fit === 'cover' ? 'cover' : 'contain', webkitMaskSize: c.fit === 'cover' ? 'cover' : 'contain', maskRepeat: 'no-repeat', webkitMaskRepeat: 'no-repeat', maskPosition: 'center', webkitMaskPosition: 'center' });
+        const band = h('div', { position: 'absolute', top: '-50%', left: '-50%', width: '200%', height: '200%', background: 'linear-gradient(115deg, rgba(255,255,255,0) 42%, rgba(255,255,255,.6) 50%, rgba(255,255,255,0) 58%)' });
+        wrap.append(band); inner.append(wrap);
+        anims.push(band.animate([{ transform: 'translateX(-100%)', offset: 0 }, { transform: 'translateX(100%)', offset: 0.45 }, { transform: 'translateX(100%)', offset: 1 }], { duration: sp.loopMs, delay: wait, iterations: Infinity }));
+      } else {
+        const kf = []; const N = 40;
+        for (let i = 0; i <= N; i++) { const f = loopFrame(sp.loop, i / N, sp.k); const css = frameCss(f); kf.push({ transform: css.transform, opacity: css.opacity, filter: css.filter }); }
+        inner.style.transformOrigin = loopFrame(sp.loop, 0, sp.k).origin;
+        anims.push(inner.animate(kf, { duration: sp.loopMs, delay: wait, iterations: Infinity }));
+      }
+    }
+    ctx.timers.push(() => anims.forEach((a) => a.cancel()));
+    return outer;
+  }
+  /** "Animate whole screen" presets (same rules as the app). */
+  const SCREEN_STYLES = { smooth: 'Smooth', energetic: 'Energetic', elegant: 'Elegant', none: 'Remove all animations' };
+  const ANIM_KEYS = ['animation', 'animation_duration_ms', 'animation_delay_ms', 'animation_replay_seconds', 'loop_animation', 'loop_duration_ms', 'loop_intensity'];
+  function applyScreenAnimation(widgets, style, replay) {
+    if (style === 'none') { widgets.forEach((w) => ANIM_KEYS.forEach((k) => delete obj(w.configuration)[k])); return; }
+    const [dur, stagger] = style === 'energetic' ? [700, 180] : style === 'elegant' ? [1200, 400] : [850, 260];
+    const order = widgets.filter((w) => w.is_visible !== false).sort((a, b) => { const dy = a.position_y - b.position_y; return Math.abs(dy) > 0.05 ? Math.sign(dy) : Math.sign(a.position_x - b.position_x); });
+    let i = 0;
+    for (const w of order) {
+      const c = w.configuration = w.configuration || {}; const type = w.widget_type;
+      const full = w.width >= 0.95 && w.height >= 0.95, isText = type === 'heading' || type === 'text', isImage = ['image', 'logo', 'background_image'].includes(type);
+      const isRound = type === 'shape' && c.shape === 'circle', small = w.width * w.height < 0.03;
+      let entrance, loop = 'none';
+      if (full) { entrance = 'fade_in'; if (isImage) loop = 'ken_burns'; }
+      else {
+        entrance = style === 'energetic' ? (type === 'heading' ? 'bounce_in' : isText ? 'slide_left' : (isImage || isRound || type === 'shape') ? 'pop' : 'zoom_in')
+          : style === 'elegant' ? (type === 'heading' ? 'wipe_right' : isImage ? 'blur_in' : 'fade_in')
+          : (isText ? 'slide_up' : isImage ? 'zoom_in' : (isRound || type === 'shape') ? 'pop' : 'fade_in');
+        if (isRound) loop = style === 'energetic' ? 'heartbeat' : style === 'elegant' ? 'breathe' : 'pulse';
+        else if (isImage && small) loop = 'sway';
+        else if (isImage) loop = style === 'energetic' ? 'bounce' : 'float';
+      }
+      Object.assign(c, { animation: entrance, animation_duration_ms: full ? 1000 : dur, animation_delay_ms: full ? 0 : 150 + stagger * i++, animation_replay_seconds: replay, loop_animation: loop, loop_duration_ms: 0, loop_intensity: 1 });
+    }
+  }
+
   // ---------------------------------------------------------------- composition
   function widgetContent(w, ctx) {
     const fn = R[w.widget_type];
@@ -665,11 +825,7 @@
     let el;
     try { el = fn ? fn(c, ctx, w) : placeholder(ctx, 'extension', `${w.widget_type} (not supported here)`); }
     catch (e) { console.warn('widget', w.widget_type, e); el = placeholder(ctx, 'error', 'Widget error'); }
-    const anim = c.animation;
-    if (isLive(ctx) && anim && anim !== 'none') {
-      const name = { fade_in: 'sgFade', typewriter: 'sgFade', slide_up: 'sgUp', slide_left: 'sgLeft', zoom_in: 'sgZoom' }[anim];
-      if (name) el.style.animation = `${name} ${clamp(num(c.animation_duration_ms, 700), 100, 5000)}ms cubic-bezier(.2,.7,.2,1) both`;
-    }
+    if (isLive(ctx) && el.animate) el = animate(el, w, ctx);
     return el;
   }
 
@@ -763,5 +919,6 @@
     return mount(host, layout, { media, mode: 'thumb', letterbox: '#101214' });
   }
 
-  window.SignRender = { mount, thumb, buildStage, widgetBox, widgetContent, backgroundEl, refit, color, fmt, zoned, PRESETS };
+  window.SignRender = { mount, thumb, buildStage, widgetBox, widgetContent, backgroundEl, refit, color, fmt, zoned, PRESETS,
+    ENTRANCES, LOOPS, LOOP_MS, SCREEN_STYLES, ANIM_KEYS, entranceFrame, loopFrame, entranceProgressAt, replayPeriodMs, applyScreenAnimation };
 })();

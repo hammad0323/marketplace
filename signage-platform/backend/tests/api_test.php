@@ -428,6 +428,29 @@ check('marked global', (int)($gm['is_global'] ?? 0) === 1);
 $um = expect('user upload ignores global flag', req('POST', '/api/media/upload', ['global' => 1], $CHLOE, ['file' => [$img, 'image/png', 'mine.png']]), 201);
 check('stays private', (int)($um['is_global'] ?? 0) === 0);
 
+section('Widget animations');
+$anim = ['animation' => 'bounce_in', 'animation_duration_ms' => 900, 'animation_delay_ms' => 400, 'animation_replay_seconds' => 12,
+    'loop_animation' => 'pulse', 'loop_duration_ms' => 0, 'loop_intensity' => 1.5];
+$as = expect('create a screen for animations', req('POST', '/api/screens/create', ['screen_name' => 'Animated', 'orientation' => 'landscape'], $ADMIN2), 201);
+$saved = expect('save shape + heading with animations', req('POST', '/api/screens/save-layout', ['screen_id' => $as['screen_id'], 'layout_version' => $as['layout_version'], 'layout' => [
+    'canvas' => $as['layout']['canvas'], 'background' => ['type' => 'color', 'value' => '#101010', 'config' => []],
+    'widgets' => [
+        ['widget_uid' => 'anim-shape-0001', 'widget_type' => 'shape', 'position_x' => 0.1, 'position_y' => 0.1, 'width' => 0.2, 'height' => 0.2, 'z_index' => 1, 'configuration' => ['shape' => 'circle'] + $anim],
+        ['widget_uid' => 'anim-head-0001', 'widget_type' => 'heading', 'position_x' => 0.3, 'position_y' => 0.1, 'width' => 0.5, 'height' => 0.2, 'z_index' => 2, 'configuration' => ['text' => 'Hi', 'animation' => 'typewriter', 'loop_animation' => 'shine']],
+    ]], 'publish' => true], $ADMIN2), 200);
+$sw = array_values(array_filter($saved['layout']['widgets'] ?? [], fn($w) => $w['widget_type'] === 'shape'))[0] ?? [];
+check('animation settings kept on save', array_intersect_assoc($anim, $sw['configuration'] ?? []) == $anim, $sw['configuration'] ?? null);
+$code = expect('display code for the animated screen', req('GET', '/api/display-codes/get?screen_id=' . $as['screen_id'], null, $ADMIN2), 200)['code'] ?? '';
+$pub = expect('TV feed of the animated screen', req('GET', '/api/display/content?code=' . $code), 200);
+$pw = $pub['doc']['items'][0]['screen']['widgets'] ?? [];
+$byType = array_column($pw, 'configuration', 'widget_type');
+check('published to the TV with entrance + loop', ($byType['shape']['loop_animation'] ?? '') === 'pulse' && ($byType['shape']['animation_replay_seconds'] ?? 0) == 12 && ($byType['heading']['animation'] ?? '') === 'typewriter', $byType);
+$tl = expect('menu templates ship with animations', req('GET', '/api/admin/templates', null, $ADMIN2), 200);
+$feat = array_values(array_filter($tl, fn($t) => $t['template_key'] === 'menu_fresh_feature_l'))[0] ?? [];
+$animated = array_filter($feat['template_json']['widgets'] ?? [], fn($w) => ($w['configuration']['animation'] ?? 'none') !== 'none');
+check('every element of the feature-dish template animates', $animated && count($animated) === count($feat['template_json']['widgets']), count($animated));
+expect('clean up', req('POST', '/api/screens/delete', ['screen_id' => $as['screen_id']], $ADMIN2), 200);
+
 section('Web app (core PHP pages)');
 $jar = tempnam(sys_get_temp_dir(), 'webjar');
 $web = function (string $method, string $path, ?array $form = null) use ($jar) {

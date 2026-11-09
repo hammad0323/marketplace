@@ -17,6 +17,7 @@ import '../../core/utils/json.dart';
 import '../../models/layout.dart';
 import 'render_context.dart';
 import 'web_embed.dart';
+import 'widget_animation.dart';
 
 // =============================================================================
 // Shared helpers
@@ -116,46 +117,6 @@ class EditorPlaceholder extends StatelessWidget {
   }
 }
 
-/// Entry animation (fade / slide / zoom) played once when the widget appears on a live screen.
-class EntryAnimation extends StatefulWidget {
-  const EntryAnimation({super.key, required this.type, required this.child, this.durationMs = 700});
-  final String? type;
-  final int durationMs;
-  final Widget child;
-  @override
-  State<EntryAnimation> createState() => _EntryAnimationState();
-}
-
-class _EntryAnimationState extends State<EntryAnimation> with SingleTickerProviderStateMixin {
-  late final AnimationController c = AnimationController(vsync: this, duration: Duration(milliseconds: widget.durationMs.clamp(100, 5000)));
-
-  @override
-  void initState() {
-    super.initState();
-    c.forward();
-  }
-
-  @override
-  void dispose() {
-    c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = CurvedAnimation(parent: c, curve: Curves.easeOutCubic);
-    return switch (widget.type) {
-      'fade_in' => FadeTransition(opacity: t, child: widget.child),
-      'slide_up' => SlideTransition(position: Tween(begin: const Offset(0, 0.25), end: Offset.zero).animate(t), child: FadeTransition(opacity: t, child: widget.child)),
-      'slide_left' => SlideTransition(position: Tween(begin: const Offset(0.25, 0), end: Offset.zero).animate(t), child: FadeTransition(opacity: t, child: widget.child)),
-      'zoom_in' => ScaleTransition(scale: Tween(begin: 0.8, end: 1.0).animate(t), child: FadeTransition(opacity: t, child: widget.child)),
-      'typewriter' => FadeTransition(opacity: t, child: widget.child),
-      _ => widget.child,
-    };
-  }
-}
-
-/// Rebuilds on a fixed interval (clocks, timers, rotators).
 class Ticking extends StatefulWidget {
   const Ticking({super.key, required this.interval, required this.builder});
   final Duration interval;
@@ -243,10 +204,11 @@ Widget buildWidgetContent(BuildContext context, WidgetItem w) {
       'custom_html' => WebEmbedView(url: null, html: '<style>${asString(c['css'])}</style>${asString(c['html'])}', allowScripts: asBool(c['allow_scripts'])),
       _ => EditorPlaceholder(icon: Icons.extension_outlined, label: '${w.widgetType} (not supported in this app version)'),
     };
-    final anim = c['animation']?.toString();
     final scope = RenderScope.of(context);
-    if (scope.animate && anim != null && anim != 'none') {
-      return EntryAnimation(type: anim, durationMs: asInt(c['animation_duration_ms'], 700), child: child);
+    if (scope.animate) {
+      final spec = AnimSpec(c, chars: textLength(c));
+      // Entrance + loop effects (identical frames on the web renderer).
+      if (spec.any) return WidgetAnimator(key: ValueKey('anim-${w.widgetUid}'), spec: spec, child: child);
     }
     return child;
   } catch (e) {

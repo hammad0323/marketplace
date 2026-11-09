@@ -22,8 +22,8 @@ Signal Signage is a complete digital-signage system:
 | Check | Result |
 |---|---|
 | Database suite | **59/59** checks pass |
-| End-to-end API suite (workflows A–E, display codes, template access, web app pages, limits, IDOR, uploads, pairing, sync, rate limits) | **290/290** checks pass |
-| Flutter tests (incl. screen-card overflow at 144–230 px widths and 130% font size) | **24/24** pass, plus an offline-display integration test against the live API |
+| End-to-end API suite (workflows A–E, display codes, template access, animations, web app pages, limits, IDOR, uploads, pairing, sync, rate limits) | **299/299** checks pass |
+| Flutter tests (incl. screen-card overflow at 144–230 px widths and 130% font size) | **31/31** pass (incl. animation maths), plus an offline-display integration test against the live API |
 | `flutter analyze` | No issues |
 | Web build of both apps | Done |
 | Live player test (register → pair → sync → play → command → emergency) | Done |
@@ -38,6 +38,7 @@ Full details and the list of things that were **not** tested in this environment
 | Management app (412×915) | `docs/screenshots/01_login.png` … `22_admin_plans.png`: dashboard, My Screens, template library, editor (select, drag, settings, layers, add widget), playlists, playlist builder, schedules, devices, device detail, media library, profile, admin dashboard, users, create user, plans |
 | Web app | `50_web_new_screen_restricted_templates.png` … `58_web_mobile_editor.png`: template picker limited to a restaurant's templates, editor, TV browser player, playlist, display code, admin templates, admin template editor, per-user template access, phone editor |
 | Menu templates in the app | `59_app_menu_templates.png` |
+| Animations | `60`–`62`: frames over time (web player and app player), `63`–`64`: animation settings and *Animate whole screen* in the web editor |
 | TV player (1920×1080) | `23_player_pairing.png`, `24`–`26_player_playing_*.png` (automatic rotation), `27_player_emergency.png` |
 
 ## Features
@@ -58,6 +59,12 @@ Full details and the list of things that were **not** tested in this environment
   * business: menu board, price list, product showcase, contact, opening hours, location
   * messages: announcements, quotes, daily motivation, emergency
   * embeds: web page and custom HTML (WebView on Android/iOS)
+* **Animations on every element (text, images, shapes, menus, clocks, …)** so screens play like a looping video:
+  * 17 entrance effects: fade, slide ×4, zoom in/out, pop, drop & bounce, flip ×2, spin in, blur in, wipe ×2, typewriter, each with duration and delay to stagger elements
+  * 18 continuous loop effects: pulse, breathe, float, bounce, shake, wobble, swing, sway, spin, heartbeat, flash, tada, jello, rubber band, slow zoom (Ken Burns), glow, shine sweep, colour cycle, each with speed and intensity
+  * *Replay every N seconds*: elements exit and come back in, so the scene loops forever
+  * **Animate whole screen** in one tap (Smooth / Energetic / Elegant), then fine-tune per element; the 7 photo menu templates come animated
+  * Identical on the app, the Android TV player, the web preview and the browser TV player
 * Backgrounds: colour, gradient, image, video or preset, with opacity, blur, overlay, fit and position.
 * Media library: uploads with progress, folders, rename, move, delete with in-use protection, storage meter.
 * Playlists ("screen carousels"): pick screens, drag to reorder, set durations, 8 transitions, loop, shuffle, priority, preview, publish, assign to displays.

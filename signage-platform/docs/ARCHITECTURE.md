@@ -163,6 +163,20 @@ This keeps the editor on a 390-pt phone and a 4K TV pixel-identical in proportio
 
 Publications add `screen_id`, `screen_uid`, `version`, `default_duration` and a `media` manifest of `[{media_id, file_path, mime_type, file_size, checksum_sha256}]`. The API turns `file_path` into a signed download URL. Hostnames are never stored in the database.
 
+### 6.1 Widget animations (every widget type)
+
+Animation settings live in the widget's `configuration`, so they are saved, published and synced like any other setting. The renderers in the app/TV player (`widget_animation.dart`) and on the web (`web/assets/render.js`) use the same formulas, so a screen moves identically everywhere. Editors never animate the canvas unless you press ▶ (web) or open Preview.
+
+| Key | Values |
+|---|---|
+| `animation` | Entrance: `none`, `fade_in`, `slide_up`, `slide_down`, `slide_left`, `slide_right`, `zoom_in`, `zoom_out`, `pop`, `bounce_in`, `flip_x`, `flip_y`, `rotate_in`, `blur_in`, `wipe_right`, `wipe_up`, `typewriter` |
+| `animation_duration_ms` / `animation_delay_ms` | Entrance length (default 800) and start delay (stagger elements like a video) |
+| `animation_replay_seconds` | `0` = play once. `N` = every N s the element exits (entrance in reverse) and enters again, so the whole screen loops like a clip. The period is stretched if N is shorter than delay + 2 × duration + 0.5 s. |
+| `loop_animation` | Continuous effect: `pulse`, `breathe`, `float`, `bounce`, `shake`, `wobble`, `swing`, `sway`, `spin`, `heartbeat`, `flash`, `tada`, `jello`, `rubber_band`, `ken_burns`, `glow`, `shine`, `color_cycle` |
+| `loop_duration_ms` / `loop_intensity` | One cycle (0 = the effect's default) and strength (0.2–3) |
+
+The loop starts when the entrance finishes. **Animate whole screen** (app and web) fills these keys for all widgets: staggered entrances top to bottom, round badges pulse, photos float, small decorations sway, full-screen photos zoom slowly, with a common replay period. Transforms only (translate/scale/rotate/opacity), so it stays smooth on TV boxes.
+
 ## 7. Widget system (extensible)
 
 * `widget_types` is the registry: `widget_key`, `default_config_json`, default size, `availability` (`stable` / `beta` / `planned`) and `is_premium`.

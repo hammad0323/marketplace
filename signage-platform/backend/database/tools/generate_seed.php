@@ -790,6 +790,52 @@ foreach ($WIDGETS as $key => [$name, $cat, $icon, $avail, $net, $prem, $dw, $dh,
 }
 $sql .= insert('widget_types', $wtRows);
 
+/**
+ * "Animate whole screen" (same rules as the app and the web editor): staggered
+ * entrances top to bottom, pulsing round badges, floating photos, swaying
+ * decorations, slow zoom on full-screen photos; the scene replays every N s.
+ */
+function animate_layout(array &$lay, string $style, int $replay): void
+{
+    [$dur, $stagger] = match ($style) { 'energetic' => [700, 180], 'elegant' => [1200, 400], default => [850, 260] };
+    $idx = array_keys($lay['widgets']);
+    usort($idx, function ($a, $b) use ($lay) {
+        $wa = $lay['widgets'][$a]; $wb = $lay['widgets'][$b];
+        $dy = $wa['position_y'] - $wb['position_y'];
+        return abs($dy) > 0.05 ? ($dy <=> 0) : ($wa['position_x'] <=> $wb['position_x']);
+    });
+    $i = 0;
+    foreach ($idx as $k) {
+        $w = &$lay['widgets'][$k];
+        $t = $w['widget_type']; $c = &$w['configuration'];
+        $full = $w['width'] >= 0.95 && $w['height'] >= 0.95;
+        $isText = in_array($t, ['heading', 'text'], true);
+        $isImage = in_array($t, ['image', 'logo', 'background_image'], true);
+        $isRound = $t === 'shape' && ($c['shape'] ?? '') === 'circle';
+        $small = $w['width'] * $w['height'] < 0.03;
+        $loop = 'none';
+        if ($full) { $entrance = 'fade_in'; if ($isImage) $loop = 'ken_burns'; }
+        else {
+            $entrance = match ($style) {
+                'energetic' => $t === 'heading' ? 'bounce_in' : ($isText ? 'slide_left' : (($isImage || $t === 'shape') ? 'pop' : 'zoom_in')),
+                'elegant' => $t === 'heading' ? 'wipe_right' : ($isImage ? 'blur_in' : 'fade_in'),
+                default => $isText ? 'slide_up' : ($isImage ? 'zoom_in' : ($t === 'shape' ? 'pop' : 'fade_in')),
+            };
+            if ($isRound) $loop = $style === 'energetic' ? 'heartbeat' : ($style === 'elegant' ? 'breathe' : 'pulse');
+            elseif ($isImage && $small) $loop = 'sway';
+            elseif ($isImage) $loop = $style === 'energetic' ? 'bounce' : 'float';
+        }
+        $c = array_replace($c, ['animation' => $entrance, 'animation_duration_ms' => $full ? 1000 : $dur, 'animation_delay_ms' => $full ? 0 : 150 + $stagger * $i++,
+            'animation_replay_seconds' => $replay, 'loop_animation' => $loop, 'loop_duration_ms' => 0, 'loop_intensity' => 1.0]);
+        unset($w, $c);
+    }
+}
+// The photo menu templates play like short looping videos out of the box.
+foreach (['menu_fresh_feature_l' => 'smooth', 'menu_fresh_pricelist_l' => 'smooth', 'menu_fresh_duo_l' => 'smooth', 'menu_combo_deal_p' => 'energetic',
+          'menu_steakhouse_l' => 'elegant', 'menu_cafe_wood_l' => 'elegant', 'menu_asian_kitchen_l' => 'smooth'] as $key => $style) {
+    animate_layout($T[$key][6], $style, 15);
+}
+
 $tplRows = []; $tplId = []; $n = 0;
 foreach ($T as $key => [$cat, $name, $desc, $orient, $prem, $tags, $lay]) {
     $tplId[$key] = ++$n;
