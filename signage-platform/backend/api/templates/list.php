@@ -6,6 +6,9 @@ $uid = (int)$u['user_id'];
 $in = input();
 $where = ["t.status = 'active'", 't.deleted_at IS NULL', '(t.is_public = 1 OR t.created_by = ?)'];
 $params = [$uid];
+[$accessSql, $accessParams] = template_access_sql($u);
+$where[] = $accessSql;
+$params = array_merge($params, $accessParams);
 if ($c = v_int($in, 'category_id', false, 1)) { $where[] = 't.category_id = ?'; $params[] = $c; }
 if ($ck = v_str($in, 'category', false, 60)) { $where[] = 'c.category_key = ?'; $params[] = $ck; }
 if ($o = v_enum($in, 'orientation', ORIENTATIONS)) { $where[] = 't.orientation = ?'; $params[] = $o; }
@@ -25,6 +28,7 @@ $out = array_map(function ($t) use ($canPremium) {
     $t['is_premium'] = (bool)$t['is_premium'];
     $t['is_locked'] = $t['is_premium'] && !$canPremium;
     $t['preview_image_url'] = $t['preview_image'] ? base_url() . '/uploads/' . $t['preview_image'] : null;
+    $t['media'] = (object)template_media(is_array($t['template_json']) ? $t['template_json'] : []);
     return $t;
 }, $rows);
 ok($out);

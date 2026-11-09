@@ -14,7 +14,7 @@ $limits = effective_limits($uid);
 $layout = null;
 if ($templateId) {
     $t = db_one("SELECT * FROM screen_templates WHERE template_id = ? AND status = 'active' AND deleted_at IS NULL AND (is_public = 1 OR created_by = ?)", [$templateId, $uid]);
-    if (!$t) not_found('Template');
+    if (!$t || !template_allowed($u, $templateId)) not_found('Template');
     if ($t['is_premium'] && !$limits['can_use_premium_templates'] && !has_permission($u, 'templates.premium')) {
         fail('This is a premium template. Upgrade your plan to use it.', 403, 'PREMIUM_REQUIRED');
     }

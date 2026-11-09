@@ -74,7 +74,7 @@ TextStyle textStyleFrom(Map<String, dynamic> c, {double size = 40, FontWeight? w
     letterSpacing: asDouble(c['letter_spacing']),
     height: c['line_height'] == null ? null : asDouble(c['line_height'], 1.2),
     shadows: switch (effect) {
-      'shadow' => [Shadow(color: eColor, blurRadius: 12, offset: const Offset(0, 4))],
+      'shadow' => [Shadow(color: eColor, blurRadius: asDouble(c['effect_blur'], 12), offset: Offset(0, asDouble(c['effect_offset_y'], 4)))],
       'glow' => [Shadow(color: eColor, blurRadius: 24), Shadow(color: eColor, blurRadius: 8)],
       'outline' => [
           for (final o in const [Offset(-2, -2), Offset(2, -2), Offset(-2, 2), Offset(2, 2)]) Shadow(color: eColor, offset: o)
@@ -285,6 +285,7 @@ class ImageWidgetView extends StatelessWidget {
         return const SizedBox.shrink();
       },
     );
+    final raw = img;
     img = Container(
       decoration: BoxDecoration(
         color: parseHexColor(config['background_color']),
@@ -294,6 +295,24 @@ class ImageWidgetView extends StatelessWidget {
       clipBehavior: radius > 0 ? Clip.antiAlias : Clip.none,
       child: img,
     );
+    // Drop shadow that follows the image's transparency (cut-out PNGs get a dish-shaped shadow).
+    final sc = parseHexColor(config['shadow_color']);
+    if (sc != null && scope.mode != RenderMode.thumbnail) {
+      final blur = asDouble(config['shadow_blur'], 30);
+      img = Stack(fit: StackFit.expand, clipBehavior: Clip.none, children: [
+        Transform.translate(
+          offset: Offset(asDouble(config['shadow_offset_x']), asDouble(config['shadow_offset_y'], 18)),
+          child: ImageFiltered(
+            imageFilter: ui.ImageFilter.blur(sigmaX: blur / 2, sigmaY: blur / 2, tileMode: TileMode.decal),
+            child: ColorFiltered(
+              colorFilter: ColorFilter.mode(sc, BlendMode.srcIn),
+              child: radius > 0 ? ClipRRect(borderRadius: BorderRadius.circular(radius), child: raw) : raw,
+            ),
+          ),
+        ),
+        img,
+      ]);
+    }
     return Opacity(opacity: asDouble(config['opacity'], 1).clamp(0, 1), child: img);
   }
 }
@@ -1855,7 +1874,10 @@ class ShapeView extends StatelessWidget {
           shape: shape == 'circle' ? BoxShape.circle : BoxShape.rectangle,
           borderRadius: shape == 'circle' ? null : BorderRadius.circular(asDouble(config['border_radius'])),
           border: bw > 0 ? Border.all(color: colorOr(config['border_color'], Colors.white), width: bw) : null,
-          boxShadow: asBool(config['shadow']) ? const [BoxShadow(color: Color(0x55000000), blurRadius: 30, offset: Offset(0, 12))] : null,
+          boxShadow: asBool(config['shadow'])
+              ? [BoxShadow(color: colorOr(config['shadow_color'], const Color(0x55000000)), blurRadius: asDouble(config['shadow_blur'], 30),
+                  offset: Offset(asDouble(config['shadow_offset_x']), asDouble(config['shadow_offset_y'], 12)))]
+              : null,
         ),
       ),
     );

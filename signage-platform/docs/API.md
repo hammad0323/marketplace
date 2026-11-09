@@ -78,8 +78,8 @@ POST /api/auth/login.php
 
 | Method | Endpoint | |
 |---|---|---|
-| GET | `templates/categories.php` | 14 categories with template counts |
-| GET | `templates/list.php` | `category_id, category, orientation, q, favorites, mine`. Each template has `template_json`, `is_premium`, `is_locked` (premium template not in your plan) and `is_favorite`. |
+| GET | `templates/categories.php` | Categories with counts of templates **this user may use**; empty categories are hidden. Admins can pass `all=1` to get every category. |
+| GET | `templates/list.php` | `category_id, category, orientation, q, favorites, mine`. Each template has `template_json`, a `media` map (signed URLs of the images it uses), `is_premium`, `is_locked` (premium template not in your plan) and `is_favorite`. **Only templates allowed for the user** are returned (see `admin/template-access.php`); `details.php` and `screens/create.php` return 404 for others. |
 | GET | `templates/details.php?template_id=` | |
 | POST | `templates/favorite.php` | `{template_id}`: toggles the favourite |
 | POST | `templates/save-as-template.php` | `{screen_id, template_name?, category_id?}`: saves a private template (admins can pass `is_public`) |
@@ -96,7 +96,7 @@ POST /api/auth/login.php
 | Method | Endpoint | |
 |---|---|---|
 | GET | `media/list.php` | `file_type, folder_id (0 = root), q, sort, include_global=1, page`. The response also includes `folders[]` and `storage{used_bytes, limit_mb}`. |
-| POST | `media/upload.php` | multipart: `file`, `folder_id?`, `as_logo?`, `duration_ms?`. Checks: extension, `finfo` MIME, image integrity, per-plan upload size, storage quota, video permission. Generates a random file name and a GD thumbnail. |
+| POST | `media/upload.php` | multipart: `file`, `folder_id?`, `as_logo?`, `duration_ms?`, `global?` (super admin only: share with every user, e.g. template photos). Checks: extension, `finfo` MIME, image integrity, per-plan upload size, storage quota, video permission. Generates a random file name and a GD thumbnail. |
 | GET | `media/details.php?media_id=` | Includes `used_in[]` (the screens that use it) |
 | POST | `media/rename.php` | `{media_id, original_name}` |
 | POST | `media/move.php` | `{media_ids[], folder_id}` |
@@ -196,7 +196,8 @@ Every screen and playlist can have a short code. Open the app on any TV, box or 
 | POST | `admin/delete-user.php` | Soft delete, revokes sessions, disconnects the user's displays |
 | GET | `admin/activity-logs.php` | `user_id, action (prefix), from, to, page` |
 | GET/POST | `admin/plans.php` | `POST {action: save\|delete, plan_id?, plan_name, max_*, features{video_upload, premium_templates, allowed_widgets, …}, is_default, status}` |
-| GET/POST | `admin/templates.php` | `POST {action: save\|toggle\|delete, …}` |
+| GET/POST | `admin/templates.php` | GET: every template with its `media` map; `?template_id=` returns one. `POST {action: save, template_id?, category_id, template_name, description?, orientation, template_json (layout document), tags?, is_premium?, status: active\|inactive}`, `{action: toggle\|delete, template_id}`. Widgets with `is_locked: true` cannot be moved, resized or deleted by users. |
+| GET/POST | `admin/template-access.php` | GET `?user_id=` → `{mode: all\|selected, category_ids, template_ids}`. POST `{user_id, mode, category_ids[], template_ids[]}`; `selected` needs at least one. The same object can be sent as `template_access` to `create-user.php` / `update-user.php`. |
 | GET/POST | `admin/widget-types.php` | `POST {widget_key, availability: stable\|beta\|planned, status, is_premium, default_config_json}` |
 | GET | `admin/devices.php` · `admin/media.php` | All users' devices and media. `POST admin/media.php {media_id, action: delete\|make_global\|make_private}` |
 | GET | `admin/permissions.php` | Permission catalogue with the default for the user role |

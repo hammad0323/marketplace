@@ -121,3 +121,72 @@ function owned_row(string $table, string $pk, int $id, array $user, bool $includ
     }
     return $row;
 }
+
+// ---------------------------------------------------------------------------
+// Template access (admin decides which templates each user can use)
+// ---------------------------------------------------------------------------
+
+/** ['mode' => 'all'|'selected', 'category_ids' => [], 'template_ids' => []] */
+function template_access(int $userId): array
+{
+    $rows = db_all('SELECT category_id, template_id FROM user_template_access WHERE user_id = ?', [$userId]);
+    return [
+        'mode' => $rows ? 'selected' : 'all',
+        'category_ids' => array_values(array_map('intval', array_filter(array_column($rows, 'category_id')))),
+        'template_ids' => array_values(array_map('intval', array_filter(array_column($rows, 'template_id')))),
+    ];
+}
+
+/**
+ * SQL condition (on alias t) limiting templates to what the user may use.
+ * Admins and users without restrictions see everything; a user's own saved
+ * templates are always allowed.
+ */
+function template_access_sql(array $user, string $alias = 't'): array
+{
+    if (is_admin($user)) return ['1=1', []];
+    $a = template_access((int)$user['user_id']);
+    if ($a['mode'] === 'all') return ['1=1', []];
+    $parts = ["{$alias}.created_by = ?"];
+    $params = [(int)$user['user_id']];
+    if ($a['category_ids']) { $parts[] = "{$alias}.category_id IN (" . placeholders($a['category_ids']) . ')'; $params = array_merge($params, $a['category_ids']); }
+    if ($a['template_ids']) { $parts[] = "{$alias}.template_id IN (" . placeholders($a['template_ids']) . ')'; $params = array_merge($params, $a['template_ids']); }
+    return ['(' . implode(' OR ', $parts) . ')', $params];
+}
+
+function template_allowed(array $user, int $templateId): bool
+{
+    [$w, $p] = template_access_sql($user);
+    return (bool)db_val("SELECT 1 FROM screen_templates t WHERE t.template_id = ? AND {$w}", array_merge([$templateId], $p));
+}
+
+/** Replace a user's template access. $mode 'all' clears restrictions. */
+function set_template_access(int $userId, string $mode, array $categoryIds, array $templateIds): void
+{
+    db_run('DELETE FROM user_template_access WHERE user_id = ?', [$userId]);
+    if ($mode !== 'selected') return;
+    $categoryIds = array_values(array_unique(array_map('intval', $categoryIds)));
+    $templateIds = array_values(array_unique(array_map('intval', $templateIds)));
+    if (!$categoryIds && !$templateIds) fail('Select at least one category or template, or choose "All templates"', 400, 'VALIDATION');
+    foreach ($categoryIds as $c) {
+        if (!db_val('SELECT 1 FROM template_categories WHERE category_id = ?', [$c])) fail("Category #{$c} not found", 400, 'VALIDATION');
+        db_run('INSERT INTO user_template_access (user_id, category_id) VALUES (?, ?)', [$userId, $c]);
+    }
+    foreach ($templateIds as $t) {
+        if (!db_val('SELECT 1 FROM screen_templates WHERE template_id = ? AND deleted_at IS NULL', [$t])) fail("Template #{$t} not found", 400, 'VALIDATION');
+        db_run('INSERT INTO user_template_access (user_id, template_id) VALUES (?, ?)', [$userId, $t]);
+    }
+}
+
+/** Presented media rows (signed URLs) for every media id used in a layout document. */
+function template_media(array $layout): array
+{
+    $ids = [];
+    if (!empty($layout['background']['media_id'])) $ids[] = (int)$layout['background']['media_id'];
+    foreach ($layout['widgets'] ?? [] as $w) $ids = array_merge($ids, config_media_ids($w['configuration'] ?? []));
+    $ids = array_values(array_unique($ids));
+    if (!$ids) return [];
+    $out = [];
+    foreach (db_all('SELECT * FROM media_library WHERE deleted_at IS NULL AND media_id IN (' . placeholders($ids) . ')', $ids) as $m) $out[(string)$m['media_id']] = present_media($m);
+    return $out;
+}

@@ -343,6 +343,7 @@ class EditorController extends ChangeNotifier {
           w.widgetUid = WidgetItem(widgetType: w.widgetType).widgetUid;
         }
         layout = l;
+        media.addAll(t.media);
         selection.clear();
       });
 

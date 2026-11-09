@@ -242,7 +242,7 @@ class AdminContentScreen extends ConsumerWidget {
                     return AppCard(
                       padding: const EdgeInsets.all(8),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Expanded(child: Opacity(opacity: active ? 1 : 0.4, child: LayoutThumbnail(layout: t.layout, media: NetworkMediaSource(const {})))),
+                        Expanded(child: Opacity(opacity: active ? 1 : 0.4, child: LayoutThumbnail(layout: t.layout, media: NetworkMediaSource(t.media)))),
                         const SizedBox(height: 6),
                         Text(t.templateName, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
                         Row(children: [

@@ -395,6 +395,81 @@ expect('sessions', req('GET', '/api/auth/sessions', null, $BILAL), 200);
 expect('logout', req('POST', '/api/auth/logout', [], $BILAL), 200);
 expect('token revoked after logout', req('GET', '/api/auth/profile', null, $BILAL), 401);
 
+section('Template access per user + professional menu templates');
+$ADMIN2 = login('admin@signage.local', 'Admin@12345');
+$AISHA2 = login('aisha@demo.local');
+$at = expect('Aisha template list (restricted)', req('GET', '/api/templates/list', null, $AISHA2), 200);
+check('only Restaurant & Menu Board templates', $at && !array_filter($at, fn($t) => !in_array($t['category_key'], ['restaurant', 'menu_boards'], true)), array_unique(array_column($at, 'category_key')));
+$acats = expect('Aisha categories', req('GET', '/api/templates/categories', null, $AISHA2), 200);
+check('categories filtered to 2', count($acats) === 2, array_column($acats, 'category_key'));
+$corp = array_values(array_filter(req('GET', '/api/templates/list', null, $ADMIN2)['json']['data'], fn($t) => $t['template_key'] === 'corp_welcome_l'))[0];
+expect('Aisha cannot open a corporate template', req('GET', '/api/templates/details?template_id=' . $corp['template_id'], null, $AISHA2), 404);
+expect('admin reads access', req('GET', '/api/admin/template-access?user_id=2', null, $ADMIN2), 200);
+$feature = array_values(array_filter($at, fn($t) => $t['template_key'] === 'menu_fresh_feature_l'))[0] ?? null;
+check('menu template ships with signed media', $feature && count((array)$feature['media']) >= 4 && str_contains(array_values((array)$feature['media'])[0]['url'], 'sig='));
+$ta = expect('admin limits Chloe to one template', req('POST', '/api/admin/template-access', ['user_id' => 4, 'mode' => 'selected', 'template_ids' => [$feature['template_id']]], $ADMIN2), 200);
+$CHLOE = login('chloe@demo.local', 'Chloe2026new');
+$ct = expect('Chloe sees exactly that template', req('GET', '/api/templates/list', null, $CHLOE), 200);
+check('one template', count($ct) === 1 && $ct[0]['template_id'] === $feature['template_id']);
+expect('Chloe blocked from another template', req('POST', '/api/screens/create', ['screen_name' => 'X', 'template_id' => $corp['template_id']], $CHLOE), 404);
+$cs = expect('Chloe creates from allowed menu template (shared images)', req('POST', '/api/screens/create', ['screen_name' => 'Lunch board', 'template_id' => $feature['template_id']], $CHLOE), 201);
+check('all widgets incl. images copied', count($cs['layout']['widgets'] ?? []) === count($feature['template_json']['widgets']) && $cs['layout']['background']['media_id'] === 6);
+expect('publish it', req('POST', '/api/screens/publish', ['screen_id' => $cs['screen_id']], $CHLOE), 200);
+expect('empty selection rejected', req('POST', '/api/admin/template-access', ['user_id' => 4, 'mode' => 'selected'], $ADMIN2), 400, 'VALIDATION');
+expect('reset to all', req('POST', '/api/admin/template-access', ['user_id' => 4, 'mode' => 'all'], $ADMIN2), 200);
+check('Chloe sees all again', count(req('GET', '/api/templates/list', null, $CHLOE)['json']['data']) > 20);
+expect('user cannot change template access', req('POST', '/api/admin/template-access', ['user_id' => 4, 'mode' => 'all'], $CHLOE), 403);
+$nu2 = expect('create user with template access', req('POST', '/api/admin/create-user', ['full_name' => 'Resto Owner', 'email' => 'resto@demo.local',
+    'template_access' => ['mode' => 'selected', 'category_ids' => [$feature['category_id']]]], $ADMIN2), 201);
+check('template access stored', ($nu2['user']['template_access']['mode'] ?? '') === 'selected');
+$img = sys_get_temp_dir() . '/glob.png'; $im = imagecreatetruecolor(64, 64); imagepng($im, $img);
+$gm = expect('admin uploads a shared template image', req('POST', '/api/media/upload', ['global' => 1], $ADMIN2, ['file' => [$img, 'image/png', 'hero.png']]), 201);
+check('marked global', (int)($gm['is_global'] ?? 0) === 1);
+$um = expect('user upload ignores global flag', req('POST', '/api/media/upload', ['global' => 1], $CHLOE, ['file' => [$img, 'image/png', 'mine.png']]), 201);
+check('stays private', (int)($um['is_global'] ?? 0) === 0);
+
+section('Web app (core PHP pages)');
+$jar = tempnam(sys_get_temp_dir(), 'webjar');
+$web = function (string $method, string $path, ?array $form = null) use ($jar) {
+    global $BASE;
+    $ch = curl_init($BASE . $path);
+    curl_setopt_array($ch, [CURLOPT_CUSTOMREQUEST => $method, CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_COOKIEJAR => $jar, CURLOPT_COOKIEFILE => $jar]);
+    if ($form !== null) curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($form));
+    $raw = (string)curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); $hs = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+    curl_close($ch);
+    preg_match('/^Location:\s*(\S+)/mi', substr($raw, 0, $hs), $m);
+    return ['code' => $code, 'body' => substr($raw, $hs), 'location' => $m[1] ?? ''];
+};
+$r = $web('GET', '/web/dashboard.php');
+check('signed-out page redirects to login', $r['code'] === 302 && str_ends_with($r['location'], '/web/login.php'), $r);
+check('internal web files are blocked', $web('GET', '/web/_bootstrap.php')['code'] === 403);
+$r = $web('GET', '/web/display.php');
+check('public TV web player loads', $r['code'] === 200 && str_contains($r['body'], 'Show Display'));
+$r = $web('GET', '/web/login.php');
+preg_match('/name="csrf" value="([^"]+)"/', $r['body'], $m); $csrf = $m[1] ?? '';
+check('login form has a CSRF token', $r['code'] === 200 && strlen($csrf) === 32);
+check('login without CSRF token rejected', $web('POST', '/web/login.php', ['email' => 'chloe@demo.local', 'password' => 'Demo@12345'])['code'] === 400);
+$r = $web('POST', '/web/login.php', ['csrf' => $csrf, 'email' => 'chloe@demo.local', 'password' => 'Chloe2026new']);
+check('web login redirects to dashboard', $r['code'] === 302 && str_ends_with($r['location'], '/web/dashboard.php'), $r);
+$r = $web('GET', '/web/dashboard.php');
+preg_match('/"token":"([a-f0-9]{64})"/', $r['body'], $m); $webTok = $m[1] ?? '';
+check('dashboard renders with an API session', $r['code'] === 200 && strlen($webTok) === 64);
+expect('web session token works on the API', req('GET', '/api/auth/profile', null, $webTok), 200);
+foreach (['screens.php', 'playlists.php', 'playlist.php', 'media.php', 'displays.php', 'profile.php'] as $pg) {
+    check("page {$pg} loads", $web('GET', '/web/' . $pg)['code'] === 200);
+}
+$r = $web('GET', '/web/admin/index.php');
+check('customer cannot open the admin panel', $r['code'] === 302 && str_ends_with($r['location'], '/web/dashboard.php'), $r);
+$r = $web('GET', '/web/editor.php?template=new');
+check('customer cannot open the template editor', $r['code'] === 302 && str_ends_with($r['location'], '/web/screens.php'), $r);
+$web('GET', '/web/logout.php');
+expect('logout revokes the web token', req('GET', '/api/auth/profile', null, $webTok), 401, 'UNAUTHENTICATED');
+@unlink($jar);
+$allCats = expect('admin can list every category', req('GET', '/api/templates/categories?all=1', null, $ADMIN2), 200);
+$userCats = expect('categories for a restricted user', req('GET', '/api/templates/categories?all=1', null, $AISHA), 200);
+check('“all” is ignored for customers', count($userCats) < count($allCats), [count($userCats), count($allCats)]);
+
 section('Rate limiting');
 $hit = 0;
 for ($i = 0; $i < 12; $i++) { if (req('POST', '/api/auth/login', ['email' => 'daniel@demo.local', 'password' => 'wrong'])['code'] === 429) { $hit = $i; break; } }

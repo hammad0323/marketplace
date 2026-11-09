@@ -57,7 +57,10 @@ eq "template schema_version=1" "SELECT COUNT(*) FROM screen_templates WHERE JSON
 # Every widget referenced in a template exists in the registry
 MISSING=$(q "SELECT DISTINCT jt.wtype FROM screen_templates t, JSON_TABLE(t.template_json, '\$.widgets[*]' COLUMNS (wtype VARCHAR(60) PATH '\$.widget_type')) jt WHERE jt.wtype COLLATE utf8mb4_unicode_ci NOT IN (SELECT widget_key FROM widget_types)" )
 [ -z "$MISSING" ] && ok "template widget types all registered" || ko "template widget types all registered" "$MISSING"
-eq "template widget geometry normalised" "SELECT COUNT(*) FROM screen_templates t, JSON_TABLE(t.template_json, '\$.widgets[*]' COLUMNS (x DOUBLE PATH '\$.position_x', y DOUBLE PATH '\$.position_y', w DOUBLE PATH '\$.width', h DOUBLE PATH '\$.height')) jt WHERE jt.x<0 OR jt.y<0 OR jt.x+jt.w>1.000001 OR jt.y+jt.h>1.000001" 0
+# Normalised geometry; designs may bleed slightly off the canvas edge (like a cropped photo), never far.
+eq "template widget geometry normalised" "SELECT COUNT(*) FROM screen_templates t, JSON_TABLE(t.template_json, '\$.widgets[*]' COLUMNS (x DOUBLE PATH '\$.position_x', y DOUBLE PATH '\$.position_y', w DOUBLE PATH '\$.width', h DOUBLE PATH '\$.height')) jt WHERE jt.x<-0.25 OR jt.y<-0.25 OR jt.x+jt.w>1.25 OR jt.y+jt.h>1.25 OR jt.w<=0 OR jt.h<=0" 0
+eq "template media are shared (global)" "SELECT COUNT(*) FROM screen_templates t, JSON_TABLE(t.template_json, '\$.widgets[*]' COLUMNS (m INT PATH '\$.configuration.media_id')) jt JOIN media_library ml ON ml.media_id = jt.m WHERE ml.is_global = 0" 0
+eq "Aisha restricted to 2 template categories" "SELECT COUNT(*) FROM user_template_access WHERE user_id = 2" 2
 
 echo "▶ Limits & permissions"
 eq "User A max_screens=2"      "SELECT max_screens FROM v_user_effective_limits WHERE user_id=2" 2

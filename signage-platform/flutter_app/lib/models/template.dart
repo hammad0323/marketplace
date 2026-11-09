@@ -1,5 +1,6 @@
 import '../core/utils/json.dart';
 import 'layout.dart';
+import 'media.dart';
 
 class TemplateCategory {
   TemplateCategory({required this.categoryId, required this.categoryKey, required this.categoryName, this.icon, this.templateCount = 0});
@@ -17,8 +18,11 @@ class ScreenTemplate {
   ScreenTemplate({
     required this.templateId, required this.templateName, required this.categoryId, required this.orientation,
     required this.layout, this.description, this.categoryName, this.isPremium = false, this.isLocked = false,
-    this.isFavorite = false, this.tags, this.templateKey,
+    this.isFavorite = false, this.tags, this.templateKey, this.media = const {}, this.status = 'active',
   });
+  /// Images used by the template (shared media with signed URLs).
+  final Map<int, MediaItem> media;
+  final String status;
   final int templateId, categoryId;
   final String templateName, orientation;
   final String? description, categoryName, tags, templateKey;
@@ -31,6 +35,8 @@ class ScreenTemplate {
         description: j['description']?.toString(), categoryName: j['category_name']?.toString(),
         isPremium: asBool(j['is_premium']), isLocked: asBool(j['is_locked']), isFavorite: asBool(j['is_favorite']),
         tags: j['tags']?.toString(), templateKey: j['template_key']?.toString(),
+        media: {for (final e in asMap(j['media']).entries) asInt(e.key): MediaItem.fromJson(asMap(e.value))},
+        status: asString(j['status'], 'active'),
       );
 }
 

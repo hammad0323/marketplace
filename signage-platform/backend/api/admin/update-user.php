@@ -29,6 +29,7 @@ if (v_bool($in, 'reset_password', false) || v_present($in, 'new_password')) {
     if (v_bool($in, 'send_email', false)) send_mail($email, 'Your password has been reset', $credentials['share_text']);
     log_activity((int)$admin['user_id'], 'admin.user.reset_password', 'user', (int)$u['user_id'], "Reset password for {$email}");
 }
+admin_apply_template_access((int)$u['user_id'], $in);
 admin_apply_limits((int)$u['user_id'], $in, (int)$admin['user_id']);
 log_activity((int)$admin['user_id'], 'admin.user.update', 'user', (int)$u['user_id'], "Updated {$email}");
 db_commit();

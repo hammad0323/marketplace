@@ -18,6 +18,7 @@ function admin_present_user(array $u, bool $full = false): array
     $out['limit_overrides'] = $ov ? shape_row($ov, ['allowed_widgets_json']) : null;
     if ($full) {
         $out['permissions'] = user_permission_keys($uid);
+        $out['template_access'] = template_access($uid);
         $out['permission_overrides'] = db_all('SELECT p.permission_key, up.allowed FROM user_permissions up JOIN permissions p USING (permission_id) WHERE up.user_id = ?', [$uid]);
         $out['screens'] = array_map(fn($s) => present_screen($s, false), db_all('SELECT * FROM screens WHERE user_id = ? AND deleted_at IS NULL ORDER BY updated_at DESC LIMIT 50', [$uid]));
         $out['playlists'] = db_all('SELECT playlist_id, playlist_name, status, published_version, updated_at FROM playlists WHERE user_id = ? AND deleted_at IS NULL ORDER BY updated_at DESC LIMIT 50', [$uid]);
@@ -82,4 +83,13 @@ function generate_password(): string
     $all = implode('', $sets);
     for ($i = 0; $i < 8; $i++) $p .= $all[random_int(0, strlen($all) - 1)];
     return str_shuffle($p);
+}
+
+/** Optional `template_access: {mode: all|selected, category_ids: [], template_ids: []}` in admin user forms. */
+function admin_apply_template_access(int $userId, array $in): void
+{
+    if (!isset($in['template_access']) || !is_array($in['template_access'])) return;
+    $a = $in['template_access'];
+    set_template_access($userId, ($a['mode'] ?? 'all') === 'selected' ? 'selected' : 'all',
+        is_array($a['category_ids'] ?? null) ? $a['category_ids'] : [], is_array($a['template_ids'] ?? null) ? $a['template_ids'] : []);
 }

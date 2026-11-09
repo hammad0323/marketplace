@@ -32,7 +32,8 @@ const Map<String, List<String>> configEnums = {
   'provider': ['open_meteo'],
   'network': ['instagram', 'facebook', 'x'],
   'font_weight': ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
-  'font_family': ['Poppins', 'Inter', 'Montserrat', 'Roboto', 'Open Sans', 'Lato', 'Playfair Display', 'Oswald', 'Raleway', 'Merriweather', 'Bebas Neue', 'Nunito', 'Cairo', 'Noto Sans'],
+  'font_family': ['Poppins', 'Inter', 'Montserrat', 'Roboto', 'Open Sans', 'Lato', 'Playfair Display', 'Oswald', 'Raleway', 'Merriweather', 'Bebas Neue', 'Nunito', 'Cairo', 'Noto Sans',
+    'Amatic SC', 'Caveat', 'Pacifico', 'Lobster', 'Dancing Script', 'Anton', 'Archivo Black', 'Permanent Marker'],
 };
 
 /// Slider ranges for numeric keys: (min, max, divisions).
@@ -43,7 +44,8 @@ const Map<String, (double, double, int?)> configRanges = {
   'overlay_opacity': (0, 1, 20), 'blur': (0, 40, 40), 'forecast_days': (1, 7, 6), 'refresh_minutes': (0, 1440, null),
   'columns': (1, 3, 2), 'default_duration': (1, 120, 119), 'pause_ms': (0, 10000, 20), 'first_day_of_week': (1, 7, 6),
   'animation_duration_ms': (100, 3000, 29), 'max_items': (1, 30, 29), 'refresh_seconds': (10, 3600, null),
-  'page_duration': (2, 120, null), 'start_sec': (0, 3600, null), 'angle': (0, 360, 36), 'slide_duration': (2, 120, null),
+  'page_duration': (2, 120, null), 'shadow_blur': (0, 120, null), 'shadow_offset_x': (-80, 80, null), 'shadow_offset_y': (-80, 80, null),
+  'effect_blur': (0, 60, null), 'effect_offset_y': (-30, 30, null), 'start_sec': (0, 3600, null), 'angle': (0, 360, 36), 'slide_duration': (2, 120, null),
 };
 
 const _multiline = {'text', 'body', 'message', 'html', 'css', 'description', 'address', 'directions'};

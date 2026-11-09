@@ -181,6 +181,21 @@ server {
 - [ ] Nightly backups of the database and `uploads/`.
 - [ ] Optional: put `uploads/` on block storage. The `storage_driver` column is ready for an S3 adapter.
 
+### 3.6 Web app
+
+The core-PHP web app ships inside `backend/web/` and needs no build step. With the backend at `https://signage.example.com`:
+
+| URL | Who |
+|---|---|
+| `https://signage.example.com/web/` | Users and the super admin (sign in with the same accounts as the app) |
+| `https://signage.example.com/web/admin/templates.php` | Super admin: template gallery and designer |
+| `https://signage.example.com/web/display.php` | Browser TV player: open it on a smart-TV browser or kiosk PC and enter a display code (or append `?code=LOBBY1`) |
+
+* Pages use PHP sessions (`signage_web` cookie, HTTP-only, `Secure` on HTTPS, SameSite=Lax) and call the same REST API with a per-browser token, revoked on sign-out.
+* Files starting with `_` (`_bootstrap.php`, `_layout.php`) are blocked by `.htaccess` / the router; keep that rule in Nginx too (`location ~ /_[^/]*\.php$ { deny all; }`).
+* The pages load Google Fonts and Material Symbols from Google's CDN. The QR-code library is bundled (`web/assets/vendor/qrcode.js`, MIT).
+* If `APP_URL` is set, it is used for links; otherwise the folder is detected automatically, so the backend can live in a sub-folder.
+
 ## 4. Building the apps
 
 Flavors are defined in `android/app/build.gradle.kts`:

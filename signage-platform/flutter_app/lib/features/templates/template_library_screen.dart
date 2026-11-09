@@ -180,7 +180,7 @@ class _TemplateTile extends ConsumerWidget {
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               ConstrainedBox(
                 constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
-                child: AspectRatio(aspectRatio: t.layout.aspect, child: LayoutThumbnail(layout: t.layout, media: NetworkMediaSource(const {}))),
+                child: AspectRatio(aspectRatio: t.layout.aspect, child: LayoutThumbnail(layout: t.layout, media: NetworkMediaSource(t.media))),
               ),
               const SizedBox(height: 14),
               Text(t.templateName, style: Theme.of(context).textTheme.titleLarge),
@@ -214,7 +214,7 @@ class _TemplateTile extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Stack(children: [
-              Positioned.fill(child: LayoutThumbnail(layout: t.layout, media: NetworkMediaSource(const {}))),
+              Positioned.fill(child: LayoutThumbnail(layout: t.layout, media: NetworkMediaSource(t.media))),
               if (t.isPremium)
                 Positioned(
                   top: 6, left: 6,

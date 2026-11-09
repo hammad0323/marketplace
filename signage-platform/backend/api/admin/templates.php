@@ -20,4 +20,12 @@ if (request_method() === 'POST') {
     log_activity((int)$admin['user_id'], 'admin.template.save', 'template', $id, 'Saved template');
     ok(shape_row(db_one('SELECT * FROM screen_templates WHERE template_id = ?', [$id]), ['template_json']), 'Template saved');
 }
-ok(shape_rows(db_all('SELECT t.*, c.category_name FROM screen_templates t JOIN template_categories c USING (category_id) WHERE t.deleted_at IS NULL AND t.is_public = 1 ORDER BY t.sort_order, t.template_id'), ['template_json']));
+if ($tid = v_int(input(), 'template_id', false, 1)) {
+    $t = shape_row(db_one('SELECT t.*, c.category_name FROM screen_templates t JOIN template_categories c USING (category_id) WHERE t.template_id = ? AND t.deleted_at IS NULL', [$tid]), ['template_json']);
+    if (!$t) not_found('Template');
+    $t['media'] = (object)template_media($t['template_json'] ?? []);
+    ok($t);
+}
+$rows = shape_rows(db_all('SELECT t.*, c.category_name FROM screen_templates t JOIN template_categories c USING (category_id) WHERE t.deleted_at IS NULL AND t.is_public = 1 ORDER BY t.sort_order, t.template_id DESC'), ['template_json']);
+foreach ($rows as &$r) $r['media'] = (object)template_media($r['template_json'] ?? []);
+ok($rows);

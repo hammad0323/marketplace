@@ -45,6 +45,7 @@ DROP TABLE IF EXISTS media_library;
 DROP TABLE IF EXISTS media_folders;
 DROP TABLE IF EXISTS user_recent_widgets;
 DROP TABLE IF EXISTS widget_types;
+DROP TABLE IF EXISTS user_template_access;
 DROP TABLE IF EXISTS template_favorites;
 DROP TABLE IF EXISTS screen_templates;
 DROP TABLE IF EXISTS template_categories;
@@ -335,6 +336,23 @@ CREATE TABLE template_favorites (
     KEY idx_tf_template (template_id),
     CONSTRAINT fk_tf_user     FOREIGN KEY (user_id)     REFERENCES users (user_id)                ON DELETE CASCADE,
     CONSTRAINT fk_tf_template FOREIGN KEY (template_id) REFERENCES screen_templates (template_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Which templates a user may use. No rows for a user = all templates (subject to plan/premium).
+-- Rows restrict the user to the listed categories and/or individual templates.
+CREATE TABLE user_template_access (
+    id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    user_id     BIGINT UNSIGNED NOT NULL,
+    category_id INT UNSIGNED    NULL,
+    template_id BIGINT UNSIGNED NULL,
+    created_at  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_uta_user (user_id),
+    KEY idx_uta_category (category_id),
+    KEY idx_uta_template (template_id),
+    CONSTRAINT fk_uta_user     FOREIGN KEY (user_id)     REFERENCES users (user_id)                ON DELETE CASCADE,
+    CONSTRAINT fk_uta_category FOREIGN KEY (category_id) REFERENCES template_categories (category_id) ON DELETE CASCADE,
+    CONSTRAINT fk_uta_template FOREIGN KEY (template_id) REFERENCES screen_templates (template_id)   ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Registry of widget kinds. Adding a widget = 1 row here + 1 renderer/editor in Flutter.

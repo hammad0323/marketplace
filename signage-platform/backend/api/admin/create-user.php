@@ -22,6 +22,7 @@ $uid = db_insert('INSERT INTO users (role_id, full_name, email, phone, password_
     v_str($in, 'business_name', false, 150), v_timezone($in, 'timezone') ?? 'UTC', v_enum($in, 'status', ['active', 'inactive', 'suspended'], false, 'active'),
     v_bool($in, 'must_change_password', $generated), v_datetime($in, 'account_expires_at'), $admin['user_id']]);
 if (!v_present($in, 'plan_id')) $in['plan_id'] = (int)db_val('SELECT plan_id FROM plans WHERE is_default = 1 ORDER BY plan_id LIMIT 1');
+admin_apply_template_access($uid, $in);
 admin_apply_limits($uid, $in, (int)$admin['user_id']);
 log_activity((int)$admin['user_id'], 'admin.user.create', 'user', $uid, "Created user {$email}");
 notify($uid, 'Welcome!', 'Your account is ready. Create your first screen to get started.', 'success', '/screens/new');

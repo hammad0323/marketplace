@@ -10,12 +10,16 @@ import '../../core/utils/json.dart';
 import '../../core/widgets/common.dart';
 import '../../models/misc.dart';
 import '../../models/user.dart';
+import '../../models/template.dart';
 import '../../providers/providers.dart';
+import '../widgets_library/layout_view.dart';
+import '../widgets_library/render_context.dart';
 
 final adminUsersProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, (String?, String?)>(
     (ref, a) async => (await ref.watch(adminRepoProvider).users(q: a.$1, status: a.$2)).items);
 final adminUserProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, int>((ref, id) => ref.watch(adminRepoProvider).userDetails(id));
 final adminPlansProvider = FutureProvider.autoDispose<List<Plan>>((ref) => ref.watch(adminRepoProvider).plans());
+final _allTemplatesProvider = FutureProvider.autoDispose((ref) => ref.watch(adminRepoProvider).templates());
 final adminPermissionsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) => ref.watch(adminRepoProvider).permissions());
 
 class AdminUsersScreen extends ConsumerStatefulWidget {
@@ -242,6 +246,10 @@ class _AdminUserFormScreenState extends ConsumerState<AdminUserFormScreen> {
   final Map<String, int?> limits = {'max_screens': null, 'max_playlists': null, 'max_devices': null, 'max_storage_mb': null};
   bool? video, premium;
   final Map<String, bool?> perms = {};
+  // Template access: 'all' or only the selected categories / templates.
+  String templateMode = 'all';
+  final Set<int> tplCategories = {};
+  final Set<int> tplIds = {};
 
   @override
   void initState() {
@@ -269,6 +277,10 @@ class _AdminUserFormScreenState extends ConsumerState<AdminUserFormScreen> {
       for (final p in asList(u['permission_overrides']).map(asMap)) {
         perms[asString(p['permission_key'])] = asBool(p['allowed']);
       }
+      final ta = asMap(u['template_access']);
+      templateMode = asString(ta['mode'], 'all');
+      tplCategories.addAll(asList(ta['category_ids']).map((e) => asInt(e)));
+      tplIds.addAll(asList(ta['template_ids']).map((e) => asInt(e)));
     }
     if (mounted) setState(() => loading = false);
   }
@@ -333,6 +345,55 @@ class _AdminUserFormScreenState extends ConsumerState<AdminUserFormScreen> {
           _limitRow(e.$1, e.$2, plan == null ? null : switch (e.$1) { 'max_screens' => plan.maxScreens, 'max_playlists' => plan.maxPlaylists, 'max_devices' => plan.maxDevices, _ => plan.maxStorageMb }),
         _triState('Video uploads', video, asBool(plan?.features['video_upload']), (v) => setState(() => video = v)),
         _triState('Premium templates', premium, asBool(plan?.features['premium_templates']), (v) => setState(() => premium = v)),
+        const Divider(height: 32),
+        Text('Templates this user can use', style: t.titleMedium),
+        const SizedBox(height: 6),
+        SegmentedButton<String>(
+          showSelectedIcon: false,
+          segments: const [ButtonSegment(value: 'all', label: Text('All templates')), ButtonSegment(value: 'selected', label: Text('Only selected'))],
+          selected: {templateMode},
+          onSelectionChanged: (v) => setState(() => templateMode = v.first),
+        ),
+        if (templateMode == 'selected') ...[
+          const SizedBox(height: 10),
+          const Text('Whole categories (e.g. Restaurant for a restaurant customer):', style: TextStyle(color: AppColors.mediumGrey, fontSize: 12)),
+          const SizedBox(height: 6),
+          Wrap(spacing: 6, runSpacing: 6, children: [
+            for (final c in ref.watch(templateCategoriesProvider).value ?? [])
+              FilterChip(
+                label: Text(c.categoryName),
+                selected: tplCategories.contains(c.categoryId),
+                onSelected: (v) => setState(() => v ? tplCategories.add(c.categoryId) : tplCategories.remove(c.categoryId)),
+              ),
+          ]),
+          const SizedBox(height: 10),
+          const Text('…and/or individual templates:', style: TextStyle(color: AppColors.mediumGrey, fontSize: 12)),
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 150,
+            child: ListView(scrollDirection: Axis.horizontal, children: [
+              for (final tj in ref.watch(_allTemplatesProvider).value ?? <Map<String, dynamic>>[])
+                Builder(builder: (_) {
+                  final tpl = ScreenTemplate.fromJson(tj);
+                  final on = tplIds.contains(tpl.templateId) || tplCategories.contains(tpl.categoryId);
+                  return GestureDetector(
+                    onTap: tplCategories.contains(tpl.categoryId) ? null : () => setState(() => on ? tplIds.remove(tpl.templateId) : tplIds.add(tpl.templateId)),
+                    child: Container(
+                      width: 150,
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: on ? AppColors.teal : Colors.transparent, width: 3)),
+                      child: Column(children: [
+                        Expanded(child: LayoutThumbnail(layout: tpl.layout, media: NetworkMediaSource(tpl.media), radius: 8)),
+                        Text(tpl.templateName, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                      ]),
+                    ),
+                  );
+                }),
+            ]),
+          ),
+          Text('${tplCategories.length} categories · ${tplIds.length} individual templates selected', style: const TextStyle(color: AppColors.mediumGrey, fontSize: 12)),
+        ],
         const Divider(height: 32),
         Text('Permissions', style: t.titleMedium),
         const Text('Defaults come from the role. Tap to grant ✓ / revoke ✕ / reset.', style: TextStyle(color: AppColors.mediumGrey, fontSize: 12)),
@@ -403,7 +464,12 @@ class _AdminUserFormScreenState extends ConsumerState<AdminUserFormScreen> {
       'role': role, 'status': status, 'account_expires_at': expires?.toUtc().toIso8601String(), 'plan_id': planId,
       ...limits, 'can_upload_video': video, 'can_use_premium_templates': premium,
       'permissions': perms.map((k, v) => MapEntry(k, v)),
+      'template_access': {'mode': templateMode, 'category_ids': tplCategories.toList(), 'template_ids': tplIds.toList()},
     };
+    if (templateMode == 'selected' && tplCategories.isEmpty && tplIds.isEmpty) {
+      showToast(context, 'Select at least one template category or template', error: true);
+      return;
+    }
     if (widget.userId == null) {
       final r = await runWithProgress(context, () => repo.createUser({...body, if (password.text.isNotEmpty) 'password': password.text, 'send_email': sendEmail}), success: 'User created');
       if (r == null || !mounted) return;

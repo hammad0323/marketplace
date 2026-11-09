@@ -667,7 +667,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                 child: Opacity(
                   opacity: list[i].isLocked ? 0.45 : 1,
                   child: Column(children: [
-                    Expanded(child: LayoutThumbnail(layout: list[i].layout, media: NetworkMediaSource(const {}))),
+                    Expanded(child: LayoutThumbnail(layout: list[i].layout, media: NetworkMediaSource(list[i].media))),
                     const SizedBox(height: 4),
                     Text(list[i].templateName, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                   ]),

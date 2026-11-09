@@ -8,6 +8,7 @@ $admin = require_admin();
 $in = input();
 $u = admin_user_row(v_int($in, 'user_id', true, 1));
 db_begin();
+admin_apply_template_access((int)$u['user_id'], $in);
 admin_apply_limits((int)$u['user_id'], $in, (int)$admin['user_id']);
 $l = effective_limits((int)$u['user_id']);
 log_activity((int)$admin['user_id'], 'admin.user.limits', 'user', (int)$u['user_id'], 'Updated limits', $l);
