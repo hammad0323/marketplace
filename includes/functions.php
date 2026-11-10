@@ -437,3 +437,16 @@ function log_error(string $msg): void
 {
     error_log('[fahim] ' . $msg);
 }
+
+/**
+ * Sanitise admin/import supplied rich text: keep a whitelist of tags and
+ * drop event handlers, inline scripts and javascript:/data: URLs.
+ */
+function safe_html(?string $html, string $allowed = '<p><br><ul><ol><li><strong><b><em><i><u><h2><h3><h4><a><table><thead><tbody><tr><td><th><blockquote><hr><img><span>'): string
+{
+    $html = strip_tags((string) $html, $allowed);
+    $html = preg_replace('/\s+on[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $html);
+    $html = preg_replace('/\s+style\s*=\s*("[^"]*expression[^"]*"|\'[^\']*expression[^\']*\')/i', '', $html);
+    $html = preg_replace('/(href|src)\s*=\s*(["\']?)\s*(javascript|vbscript|data):[^"\'\s>]*\2/i', '$1="#"', $html);
+    return $html;
+}

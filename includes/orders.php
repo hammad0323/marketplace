@@ -93,11 +93,12 @@ function order_create(array $d, array $lines): array
     $phone = normalize_phone((string) ($d['phone'] ?? ''));
     $email = mb_strtolower(trim((string) ($d['email'] ?? '')));
     $errors = [];
-    if ($channel === 'web' || $status !== 'completed' || $phone !== '') {
+    $anonymousOk = $channel === 'pos' && in_array($status, ['completed', 'draft'], true);
+    if (!$anonymousOk || $phone !== '') {
         if (mb_strlen($name) < 2) $errors[] = 'Please enter the customer name.';
         if (!valid_phone($phone)) $errors[] = 'Please enter a valid phone number.';
     }
-    if ($channel === 'pos' && $status === 'completed' && $phone === '') {
+    if ($anonymousOk && $phone === '') {
         $name = $name ?: 'Walk-in Customer';
         $phone = '00000000000';
     }

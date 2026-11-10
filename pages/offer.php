@@ -25,7 +25,7 @@ require FS_ROOT . '/partials/header.php';
       <?php if ($pr['image']): ?><div class="col-md-4 text-center"><img src="<?= e(upload_url($pr['image'])) ?>" alt="<?= e($pr['title']) ?>" class="img-fluid" style="max-height:200px"></div><?php endif; ?>
     </div>
   </div>
-  <?php if ($pr['description']): ?><div class="mb-4"><?= strip_tags($pr['description'], '<p><br><ul><ol><li><strong><b><em><h2><h3>') ?></div><?php endif; ?>
+  <?php if ($pr['description']): ?><div class="mb-4"><?= safe_html($pr['description']) ?></div><?php endif; ?>
   <?= render_product_grid($products) ?>
 </div>
 <?php require FS_ROOT . '/partials/footer.php';

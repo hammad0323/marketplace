@@ -228,3 +228,4 @@ $wishCount = count(wishlist_ids());
 </div>
 
 <main id="main" class="site-main">
+<?php if (!empty($_SESSION['_flash']) && !page_get('own_flashes')): ?><div class="container pt-3"><?= render_flashes() ?></div><?php endif; ?>

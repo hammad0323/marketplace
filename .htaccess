@@ -22,7 +22,7 @@ ServerSignature Off
     # RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
 
     # Block direct access to internal folders & sensitive files
-    RewriteRule ^(includes|pages|partials|database|tools|logs)(/|$) - [F,L]
+    RewriteRule ^(includes|pages|partials|database|tools|logs|docs)(/|$) - [F,L]
     RewriteRule (^|/)\.(?!well-known/) - [F,L]
     RewriteRule \.(sql|sh|log|md|lock|ini|bak|dist|cache)$ - [F,L,NC]
 

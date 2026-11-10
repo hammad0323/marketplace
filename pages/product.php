@@ -160,7 +160,7 @@ require FS_ROOT . '/partials/header.php';
     </ul>
     <div class="tab-content pt-3">
       <div class="tab-pane fade show active" id="tabDesc" role="tabpanel">
-        <div class="product-description"><?= $p['description'] ? strip_tags($p['description'], '<p><br><ul><ol><li><strong><b><em><i><h2><h3><h4><table><tr><td><th><thead><tbody>') : '<p>' . e($p['name']) . '</p>' ?></div>
+        <div class="product-description"><?= $p['description'] ? safe_html($p['description']) : '<p>' . e($p['name']) . '</p>' ?></div>
       </div>
       <div class="tab-pane fade" id="tabSpec" role="tabpanel">
         <table class="table spec-table">

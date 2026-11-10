@@ -32,7 +32,7 @@ function upload_files_list(string $field): array
  * Process one uploaded image.
  * @return array ['ok'=>bool, 'path'=>'products/2026/01/abc.webp', 'thumb'=>..., 'error'=>...]
  */
-function upload_image(array $file, string $folder, int $maxW = 1200, int $thumbW = 400): array
+function upload_image(array $file, string $folder, int $maxW = 1200, int $thumbW = 400, bool $localFile = false): array
 {
     $allowedFolders = ['products', 'categories', 'banners', 'brands', 'promotions', 'misc'];
     if (!in_array($folder, $allowedFolders, true)) {
@@ -44,7 +44,7 @@ function upload_image(array $file, string $folder, int $maxW = 1200, int $thumbW
     if ($file['size'] > MAX_UPLOAD_MB * 1024 * 1024) {
         return ['ok' => false, 'error' => 'Image is larger than ' . MAX_UPLOAD_MB . ' MB.'];
     }
-    if (!is_uploaded_file($file['tmp_name']) && PHP_SAPI !== 'cli') {
+    if (!$localFile && !is_uploaded_file($file['tmp_name']) && PHP_SAPI !== 'cli') {
         return ['ok' => false, 'error' => 'Invalid upload.'];
     }
     $finfo = new finfo(FILEINFO_MIME_TYPE);

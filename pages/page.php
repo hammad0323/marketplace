@@ -14,7 +14,7 @@ require FS_ROOT . '/partials/header.php';
 <div class="container">
   <div class="page-head"><?= breadcrumbs_html($crumbs) ?><h1><?= e($page['title']) ?></h1></div>
   <div class="box cms-content">
-    <?= strip_tags((string) $page['content'], '<p><br><ul><ol><li><strong><b><em><i><h2><h3><h4><a><table><tr><td><th><thead><tbody><blockquote><hr><img>') ?>
+    <?= safe_html($page['content']) ?>
     <?php if ($faqs): ?>
     <div class="accordion mt-3" id="faqAcc">
       <?php foreach ($faqs as $i => $fq): ?>

@@ -6,7 +6,4 @@ uploads/*/*
 uploads/products/*
 !uploads/products/sample
 !uploads/.htaccess
-assets/css/*.min.css
-assets/js/*.min.js
-admin/assets/*.min.*
 node_modules/

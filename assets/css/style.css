@@ -357,3 +357,5 @@ mark { background: #fef08a; padding: 0 1px; border-radius: 3px; }
 .toast { border-radius: 12px; }
 .fs-spinner { width: 1rem; height: 1rem; border-width: .15em; }
 @media print { .site-header, .site-footer, .bottom-nav, .trust-strip, .announce-bar, .back-to-top { display: none !important; } }
+@media (max-width: 767px) { .hero-carousel .carousel-control-prev, .hero-carousel .carousel-control-next { display: none; } }
+.cms-content img, .product-description img { max-width: 100%; height: auto; }
