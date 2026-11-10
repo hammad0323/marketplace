@@ -14,7 +14,7 @@ $code = preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['code'] ?? ''));
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Amatic+SC:wght@700&family=Bebas+Neue&family=Oswald:wght@400;600;700&family=Caveat:wght@500;700&family=Pacifico&family=Playfair+Display:wght@400;700&family=Montserrat:wght@400;600;800&family=Lobster&family=Dancing+Script:wght@600&family=Anton&family=Archivo+Black&family=Permanent+Marker&family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Lato:wght@400;700&family=Raleway:wght@400;700&family=Merriweather:wght@400;700&family=Nunito:wght@400;700&family=Cairo:wght@400;700&family=Noto+Sans:wght@400;700&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
-<link rel="stylesheet" href="<?= h($base) ?>/web/assets/web.css?v=3">
+<link rel="stylesheet" href="<?= h(web_asset('web.css')) ?>">
 <style>
   html, body { background: #000; height: 100%; overflow: hidden; }
   #player { position: fixed; inset: 0; }
@@ -22,10 +22,10 @@ $code = preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['code'] ?? ''));
   #corner { position: fixed; right: 14px; bottom: 14px; z-index: 60; color: #fff; background: rgba(0,0,0,.55); padding: 8px 12px; border-radius: 10px; font-size: 13px; display: none; }
   body.auth { background: #17191C; }
 </style>
-<script src="<?= h($base) ?>/web/assets/vendor/qrcode.js"></script>
+<script src="<?= h(web_asset('vendor/qrcode.js')) ?>"></script>
 <script>window.SIGNAGE = <?= json_encode(['api' => $base . '/api/', 'web' => $base . '/web/', 'token' => '']) ?>;</script>
-<script src="<?= h($base) ?>/web/assets/render.js?v=3"></script>
-<script src="<?= h($base) ?>/web/assets/player.js?v=3"></script>
+<script src="<?= h(web_asset('render.js')) ?>"></script>
+<script src="<?= h(web_asset('player.js')) ?>"></script>
 </head>
 <body class="auth">
 <form class="auth-card" id="form" style="display:none">

@@ -20,7 +20,7 @@ class HomeScreen extends ConsumerWidget {
     final session = ref.watch(sessionProvider).value;
     final t = Theme.of(context).textTheme;
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton.extended(heroTag: null, 
         onPressed: () => context.push('/screens/new'),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Create New Screen'),
@@ -58,13 +58,15 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: 18),
                 _HeroCard(stats: stats, limits: limits),
                 const SizedBox(height: 14),
-                GridView.count(
-                  crossAxisCount: MediaQuery.of(context).size.width > 700 ? 4 : 2,
+                GridView(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: MediaQuery.of(context).size.width > 700 ? 4 : 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    mainAxisExtent: 152, // fixed height: fits icon + value + label + caption at any width
+                  ),
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 1.35,
                   children: [
                     StatCard(label: 'Published screens', value: '${stats['published_screens']}', icon: Icons.cloud_done_outlined, caption: '${stats['draft_screens']} drafts', onTap: () => context.go('/screens')),
                     StatCard(label: 'Active playlists', value: '${stats['active_playlists']}', icon: Icons.playlist_play_rounded, color: const Color(0xFF5E35B1), caption: '${stats['total_playlists']} total', onTap: () => context.go('/playlists')),

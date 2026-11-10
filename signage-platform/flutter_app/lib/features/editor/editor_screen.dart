@@ -185,7 +185,13 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       SaveState.saving => ('Saving…', AppColors.mediumGrey, Icons.cloud_sync_outlined),
       SaveState.error || SaveState.conflict => ('Not saved', AppColors.danger, Icons.cloud_off_outlined),
     };
-    final narrow = MediaQuery.of(context).size.width < 420;
+    final narrow = MediaQuery.of(context).size.width < 600;
+    Future<void> animateAll() async {
+      final r = await showScreenAnimationSheet(context);
+      if (r == null) return;
+      c.mutate(() => applyScreenAnimation(c.layout.widgets, r.$1, r.$2));
+      if (mounted) showToast(context, r.$1 == 'none' ? 'Animations removed' : 'Animations applied — tap Preview to watch');
+    }
     return AppBar(
       leading: IconButton(icon: const Icon(Icons.arrow_back_rounded), onPressed: _back, tooltip: 'Back'),
       titleSpacing: 0,
@@ -199,25 +205,34 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           Row(children: [
             Icon(state.$3, size: 13, color: state.$2),
             const SizedBox(width: 4),
-            Text(state.$1, style: TextStyle(fontSize: 11.5, color: state.$2, fontWeight: FontWeight.w600)),
+            Flexible(child: Text(state.$1, maxLines: 1, overflow: TextOverflow.ellipsis, softWrap: false, style: TextStyle(fontSize: 11.5, color: state.$2, fontWeight: FontWeight.w600))),
           ]),
         ]),
       ),
       actions: [
         IconButton(onPressed: c.canUndo ? c.undo : null, icon: const Icon(Icons.undo_rounded), tooltip: 'Undo'),
-        IconButton(onPressed: c.canRedo ? c.redo : null, icon: const Icon(Icons.redo_rounded), tooltip: 'Redo'),
-        IconButton(
-          onPressed: () async {
-            final r = await showScreenAnimationSheet(context);
-            if (r == null) return;
-            c.mutate(() => applyScreenAnimation(c.layout.widgets, r.$1, r.$2));
-            if (mounted) showToast(context, r.$1 == 'none' ? 'Animations removed' : 'Animations applied — tap Preview to watch');
-          },
-          icon: const Icon(Icons.auto_awesome_outlined),
-          tooltip: 'Animate whole screen',
-        ),
+        if (!narrow) ...[
+          IconButton(onPressed: c.canRedo ? c.redo : null, icon: const Icon(Icons.redo_rounded), tooltip: 'Redo'),
+          IconButton(onPressed: animateAll, icon: const Icon(Icons.auto_awesome_outlined), tooltip: 'Animate whole screen'),
+        ],
         IconButton(onPressed: () => _preview(c), icon: const Icon(Icons.play_circle_outline_rounded), tooltip: 'Preview'),
         if (!narrow) IconButton(onPressed: () => c.save(), icon: const Icon(Icons.save_outlined), tooltip: 'Save draft'),
+        if (narrow)
+          PopupMenuButton<String>(
+            tooltip: 'More',
+            icon: const Icon(Icons.more_vert_rounded),
+            onSelected: (v) => switch (v) {
+              'redo' => c.redo(),
+              'animate' => animateAll(),
+              'save' => c.save(),
+              _ => null,
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(value: 'redo', enabled: c.canRedo, child: const ListTile(leading: Icon(Icons.redo_rounded), title: Text('Redo'), dense: true, contentPadding: EdgeInsets.zero)),
+              const PopupMenuItem(value: 'animate', child: ListTile(leading: Icon(Icons.auto_awesome_outlined), title: Text('Animate whole screen'), dense: true, contentPadding: EdgeInsets.zero)),
+              const PopupMenuItem(value: 'save', child: ListTile(leading: Icon(Icons.save_outlined), title: Text('Save draft'), dense: true, contentPadding: EdgeInsets.zero)),
+            ],
+          ),
         Padding(
           padding: const EdgeInsets.only(right: 8),
           child: FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(0, 38), padding: const EdgeInsets.symmetric(horizontal: 14)), onPressed: _publish, child: const Text('Publish')),

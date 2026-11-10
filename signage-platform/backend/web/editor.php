@@ -21,5 +21,5 @@ web_page_start($title, $cfg['mode'] === 'template' ? 'admin-templates' : 'screen
 ?>
 <div id="editor"></div>
 <script>window.EDITOR = <?= json_encode($cfg) ?>;</script>
-<script src="<?= h(web_base()) ?>/web/assets/editor.js?v=3"></script>
+<script src="<?= h(web_asset('editor.js')) ?>"></script>
 <?php web_page_end();

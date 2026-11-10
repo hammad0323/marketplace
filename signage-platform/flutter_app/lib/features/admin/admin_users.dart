@@ -35,7 +35,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
     final users = ref.watch(adminUsersProvider((q, status)));
     return Scaffold(
       appBar: AppBar(title: const Text('Users')),
-      floatingActionButton: FloatingActionButton.extended(onPressed: () => context.push('/admin/users/new'), icon: const Icon(Icons.person_add_alt_1_rounded), label: const Text('Create user')),
+      floatingActionButton: FloatingActionButton.extended(heroTag: null, onPressed: () => context.push('/admin/users/new'), icon: const Icon(Icons.person_add_alt_1_rounded), label: const Text('Create user')),
       body: Column(children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),

@@ -20,7 +20,7 @@ class DevicesScreen extends ConsumerWidget {
         IconButton(tooltip: 'Locations', icon: const Icon(Icons.location_city_outlined), onPressed: () => context.push('/locations')),
         IconButton(tooltip: 'Emergency broadcast', icon: const Icon(Icons.warning_amber_rounded, color: AppColors.danger), onPressed: () => context.push('/emergency')),
       ]),
-      floatingActionButton: FloatingActionButton.extended(onPressed: () => context.push('/devices/add'), icon: const Icon(Icons.add_to_queue_rounded), label: const Text('Add device')),
+      floatingActionButton: FloatingActionButton.extended(heroTag: null, onPressed: () => context.push('/devices/add'), icon: const Icon(Icons.add_to_queue_rounded), label: const Text('Add device')),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(devicesProvider),
         child: list.when(

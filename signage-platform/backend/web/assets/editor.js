@@ -847,6 +847,9 @@
   // ------------------------------------------------------------------ boot
   async function boot() {
     try {
+      if (!window.SignRender || !SignRender.SCREEN_STYLES || !SignRender.ENTRANCES || !App.get) {
+        throw new Error('Your browser loaded an outdated copy of the app after an update. Press Ctrl+F5 (Cmd+Shift+R on Mac) to reload.');
+      }
       const types = await api('widgets/types.php');
       st.types = types.types; st.types.forEach((t) => (st.typeMap[t.widget_key] = t));
       if (TEMPLATE) {

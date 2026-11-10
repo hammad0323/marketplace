@@ -19,7 +19,7 @@ class PlaylistsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Playlists'), actions: [
         IconButton(tooltip: 'Schedules', icon: const Icon(Icons.event_note_outlined), onPressed: () => context.push('/schedules')),
       ]),
-      floatingActionButton: FloatingActionButton.extended(onPressed: () => context.push('/playlists/new'), icon: const Icon(Icons.view_carousel_rounded), label: const Text('Create Screen Carousel')),
+      floatingActionButton: FloatingActionButton.extended(heroTag: null, onPressed: () => context.push('/playlists/new'), icon: const Icon(Icons.view_carousel_rounded), label: const Text('Create Screen Carousel')),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(playlistsProvider),
         child: list.when(

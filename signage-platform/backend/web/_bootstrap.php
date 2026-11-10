@@ -35,6 +35,14 @@ function web_base(): string
 }
 function web_url(string $path): string { return web_base() . '/web/' . ltrim($path, '/'); }
 
+/** URL of a file in web/assets with its modification time, so browsers never mix old and new scripts after an update. */
+function web_asset(string $file): string
+{
+    $file = ltrim(str_replace('..', '', $file), '/');
+    $v = @filemtime(__DIR__ . '/assets/' . $file) ?: 1;
+    return web_base() . '/web/assets/' . $file . '?v=' . $v;
+}
+
 /** Current signed-in user (fresh from DB), or null. Validates the stored API token. */
 function web_user(): ?array
 {

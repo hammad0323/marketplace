@@ -332,7 +332,7 @@ class LocationsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Locations')),
-      floatingActionButton: FloatingActionButton(onPressed: () => edit(), child: const Icon(Icons.add)),
+      floatingActionButton: FloatingActionButton(heroTag: null, onPressed: () => edit(), child: const Icon(Icons.add)),
       body: list.when(
         loading: () => const LoadingView(),
         error: (e, _) => ErrorView(error: e),

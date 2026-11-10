@@ -65,7 +65,11 @@ class StatCard extends StatelessWidget {
     return AppCard(
       onTap: onTap,
       padding: const EdgeInsets.all(14),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      // Scales down instead of overflowing on small phones or with large system fonts.
+      child: LayoutBuilder(builder: (context, box) => FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.topLeft,
+        child: SizedBox(width: box.maxWidth.isFinite ? box.maxWidth : 160, child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
@@ -76,7 +80,8 @@ class StatCard extends StatelessWidget {
         const SizedBox(height: 2),
         Text(label, style: t.bodySmall?.copyWith(color: AppColors.mediumGrey), maxLines: 1, overflow: TextOverflow.ellipsis),
         if (caption != null) Text(caption!, style: t.labelSmall?.copyWith(color: c), maxLines: 1, overflow: TextOverflow.ellipsis),
-      ]),
+      ])),
+      )),
     );
   }
 }

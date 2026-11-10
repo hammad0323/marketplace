@@ -56,11 +56,10 @@ class AdminDashboardScreen extends ConsumerWidget {
                   IconButton.filledTonal(tooltip: 'Create user', onPressed: () => context.push('/admin/users/new'), icon: const Icon(Icons.person_add_alt_1_rounded)),
                 ]),
                 const SizedBox(height: 16),
-                GridView.count(
-                  crossAxisCount: w > 900 ? 5 : (w > 600 ? 3 : 2),
+                GridView(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: w > 900 ? 5 : (w > 600 ? 3 : 2), mainAxisSpacing: 12, crossAxisSpacing: 12, mainAxisExtent: 152),
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 1.3,
                   children: [for (final x in stat) StatCard(label: x.$1, value: x.$2, icon: x.$3, color: x.$4, onTap: () => context.go(x.$5))],
                 ),
                 const SizedBox(height: 16),
@@ -108,7 +107,7 @@ class AdminPlansScreen extends ConsumerWidget {
     final plans = ref.watch(adminPlansProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Plans')),
-      floatingActionButton: FloatingActionButton.extended(onPressed: () => _edit(context, ref, null), icon: const Icon(Icons.add), label: const Text('New plan')),
+      floatingActionButton: FloatingActionButton.extended(heroTag: null, onPressed: () => _edit(context, ref, null), icon: const Icon(Icons.add), label: const Text('New plan')),
       body: plans.when(
         loading: () => const LoadingView(),
         error: (e, _) => ErrorView(error: e),

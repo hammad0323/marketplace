@@ -42,13 +42,13 @@ class _ScreensListScreenState extends ConsumerState<ScreensListScreen> {
         ],
       ),
       floatingActionButton: selecting
-          ? FloatingActionButton.extended(
+          ? FloatingActionButton.extended(heroTag: null, 
               onPressed: selected.isEmpty ? null : () => context.push('/playlists/new?screens=${selected.join(',')}'),
               backgroundColor: selected.isEmpty ? AppColors.mediumGrey : AppColors.teal,
               icon: const Icon(Icons.view_carousel_rounded),
               label: Text('Create Screen Carousel (${selected.length})'),
             )
-          : FloatingActionButton.extended(onPressed: () => context.push('/screens/new'), icon: const Icon(Icons.add_rounded), label: const Text('New screen')),
+          : FloatingActionButton.extended(heroTag: null, onPressed: () => context.push('/screens/new'), icon: const Icon(Icons.add_rounded), label: const Text('New screen')),
       body: Column(children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),

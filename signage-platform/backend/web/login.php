@@ -37,7 +37,7 @@ $base = web_base();
 <title>Sign in · <?= h(app_setting('app_name', 'Signal Signage')) ?></title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
-<link rel="stylesheet" href="<?= h($base) ?>/web/assets/web.css?v=3"></head>
+<link rel="stylesheet" href="<?= h(web_asset('web.css')) ?>"></head>
 <body class="auth">
 <form class="auth-card" method="post" autocomplete="on">
   <span class="brand-mark big ms">cast_connected</span>
