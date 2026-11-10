@@ -427,6 +427,14 @@ $gm = expect('admin uploads a shared template image', req('POST', '/api/media/up
 check('marked global', (int)($gm['is_global'] ?? 0) === 1);
 $um = expect('user upload ignores global flag', req('POST', '/api/media/upload', ['global' => 1], $CHLOE, ['file' => [$img, 'image/png', 'mine.png']]), 201);
 check('stays private', (int)($um['is_global'] ?? 0) === 0);
+$ids = fn($list) => array_map(fn($m) => (int)$m['media_id'], $list);
+$chloeList = $ids(expect('owner lists media', req('GET', '/api/media/list?per_page=100', null, $CHLOE), 200));
+check('own upload listed', in_array((int)$um['media_id'], $chloeList, true));
+check('shared template images are not listed in a user library', !in_array((int)$gm['media_id'], $chloeList, true));
+$bilalList = $ids(expect('another user lists media', req('GET', '/api/media/list?per_page=100&include_global=1', null, $AISHA), 200));
+check('another user never sees it (even asking for shared)', !in_array((int)$um['media_id'], $bilalList, true) && !in_array((int)$gm['media_id'], $bilalList, true));
+$shared = $ids(expect('admin lists shared media', req('GET', '/api/media/list?scope=shared&per_page=100', null, $ADMIN2), 200));
+check('admin shared view has the shared image only', in_array((int)$gm['media_id'], $shared, true) && !in_array((int)$um['media_id'], $shared, true));
 
 section('Widget animations');
 $anim = ['animation' => 'bounce_in', 'animation_duration_ms' => 900, 'animation_delay_ms' => 400, 'animation_replay_seconds' => 12,

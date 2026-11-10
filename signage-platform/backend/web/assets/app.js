@@ -130,7 +130,7 @@
       const status = el('span', { class: 'muted small' });
       const load = async () => {
         grid.innerHTML = '';
-        const list = await get('media/list.php', { file_type: type, per_page: 100, include_global: true });
+        const list = await get('media/list.php', { file_type: type, per_page: 100, include_global: global ? 1 : 0 });
         if (!list.length) grid.append(el('div', { class: 'empty', style: { gridColumn: '1/-1' } }, 'No files yet — upload one.'));
         for (const m of list) {
           grid.append(el('div', { class: 'card hover', style: { padding: '6px', cursor: 'pointer' }, onclick: () => { chosen = m; resolve(m); md.close(); } },

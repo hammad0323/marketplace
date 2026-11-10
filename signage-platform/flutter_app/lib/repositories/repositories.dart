@@ -85,7 +85,7 @@ class TemplatesRepository {
 class MediaRepository {
   MediaRepository(this.api);
   final ApiClient api;
-  Future<Paged<MediaItem>> list({String? type, int? folderId, String? q, int page = 1, bool includeGlobal = true}) async =>
+  Future<Paged<MediaItem>> list({String? type, int? folderId, String? q, int page = 1, bool includeGlobal = false}) async =>
       _paged(await api.get('media/list.php', query: {'file_type': type, 'folder_id': folderId, 'q': q, 'page': page, 'per_page': 60, 'include_global': includeGlobal}), MediaItem.fromJson);
   Future<MediaItem> upload(MultipartFile file, {int? folderId, bool asLogo = false, int? durationMs, void Function(double)? onProgress}) async =>
       MediaItem.fromJson(asMap((await api.upload('media/upload.php', file: file, fields: {

@@ -29,9 +29,8 @@ web_page_start($shared ? 'Shared media' : 'Media library', $shared ? 'admin-medi
   async function load() {
     const grid = $('grid'); grid.innerHTML = '<div class="muted">Loading…</div>';
     try {
-      const j = await App.get('media/list.php', { file_type: type, q, per_page: 100, include_global: SHARED ? 1 : 0, folder_id: SHARED ? null : folder }, { full: true });
+      const j = await App.get('media/list.php', { file_type: type, q, per_page: 100, scope: SHARED ? 'shared' : null, folder_id: SHARED ? null : folder }, { full: true });
       let list = j.data; folders = j.folders || [];
-      if (SHARED) list = list.filter((m) => m.is_global);
       else $('storage').textContent = bytes(j.storage.used_bytes) + ' of ' + mb(j.storage.limit_mb) + ' used';
       drawFolders();
       grid.replaceChildren();

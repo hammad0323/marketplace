@@ -10,9 +10,17 @@ $where = ['m.deleted_at IS NULL'];
 $params = [];
 if (is_admin($u) && v_bool($in, 'all', false)) {
     if ($o = v_int($in, 'user_id', false, 1)) { $where[] = 'm.user_id = ?'; $params[] = $o; }
-} elseif (v_bool($in, 'include_global', true)) {
+} elseif (is_admin($u) && ($in['scope'] ?? '') === 'shared') {
+    // Admin "Shared media": only the images shared with every user (template artwork).
+    $where[] = 'm.is_global = 1';
+} elseif (is_admin($u) && v_bool($in, 'include_global', false)) {
+    // Admin designing templates: own uploads + the shared library.
     $where[] = '(m.user_id = ? OR m.is_global = 1)'; $params[] = $uid;
-} else { $where[] = 'm.user_id = ?'; $params[] = $uid; }
+} else {
+    // Everyone's library shows only the files they uploaded themselves. Shared template
+    // images still display inside templates/screens that use them, but are not listed here.
+    $where[] = 'm.user_id = ?'; $params[] = $uid;
+}
 if ($t = v_enum($in, 'file_type', ['image', 'video', 'document', 'logo', 'audio'])) { $where[] = 'm.file_type = ?'; $params[] = $t; }
 if ($q = v_str($in, 'q', false, 100)) { $where[] = 'm.original_name LIKE ?'; $params[] = "%{$q}%"; }
 if (array_key_exists('folder_id', $in) && $in['folder_id'] !== '' && $in['folder_id'] !== null) {
