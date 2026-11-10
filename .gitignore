@@ -1,2 +1,12 @@
-logs/*.log
-.DS_Store
+includes/config.local.php
+logs/*
+!logs/.htaccess
+uploads/*/*
+!uploads/products/sample/
+uploads/products/*
+!uploads/products/sample
+!uploads/.htaccess
+assets/css/*.min.css
+assets/js/*.min.js
+admin/assets/*.min.*
+node_modules/
