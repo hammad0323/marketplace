@@ -1,0 +1,117 @@
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 70px;
+}
+
+.brand {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.nav-link {
+  position: relative;
+  color: var(--muted);
+  font-weight: 500;
+  padding: 0.25rem 0;
+  transition: color 0.2s;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  color: var(--primary);
+}
+
+/* Underline under the active page */
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--primary);
+}
+
+/* Hamburger button (hidden on desktop) */
+.menu-toggle {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.bar,
+.bar::before,
+.bar::after {
+  display: block;
+  width: 24px;
+  height: 2px;
+  margin: 0 auto;
+  background: var(--text);
+  border-radius: 2px;
+  transition: transform 0.3s, background 0.3s;
+  position: relative;
+}
+
+.bar::before,
+.bar::after {
+  content: '';
+  position: absolute;
+}
+
+.bar::before { top: -7px; }
+.bar::after { top: 7px; }
+
+/* Turn the 3 bars into an X */
+.bar-open { background: transparent; }
+.bar-open::before { transform: translateY(7px) rotate(45deg); }
+.bar-open::after { transform: translateY(-7px) rotate(-45deg); }
+
+@media (max-width: 768px) {
+  .menu-toggle { display: block; }
+
+  .nav {
+    position: absolute;
+    top: 70px;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    /* hidden by default */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.25s;
+  }
+
+  .nav-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+}

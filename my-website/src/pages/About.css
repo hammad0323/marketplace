@@ -1,0 +1,121 @@
+/* ===== Intro ===== */
+.about-intro {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.about-photo {
+  aspect-ratio: 1;
+  max-width: 380px;
+  width: 100%;
+  border-radius: 24px;
+  background: var(--gradient);
+  display: grid;
+  place-items: center;
+  font-size: 8rem;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+
+.about-intro h2 {
+  font-size: clamp(1.7rem, 3.5vw, 2.3rem);
+  margin-bottom: 1rem;
+}
+
+.about-intro p {
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.about-intro .btn {
+  margin-top: 0.5rem;
+}
+
+/* ===== Skills ===== */
+.skills {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.75rem 3rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.skill-top {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.skill-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.skill-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--gradient);
+}
+
+/* ===== Timeline ===== */
+.timeline {
+  list-style: none;
+  max-width: 700px;
+  margin: 0 auto;
+  border-left: 2px solid var(--border);
+  padding-left: 2rem;
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 2.5rem;
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+/* The round dot on the line */
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: calc(-2rem - 8px);
+  top: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+.timeline-year {
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-light);
+  padding: 0.15rem 0.7rem;
+  border-radius: 999px;
+  margin-bottom: 0.5rem;
+}
+
+.timeline-item h3 {
+  margin-bottom: 0.25rem;
+}
+
+.timeline-item p {
+  color: var(--muted);
+}
+
+@media (max-width: 768px) {
+  .about-intro { grid-template-columns: 1fr; gap: 2rem; text-align: center; }
+  .about-photo { margin: 0 auto; max-width: 260px; font-size: 6rem; }
+  .skills { grid-template-columns: 1fr; }
+}
