@@ -1,5 +1,7 @@
 # Har File ka Complete Guide (Roman Urdu) 📘
 
+> 🆕 **PHP backend + database** wali nayi files ka guide alag hai: [BACKEND_GUIDE_URDU.md](./BACKEND_GUIDE_URDU.md)
+
 Is guide mein **project ki har file** ko aasaan Roman Urdu mein samjhaya gaya hai:
 - Yeh file **kya hai**
 - Yeh file **kyun use hoti hai**
@@ -493,6 +495,9 @@ Laptop par 3, tablet par 2, mobile par 1. **Media query ke baghair khud ho jaata
 ---
 
 ## 10. `src/data/siteData.js`
+
+> 🆕 **Update:** Ab `services`, `skills` aur `timeline` is file mein **nahi** hain. Yeh **MySQL database** se PHP ke zariye aate hain.
+> Is file mein sirf `site` aur `stats` baaqi hain. Poori tafseel: [BACKEND_GUIDE_URDU.md](./BACKEND_GUIDE_URDU.md)
 
 ### Yeh kya hai?
 Website ka **saara text aur maloomat** (naam, email, skills, services) **sirf is ek file** mein hai.

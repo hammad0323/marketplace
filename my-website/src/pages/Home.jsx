@@ -1,8 +1,14 @@
 import { Link } from 'react-router-dom';
-import { site, stats, services } from '../data/siteData.js';
+import { site, stats } from '../data/siteData.js';
+import { useContent } from '../hooks/useContent.js';
+import Loader from '../components/Loader.jsx';
+import ErrorMessage from '../components/ErrorMessage.jsx';
 import './Home.css';
 
 function Home() {
+  // services come from the database (PHP API)
+  const { content, loading, error } = useContent();
+
   return (
     <>
       {/* ===== Hero ===== */}
@@ -46,15 +52,20 @@ function Home() {
           <h2>Services I Offer</h2>
         </div>
 
-        <div className="cards">
-          {services.map((service) => (
-            <article key={service.title} className="card">
-              <div className="card-icon">{service.icon}</div>
-              <h3>{service.title}</h3>
-              <p>{service.text}</p>
-            </article>
-          ))}
-        </div>
+        {loading && <Loader text="Loading services..." />}
+        {error && <ErrorMessage message={error} />}
+
+        {content && (
+          <div className="cards">
+            {content.services.map((service) => (
+              <article key={service.id} className="card">
+                <div className="card-icon">{service.icon}</div>
+                <h3>{service.title}</h3>
+                <p>{service.text}</p>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* ===== Call to action ===== */}

@@ -270,6 +270,9 @@ This is also a good example of a component that **renders nothing** (`return nul
 
 ## 4. Project Structure and Separating Data ⭐⭐⭐⭐
 
+> 🆕 **Update:** `services`, `skills` and `timeline` now come from a **MySQL database** through the PHP API, so they are no longer in `siteData.js`.
+> The idea below is the same; only the source changed. See [BACKEND_GUIDE_URDU.md](./BACKEND_GUIDE_URDU.md).
+
 All the text is in **`src/data/siteData.js`**, not inside the components:
 
 ```js

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "api": "php -S localhost:8000 -t backend",
     "build": "vite build",
     "preview": "vite preview"
   },

@@ -1,9 +1,15 @@
 import { Link } from 'react-router-dom';
 import PageHeader from '../components/PageHeader.jsx';
-import { site, skills, timeline } from '../data/siteData.js';
+import { site } from '../data/siteData.js';
+import { useContent } from '../hooks/useContent.js';
+import Loader from '../components/Loader.jsx';
+import ErrorMessage from '../components/ErrorMessage.jsx';
 import './About.css';
 
 function About() {
+  // skills and timeline come from the database (PHP API)
+  const { content, loading, error } = useContent();
+
   return (
     <>
       <PageHeader
@@ -39,20 +45,25 @@ function About() {
             <h2>What I'm Good At</h2>
           </div>
 
-          <div className="skills">
-            {skills.map((skill) => (
-              <div key={skill.name} className="skill">
-                <div className="skill-top">
-                  <span>{skill.name}</span>
-                  <span>{skill.level}%</span>
+          {loading && <Loader text="Loading skills..." />}
+          {error && <ErrorMessage message={error} />}
+
+          {content && (
+            <div className="skills">
+              {content.skills.map((skill) => (
+                <div key={skill.id} className="skill">
+                  <div className="skill-top">
+                    <span>{skill.name}</span>
+                    <span>{skill.level}%</span>
+                  </div>
+                  <div className="skill-bar">
+                    {/* Inline style: the width comes from the data */}
+                    <div className="skill-fill" style={{ width: `${skill.level}%` }} />
+                  </div>
                 </div>
-                <div className="skill-bar">
-                  {/* Inline style: the width comes from the data */}
-                  <div className="skill-fill" style={{ width: `${skill.level}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -63,15 +74,19 @@ function About() {
           <h2>Experience</h2>
         </div>
 
-        <ol className="timeline">
-          {timeline.map((item) => (
-            <li key={item.year} className="timeline-item">
-              <span className="timeline-year">{item.year}</span>
-              <h3>{item.title}</h3>
-              <p>{item.text}</p>
-            </li>
-          ))}
-        </ol>
+        {loading && <Loader text="Loading experience..." />}
+
+        {content && (
+          <ol className="timeline">
+            {content.timeline.map((item) => (
+              <li key={item.id} className="timeline-item">
+                <span className="timeline-year">{item.year}</span>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </li>
+            ))}
+          </ol>
+        )}
       </section>
     </>
   );

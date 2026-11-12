@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import PageHeader from '../components/PageHeader.jsx';
 import { site } from '../data/siteData.js';
+import { sendContactMessage } from '../api.js';
 import './Contact.css';
 
 const emptyForm = { name: '', email: '', subject: '', message: '' };
@@ -25,6 +26,8 @@ function Contact() {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);     // true while waiting for PHP
+  const [serverError, setServerError] = useState(''); // e.g. "database offline"
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -33,17 +36,33 @@ function Contact() {
     if (errors[name]) setErrors({ ...errors, [name]: '' });
   }
 
-  function handleSubmit(e) {
+  // "async" lets us use "await" to wait for the PHP server's answer
+  async function handleSubmit(e) {
     e.preventDefault(); // stop the browser from reloading the page
 
     const newErrors = validate(form);
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return; // stop if there are errors
 
-    // A real website would send `form` to a server or a service like Formspree here.
-    console.log('Message sent:', form);
-    setSent(true);
-    setForm(emptyForm);
+    setSending(true);
+    setServerError('');
+
+    try {
+      // Send the form to backend/api/contact.php → saved in the "messages" table
+      const result = await sendContactMessage(form);
+
+      if (!result.ok) {
+        setErrors(result.errors); // the server found mistakes
+        return;
+      }
+
+      setSent(true);
+      setForm(emptyForm);
+    } catch (err) {
+      setServerError(err.message); // e.g. PHP or MySQL is not running
+    } finally {
+      setSending(false); // runs in every case: success or error
+    }
   }
 
   const contactInfo = [
@@ -100,7 +119,10 @@ function Contact() {
                 onChange={handleChange} />
               <Field label="Message" name="message" textarea value={form.message}
                 onChange={handleChange} error={errors.message} />
-              <button type="submit" className="btn btn-full">Send Message</button>
+              {serverError && <p className="form-error">⚠️ {serverError}</p>}
+              <button type="submit" className="btn btn-full" disabled={sending}>
+                {sending ? 'Sending...' : 'Send Message'}
+              </button>
             </form>
           )}
         </div>

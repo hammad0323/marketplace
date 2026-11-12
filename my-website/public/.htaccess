@@ -1,0 +1,12 @@
+# For Apache / cPanel hosting:
+# send every page URL (/about, /contact) to index.html so React Router works,
+# but leave real files and the PHP "api" folder alone.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^api/ - [L]
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+  RewriteRule ^ index.html [L]
+</IfModule>
