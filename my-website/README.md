@@ -10,3 +10,4 @@ npm run dev
 - ✏️ Edit your content in `src/data/siteData.js`
 - 🎨 Change colors in `src/index.css` (`--primary`, `--secondary`)
 - 📘 **What to learn from this project:** [LEARNING.md](./LEARNING.md)
+- 🇵🇰 **Har file ka guide (Roman Urdu):** [FILES_GUIDE_URDU.md](./FILES_GUIDE_URDU.md)
