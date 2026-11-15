@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../core/services/video_cache.dart';
 import '../../models/media.dart';
 
 /// Where a layout is being rendered. Controls animation, video playback, placeholders.
@@ -27,6 +28,9 @@ abstract class MediaSource {
   ImageProvider? image(int? mediaId, {bool thumb = false});
   VideoPlayerController? video(int? mediaId);
   MediaItem? info(int? mediaId);
+
+  /// Everything the video cache needs (stable key, URL, saved file). Null if unknown.
+  VideoRef? videoRef(int? mediaId);
 }
 
 /// Streams media from signed URLs (management app).
@@ -49,6 +53,13 @@ class NetworkMediaSource implements MediaSource {
   VideoPlayerController? video(int? id) {
     final url = info(id)?.url;
     return url == null ? null : VideoPlayerController.networkUrl(Uri.parse(url));
+  }
+
+  @override
+  VideoRef? videoRef(int? id) {
+    final m = info(id);
+    if (m == null || m.url == null) return null;
+    return VideoRef(mediaId: m.mediaId, url: m.url, size: m.fileSize, checksum: m.checksum);
   }
 
   NetworkMediaSource merge(Map<int, MediaItem> more) => NetworkMediaSource({...items, ...more});
@@ -80,6 +91,16 @@ class CachedFileMediaSource implements MediaSource {
     if (p != null && !kIsWeb) return VideoPlayerController.file(File(p));
     final u = urls[id];
     return u == null ? null : VideoPlayerController.networkUrl(Uri.parse(u));
+  }
+
+  @override
+  VideoRef? videoRef(int? id) {
+    if (id == null) return null;
+    final p = kIsWeb ? null : localPaths[id];
+    final u = urls[id];
+    if (p == null && u == null) return null;
+    final m = meta[id];
+    return VideoRef(mediaId: id, url: u, localPath: p, size: m?.fileSize ?? 0, checksum: m?.checksum);
   }
 }
 

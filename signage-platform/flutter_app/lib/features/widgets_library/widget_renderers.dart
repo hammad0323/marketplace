@@ -12,6 +12,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:video_player/video_player.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/services/video_cache.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/utils/json.dart';
 import '../../models/layout.dart';
@@ -428,8 +429,29 @@ class _VideoWidgetViewState extends State<VideoWidgetView> {
     if (list.isEmpty) return;
     final scope = RenderScope.of(context);
     final old = ctrl;
-    final c = scope.media.video(list[index % list.length]);
-    if (c == null) return;
+    // Local copy if already downloaded; otherwise stream while it downloads in the background.
+    final ref = scope.media.videoRef(list[index % list.length]);
+    if (ref == null) return;
+    final VideoPlayerController c;
+    final bool isLocal;
+    try {
+      (c, isLocal) = await VideoCache.instance.open(ref);
+    } catch (e) {
+      scope.onError?.call('video', e);
+      if (mounted) setState(() => failed = true);
+      return;
+    }
+    if (!mounted) {
+      c.dispose();
+      return;
+    }
+    // Several videos in one widget: fetch all of them now so switching never waits on the network.
+    if (list.length > 1) {
+      for (final id in list) {
+        final r = scope.media.videoRef(id);
+        if (r != null) unawaited(VideoCache.instance.ensure(r));
+      }
+    }
     try {
       await c.initialize();
       if (!mounted) {
@@ -449,6 +471,16 @@ class _VideoWidgetViewState extends State<VideoWidgetView> {
         failed = false;
       });
       old?.dispose();
+      _swapToLocal = false;
+      if (!isLocal) {
+        // When the full file is saved, stop looping the stream: at the end of this loop _next()
+        // reopens the video from the device and it loops locally from then on.
+        unawaited(VideoCache.instance.whenCached(ref).then((loc) async {
+          if (loc == null || !mounted || ctrl != c) return;
+          _swapToLocal = true;
+          if (c.value.isLooping) await c.setLooping(false);
+        }));
+      }
     } catch (e) {
       scope.onError?.call('video', e);
       c.dispose();
@@ -471,11 +503,17 @@ class _VideoWidgetViewState extends State<VideoWidgetView> {
   }
 
   bool _advancing = false;
+  bool _swapToLocal = false;
 
   Future<void> _next() async {
     if (!mounted) return;
     final list = ids;
     if (list.length == 1) {
+      if (_swapToLocal) {
+        _swapToLocal = false;
+        await _load();   // now opens the downloaded copy
+        return;
+      }
       if (asBool(widget.config['loop'], true)) {
         await ctrl?.seekTo(Duration(seconds: asInt(widget.config['start_sec'])));
         await ctrl?.play();

@@ -56,7 +56,29 @@ $code = preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['code'] ?? ''));
     if (!j || !j.status) throw Object.assign(new Error((j && j.message) || 'Server error'), { code: j && j.code, status: r.status });
     return j.data;
   }
+  // Download every video of the published content into browser storage (once), so loops and
+  // rotations play from the TV itself — no buffering, no repeated downloads.
+  let prepToken = 0;
+  async function prepareVideos(d) {
+    const token = ++prepToken;
+    const media = (d.media || []).filter((m) => m.file_type === 'video');
+    R.VideoCache.prune(media);
+    for (let i = 0; i < media.length; i++) {
+      if (token !== prepToken) return;
+      const m = media[i];
+      if (await R.VideoCache.local(m, m.media_id)) continue;
+      const off = R.VideoCache.onChange(() => { const st = R.VideoCache.status(); if (st.downloading) showMessage(`Saving video ${i + 1} of ${media.length} for smooth playback… ${Math.round(st.progress * 100)}%`); });
+      await R.VideoCache.ensure(m, m.media_id, m.url);
+      off();
+    }
+    if (token === prepToken && corner.textContent.startsWith('Saving video')) corner.style.display = 'none';
+  }
+  const docKey = () => 'sg_display_doc_' + code;
+  function remember(d, h) { try { localStorage.setItem(docKey(), JSON.stringify({ doc: d, hash: h })); } catch (e) { /* storage full: still plays */ } }
+  function remembered() { try { return JSON.parse(localStorage.getItem(docKey()) || 'null'); } catch (e) { return null; } }
+
   function play() {
+    prepareVideos(doc);
     if (player2) player2.update(doc);
     else player2 = window.SignPlayer.start(player, doc, { mode: 'live', onEmpty: (empty) => (empty ? showMessage('Nothing scheduled to play right now.') : (corner.style.display = 'none')) });
   }
@@ -73,11 +95,18 @@ $code = preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['code'] ?? ''));
     try {
       const d = await fetchContent(true);
       doc = d.doc; hash = d.content_hash; lastFull = Date.now();
+      remember(doc, hash);
       emergency(d.emergency); corner.style.display = 'none';
       play();
       setTimeout(poll, (d.refresh_seconds || 60) * 1000);
     } catch (e) {
       if (e.code === 'CODE_NOT_FOUND' || e.code === 'CODE_INACTIVE' || e.code === 'NOT_PUBLISHED' || e.code === 'VALIDATION') return showForm(e.message);
+      const saved = remembered();
+      if (saved && saved.doc) {   // no internet after a restart: play the last content from the TV's storage
+        doc = saved.doc; hash = saved.hash || ''; play(); showMessage('Offline — playing saved content');
+        setTimeout(poll, 60000);
+        return;
+      }
       showForm('Could not connect: ' + e.message);
     }
   }
@@ -86,7 +115,7 @@ $code = preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['code'] ?? ''));
       const full = Date.now() - lastFull > 6 * 3600 * 1000;   // refresh signed media links a few times a day
       const d = await fetchContent(full);
       emergency(d.emergency); corner.style.display = 'none';
-      if (d.doc) { doc = d.doc; hash = d.content_hash; if (full) lastFull = Date.now(); play(); }
+      if (d.doc) { doc = d.doc; hash = d.content_hash; if (full) lastFull = Date.now(); remember(doc, hash); play(); }
     } catch (e) {
       if (e.code === 'CODE_NOT_FOUND' || e.code === 'CODE_INACTIVE') { localStorage.removeItem('sg_display_code'); return showForm(e.message); }
       showMessage('Offline — showing the last content');   // keep playing what we have

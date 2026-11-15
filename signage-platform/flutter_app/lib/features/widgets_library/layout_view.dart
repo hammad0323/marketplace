@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../core/services/video_cache.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/utils/json.dart';
 import '../../models/layout.dart';
@@ -99,21 +100,63 @@ class _BackgroundVideo extends StatefulWidget {
 
 class _BackgroundVideoState extends State<_BackgroundVideo> {
   VideoPlayerController? c;
+  bool _started = false, _swapping = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (c != null) return;
-    final ctrl = RenderScope.of(context).media.video(widget.mediaId);
-    if (ctrl == null) return;
-    c = ctrl;
-    ctrl.initialize().then((_) async {
+    if (_started) return;
+    _started = true;
+    _open();
+  }
+
+  /// Plays from the local copy when available; otherwise streams, and switches to the
+  /// downloaded copy at the end of the current loop (see VideoCache).
+  Future<void> _open() async {
+    final scope = RenderScope.of(context);
+    final ref = scope.media.videoRef(widget.mediaId);
+    if (ref == null) return;
+    final VideoPlayerController ctrl;
+    final bool isLocal;
+    try {
+      (ctrl, isLocal) = await VideoCache.instance.open(ref);
+    } catch (e) {
+      scope.onError?.call('background_video', e);
+      return;
+    }
+    if (!mounted) {
+      ctrl.dispose();
+      return;
+    }
+    try {
+      await ctrl.initialize();
       await ctrl.setLooping(true);
       await ctrl.setVolume(0);
       await ctrl.play();
-      if (mounted) setState(() {});
-    }).catchError((Object e) {
-      if (mounted) RenderScope.of(context).onError?.call('background_video', e);
-    });
+    } catch (e) {
+      ctrl.dispose();
+      if (mounted) scope.onError?.call('background_video', e);
+      return;
+    }
+    if (!mounted) {
+      ctrl.dispose();
+      return;
+    }
+    final old = c;
+    setState(() => c = ctrl);
+    old?.dispose();
+    if (isLocal) return;
+    final loc = await VideoCache.instance.whenCached(ref);
+    if (loc == null || !mounted || c != ctrl) return;
+    await ctrl.setLooping(false);
+    void onTick() {
+      final v = ctrl.value;
+      if (_swapping || v.duration == Duration.zero || v.position < v.duration - const Duration(milliseconds: 200)) return;
+      _swapping = true;
+      ctrl.removeListener(onTick);
+      _open().whenComplete(() => _swapping = false);
+    }
+    ctrl.addListener(onTick);
   }
 
   @override

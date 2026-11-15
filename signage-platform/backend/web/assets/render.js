@@ -137,6 +137,115 @@
   }
   const timeFmt = (c, sec = false) => { const s = sec || bool(c.show_seconds); return c.format === '12h' ? (s ? 'h:mm:ss a' : 'h:mm a') : (s ? 'HH:mm:ss' : 'HH:mm'); };
 
+
+  // ---------------------------------------------------------------- video cache
+  /**
+   * Smooth, uninterrupted video: every video is downloaded once, completely, into browser
+   * storage (Cache Storage on HTTPS, IndexedDB on plain HTTP, e.g. smart TVs on a LAN) and then
+   * played from a local blob: URL, so loops and playlist rotations never touch the network again.
+   * The cache key is media id + checksum, not the signed URL (which changes daily).
+   */
+  const VideoCache = (() => {
+    const CACHE = 'sg-video-v1', DB = 'sg-video-cache', STORE = 'videos', PREFIX = '/__sg_video__/';
+    const MAX_BYTES = 1024 * 1048576;                      // larger files are streamed, not cached
+    const blobUrls = new Map(), inflight = new Map(), progress = new Map(), listeners = new Set();
+    const useCaches = typeof caches !== 'undefined' && window.isSecureContext;
+    let dbp = null, persistAsked = false;
+    const key = (m, id) => 'v' + (m.media_id || id) + '-' + String(m.checksum_sha256 || m.checksum || m.file_size || '0').slice(0, 16);
+    function idb() {
+      if (dbp) return dbp;
+      dbp = new Promise((res, rej) => {
+        if (!window.indexedDB) return rej(new Error('no storage'));
+        const r = indexedDB.open(DB, 1);
+        r.onupgradeneeded = () => r.result.createObjectStore(STORE);
+        r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+      });
+      return dbp;
+    }
+    const tx = (mode, fn) => idb().then((db) => new Promise((res, rej) => { const t = db.transaction(STORE, mode); const q = fn(t.objectStore(STORE)); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); }));
+    async function readStored(k) {
+      try {
+        if (useCaches) { const r = await (await caches.open(CACHE)).match(PREFIX + k); return r ? await r.blob() : null; }
+        return (await tx('readonly', (st) => st.get(k))) || null;
+      } catch (e) { return null; }
+    }
+    async function writeStored(k, blob) {
+      try {
+        if (!persistAsked && navigator.storage && navigator.storage.persist) { persistAsked = true; navigator.storage.persist().catch(() => {}); }
+        if (useCaches) await (await caches.open(CACHE)).put(PREFIX + k, new Response(blob, { headers: { 'Content-Type': blob.type || 'video/mp4', 'Content-Length': String(blob.size) } }));
+        else await tx('readwrite', (st) => st.put(blob, k));
+      } catch (e) { /* quota full or storage blocked: the blob still plays from memory this session */ }
+    }
+    const emit = () => listeners.forEach((f) => { try { f(); } catch (e) {} });
+    /** Local blob: URL if this video is already stored, else null (never downloads). */
+    async function local(m, id) {
+      const k = key(m, id);
+      if (blobUrls.has(k)) return blobUrls.get(k);
+      const b = await readStored(k);
+      if (!b || !b.size) return null;
+      const u = URL.createObjectURL(b); blobUrls.set(k, u); return u;
+    }
+    /** Download the whole file once (shared by every widget using it) → local blob: URL, or null. */
+    function ensure(m, id, url) {
+      const k = key(m, id);
+      if (blobUrls.has(k)) return Promise.resolve(blobUrls.get(k));
+      if (inflight.has(k)) return inflight.get(k);
+      const p = (async () => {
+        const have = await local(m, id); if (have) return have;
+        if (!url || (m.file_size && m.file_size > MAX_BYTES)) return null;
+        const r = await fetch(url, { cache: 'force-cache' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const total = Number(r.headers.get('Content-Length')) || m.file_size || 0;
+        let blob;
+        if (r.body && r.body.getReader) {
+          const reader = r.body.getReader(), parts = []; let got = 0;
+          for (;;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); got += value.length; progress.set(k, total ? got / total : 0); emit(); }
+          blob = new Blob(parts, { type: r.headers.get('Content-Type') || m.mime_type || 'video/mp4' });
+        } else blob = await r.blob();
+        if (total && blob.size !== total) throw new Error('incomplete download');
+        await writeStored(k, blob);
+        const u = URL.createObjectURL(blob); blobUrls.set(k, u); return u;
+      })().catch((e) => { console.warn('video cache', e); return null; }).finally(() => { inflight.delete(k); progress.delete(k); emit(); });
+      inflight.set(k, p);
+      return p;
+    }
+    /** Delete stored videos not in `keepMedia` (list of media rows); used by the TV player. */
+    async function prune(keepMedia) {
+      const keep = new Set(keepMedia.map((m) => key(m, m.media_id)));
+      try {
+        if (useCaches) { const c = await caches.open(CACHE); for (const req of await c.keys()) { const k = new URL(req.url).pathname.replace(PREFIX, ''); if (!keep.has(k)) await c.delete(req); } }
+        else { const keys = await tx('readonly', (st) => st.getAllKeys()); for (const k of keys || []) if (!keep.has(k)) await tx('readwrite', (st) => st.delete(k)); }
+      } catch (e) {}
+      for (const [k, u] of blobUrls) if (!keep.has(k)) { URL.revokeObjectURL(u); blobUrls.delete(k); }
+    }
+    function status() { let n = 0, sum = 0; progress.forEach((v) => { n++; sum += v; }); return { downloading: inflight.size, progress: n ? sum / n : 1 }; }
+    return { local, ensure, prune, status, onChange: (f) => (listeners.add(f), () => listeners.delete(f)), key };
+  })();
+
+  /**
+   * Play a video from the local cache when available; otherwise stream it while it downloads
+   * in the background and switch to the local copy at the end of the current loop (seamless).
+   */
+  function playVideo(v, ctx, id, { loop = true, startSec = 0 } = {}) {
+    const m = (ctx.media || {})[id] || {};
+    const url = mediaUrl(ctx, id);
+    let alive = true;
+    ctx.timers.push(() => (alive = false));
+    v.preload = 'auto';
+    VideoCache.local(m, id).then((localUrl) => {
+      if (!alive) return;
+      v.src = localUrl || url || '';
+      v.loop = loop;
+      if (startSec) v.currentTime = startSec;
+      v.play().catch(() => {});
+      if (localUrl || !url) return;
+      VideoCache.ensure(m, id, url).then((u) => {
+        // Single looping video: stop looping the stream; the 'ended' handler reloads it from the cache.
+        if (alive && u && loop && !String(v.src).startsWith('blob:')) { v.loop = false; v.dataset.swapToCache = '1'; }
+      });
+    });
+  }
+
   // ---------------------------------------------------------------- widgets
   const R = {};
 
@@ -214,14 +323,12 @@
     let i = 0;
     const v = h('video', { width: '100%', height: '100%', objectFit: fitOf(c.fit), display: 'block' });
     v.muted = bool(c.muted, true); v.playsInline = true; v.autoplay = bool(c.autoplay, true);
-    const play = () => {
-      v.src = mediaUrl(ctx, ids[i % ids.length]) || '';
-      v.loop = ids.length === 1 && bool(c.loop, true);
-      if (num(c.start_sec)) v.currentTime = num(c.start_sec);
-      v.play().catch(() => {});
-    };
-    v.addEventListener('ended', () => { i++; if (i < ids.length || bool(c.loop, true)) play(); });
+    const loopAll = bool(c.loop, true);
+    const play = () => playVideo(v, ctx, ids[i % ids.length], { loop: ids.length === 1 && loopAll && !c.end_sec, startSec: num(c.start_sec) });
+    v.addEventListener('ended', () => { i++; if (i < ids.length || loopAll) play(); });
     v.addEventListener('timeupdate', () => { if (c.end_sec && v.currentTime >= num(c.end_sec)) { v.pause(); v.dispatchEvent(new Event('ended')); } });
+    // Several videos in one widget: download all of them up front so switching never stalls.
+    if (ids.length > 1) ids.forEach((id) => VideoCache.ensure((ctx.media || {})[id] || {}, id, mediaUrl(ctx, id)));
     play();
     box.append(v);
     ctx.timers.push(() => { v.pause(); v.removeAttribute('src'); v.load(); });
@@ -864,8 +971,10 @@
       const id = bg.media_id ?? bg.value;
       if (isLive(ctx) && mediaUrl(ctx, id)) {
         const v = h('video', { width: '100%', height: '100%', objectFit: fitOf(c.fit), display: 'block' });
-        v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true; v.src = mediaUrl(ctx, id); v.play().catch(() => {});
-        base.append(v); ctx.timers.push(() => v.pause());
+        v.muted = true; v.autoplay = true; v.playsInline = true;
+        v.addEventListener('ended', () => playVideo(v, ctx, id, { loop: true }));   // fires once, when switching to the cached copy
+        playVideo(v, ctx, id, { loop: true });
+        base.append(v); ctx.timers.push(() => { v.pause(); v.removeAttribute('src'); v.load(); });
       } else { const m = (ctx.media || {})[id]; if (m && m.thumbnail_url) { const i = h('img', { width: '100%', height: '100%', objectFit: 'cover' }); i.src = m.thumbnail_url; base.append(i); } else base.append(h('div', { position: 'absolute', inset: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }, ico('movie', 160, 'rgba(255,255,255,.3)'))); }
     } else base.style.background = color(bg.value, '#17191C');
     outer.append(base);
@@ -920,5 +1029,5 @@
   }
 
   window.SignRender = { mount, thumb, buildStage, widgetBox, widgetContent, backgroundEl, refit, color, fmt, zoned, PRESETS,
-    ENTRANCES, LOOPS, LOOP_MS, SCREEN_STYLES, ANIM_KEYS, entranceFrame, loopFrame, entranceProgressAt, replayPeriodMs, applyScreenAnimation };
+    ENTRANCES, LOOPS, LOOP_MS, SCREEN_STYLES, ANIM_KEYS, VideoCache, entranceFrame, loopFrame, entranceProgressAt, replayPeriodMs, applyScreenAnimation };
 })();

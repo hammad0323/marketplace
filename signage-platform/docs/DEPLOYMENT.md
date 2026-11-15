@@ -181,6 +181,14 @@ server {
 - [ ] Nightly backups of the database and `uploads/`.
 - [ ] Optional: put `uploads/` on block storage. The `storage_driver` column is ready for an S3 adapter.
 
+### 3.5b Smooth video playback
+
+* Videos are downloaded once and played from the device: the app saves them under app storage (`video_cache/`, size + SHA-256 verified, 2 GB LRU), the web pages and the browser TV player store them in Cache Storage (HTTPS) or IndexedDB (plain HTTP). The first loop streams; from the second loop on, playback never touches the network.
+* Raise PHP's upload limits for videos (`upload_max_filesize`, `post_max_size`, e.g. 512M) — the default 2 MB rejects most videos.
+* Recommended in production: let the web server send media files. Set `MEDIA_XSENDFILE=apache` (with mod_xsendfile and `XSendFilePath <STORAGE_PATH>`) or `MEDIA_XSENDFILE=nginx` with
+  `location /_protected_media/ { internal; alias <STORAGE_PATH>/; }`. Without it PHP streams the file (no time limit, no DB connection held).
+* Encode videos as H.264/AAC MP4. For the fastest first start, move the index to the front once: `ffmpeg -i in.mp4 -c copy -movflags +faststart out.mp4`.
+
 ### 3.6 Web app
 
 The core-PHP web app ships inside `backend/web/` and needs no build step. With the backend at `https://signage.example.com`:

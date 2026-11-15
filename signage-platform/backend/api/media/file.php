@@ -37,8 +37,27 @@ if (isset($_SERVER['HTTP_RANGE']) && preg_match('/bytes=(\d*)-(\d*)/', $_SERVER[
     http_response_code(206);
     header("Content-Range: bytes {$start}-{$end}/{$size}");
 }
+// Production: let the web server send the bytes (handles Range, sendfile(), no PHP worker held).
+//   MEDIA_XSENDFILE=apache  → mod_xsendfile (XSendFilePath <STORAGE_PATH>)
+//   MEDIA_XSENDFILE=nginx   → X-Accel-Redirect to an internal location mapped to STORAGE_PATH:
+//                             location /_protected_media/ { internal; alias <STORAGE_PATH>/; }
+$mode = defined('MEDIA_XSENDFILE') ? strtolower((string)MEDIA_XSENDFILE) : '';
+if ($mode === 'apache' || $mode === 'nginx') {
+    if (http_response_code() === 206) http_response_code(200);   // the web server answers the Range itself
+    header_remove('Content-Range');
+    if ($mode === 'apache') header('X-Sendfile: ' . $abs);
+    else header('X-Accel-Redirect: /_protected_media/' . str_replace('%2F', '/', rawurlencode(ltrim(substr($abs, strlen($root)), '/'))));
+    exit;
+}
+
 header('Content-Length: ' . ($end - $start + 1));
 if (request_method() === 'HEAD') exit;
+
+// Long videos must never be cut off half way (that is what makes players stall and re-buffer).
+@set_time_limit(0);
+@ini_set('zlib.output_compression', '0');            // compression breaks byte ranges / Content-Length
+while (ob_get_level() > 0) @ob_end_clean();          // stream straight to the client
+db()->close();                                        // do not hold a DB connection while streaming
 $fp = fopen($abs, 'rb');
 fseek($fp, $start);
 $left = $end - $start + 1;
