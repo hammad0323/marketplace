@@ -13,6 +13,10 @@ DirectoryIndex index.php
     RewriteRule (^|/)_[^/]*\.php$ - [F,L]
     RewriteRule (^|/)\. - [F,L]
 
+    # Short display links: /d/LOBBY1 → browser TV player with that code (/d alone = enter a code)
+    RewriteRule ^d/?$ web/display.php [L,QSA]
+    RewriteRule ^d/([A-Za-z0-9]{4,12})/?$ web/display.php?code=$1 [L,QSA]
+
     # Clean URLs: /api/screens/list  →  /api/screens/list.php
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d

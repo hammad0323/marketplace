@@ -159,7 +159,7 @@
     const body = el('div', {}, el('p', { class: 'muted' }, 'Loading…'));
     const m = modal('Display code', body);
     const draw = (c) => {
-      const playerUrl = location.origin + S.web + 'display.php?code=' + encodeURIComponent(c.code);
+      const playerUrl = c.short_url || (location.origin + S.web + 'display.php?code=' + encodeURIComponent(c.code));
       const qrBox = el('div', { style: { width: '150px', height: '150px', background: '#fff', borderRadius: '14px', padding: '10px', flex: 'none' } });
       if (window.qrcode) { const q = window.qrcode(0, 'M'); q.addData(playerUrl); q.make(); qrBox.innerHTML = q.createSvgTag({ scalable: true, margin: 0 }); }
       const own = el('input', { value: c.code, maxlength: 12, style: { textTransform: 'uppercase' } });
@@ -170,9 +170,12 @@
           el('div', { class: 'grow' },
             el('div', { style: { fontSize: '44px', fontWeight: '800', letterSpacing: '8px', color: 'var(--teal)', fontFamily: 'monospace' } }, c.code),
             el('div', { class: 'small muted' }, 'Used ' + (c.view_count || 0) + ' times · last ' + timeAgo(c.last_used_at)),
+            el('a', { href: playerUrl, target: '_blank', rel: 'noopener', style: { display: 'inline-block', marginTop: '8px', fontWeight: '700', wordBreak: 'break-all' } }, playerUrl.replace(/^https?:\/\//, '')),
             el('div', { class: 'row', style: { marginTop: '10px' } },
               el('button', { class: 'btn sm', onclick: () => { navigator.clipboard && navigator.clipboard.writeText(c.code); toast('Code copied'); } }, icon('content_copy'), 'Copy code'),
-              el('a', { class: 'btn sm', href: playerUrl, target: '_blank', rel: 'noopener' }, icon('open_in_new'), 'Open web player'))),
+              el('button', { class: 'btn sm', onclick: () => { navigator.clipboard && navigator.clipboard.writeText(playerUrl); toast('Link copied'); } }, icon('link'), 'Copy link'),
+              navigator.share ? el('button', { class: 'btn sm', onclick: () => navigator.share({ title: name, text: 'Display code ' + c.code, url: playerUrl }).catch(() => {}) }, icon('share'), 'Share') : null,
+              el('a', { class: 'btn sm', href: playerUrl, target: '_blank', rel: 'noopener' }, icon('open_in_new'), 'Open'))),
           qrBox),
         el('div', { class: 'wgroup', style: { marginTop: '18px' } }, 'Choose your own code'),
         el('div', { class: 'row', style: { flexWrap: 'nowrap' } }, own, el('button', { class: 'btn', onclick: async () => {

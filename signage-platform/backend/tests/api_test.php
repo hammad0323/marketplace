@@ -457,7 +457,6 @@ $tl = expect('menu templates ship with animations', req('GET', '/api/admin/templ
 $feat = array_values(array_filter($tl, fn($t) => $t['template_key'] === 'menu_fresh_feature_l'))[0] ?? [];
 $animated = array_filter($feat['template_json']['widgets'] ?? [], fn($w) => ($w['configuration']['animation'] ?? 'none') !== 'none');
 check('every element of the feature-dish template animates', $animated && count($animated) === count($feat['template_json']['widgets']), count($animated));
-expect('clean up', req('POST', '/api/screens/delete', ['screen_id' => $as['screen_id']], $ADMIN2), 200);
 
 section('Web app (core PHP pages)');
 $jar = tempnam(sys_get_temp_dir(), 'webjar');
@@ -477,6 +476,13 @@ check('signed-out page redirects to login', $r['code'] === 302 && str_ends_with(
 check('internal web files are blocked', $web('GET', '/web/_bootstrap.php')['code'] === 403);
 $r = $web('GET', '/web/display.php');
 check('public TV web player loads', $r['code'] === 200 && str_contains($r['body'], 'Show Display'));
+$sc = expect('display code has a short link', req('GET', '/api/display-codes/get?screen_id=' . $as['screen_id'], null, $ADMIN2), 200);
+check('short link is <base>/d/<CODE>', str_ends_with($sc['short_url'] ?? '', '/d/' . ($sc['code'] ?? '?')), $sc['short_url'] ?? null);
+$r = $web('GET', '/d/' . $sc['code']);
+check('short link opens the TV player with the code', $r['code'] === 200 && str_contains($r['body'], 'Show Display') && str_contains($r['body'], '"' . $sc['code'] . '"'), substr($r['body'], 0, 200));
+$r = $web('GET', '/d');
+check('/d alone opens the code form', $r['code'] === 200 && str_contains($r['body'], 'Display code'));
+check('malformed short codes are refused', $web('GET', '/d/ab')['code'] === 404 && $web('GET', '/d/../config')['code'] !== 200);
 $r = $web('GET', '/web/login.php');
 preg_match('/name="csrf" value="([^"]+)"/', $r['body'], $m); $csrf = $m[1] ?? '';
 check('login form has a CSRF token', $r['code'] === 200 && strlen($csrf) === 32);
@@ -500,6 +506,7 @@ expect('logout revokes the web token', req('GET', '/api/auth/profile', null, $we
 $allCats = expect('admin can list every category', req('GET', '/api/templates/categories?all=1', null, $ADMIN2), 200);
 $userCats = expect('categories for a restricted user', req('GET', '/api/templates/categories?all=1', null, $AISHA), 200);
 check('“all” is ignored for customers', count($userCats) < count($allCats), [count($userCats), count($allCats)]);
+expect('clean up', req('POST', '/api/screens/delete', ['screen_id' => $as['screen_id']], $ADMIN2), 200);
 
 section('Rate limiting');
 $hit = 0;

@@ -133,7 +133,7 @@ Every screen and playlist can have a short code. Open the app on any TV, box or 
 
 | Method | Endpoint | Auth | |
 |---|---|---|---|
-| GET | `display-codes/get.php?screen_id= \| playlist_id=` | U | The item's code. A random 6-character code is created on first request. → `{code, kind, name, is_published, view_count, last_used_at}` |
+| GET | `display-codes/get.php?screen_id= \| playlist_id=` | U | The item's code. A random 6-character code is created on first request. → `{code, short_url, kind, name, is_published, view_count, last_used_at}`. `short_url` is `<APP_URL>/d/<CODE>` (or `SHORT_LINK_BASE/<CODE>`); opening it on any browser plays the content. |
 | POST | `display-codes/set.php` | U | `{screen_id \| playlist_id, code}`: choose your own code (4–12 letters or numbers, stored upper-case, unique; **409** if already taken) |
 | POST | `display-codes/regenerate.php` | U | New random code. The old one stops working immediately. |
 | GET | `display/content.php?code=&have=<content_hash>` | P | `{kind, name, content_hash, doc, emergency[], refresh_seconds}`. `doc` is a playable playlist document with signed media (a single screen is wrapped as a one-item playlist). It is `null` when `have` matches. Errors: **404** `CODE_NOT_FOUND`, **409** `NOT_PUBLISHED`, **403** `CODE_INACTIVE`. Rate limited per IP, with extra limits on unknown codes to slow guessing. |

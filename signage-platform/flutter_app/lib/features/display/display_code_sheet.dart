@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/formatters.dart';
@@ -82,6 +84,7 @@ class _DisplayCodeSheetState extends ConsumerState<_DisplayCodeSheet> {
     if (error != null) return SizedBox(height: 260, child: ErrorView(error: error!, onRetry: () { setState(() => error = null); _load(); }));
     if (data == null) return const SizedBox(height: 260, child: LoadingView());
     final code = asString(data!['code']);
+    final link = asString(data!['short_url']);
     final published = asBool(data!['is_published']);
     final kind = asString(data!['kind']) == 'playlist' ? 'playlist' : 'screen';
     return SafeArea(
@@ -108,6 +111,29 @@ class _DisplayCodeSheetState extends ConsumerState<_DisplayCodeSheet> {
               ),
             ]),
           ),
+          if (link.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(border: Border.all(color: Theme.of(context).colorScheme.outlineVariant), borderRadius: BorderRadius.circular(16)),
+              child: Row(children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
+                  child: QrImageView(data: link, size: 76, padding: EdgeInsets.zero),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Short link', style: t.labelMedium?.copyWith(color: AppColors.mediumGrey)),
+                    SelectableText(link.replaceFirst(RegExp(r'^https?://'), ''), maxLines: 2, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.teal)),
+                    const SizedBox(height: 2),
+                    Text('Open it on a TV browser, or scan the QR code.', style: t.bodySmall?.copyWith(color: AppColors.mediumGrey)),
+                  ]),
+                ),
+              ]),
+            ),
+          ],
           if (!published)
             Container(
               margin: const EdgeInsets.only(top: 12),
@@ -119,8 +145,18 @@ class _DisplayCodeSheetState extends ConsumerState<_DisplayCodeSheet> {
           Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.center, children: [
             OutlinedButton.icon(
               onPressed: () { Clipboard.setData(ClipboardData(text: code)); showToast(context, 'Code copied'); },
-              icon: const Icon(Icons.copy_rounded), label: const Text('Copy'),
+              icon: const Icon(Icons.copy_rounded), label: const Text('Copy code'),
             ),
+            if (link.isNotEmpty) ...[
+              OutlinedButton.icon(
+                onPressed: () { Clipboard.setData(ClipboardData(text: link)); showToast(context, 'Link copied'); },
+                icon: const Icon(Icons.link_rounded), label: const Text('Copy link'),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => SharePlus.instance.share(ShareParams(text: 'Show "${data!['name']}" on a TV: $link  (display code $code)', subject: 'Display link')),
+                icon: const Icon(Icons.share_outlined), label: const Text('Share'),
+              ),
+            ],
             OutlinedButton.icon(onPressed: busy ? null : _change, icon: const Icon(Icons.edit_outlined), label: const Text('Choose code')),
             OutlinedButton.icon(onPressed: busy ? null : _regenerate, icon: const Icon(Icons.refresh_rounded), label: const Text('New code')),
           ]),
@@ -131,6 +167,7 @@ class _DisplayCodeSheetState extends ConsumerState<_DisplayCodeSheet> {
             '1.  Install Signal Signage on the TV, TV box or tablet.',
             '2.  On the sign-in page, tap "Show Display".',
             '3.  Enter the code above. That\'s it — it updates automatically when you publish changes.',
+            'No app on the TV? Open the short link in its web browser instead.',
           ])
             Padding(padding: const EdgeInsets.only(bottom: 4), child: Text(s)),
           if (asInt(data!['view_count']) > 0)
