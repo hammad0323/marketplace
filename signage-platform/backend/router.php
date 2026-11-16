@@ -12,14 +12,6 @@ if (preg_match('#^/(config|includes|database|cron|logs)(/|$)#', $path) || preg_m
 if (preg_match('#^/uploads/#', $path) && !preg_match('#^/uploads/images/avatars/#', $path)) {
     http_response_code(403); echo 'Forbidden'; return true;
 }
-// Short display links: /d/LOBBY1 → web/display.php?code=LOBBY1 (same as the .htaccess rule)
-if (preg_match('#^/d(?:/([A-Za-z0-9]{4,12}))?/?$#', $path, $dm)) {
-    if (!empty($dm[1])) $_GET['code'] = $dm[1];
-    $_SERVER['SCRIPT_NAME'] = '/web/display.php';
-    chdir(__DIR__ . '/web');
-    require __DIR__ . '/web/display.php';
-    return true;
-}
 $file = __DIR__ . $path;
 if ($path !== '/' && is_file($file)) {
     if (str_ends_with($file, '.php')) { $_SERVER['SCRIPT_NAME'] = $path; chdir(dirname($file)); require $file; return true; }

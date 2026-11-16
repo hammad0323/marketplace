@@ -36,18 +36,17 @@ function display_code_target(array $in, array $user): array
     v_error('screen_id', 'screen_id or playlist_id is required');
 }
 
-/** Short link that opens the browser player with this code, e.g. https://example.com/d/LOBBY1 */
-function display_short_url(string $code): string
+/** Web link that opens the browser player with this code (works on every server, no URL rewriting needed). */
+function display_web_url(string $code): string
 {
-    $base = defined('SHORT_LINK_BASE') && SHORT_LINK_BASE !== '' ? rtrim((string)SHORT_LINK_BASE, '/') : base_url() . '/d';
-    return $base . '/' . rawurlencode($code);
+    return base_url() . '/web/display.php?code=' . rawurlencode($code);
 }
 
 function present_display_code(array $c, string $kind, array $target): array
 {
     return [
         'code' => $c['code'],
-        'short_url' => display_short_url($c['code']),
+        'web_url' => display_web_url($c['code']),
         'kind' => $kind,
         'screen_id' => $c['screen_id'] !== null ? (int)$c['screen_id'] : null,
         'playlist_id' => $c['playlist_id'] !== null ? (int)$c['playlist_id'] : null,

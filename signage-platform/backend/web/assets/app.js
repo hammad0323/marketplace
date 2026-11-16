@@ -159,7 +159,7 @@
     const body = el('div', {}, el('p', { class: 'muted' }, 'Loading…'));
     const m = modal('Display code', body);
     const draw = (c) => {
-      const playerUrl = c.short_url || (location.origin + S.web + 'display.php?code=' + encodeURIComponent(c.code));
+      const playerUrl = c.web_url || (location.origin + S.web + 'display.php?code=' + encodeURIComponent(c.code));
       const qrBox = el('div', { style: { width: '150px', height: '150px', background: '#fff', borderRadius: '14px', padding: '10px', flex: 'none' } });
       if (window.qrcode) { const q = window.qrcode(0, 'M'); q.addData(playerUrl); q.make(); qrBox.innerHTML = q.createSvgTag({ scalable: true, margin: 0 }); }
       const own = el('input', { value: c.code, maxlength: 12, style: { textTransform: 'uppercase' } });

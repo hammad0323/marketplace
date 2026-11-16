@@ -476,13 +476,10 @@ check('signed-out page redirects to login', $r['code'] === 302 && str_ends_with(
 check('internal web files are blocked', $web('GET', '/web/_bootstrap.php')['code'] === 403);
 $r = $web('GET', '/web/display.php');
 check('public TV web player loads', $r['code'] === 200 && str_contains($r['body'], 'Show Display'));
-$sc = expect('display code has a short link', req('GET', '/api/display-codes/get?screen_id=' . $as['screen_id'], null, $ADMIN2), 200);
-check('short link is <base>/d/<CODE>', str_ends_with($sc['short_url'] ?? '', '/d/' . ($sc['code'] ?? '?')), $sc['short_url'] ?? null);
-$r = $web('GET', '/d/' . $sc['code']);
-check('short link opens the TV player with the code', $r['code'] === 200 && str_contains($r['body'], 'Show Display') && str_contains($r['body'], '"' . $sc['code'] . '"'), substr($r['body'], 0, 200));
-$r = $web('GET', '/d');
-check('/d alone opens the code form', $r['code'] === 200 && str_contains($r['body'], 'Display code'));
-check('malformed short codes are refused', $web('GET', '/d/ab')['code'] === 404 && $web('GET', '/d/../config')['code'] !== 200);
+$sc = expect('display code has a web link', req('GET', '/api/display-codes/get?screen_id=' . $as['screen_id'], null, $ADMIN2), 200);
+check('web link is <base>/web/display.php?code=<CODE>', str_ends_with($sc['web_url'] ?? '', '/web/display.php?code=' . ($sc['code'] ?? '?')), $sc['web_url'] ?? null);
+$r = $web('GET', '/web/display.php?code=' . $sc['code']);
+check('web link opens the TV player with the code', $r['code'] === 200 && str_contains($r['body'], '"' . $sc['code'] . '"'), substr($r['body'], 0, 200));
 $r = $web('GET', '/web/login.php');
 preg_match('/name="csrf" value="([^"]+)"/', $r['body'], $m); $csrf = $m[1] ?? '';
 check('login form has a CSRF token', $r['code'] === 200 && strlen($csrf) === 32);

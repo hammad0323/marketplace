@@ -35,7 +35,6 @@ $__defaults = [
     'MAIL_FROM'        => 'no-reply@signage.local',
     'TOKEN_TTL_DAYS'   => '30',
     'MEDIA_URL_TTL_DAYS' => '7',
-    'SHORT_LINK_BASE'  => '',                     // short display links; '' = <APP_URL>/d  (e.g. https://tv.example.com)
     'MEDIA_XSENDFILE'  => '',                     // '' = PHP streams files | apache (mod_xsendfile) | nginx (X-Accel-Redirect)
     'WEATHER_PROVIDER' => 'open_meteo',
     'WEATHER_API_KEY'  => '',

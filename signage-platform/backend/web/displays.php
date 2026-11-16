@@ -8,12 +8,7 @@ web_page_start('Displays', 'displays', $u);
 <div class="row" style="align-items:stretch;gap:14px;margin-bottom:18px">
   <div class="card grow" style="min-width:280px"><h2><span class="ms" style="color:var(--teal)">pin</span> Display codes — easiest</h2>
     <p class="muted">Every screen and playlist has a short code. On the TV open the app and tap <b>Show Display</b>, or open the web player in the TV's browser, and enter the code. No account needed on the TV, and it keeps playing offline once downloaded (app).</p>
-    <?php
-    $origin = APP_URL !== '' ? '' : (((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'));
-    $shortBase = (defined('SHORT_LINK_BASE') && SHORT_LINK_BASE !== '') ? rtrim(SHORT_LINK_BASE, '/') : $origin . web_base() . '/d';
-    ?>
-    <div class="row"><a class="btn" href="<?= h($shortBase) ?>" target="_blank"><span class="ms">open_in_new</span>Open web player</a><span class="small muted" style="word-break:break-all"><?= h(preg_replace('#^https?://#', '', $shortBase)) ?></span></div>
-    <p class="small muted">Each screen and playlist also has its own short link, e.g. <b><?= h(preg_replace('#^https?://#', '', $shortBase)) ?>/LOBBY1</b> — open it on the TV and it starts playing.</p>
+    <div class="row"><a class="btn" href="<?= h(web_url('display.php')) ?>" target="_blank"><span class="ms">open_in_new</span>Open web player</a><span class="small muted" style="word-break:break-all"><?= h(web_url('display.php')) ?></span></div>
     <div id="codes" style="margin-top:14px"></div></div>
   <div class="card" style="flex:0 1 380px;min-width:280px"><h2><span class="ms" style="color:var(--teal)">link</span> Managed displays</h2>
     <p class="muted">For remote control, schedules and monitoring: open the app on the TV, choose <b>Pair this display</b> and enter the 6-character pairing code shown there.</p>

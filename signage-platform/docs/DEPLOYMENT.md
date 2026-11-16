@@ -143,8 +143,6 @@ server {
   location ~ /_[^/]*\.php$ { deny all; }
   location ^~ /uploads/images/avatars/ { try_files $uri =404; }
   location ^~ /uploads/ { deny all; }
-  # Short display links: /d/LOBBY1 → browser TV player
-  location ~ ^/d(/[A-Za-z0-9]{4,12})?/?$ { rewrite ^/d/?([A-Za-z0-9]*)/?$ /web/display.php?code=$1 last; }
 
   location / { try_files $uri $uri.php $uri/ =404; }
   location ~ \.php$ {
@@ -199,7 +197,6 @@ The core-PHP web app ships inside `backend/web/` and needs no build step. With t
 |---|---|
 | `https://signage.example.com/web/` | Users and the super admin (sign in with the same accounts as the app) |
 | `https://signage.example.com/web/admin/templates.php` | Super admin: template gallery and designer |
-| `https://signage.example.com/d/LOBBY1` | Short link of one screen/playlist (shown in the app and website with a QR code). `/d` alone asks for a code. Set `SHORT_LINK_BASE` (e.g. `https://tv.example.com`) to use a separate short domain that points `/<CODE>` to `web/display.php?code=<CODE>`. |
 | `https://signage.example.com/web/display.php` | Browser TV player: open it on a smart-TV browser or kiosk PC and enter a display code (or append `?code=LOBBY1`) |
 
 * Pages use PHP sessions (`signage_web` cookie, HTTP-only, `Secure` on HTTPS, SameSite=Lax) and call the same REST API with a per-browser token, revoked on sign-out.
