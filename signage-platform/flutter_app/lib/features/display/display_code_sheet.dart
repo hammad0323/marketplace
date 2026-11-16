@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_config.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/utils/json.dart';
 import '../../core/widgets/common.dart';
@@ -82,7 +83,11 @@ class _DisplayCodeSheetState extends ConsumerState<_DisplayCodeSheet> {
     if (error != null) return SizedBox(height: 260, child: ErrorView(error: error!, onRetry: () { setState(() => error = null); _load(); }));
     if (data == null) return const SizedBox(height: 260, child: LoadingView());
     final code = asString(data!['code']);
-    final link = asString(data!['web_url']);
+    // Web player link: from the server, or built from the app's backend address (older servers).
+    final serverLink = asString(data!['web_url']);
+    final link = serverLink.isNotEmpty
+        ? serverLink
+        : '${AppConfig.apiBaseUrl.replaceAll(RegExp(r'/+$'), '')}/web/display.php?code=${Uri.encodeQueryComponent(code)}';
     final published = asBool(data!['is_published']);
     final kind = asString(data!['kind']) == 'playlist' ? 'playlist' : 'screen';
     return SafeArea(
