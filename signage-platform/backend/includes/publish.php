@@ -8,11 +8,15 @@ function media_manifest(array $ids): array
 {
     $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
     if (!$ids) return [];
-    $rows = db_all('SELECT media_id, file_path, mime_type, file_size, checksum_sha256, file_type, width, height FROM media_library WHERE media_id IN (' . placeholders($ids) . ') AND deleted_at IS NULL', $ids);
-    return array_map(fn($r) => [
-        'media_id' => (int)$r['media_id'], 'file_path' => $r['file_path'], 'mime_type' => $r['mime_type'], 'file_type' => $r['file_type'],
-        'file_size' => (int)$r['file_size'], 'checksum_sha256' => $r['checksum_sha256'], 'width' => $r['width'], 'height' => $r['height'],
-    ], $rows);
+    $rows = db_all('SELECT media_id, file_path, tv_path, tv_file_size, tv_checksum, mime_type, file_size, checksum_sha256, file_type, width, height FROM media_library WHERE media_id IN (' . placeholders($ids) . ') AND deleted_at IS NULL', $ids);
+    return array_map(function ($r) {
+        $pb = media_playback($r);   // TV-safe version of videos when ready
+        return [
+            'media_id' => (int)$r['media_id'], 'file_path' => $r['file_path'], 'mime_type' => $pb['mime'], 'file_type' => $r['file_type'],
+            'file_size' => $pb['size'], 'checksum_sha256' => $pb['checksum'], 'width' => $r['width'], 'height' => $r['height'],
+            'variant' => $pb['variant'],
+        ];
+    }, $rows);
 }
 
 /** Build the publication document for a screen from its draft. */
@@ -121,18 +125,46 @@ function playlist_changed(int $playlistId, int $byUser, bool $autoRepublish = tr
 /** Add signed URLs to a publication's media manifest (for delivery to a player). */
 function sign_manifest(array $doc): array
 {
-    $doc['media'] = array_map(function ($m) {
-        $m['url'] = media_url((int)$m['media_id']);
+    // Videos converted after publishing: hand out the TV version (url, size, checksum) right away.
+    $tv = media_tv_versions(array_column($doc['media'] ?? [], 'media_id'));
+    $posters = media_posters(array_column($doc['media'] ?? [], 'media_id'));
+    $apply = function (array $m) use ($tv) {
+        $id = (int)$m['media_id'];
+        if (isset($tv[$id])) { $m['file_size'] = (int)$tv[$id]['tv_file_size']; $m['checksum_sha256'] = $tv[$id]['tv_checksum']; $m['mime_type'] = 'video/mp4'; $m['variant'] = 'tv'; }
+        return $m;
+    };
+    $doc['media'] = array_map(function ($m) use ($apply, $posters) {
+        $m = $apply($m);
+        $m['url'] = media_url((int)$m['media_id'], ($m['variant'] ?? 'file') === 'tv' ? 'tv' : 'file');
+        if (isset($posters[(int)$m['media_id']])) $m['poster_url'] = media_url((int)$m['media_id'], 'thumb');
         unset($m['file_path']);
         return $m;
     }, $doc['media'] ?? []);
     if (!empty($doc['items'])) {
         foreach ($doc['items'] as &$it) {
             if (isset($it['screen']['media'])) {
-                $it['screen']['media'] = array_map(function ($m) { unset($m['file_path']); return $m; }, $it['screen']['media']);
+                $it['screen']['media'] = array_map(function ($m) use ($apply) { $m = $apply($m); unset($m['file_path']); return $m; }, $it['screen']['media']);
             }
         }
         unset($it);
     }
     return $doc;
+}
+
+/** media_id => TV version row, for videos whose TV-safe file is ready. */
+function media_tv_versions(array $ids): array
+{
+    $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+    if (!$ids) return [];
+    $out = [];
+    foreach (db_all("SELECT media_id, tv_file_size, tv_checksum FROM media_library WHERE media_id IN (" . placeholders($ids) . ") AND tv_path IS NOT NULL", $ids) as $r) $out[(int)$r['media_id']] = $r;
+    return $out;
+}
+
+/** media_id => true for videos that have a poster frame. */
+function media_posters(array $ids): array
+{
+    $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+    if (!$ids) return [];
+    return array_fill_keys(array_map('intval', array_column(db_all("SELECT media_id FROM media_library WHERE media_id IN (" . placeholders($ids) . ") AND file_type = 'video' AND thumbnail_path IS NOT NULL", $ids), 'media_id')), true);
 }

@@ -6,7 +6,7 @@
 (function () {
   function mediaMap(doc) {
     const m = {};
-    (doc.media || []).forEach((x) => (m[x.media_id] = { ...x, thumbnail_url: x.thumbnail_url || (x.file_type === 'image' ? x.url : null) }));
+    (doc.media || []).forEach((x) => (m[x.media_id] = { ...x, thumbnail_url: x.thumbnail_url || (x.file_type === 'image' ? x.url : x.poster_url || null) }));
     (doc.items || []).forEach((it) => ((it.screen || {}).media || []).forEach((x) => { if (!m[x.media_id] && x.url) m[x.media_id] = { ...x, thumbnail_url: x.file_type === 'image' ? x.url : null }; }));
     return m;
   }
@@ -30,6 +30,9 @@
       const it = items[idx];
       const tr = it.transition_type && it.transition_type !== 'inherit' ? it.transition_type : ((doc.transition || {}).type || 'fade');
       const ms = Math.max(0, Number((doc.transition || {}).duration_ms) || 800);
+      // Many TVs have a single hardware video decoder: stop the previous screen's videos before the
+      // next screen starts, otherwise the new video stays black or freezes during the transition.
+      if (current) current.el.querySelectorAll('video').forEach((v) => { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} });
       const el = document.createElement('div');
       Object.assign(el.style, { position: 'absolute', inset: '0', transition: tr === 'none' || !current ? 'none' : `opacity ${ms}ms ease, transform ${ms}ms ease` });
       const from = { fade: ['0', 'none'], slide_left: ['1', 'translateX(100%)'], slide: ['1', 'translateX(100%)'], slide_right: ['1', 'translateX(-100%)'], slide_up: ['1', 'translateY(100%)'], slide_down: ['1', 'translateY(-100%)'], zoom: ['0', 'scale(1.15)'], flip: ['0', 'perspective(1200px) rotateY(80deg)'] }[tr] || ['1', 'none'];

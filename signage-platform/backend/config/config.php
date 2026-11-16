@@ -35,6 +35,10 @@ $__defaults = [
     'MAIL_FROM'        => 'no-reply@signage.local',
     'TOKEN_TTL_DAYS'   => '30',
     'MEDIA_URL_TTL_DAYS' => '7',
+    'VIDEO_OPTIMIZE'   => '1',                    // 1 = make a TV-safe MP4 of every uploaded video (needs ffmpeg)
+    'FFMPEG_PATH'      => 'ffmpeg',
+    'FFPROBE_PATH'     => 'ffprobe',
+    'PHP_CLI_PATH'     => 'php',                  // PHP command-line binary used to start the converter in the background
     'MEDIA_XSENDFILE'  => '',                     // '' = PHP streams files | apache (mod_xsendfile) | nginx (X-Accel-Redirect)
     'WEATHER_PROVIDER' => 'open_meteo',
     'WEATHER_API_KEY'  => '',

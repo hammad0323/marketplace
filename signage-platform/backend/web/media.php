@@ -34,6 +34,8 @@ web_page_start($shared ? 'Shared media' : 'Media library', $shared ? 'admin-medi
       else $('storage').textContent = bytes(j.storage.used_bytes) + ' of ' + mb(j.storage.limit_mb) + ' used';
       drawFolders();
       grid.replaceChildren();
+      clearTimeout(window._optT);
+      if (list.some((m) => m.optimize_status === 'pending' || m.optimize_status === 'processing')) window._optT = setTimeout(load, 8000);
       if (!list.length) grid.append(el('div', { class: 'empty', style: { gridColumn: '1/-1' } }, icon('photo_library'), el('p', {}, 'No files here yet. Upload images or videos to use them on your screens.')));
       for (const m of list) {
         const preview = m.file_type === 'video'
@@ -44,6 +46,8 @@ web_page_start($shared ? 'Shared media' : 'Media library', $shared ? 'admin-medi
           el('div', { class: 'thumb', style: { aspectRatio: '1', cursor: 'pointer' }, onclick: () => details(m) }, preview),
           el('div', { class: 'name small', title: m.original_name }, (m.is_global && !SHARED ? '🌐 ' : '') + m.original_name),
           el('div', { class: 'small muted' }, bytes(m.file_size) + (m.width ? ` · ${m.width}×${m.height}` : '') + (m.usage_count ? ` · used ${m.usage_count}×` : '')),
+          m.file_type === 'video' && m.optimize_status && m.optimize_status !== 'none' ? el('div', { class: 'badge ' + ({ done: 'published', failed: 'suspended' }[m.optimize_status] || 'draft'), title: m.optimize_note || '' },
+            { pending: 'Optimising for TV…', processing: 'Optimising for TV…', done: 'TV-ready', failed: 'TV conversion failed' }[m.optimize_status]) : null,
           (m.user_id == App.S.user.user_id) ? el('div', { class: 'actions' },
             el('button', { class: 'btn sm', title: 'Rename', onclick: async () => { const n = await promptBox('Rename file', m.original_name); if (n && await busy(() => api('media/rename.php', { media_id: m.media_id, original_name: n }), 'Renamed')) load(); } }, icon('edit')),
             !SHARED ? el('button', { class: 'btn sm', title: 'Move to folder', onclick: () => move(m) }, icon('drive_file_move')) : null,

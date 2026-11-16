@@ -422,6 +422,12 @@ CREATE TABLE media_library (
     height         INT UNSIGNED    NULL,
     duration_ms    INT UNSIGNED    NULL,              -- videos / audio
     checksum_sha256 CHAR(64)       NULL,              -- player verifies downloads against this
+    tv_path        VARCHAR(255)    NULL,              -- TV-safe MP4 of a video (H.264 ≤1080p30); players get this when present
+    tv_file_size   BIGINT UNSIGNED NULL,
+    tv_checksum    CHAR(64)        NULL,
+    optimize_status ENUM('none','pending','processing','done','failed') NOT NULL DEFAULT 'none',
+    optimize_note  VARCHAR(255)    NULL,
+    optimized_at   DATETIME        NULL,
     storage_driver VARCHAR(20)     NOT NULL DEFAULT 'local',  -- 'local' | 's3' (future)
     is_global      TINYINT(1)      NOT NULL DEFAULT 0, -- 1 = visible to every user (pre-built backgrounds)
     created_at     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -432,6 +438,7 @@ CREATE TABLE media_library (
     KEY idx_media_user (user_id, deleted_at, file_type),
     KEY idx_media_folder (folder_id),
     KEY idx_media_global (is_global),
+    KEY idx_media_optimize (optimize_status),
     CONSTRAINT fk_media_user   FOREIGN KEY (user_id)   REFERENCES users (user_id)           ON DELETE CASCADE,
     CONSTRAINT fk_media_folder FOREIGN KEY (folder_id) REFERENCES media_folders (folder_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

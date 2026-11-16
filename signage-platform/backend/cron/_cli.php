@@ -8,4 +8,5 @@ require APP_ROOT . '/config/database.php';
 require APP_ROOT . '/includes/response.php';
 require APP_ROOT . '/includes/functions.php';
 require APP_ROOT . '/includes/upload.php';
+require APP_ROOT . '/includes/video_optimize.php';
 function out(string $m): void { echo '[' . gmdate('c') . "] {$m}\n"; }

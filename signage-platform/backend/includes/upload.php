@@ -119,13 +119,18 @@ function handle_media_upload(array $user, string $field = 'file', ?int $folderId
         [$uid, $folderId, $name, $original, $rel, $thumb, $type, $mime, $size, $width, $height,
             isset($_POST['duration_ms']) && is_numeric($_POST['duration_ms']) ? (int)$_POST['duration_ms'] : null, hash_file('sha256', $abs)]);
     log_activity($uid, 'media.upload', 'media', $mediaId, "Uploaded {$original}");
+    if ($type === 'video' && video_optimize_enabled()) {
+        // Make the TV-safe version in the background (see includes/video_optimize.php).
+        db_run("UPDATE media_library SET optimize_status = 'pending' WHERE media_id = ?", [$mediaId]);
+        spawn_video_optimizer($mediaId);
+    }
     return present_media(db_one('SELECT * FROM media_library WHERE media_id = ?', [$mediaId]));
 }
 
 /** Physically remove a media file + thumbnail. */
 function delete_media_files(array $m): void
 {
-    foreach (['file_path', 'thumbnail_path'] as $k) {
+    foreach (['file_path', 'thumbnail_path', 'tv_path'] as $k) {
         if (!empty($m[$k])) {
             $abs = storage_abs($m[$k]);
             $real = realpath($abs);

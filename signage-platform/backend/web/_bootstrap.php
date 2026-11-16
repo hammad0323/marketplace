@@ -14,6 +14,7 @@ require APP_ROOT . '/includes/response.php';
 require APP_ROOT . '/includes/functions.php';
 require APP_ROOT . '/includes/auth.php';
 require APP_ROOT . '/includes/permissions.php';
+require APP_ROOT . '/includes/video_optimize.php';
 
 $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
 session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'httponly' => true, 'samesite' => 'Lax', 'secure' => $https]);

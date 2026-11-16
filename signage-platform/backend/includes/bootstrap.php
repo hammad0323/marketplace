@@ -17,6 +17,7 @@ require __DIR__ . '/auth.php';
 require __DIR__ . '/permissions.php';
 require __DIR__ . '/rate_limit.php';
 require __DIR__ . '/upload.php';
+require __DIR__ . '/video_optimize.php';
 require __DIR__ . '/layout.php';
 require __DIR__ . '/publish.php';
 require __DIR__ . '/schedule.php';

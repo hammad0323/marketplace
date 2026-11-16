@@ -147,7 +147,9 @@
    */
   const VideoCache = (() => {
     const CACHE = 'sg-video-v1', DB = 'sg-video-cache', STORE = 'videos', PREFIX = '/__sg_video__/';
-    const MAX_BYTES = 1024 * 1048576;                      // larger files are streamed, not cached
+    // Smart TVs have 1–2 GB of RAM: keep cached videos small there (larger ones stream from the TV-safe file).
+    const IS_TV = /Tizen|Web0S|webOS|SMART-TV|SmartTV|HbbTV|BRAVIA|NetCast|AFT[A-Z]|CrKey|VIDAA|Hisense|Android TV|GoogleTV/i.test(navigator.userAgent) || (navigator.deviceMemory && navigator.deviceMemory <= 2);
+    const MAX_BYTES = (IS_TV ? 250 : 800) * 1048576;       // larger files are streamed, not cached
     const blobUrls = new Map(), inflight = new Map(), progress = new Map(), listeners = new Set();
     const useCaches = typeof caches !== 'undefined' && window.isSecureContext;
     let dbp = null, persistAsked = false;
@@ -232,6 +234,9 @@
     let alive = true;
     ctx.timers.push(() => (alive = false));
     v.preload = 'auto';
+    // Poster frame instead of a black box while the video loads or buffers.
+    const poster = m.poster_url || (m.file_type === 'video' ? m.thumbnail_url : null);
+    if (poster) v.poster = poster;
     VideoCache.local(m, id).then((localUrl) => {
       if (!alive) return;
       v.src = localUrl || url || '';

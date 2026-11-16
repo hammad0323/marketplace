@@ -7,21 +7,22 @@
 require __DIR__ . '/../../includes/bootstrap.php';
 require_method('GET', 'HEAD');
 $id = (int)($_GET['id'] ?? 0);
-$variant = ($_GET['v'] ?? 'file') === 'thumb' ? 'thumb' : 'file';
+$variant = in_array($_GET['v'] ?? 'file', ['thumb', 'tv'], true) ? $_GET['v'] : 'file';
 $exp = (int)($_GET['exp'] ?? 0);
 $sig = (string)($_GET['sig'] ?? '');
 if ($id < 1 || $exp < time() || !hash_equals(media_signature($id, $exp, $variant), $sig)) {
     http_response_code(403); header('Content-Type: text/plain'); echo 'Link expired or invalid'; exit;
 }
-$m = db_one('SELECT file_path, thumbnail_path, mime_type, checksum_sha256, original_name FROM media_library WHERE media_id = ?', [$id]);
-$rel = $m ? ($variant === 'thumb' ? ($m['thumbnail_path'] ?? $m['file_path']) : $m['file_path']) : null;
+$m = db_one('SELECT file_path, thumbnail_path, tv_path, tv_checksum, mime_type, checksum_sha256, original_name FROM media_library WHERE media_id = ?', [$id]);
+$rel = $m ? match ($variant) { 'thumb' => $m['thumbnail_path'] ?? $m['file_path'], 'tv' => $m['tv_path'] ?? $m['file_path'], default => $m['file_path'] } : null;
 $abs = $rel ? realpath(storage_abs($rel)) : false;
 $root = realpath(STORAGE_PATH);
 if (!$abs || !$root || !str_starts_with($abs, $root) || !is_file($abs)) { http_response_code(404); header('Content-Type: text/plain'); echo 'Not found'; exit; }
 
-$mime = $variant === 'thumb' && $m['thumbnail_path'] ? 'image/jpeg' : $m['mime_type'];
+$mime = $variant === 'thumb' && $m['thumbnail_path'] ? 'image/jpeg' : ($variant === 'tv' && $m['tv_path'] ? 'video/mp4' : $m['mime_type']);
 $size = filesize($abs);
-$etag = '"' . substr($m['checksum_sha256'] ?? sha256($abs), 0, 32) . $variant . '"';
+$sum = $variant === 'tv' && $m['tv_path'] ? $m['tv_checksum'] : $m['checksum_sha256'];
+$etag = '"' . substr($sum ?? sha256($abs), 0, 32) . $variant . '"';
 header('Content-Type: ' . $mime);
 header('Accept-Ranges: bytes');
 header('ETag: ' . $etag);

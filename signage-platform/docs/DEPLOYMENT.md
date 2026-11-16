@@ -187,7 +187,10 @@ server {
 * Raise PHP's upload limits for videos (`upload_max_filesize`, `post_max_size`, e.g. 512M) — the default 2 MB rejects most videos.
 * Recommended in production: let the web server send media files. Set `MEDIA_XSENDFILE=apache` (with mod_xsendfile and `XSendFilePath <STORAGE_PATH>`) or `MEDIA_XSENDFILE=nginx` with
   `location /_protected_media/ { internal; alias <STORAGE_PATH>/; }`. Without it PHP streams the file (no time limit, no DB connection held).
-* Encode videos as H.264/AAC MP4. For the fastest first start, move the index to the front once: `ffmpeg -i in.mp4 -c copy -movflags +faststart out.mp4`.
+* **TV-safe versions (automatic):** install ffmpeg on the server (`sudo apt install ffmpeg`). Every uploaded video then gets a background-made MP4 that every TV browser can decode — H.264 High@4.1, 8-bit, max 1080p (1080×1920 portrait), max 30 fps, ~6 Mbit/s peak, AAC stereo, index at the front, keyframe every 2 s — plus a poster frame. Files that already meet this are only repackaged. Players receive the TV version automatically (also for screens published before it was ready); the original is kept. Settings: `VIDEO_OPTIMIZE` (1/0), `FFMPEG_PATH`, `FFPROBE_PATH`, `PHP_CLI_PATH` (PHP command-line binary that starts the converter after an upload).
+* Existing installations: run `backend/database/migrations/2026_11_16_tv_video_versions.sql` **before** uploading the new code, then `php backend/cron/optimize_videos.php --all` to convert videos uploaded earlier.
+* Safety-net cron (converts anything the background start missed):
+  `*/5 * * * * www-data php /var/www/signage/backend/cron/optimize_videos.php >> /var/www/signage/backend/logs/cron.log 2>&1`
 
 ### 3.6 Web app
 

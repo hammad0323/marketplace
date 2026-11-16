@@ -292,8 +292,16 @@ function media_url(?int $mediaId, string $variant = 'file'): ?string
 /** Add url / thumbnail_url to a media row and hide server paths. */
 function present_media(array $m): array
 {
-    $m['url'] = media_url((int)$m['media_id']);
+    $pb = media_playback($m);
+    if ($pb['variant'] === 'tv') {
+        // Play the TV-safe version everywhere; keep the original size for the library.
+        $m['original_file_size'] = (int)$m['file_size'];
+        $m['file_size'] = $pb['size'];
+        $m['checksum_sha256'] = $pb['checksum'];
+        $m['mime_type'] = $pb['mime'];
+    }
+    $m['url'] = media_url((int)$m['media_id'], $pb['variant']);
     $m['thumbnail_url'] = !empty($m['thumbnail_path']) ? media_url((int)$m['media_id'], 'thumb') : ($m['file_type'] === 'image' ? $m['url'] : null);
-    unset($m['file_path'], $m['thumbnail_path'], $m['storage_driver']);
+    unset($m['file_path'], $m['thumbnail_path'], $m['storage_driver'], $m['tv_path'], $m['tv_file_size'], $m['tv_checksum']);
     return $m;
 }

@@ -458,6 +458,24 @@ $feat = array_values(array_filter($tl, fn($t) => $t['template_key'] === 'menu_fr
 $animated = array_filter($feat['template_json']['widgets'] ?? [], fn($w) => ($w['configuration']['animation'] ?? 'none') !== 'none');
 check('every element of the feature-dish template animates', $animated && count($animated) === count($feat['template_json']['widgets']), count($animated));
 
+section('TV-safe video versions');
+$ffmpegOk = trim((string)@shell_exec('ffmpeg -version 2>/dev/null | head -1')) !== '';
+if (!$ffmpegOk) { echo "  (skipped: ffmpeg not installed)\n"; }
+else {
+    $hard = sys_get_temp_dir() . '/hard_' . getmypid() . '.mp4';
+    shell_exec('ffmpeg -loglevel error -y -f lavfi -i testsrc2=size=2560x1440:rate=60 -t 2 -c:v libx264 -preset ultrafast -pix_fmt yuv444p ' . escapeshellarg($hard));
+    $vm = expect('upload a video TVs cannot decode (1440p60, 4:4:4)', req('POST', '/api/media/upload', [], $ADMIN2, ['file' => [$hard, 'video/mp4', 'hard.mp4']]), 201);
+    check('conversion queued', in_array($vm['optimize_status'] ?? '', ['pending', 'processing', 'done'], true), $vm['optimize_status'] ?? null);
+    $d = null;
+    for ($i = 0; $i < 60; $i++) { $d = req('GET', '/api/media/details?media_id=' . $vm['media_id'], null, $ADMIN2)['json']['data'] ?? null; if (in_array($d['optimize_status'] ?? '', ['done', 'failed'], true)) break; sleep(1); }
+    check('TV version made in the background', ($d['optimize_status'] ?? '') === 'done', $d['optimize_note'] ?? $d);
+    check('players get the TV version (url, size, checksum)', str_contains($d['url'] ?? '', 'v=tv') && (int)$d['file_size'] < (int)($d['original_file_size'] ?? 0) && strlen($d['checksum_sha256'] ?? '') === 64, [$d['url'] ?? null, $d['file_size'] ?? null, $d['original_file_size'] ?? null]);
+    check('video got a size and poster frame', (int)($d['width'] ?? 0) <= 1920 && (int)($d['height'] ?? 0) <= 1080 && !empty($d['thumbnail_url']), [$d['width'] ?? null, $d['height'] ?? null]);
+    $bin = req('GET', parse_url($d['url'], PHP_URL_PATH) . '?' . parse_url($d['url'], PHP_URL_QUERY));
+    check('TV file served as MP4 matching its checksum', $bin['code'] === 200 && hash('sha256', $bin['raw']) === $d['checksum_sha256'] && str_contains($bin['headers'], 'video/mp4'));
+    @unlink($hard);
+}
+
 section('Web app (core PHP pages)');
 $jar = tempnam(sys_get_temp_dir(), 'webjar');
 $web = function (string $method, string $path, ?array $form = null) use ($jar) {

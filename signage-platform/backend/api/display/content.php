@@ -11,6 +11,16 @@ require_method('GET');
 $ip = client_ip();
 rate_limit('display:ip:' . $ip, 240, 3600);
 $code = normalize_display_code((string)($_GET['code'] ?? ''));
+
+/** Publication hash + the TV versions of its videos, so displays update when a conversion finishes. */
+function display_effective_hash(array $pub): string
+{
+    $doc = jdecode($pub['published_json'], []);
+    $tv = media_tv_versions(array_column($doc['media'] ?? [], 'media_id'));
+    if (!$tv) return $pub['content_hash'];
+    ksort($tv);
+    return sha256($pub['content_hash'] . '|' . implode(',', array_map(fn($id, $r) => $id . ':' . $r['tv_checksum'], array_keys($tv), $tv)));
+}
 if ($code === '') v_error('code', 'Enter a display code');
 
 $c = db_one('SELECT dc.*, u.status AS user_status, u.deleted_at AS user_deleted, u.account_expires_at FROM display_codes dc JOIN users u ON u.user_id = dc.user_id WHERE dc.code = ?', [$code]);
@@ -30,7 +40,7 @@ if ($c['playlist_id'] !== null) {
         fail('This playlist has not been published yet. Publish it in the app, then try again.', 409, 'NOT_PUBLISHED');
     }
     $name = $p['playlist_name'];
-    $hash = $pub['content_hash'];
+    $hash = display_effective_hash($pub);
     $kind = 'playlist';
     if (($_GET['have'] ?? '') !== $hash) $doc = sign_manifest(jdecode($pub['published_json'], []));
 } else {
@@ -40,7 +50,7 @@ if ($c['playlist_id'] !== null) {
         fail('This screen has not been published yet. Publish it in the app, then try again.', 409, 'NOT_PUBLISHED');
     }
     $name = $s['screen_name'];
-    $hash = $pub['content_hash'];
+    $hash = display_effective_hash($pub);
     $kind = 'screen';
     if (($_GET['have'] ?? '') !== $hash) {
         $screen = jdecode($pub['published_json'], []);
