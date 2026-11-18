@@ -19,6 +19,7 @@ $code = preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['code'] ?? ''));
   html, body { background: #000; height: 100%; overflow: hidden; }
   #player { position: fixed; inset: 0; }
   #emergency { position: fixed; inset: 0; z-index: 50; display: none; }
+  #diag { position: fixed; left: 14px; top: 14px; z-index: 70; max-width: 62vw; color: #fff; background: rgba(0,0,0,.78); padding: 12px 14px; border-radius: 12px; font: 13px/1.45 monospace; white-space: pre-wrap; display: none; }
   #corner { position: fixed; right: 14px; bottom: 14px; z-index: 60; color: #fff; background: rgba(0,0,0,.55); padding: 8px 12px; border-radius: 10px; font-size: 13px; display: none; }
   body.auth { background: #17191C; }
 </style>
@@ -41,6 +42,7 @@ $code = preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['code'] ?? ''));
 <div id="player" style="display:none"></div>
 <div id="emergency"></div>
 <div id="corner"></div>
+<div id="diag"></div>
 <script>
 (function () {
   const S = window.SIGNAGE, R = window.SignRender;
@@ -139,6 +141,53 @@ $code = preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['code'] ?? ''));
       if (presses.length >= 3) { presses = []; showForm(''); }
     }
   });
+  // Smart-TV browsers (e.g. LG webOS) only allow full screen after a button press: use the first one.
+  const goFull = () => {
+    const d = document.documentElement;
+    if (form.style.display === 'none' && !document.fullscreenElement && d.requestFullscreen) d.requestFullscreen().catch(() => {});
+  };
+  document.addEventListener('keydown', goFull, true);
+  document.addEventListener('click', goFull, true);
+
+  // Diagnostics overlay: add &debug=1 to the link, or press the BLUE button (or "D") on the remote/keyboard.
+  const diag = document.getElementById('diag');
+  let diagTimer = null;
+  async function drawDiag() {
+    const lines = [];
+    const vids = [...document.querySelectorAll('#player video')];
+    const ER = { 1: 'aborted', 2: 'network', 3: 'decode (TV cannot decode this file)', 4: 'format not supported' };
+    lines.push('Signal Signage – display diagnostics   (BLUE / D to close)');
+    lines.push('Browser: ' + navigator.userAgent);
+    lines.push(`Screen: ${screen.width}x${screen.height}  window: ${innerWidth}x${innerHeight}  memory: ${navigator.deviceMemory || '?'} GB`);
+    const v0 = document.createElement('video');
+    lines.push(`Decoders: H.264 ${v0.canPlayType('video/mp4; codecs="avc1.640028"') || 'no'} · HEVC ${v0.canPlayType('video/mp4; codecs="hvc1.1.6.L120.90"') || 'no'}`);
+    let quota = '';
+    try { if (navigator.storage && navigator.storage.estimate) { const q = await navigator.storage.estimate(); quota = ` · used ${(q.usage / 1048576).toFixed(0)} of ${(q.quota / 1048576).toFixed(0)} MB`; } } catch (e) {}
+    lines.push(`Storage: ${window.caches && window.isSecureContext ? 'Cache Storage' : (window.indexedDB ? 'IndexedDB' : 'none (memory only)')}${quota}`);
+    const st = R.VideoCache.status();
+    lines.push(`Downloads running: ${st.downloading}${st.downloading ? ' (' + Math.round(st.progress * 100) + '%)' : ''}`);
+    lines.push(`Code: ${code}   content: ${hash ? hash.slice(0, 10) : '-'}   online: ${navigator.onLine}`);
+    if (!vids.length) lines.push('Videos on screen: none');
+    vids.forEach((v, i) => {
+      const src = !v.getAttribute('src') ? 'NOT STARTED (downloading first)' : v.src.startsWith('blob:') ? 'LOCAL copy on this TV' : 'STREAM from server';
+      lines.push(`Video ${i + 1}: ${src}`);
+      lines.push(`  ${v.paused ? 'PAUSED' : 'playing'} · ${v.currentTime.toFixed(1)} / ${isFinite(v.duration) ? v.duration.toFixed(1) : '?'} s · ${v.videoWidth}x${v.videoHeight} · ready ${v.readyState}/4 · network ${v.networkState} · muted ${v.muted}`);
+      if (v.error) lines.push(`  ERROR ${v.error.code}: ${ER[v.error.code] || ''} ${v.error.message || ''}`);
+    });
+    diag.textContent = lines.join('\n');
+  }
+  function toggleDiag(on) {
+    const show = on ?? diag.style.display === 'none';
+    diag.style.display = show ? 'block' : 'none';
+    clearInterval(diagTimer);
+    if (show) { drawDiag(); diagTimer = setInterval(drawDiag, 1000); }
+  }
+  document.addEventListener('keydown', (e) => {
+    if (form.style.display !== 'none') return;
+    if (e.keyCode === 406 || e.key === 'ColorF3Blue' || e.key === 'd' || e.key === 'D') toggleDiag();
+  });
+  if (/[?&]debug=1/.test(location.search)) toggleDiag(true);
+
   document.addEventListener('mousemove', () => { document.body.style.cursor = ''; clearTimeout(window._cur); window._cur = setTimeout(() => (document.body.style.cursor = 'none'), 3000); });
   code ? start() : showForm('');
 })();
