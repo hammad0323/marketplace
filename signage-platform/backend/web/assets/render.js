@@ -205,8 +205,9 @@
           blob = new Blob(parts, { type: r.headers.get('Content-Type') || m.mime_type || 'video/mp4' });
         } else blob = await r.blob();
         if (total && blob.size !== total) throw new Error('incomplete download');
-        await writeStored(k, blob);
-        const u = URL.createObjectURL(blob); blobUrls.set(k, u); return u;
+        const u = URL.createObjectURL(blob); blobUrls.set(k, u);
+        writeStored(k, blob);                                // save for next time without delaying playback
+        return u;
       })().catch((e) => { console.warn('video cache', e); return null; }).finally(() => { inflight.delete(k); progress.delete(k); emit(); });
       inflight.set(k, p);
       return p;
@@ -221,32 +222,85 @@
       for (const [k, u] of blobUrls) if (!keep.has(k)) { URL.revokeObjectURL(u); blobUrls.delete(k); }
     }
     function status() { let n = 0, sum = 0; progress.forEach((v) => { n++; sum += v; }); return { downloading: inflight.size, progress: n ? sum / n : 1 }; }
-    return { local, ensure, prune, status, onChange: (f) => (listeners.add(f), () => listeners.delete(f)), key };
+    const canCache = (m) => !(m.file_size && m.file_size > MAX_BYTES);
+    return { local, ensure, prune, status, canCache, onChange: (f) => (listeners.add(f), () => listeners.delete(f)), key };
   })();
 
+  /** play() that never leaves a black box: TV browsers block autoplay with sound until the remote is used. */
+  function tryPlay(v) {
+    const p = v.play();
+    if (!p || !p.catch) return;
+    p.catch((e) => {
+      if (e && e.name === 'NotAllowedError' && !v.muted) {
+        v.muted = true;                       // start muted now…
+        v.play().catch(() => {});
+        const evs = ['keydown', 'click', 'touchstart'];
+        const unmute = () => { v.muted = false; evs.forEach((ev) => document.removeEventListener(ev, unmute, true)); };
+        evs.forEach((ev) => document.addEventListener(ev, unmute, true));   // …and turn sound on at the first key press
+      }
+    });
+  }
+
   /**
-   * Play a video from the local cache when available; otherwise stream it while it downloads
-   * in the background and switch to the local copy at the end of the current loop (seamless).
+   * Play a video so it never stays black:
+   *  - already downloaded → plays from the device immediately;
+   *  - TV player ('live'): downloads the whole file first (poster shown meanwhile), then plays it from
+   *    the device — no stream competing with the download on a slow TV connection;
+   *  - previews: streams at once, and switches to the downloaded copy as soon as it is ready
+   *    (immediately if the stream is not really playing, otherwise at the end of the loop);
+   *  - a watchdog restarts playback (from the downloaded copy when possible) if the picture freezes.
    */
-  function playVideo(v, ctx, id, { loop = true, startSec = 0 } = {}) {
+  function playVideo(v, ctx, id, { loop = true, startSec = 0, autoplay = true } = {}) {
     const m = (ctx.media || {})[id] || {};
     const url = mediaUrl(ctx, id);
-    let alive = true;
-    ctx.timers.push(() => (alive = false));
+    const st = v._sg || (v._sg = { gen: 0 });
+    const gen = ++st.gen;                                    // a newer call (next video) supersedes this one
+    const alive = () => st.gen === gen && !st.dead;
+    if (!st.registered) { st.registered = true; ctx.timers.push(() => { st.dead = true; clearInterval(st.watch); }); }
     v.preload = 'auto';
-    // Poster frame instead of a black box while the video loads or buffers.
     const poster = m.poster_url || (m.file_type === 'video' ? m.thumbnail_url : null);
     if (poster) v.poster = poster;
-    VideoCache.local(m, id).then((localUrl) => {
-      if (!alive) return;
-      v.src = localUrl || url || '';
+
+    const start = (src) => {
+      if (!alive() || !src) return;
+      st.lastT = -1; st.since = Date.now();
+      v.src = src;
       v.loop = loop;
-      if (startSec) v.currentTime = startSec;
-      v.play().catch(() => {});
-      if (localUrl || !url) return;
+      if (startSec) { try { v.currentTime = startSec; } catch (e) {} }
+      if (autoplay) tryPlay(v);
+    };
+
+    clearInterval(st.watch);
+    if (autoplay) st.watch = setInterval(() => {
+      if (!alive()) return;
+      if (!v.getAttribute('src') || v.ended) { st.since = Date.now(); return; }
+      const t = v.currentTime;
+      if (!v.paused && v.readyState >= 3 && t !== st.lastT) { st.lastT = t; st.since = Date.now(); return; }   // playing fine
+      if (v.paused) tryPlay(v);
+      if (Date.now() - st.since < 6000) return;
+      st.since = Date.now();                                 // frozen for 6 s: recover
+      VideoCache.local(m, id).then((lu) => {
+        if (!alive()) return;
+        if (lu && v.src !== lu) return start(lu);           // switch to the downloaded copy
+        const pos = v.currentTime;                           // or reload the stream where it was
+        v.load();
+        try { v.currentTime = pos; } catch (e) {}
+        tryPlay(v);
+      });
+    }, 2000);
+
+    VideoCache.local(m, id).then((lu) => {
+      if (!alive()) return;
+      if (lu || !url) return start(lu);
+      if (ctx.mode === 'live' && VideoCache.canCache(m)) {
+        VideoCache.ensure(m, id, url).then((u) => start(u || url));   // download first, then play from the device
+        return;
+      }
+      start(url);
       VideoCache.ensure(m, id, url).then((u) => {
-        // Single looping video: stop looping the stream; the 'ended' handler reloads it from the cache.
-        if (alive && u && loop && !String(v.src).startsWith('blob:')) { v.loop = false; v.dataset.swapToCache = '1'; }
+        if (!alive() || !u || String(v.src).startsWith('blob:')) return;
+        if (v.paused || v.readyState < 3) return start(u);  // the stream is not really playing: switch now
+        if (loop) v.loop = false;                           // switch seamlessly at the end of this loop ('ended')
       });
     });
   }
@@ -329,7 +383,7 @@
     const v = h('video', { width: '100%', height: '100%', objectFit: fitOf(c.fit), display: 'block' });
     v.muted = bool(c.muted, true); v.playsInline = true; v.autoplay = bool(c.autoplay, true);
     const loopAll = bool(c.loop, true);
-    const play = () => playVideo(v, ctx, ids[i % ids.length], { loop: ids.length === 1 && loopAll && !c.end_sec, startSec: num(c.start_sec) });
+    const play = () => playVideo(v, ctx, ids[i % ids.length], { loop: ids.length === 1 && loopAll && !c.end_sec, startSec: num(c.start_sec), autoplay: bool(c.autoplay, true) });
     v.addEventListener('ended', () => { i++; if (i < ids.length || loopAll) play(); });
     v.addEventListener('timeupdate', () => { if (c.end_sec && v.currentTime >= num(c.end_sec)) { v.pause(); v.dispatchEvent(new Event('ended')); } });
     // Several videos in one widget: download all of them up front so switching never stalls.

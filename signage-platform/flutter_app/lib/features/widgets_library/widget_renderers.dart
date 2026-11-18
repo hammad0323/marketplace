@@ -435,6 +435,12 @@ class _VideoWidgetViewState extends State<VideoWidgetView> {
     final VideoPlayerController c;
     final bool isLocal;
     try {
+      // On a TV (player mode) download the whole file first, then play it from the device:
+      // a stream competing with the download on a slow connection is what leaves the first run black.
+      if (scope.mode == RenderMode.player && ref.url != null && await VideoCache.instance.local(ref) == null) {
+        await VideoCache.instance.ensure(ref);
+        if (!mounted) return;
+      }
       (c, isLocal) = await VideoCache.instance.open(ref);
     } catch (e) {
       scope.onError?.call('video', e);
@@ -470,6 +476,9 @@ class _VideoWidgetViewState extends State<VideoWidgetView> {
         ctrl = c;
         failed = false;
       });
+      _lastPos = Duration.zero;
+      _since = DateTime.now();
+      if (asBool(widget.config['autoplay'], true)) _startWatchdog();
       old?.dispose();
       _swapToLocal = false;
       if (!isLocal) {
@@ -505,6 +514,28 @@ class _VideoWidgetViewState extends State<VideoWidgetView> {
   bool _advancing = false;
   bool _swapToLocal = false;
 
+  // Watchdog: if the picture stops moving for 6 s, reload (from the downloaded copy when available).
+  Timer? _watch;
+  Duration _lastPos = Duration.zero;
+  DateTime _since = DateTime.now();
+  void _startWatchdog() {
+    _watch?.cancel();
+    _watch = Timer.periodic(const Duration(seconds: 2), (_) {
+      final c = ctrl;
+      if (!mounted || c == null || !c.value.isInitialized || _advancing) return;
+      final v = c.value;
+      if (v.isPlaying && v.position != _lastPos) {
+        _lastPos = v.position;
+        _since = DateTime.now();
+        return;
+      }
+      if (!v.isPlaying && asBool(widget.config['autoplay'], true)) c.play();
+      if (DateTime.now().difference(_since) < const Duration(seconds: 6)) return;
+      _since = DateTime.now();
+      _load();
+    });
+  }
+
   Future<void> _next() async {
     if (!mounted) return;
     final list = ids;
@@ -526,6 +557,7 @@ class _VideoWidgetViewState extends State<VideoWidgetView> {
 
   @override
   void dispose() {
+    _watch?.cancel();
     ctrl?.dispose();
     super.dispose();
   }
