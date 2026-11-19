@@ -247,6 +247,50 @@
     }
     initCarousels();
 
+    // ------------------------------------------------------------ T-shirt rail (hanging products)
+    $('[data-rail]').each(function () {
+        var $rail = $(this), track = $rail.find('[data-rail-track]')[0];
+        var mode = $rail.hasClass('is-hover-spin') ? 'is-spinning' : ($rail.hasClass('is-hover-swing') ? 'is-swinging' : '');
+        var $prev = $rail.find('[data-rail-nav="-1"]'), $next = $rail.find('[data-rail-nav="1"]');
+        var update = function () {
+            var max = track.scrollWidth - track.clientWidth;
+            $rail.toggleClass('can-scroll', max > 4);
+            $prev.prop('disabled', track.scrollLeft <= 4);
+            $next.prop('disabled', track.scrollLeft >= max - 4);
+        };
+        $rail.on('click', '[data-rail-nav]', function () {
+            track.scrollBy({ left: $(this).data('rail-nav') * Math.max(track.clientWidth * 0.8, 200), behavior: 'smooth' });
+        });
+        $(track).on('scroll', function () { window.requestAnimationFrame(update); });
+        $(window).on('resize', update);
+        update();
+        if (reduceMotion || !mode) { return; }
+        // Start the animation on hover; it always plays to the end, even if the pointer leaves.
+        var play = function (li) {
+            if (li.classList.contains(mode)) { return; }
+            li.classList.add(mode);
+        };
+        $rail.on('mouseenter focusin', '.uc-hang', function () { play(this); });
+        $rail.on('animationend', '.uc-hang-spin, .uc-hang-swing', function (e) {
+            if (e.originalEvent.animationName === 'uc-hang-spin' || e.originalEvent.animationName === 'uc-hang-swing') {
+                $(this).closest('.uc-hang').removeClass('is-spinning is-swinging');
+            }
+        });
+        if (!('IntersectionObserver' in window)) { $rail.addClass('is-live'); return; }
+        // Sway only while visible; on touch screens each T-shirt turns once as it scrolls into view.
+        new IntersectionObserver(function (entries) {
+            entries.forEach(function (en) { $rail.toggleClass('is-live', en.isIntersecting); });
+        }).observe(this);
+        if (window.matchMedia('(hover: none)').matches) {
+            var seen = new IntersectionObserver(function (entries) {
+                entries.forEach(function (en) {
+                    if (en.isIntersecting) { setTimeout(function () { play(en.target); }, 120); seen.unobserve(en.target); }
+                });
+            }, { threshold: 0.75 });
+            $rail.find('.uc-hang').each(function () { seen.observe(this); });
+        }
+    });
+
     // ------------------------------------------------------------ wishlist
     $(document).on('click', '[data-wishlist]', function (e) {
         e.preventDefault();

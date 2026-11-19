@@ -11,6 +11,9 @@ shared hosting — no framework, no Composer, no build step.
   customers, reviews, coupons, homepage builder & hero slides, navigation, content pages, delivery
   zones, payment methods, SEO & redirects, store settings, theme designer, admin users & roles,
   audit log.
+- Homepage **T-Shirt Rail**: products hang from a pipe and turn 360° (or swing) on hover / as they scroll
+  into view on phones; click opens the product. Built from any category in the Homepage Builder — use
+  transparent PNG/WebP cut-outs (front = main image, back = second image) for the best look.
 - Services: **Custom Size Studio** (ready-made shalwar qameez, kurta, office shirts and ladies suits
   stitched to the customer's measurements on an interactive mannequin, with S–XXL suggestions and a
   measuring guide), **Alteration Service** (instant estimated price & time, admin quotes and status

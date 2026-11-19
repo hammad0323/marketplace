@@ -1054,3 +1054,57 @@ button.uc-opt-color { background: none; padding: 0; }
 .uc-service-body ul { list-style: none; padding: 0; margin: 0 0 24px; display: grid; gap: 6px; font-size: .9rem; }
 .uc-service-body ul i { color: var(--uc-accent); }
 @media (max-width: 991px) { .uc-services { grid-template-columns: 1fr; } .uc-service-card { min-height: 440px; } .uc-service-body { padding: 28px 22px; } }
+
+/* ---------------------------------------------------------------- T-shirt rail (hanger_rail section) */
+.uc-rail { --hang-w: clamp(150px, 15vw, 196px); --pipe: linear-gradient(180deg, #5a5a5a 0%, #1d1d1d 42%, #050505 58%, #3a3a3a 100%); --hook: #262626; position: relative; margin-top: 8px; }
+.uc-rail.is-pipe-chrome { --pipe: linear-gradient(180deg, #fbfbfb 0%, #c3c6ca 38%, #7c8187 58%, #dfe1e4 100%); --hook: #858a90; }
+.uc-rail.is-pipe-gold { --pipe: linear-gradient(180deg, #f5e3b0 0%, #cfaa60 42%, #8e6d30 60%, #dcc07f 100%); --hook: #a5823d; }
+.uc-rail-pipe { position: absolute; left: 0; right: 0; top: 12px; height: 8px; border-radius: 4px; background: var(--pipe); box-shadow: 0 3px 6px rgba(0,0,0,.18); z-index: 1; pointer-events: none; }
+.uc-rail-pipe i { position: absolute; top: -9px; width: 10px; height: 26px; border-radius: 3px; background: var(--pipe); box-shadow: 0 2px 5px rgba(0,0,0,.25); }
+.uc-rail-pipe i:first-child { left: -2px; } .uc-rail-pipe i:last-child { right: -2px; }
+.uc-rail-track { list-style: none; margin: 0; padding: 8px 18px 26px; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; position: relative; z-index: 2; }
+.uc-rail-track::-webkit-scrollbar { display: none; }
+.uc-hang { flex: 0 0 var(--hang-w); scroll-snap-align: start; margin-right: -4px; }
+.uc-hang-link { display: block; color: inherit; text-decoration: none; outline-offset: -4px; }
+.uc-hang-swing { position: relative; display: block; transform-origin: 50% 12px; perspective: 900px; }
+.uc-hang-hook { display: block; width: 30px; height: 35px; margin: 0 auto -8px; fill: none; stroke: var(--hook); stroke-width: 3.2; stroke-linecap: round; position: relative; z-index: 2; }
+.uc-hang-spin { position: relative; display: block; transform-style: preserve-3d; transition: transform .5s var(--uc-ease-out, ease); }
+.uc-hang-face { display: block; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.uc-hang-face.is-back { position: absolute; inset: 0; transform: rotateY(180deg); }
+.uc-hang-face img { display: block; width: 100%; height: auto; }
+.uc-hang.is-cutout .uc-hang-face img { aspect-ratio: 6 / 7; object-fit: contain; filter: drop-shadow(0 14px 12px rgba(0,0,0,.16)); }
+.uc-hang.is-card .uc-hang-face { width: 84%; margin: 0 auto; padding-top: 8px; }
+.uc-hang.is-card .uc-hang-face img { aspect-ratio: 3 / 4; object-fit: cover; border-radius: 4px; box-shadow: 0 14px 24px rgba(0,0,0,.16); background: #eee; }
+.uc-hang.is-card .uc-hang-face::before { content: ""; position: absolute; left: 50%; top: 2px; width: 34px; height: 12px; margin-left: -17px; border-radius: 3px; background: var(--hook); z-index: 1; }
+.uc-hang.is-card .uc-hang-face.is-back { width: 84%; left: 8%; }
+.uc-hang-face.is-mirror img { transform: scaleX(-1); filter: brightness(.9) drop-shadow(0 14px 12px rgba(0,0,0,.16)); }
+.uc-hang-badge { position: absolute; top: 46px; right: 10%; z-index: 3; padding: 3px 8px; font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; background: var(--uc-primary, #111); color: #fff; border-radius: 2px; transform: rotate(6deg); }
+.uc-hang.is-soldout .uc-hang-face img { opacity: .55; }
+.uc-hang-tag { display: block; text-align: center; padding: 6px 6px 0; transition: opacity .35s, transform .35s; }
+.uc-hang-name { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; font-size: .8rem; font-weight: 500; }
+.uc-hang-price { display: block; font-size: .8rem; }
+.uc-hang-price .is-sale { color: var(--uc-sale, #b3261e); } .uc-hang-price s { opacity: .55; font-size: .72rem; }
+.uc-rail.is-details-never .uc-hang-tag { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+@media (hover: hover) {
+  .uc-rail.is-details-hover .uc-hang-tag { opacity: 0; transform: translateY(-6px); }
+  .uc-rail.is-details-hover .uc-hang:hover .uc-hang-tag, .uc-rail.is-details-hover .uc-hang-link:focus-visible .uc-hang-tag { opacity: 1; transform: none; }
+  .uc-hang:hover .uc-hang-spin { transform: translateY(-4px) scale(1.04); }
+}
+/* gentle idle sway (each hanger slightly out of step), paused while a hanger is active */
+.uc-rail.has-sway.is-live .uc-hang-swing { animation: uc-sway 5.5s ease-in-out infinite; animation-delay: calc(var(--i) * -0.7s); }
+.uc-rail .uc-hang:hover .uc-hang-swing { animation-play-state: paused; }
+@keyframes uc-sway { 0%, 100% { transform: rotate(-1.4deg); } 50% { transform: rotate(1.4deg); } }
+/* hover / tap animations, started by JS so they always finish */
+.uc-hang.is-spinning .uc-hang-spin { animation: uc-hang-spin 1.5s cubic-bezier(.45, .05, .35, 1) both; }
+@keyframes uc-hang-spin { from { transform: translateY(-4px) scale(1.04) rotateY(0); } to { transform: translateY(-4px) scale(1.04) rotateY(360deg); } }
+.uc-rail .uc-hang.is-swinging .uc-hang-swing { animation: uc-hang-swing 1.8s ease-out both; }
+@keyframes uc-hang-swing { 0% { transform: rotate(0); } 14% { transform: rotate(10deg); } 32% { transform: rotate(-8deg); } 50% { transform: rotate(5deg); } 68% { transform: rotate(-3deg); } 84% { transform: rotate(1.2deg); } 100% { transform: rotate(0); } }
+.uc-rail-nav { position: absolute; top: 46%; z-index: 4; width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(0,0,0,.08); background: rgba(255,255,255,.94); box-shadow: 0 6px 18px rgba(0,0,0,.12); display: none; align-items: center; justify-content: center; transition: opacity .25s; }
+.uc-rail-nav.is-prev { left: -6px; } .uc-rail-nav.is-next { right: -6px; }
+.uc-rail.can-scroll .uc-rail-nav { display: inline-flex; }
+.uc-rail-nav[disabled] { opacity: 0; pointer-events: none; }
+@media (hover: none) { .uc-rail-nav { display: none !important; } }
+@media (max-width: 575px) { .uc-rail { --hang-w: 41vw; } .uc-rail-track { padding-left: 8px; padding-right: 8px; } .uc-hang-name, .uc-hang-price { font-size: .76rem; } }
+@media (prefers-reduced-motion: reduce) {
+  .uc-rail .uc-hang-swing, .uc-rail .uc-hang-spin { animation: none !important; }
+}

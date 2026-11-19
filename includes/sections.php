@@ -130,6 +130,17 @@ function section_types(): array
             'card2_button_text' => ['type' => 'text', 'label' => 'Card 2 button text'],
             'card2_button_url' => ['type' => 'url', 'label' => 'Card 2 button link'],
         ], 'note' => 'Two feature cards — by default Custom Size Studio and Alterations. Leave a card heading empty to hide it.'],
+        'hanger_rail' => ['label' => 'T-Shirt Rail (products hanging on a pipe)', 'fields' => $heading + [
+            'source' => ['type' => 'select', 'label' => 'Products', 'options' => ['category' => 'From the categories selected below', 'latest' => 'Latest products', 'manual' => 'Selected products'], 'default' => 'category'],
+            'category_ids' => ['type' => 'categories', 'label' => 'Categories (incl. subcategories)'],
+            'product_ids' => ['type' => 'products', 'label' => 'Selected products'],
+            'limit' => ['type' => 'number', 'label' => 'Number of products', 'default' => '12'],
+            'image' => ['type' => 'select', 'label' => 'Front picture', 'options' => ['main' => 'Main image (back = second image)', 'second' => 'Second image (back = main image)'], 'default' => 'main'],
+            'hover' => ['type' => 'select', 'label' => 'Animation when the pointer is on a T-shirt', 'options' => ['spin' => 'Turn around 360° (shows the back)', 'swing' => 'Swing on the hanger', 'none' => 'Lift only'], 'default' => 'spin'],
+            'sway' => ['type' => 'checkbox', 'label' => 'Gentle sway when the section comes into view', 'default' => '1'],
+            'details' => ['type' => 'select', 'label' => 'Name & price', 'options' => ['hover' => 'Show on hover (always on phones)', 'always' => 'Always show', 'never' => 'Hide'], 'default' => 'hover'],
+            'pipe' => ['type' => 'select', 'label' => 'Pipe finish', 'options' => ['chrome' => 'Chrome', 'black' => 'Matt black', 'gold' => 'Brushed gold'], 'default' => 'black'],
+        ] + $button, 'note' => 'Best with T-shirt photos on a transparent background (PNG or WebP cut-outs): front as the main image, back as the second image. Normal photos are shown as hanging cards.'],
         'rich_text' => ['label' => 'Text Block', 'fields' => [
             'eyebrow' => ['type' => 'text', 'label' => 'Small heading'],
             'title' => ['type' => 'text', 'label' => 'Heading'],
