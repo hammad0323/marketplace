@@ -30,6 +30,18 @@ require UC_ROOT . '/includes/header.php';
     </div>
 </section>
 
+<?php if (design_enabled() && ($dzBlanks = design_blanks())): ?>
+<section class="uc-section pt-0">
+    <div class="uc-container">
+        <a class="uc-dz-promo" href="<?= e(url('design-studio')) ?>">
+            <span class="uc-dz-promo-art" aria-hidden="true"><?php foreach (array_slice($dzBlanks, 0, 3) as $b): ?><img src="<?= e(img_url(db_val('SELECT image FROM product_images WHERE product_id = ? ORDER BY is_main DESC, sort_order LIMIT 1', [$b['id']]))) ?>" alt="" width="120" height="140" loading="lazy"><?php endforeach; ?></span>
+            <span class="uc-dz-promo-text"><span class="uc-eyebrow">New · Design Studio</span><strong>Design your own T-shirt or hoodie</strong>
+                <span>Regular tee, oversized tee or hoodie in your colour — upload photos and logos, add text on the front and back, remove backgrounds in one tap and preview in 3D.</span>
+                <span class="uc-link-arrow">Start designing <i class="bi bi-arrow-right"></i></span></span>
+        </a>
+    </div>
+</section>
+<?php endif; ?>
 <section class="uc-section pt-0" id="choose">
     <div class="uc-container">
         <header class="uc-section-head text-center"><p class="uc-eyebrow">Step 1</p><h2 class="uc-section-title">Choose what to customise</h2></header>

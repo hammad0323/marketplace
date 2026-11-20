@@ -49,6 +49,7 @@ require_once UC_ROOT . '/includes/sections.php';
 require_once UC_ROOT . '/includes/content.php';
 require_once UC_ROOT . '/includes/studio.php';
 require_once UC_ROOT . '/includes/alterations.php';
+require_once UC_ROOT . '/includes/designer.php';
 
 uc_start_session();
 uc_send_security_headers();

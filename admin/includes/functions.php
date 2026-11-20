@@ -20,6 +20,8 @@ function admin_menu(): array
         ['Alteration Requests', 'admin/alterations/', 'scissors', 'alterations'],
         ['Alteration Price List', 'admin/alterations/services.php', 'tags', 'alterations'],
         ['Custom Size Studio', 'admin/studio/', 'rulers', 'custom_studio'],
+        ['Design Requests', 'admin/designs/', 'palette2', 'design_studio'],
+        ['Design Studio Prices', 'admin/designs/settings.php', 'cash-coin', 'design_studio'],
         ['__', 'Storefront'],
         ['Homepage Builder', 'admin/homepage/', 'layout-text-window', 'homepage'],
         ['Hero Slides', 'admin/homepage/slides.php', 'images', 'homepage'],
@@ -43,6 +45,7 @@ function admin_header(string $title, array $opts = []): void
     $uri = strtok($_SERVER['REQUEST_URI'] ?? '', '?');
     $pending = $admin && admin_can('orders') ? (int) db_val("SELECT COUNT(*) FROM orders WHERE status = 'pending'") : 0;
     $newAlt = $admin && admin_can('alterations') ? (int) db_val("SELECT COUNT(*) FROM alteration_requests WHERE status = 'new'") : 0;
+    $newDesign = $admin && admin_can('design_studio') ? (int) db_val("SELECT COUNT(*) FROM design_requests WHERE status = 'new'") : 0;
     ?><!doctype html>
 <html lang="en">
 <head>
@@ -74,7 +77,8 @@ function admin_header(string $title, array $opts = []): void
         ?>
             <a href="<?= e($href) ?>" class="<?= $active ? 'is-active' : '' ?>"><i class="bi bi-<?= e($m[2]) ?>"></i><span><?= e($m[0]) ?></span>
                 <?php if ($m[3] === 'orders' && $pending): ?><em class="a-pill"><?= $pending ?></em><?php endif; ?>
-                <?php if ($m[1] === 'admin/alterations/' && $newAlt): ?><em class="a-pill"><?= $newAlt ?></em><?php endif; ?></a>
+                <?php if ($m[1] === 'admin/alterations/' && $newAlt): ?><em class="a-pill"><?= $newAlt ?></em><?php endif; ?>
+                <?php if ($m[1] === 'admin/designs/' && $newDesign): ?><em class="a-pill"><?= $newDesign ?></em><?php endif; ?></a>
         <?php endforeach; ?>
     </nav>
 </aside>

@@ -64,6 +64,14 @@
       the bag has a custom item; after the cut-off time the estimate moves to the next day.
 - [ ] Admin price changes (garment fee, style extra, alteration prices, urgent fee) take effect on the store.
 
+### Design Studio
+- [ ] Switch garment and colour; upload an image, remove its background (and *Restore original*); add text,
+      change font/colour; move, resize, rotate, mirror, move to back; 3D preview turns front/back.
+- [ ] Automatic mode: price breakdown matches the bag; add 2 sizes → two bag lines with the design preview.
+- [ ] Quote mode: send a request → appears in Design Requests → confirm a price → customer link shows
+      the total and *Order now* → order placed, request shows *Ordered*, blank stock reduced.
+- [ ] Order view → Print sheet shows sizes in cm and downloadable artwork.
+
 ### Online payments (per gateway, in sandbox)
 - [ ] Successful payment → order *Paid* + *Confirmed*; transaction log shows valid signature.
 - [ ] Declined / cancelled payment → *Failed*; customer can retry with *Pay now*.

@@ -39,6 +39,7 @@ if (is_post()) {
         'customization_fee' => (float) input_float('customization_fee', 0),
         'custom_garment_id' => input_int('custom_garment_id') && studio_garment(input_int('custom_garment_id'), false) ? input_int('custom_garment_id') : null,
         'allow_urgent' => input_bool('allow_urgent'),
+        'design_type' => isset(design_types()[input('design_type', '', 'post')]) ? input('design_type', '', 'post') : null,
         'is_featured' => input_bool('is_featured'),
         'is_new' => input_bool('is_new'),
         'is_bestseller' => input_bool('is_bestseller'),
@@ -406,6 +407,7 @@ admin_header($id ? 'Edit product' : 'Add product', ['editor' => true]);
         <h3 class="h6">Custom Size Studio</h3>
         <?php $gOpts = ['' => '— Not available —']; foreach (studio_garments(false) as $sg) { $gOpts[$sg['id']] = $sg['name'] . ((int) $sg['is_active'] ? '' : ' (garment switched off)'); } ?>
         <?= a_select('custom_garment_id', 'Let customers order this design in their own measurements as', $gOpts, $v('custom_garment_id'), [], 'Adds a “Get it in your exact size” button and the interactive mannequin. Charges, size charts and style options: <a href="' . e(url('admin/studio/')) . '">Custom Size Studio</a>.') ?>
+        <?= a_select('design_type', 'Design Studio blank — customers print their own design on it as', ['' => 'Not a Design Studio garment'] + array_map(fn($t) => $t['label'], design_types()), $v('design_type'), [], 'Needs Color and Size options. Adds a “Design yours” button; print prices: <a href="' . e(url('admin/designs/settings.php')) . '">Design Studio Prices</a>.') ?>
         <hr>
         <h3 class="h6">Simple personalisation</h3>
         <?= a_check('is_customizable', 'Offer customisation on this product', (int) $v('is_customizable')) ?>

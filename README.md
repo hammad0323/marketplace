@@ -14,6 +14,9 @@ shared hosting — no framework, no Composer, no build step.
 - Homepage **T-Shirt Rail**: products hang from a pipe and turn 360° (or swing) on hover / as they scroll
   into view on phones; click opens the product. Built from any category in the Homepage Builder — use
   transparent PNG/WebP cut-outs (front = main image, back = second image) for the best look.
+- **Design Studio**: customers design their own T-shirt, oversized tee or hoodie — images and text on
+  front and back, one-tap background removal, 3D preview — with automatic pricing or store-confirmed
+  quotes (prices for small/medium/large images, text, multi-image discount set in admin).
 - Services: **Custom Size Studio** (ready-made shalwar qameez, kurta, office shirts and ladies suits
   stitched to the customer's measurements on an interactive mannequin, with S–XXL suggestions and a
   measuring guide), **Alteration Service** (instant estimated price & time, admin quotes and status
@@ -41,7 +44,7 @@ Full deployment instructions: **[docs/INSTALL.md](docs/INSTALL.md)**.
 | Document | Contents |
 |---|---|
 | [docs/INSTALL.md](docs/INSTALL.md) | Requirements, local setup, cPanel deployment, sub-folder installs, admin setup, email, cron |
-| [docs/SERVICES.md](docs/SERVICES.md) | Custom Size Studio, Measurement Guide, Alterations, city-wise urgent delivery, upgrading an existing store |
+| [docs/SERVICES.md](docs/SERVICES.md) | Custom Size Studio, Design Studio, Measurement Guide, Alterations, city-wise urgent delivery, upgrading an existing store |
 | [docs/PAYMENTS.md](docs/PAYMENTS.md) | Cash on Delivery, JazzCash, Easypaisa and card (Stripe) configuration, testing and go-live |
 | [docs/CHECKLISTS.md](docs/CHECKLISTS.md) | Functional testing checklist and launch checklist |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Folder structure, request flow, database tables, security model, customising |

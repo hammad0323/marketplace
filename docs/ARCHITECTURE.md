@@ -70,6 +70,10 @@ Main tables (see `database/schema.sql`):
   `customer_measurements`; measurement fields and style groups are defined in `includes/studio.php`, the
   chosen spec is stored as JSON in `cart_items.custom_spec` / `order_items.custom_spec` (`is_custom = 1`) and
   re-validated and re-priced server-side on every cart read
+- **Design Studio:** blanks are products with `design_type`; `design_assets` (uploads, tied to a visitor cookie),
+  `designs` (element JSON + rendered previews), `design_requests` (quotes); cart/order lines use
+  `is_custom = 2` with `custom_spec = {design, request}`; pricing in `design_price()` (`includes/designer.php`),
+  editor and 3D preview in `assets/js/designer.js` (three.js vendored in `assets/vendor/three`)
 - **Alterations:** `alteration_services` (price list), `alteration_requests`, `alteration_request_items`,
   `alteration_request_photos`, `alteration_status_history` (see `includes/alterations.php`)
 - **Content & SEO:** `homepage_sections`, `banner_slides`, `navigation_items`, `pages`, `site_settings`,

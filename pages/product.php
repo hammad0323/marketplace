@@ -140,6 +140,13 @@ require UC_ROOT . '/includes/header.php';
 
             <?php partial('components/product-buy', ['product' => $product, 'variants' => $variants, 'groups' => $groups, 'context' => 'page']); ?>
 
+            <?php if (!empty($product['design_type']) && design_enabled()): ?>
+                <a class="uc-studio-cta" href="<?= e(url('design-studio/' . $product['slug'])) ?>">
+                    <i class="bi bi-palette"></i>
+                    <span><strong>Design yours in the Design Studio</strong><small>Add your photos, logos &amp; text front and back · 3D preview</small></span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            <?php endif; ?>
             <?php if ($studioGarment): ?>
                 <a class="uc-studio-cta" href="<?= e(url('custom-size/' . $product['slug'])) ?>">
                     <i class="bi bi-rulers"></i>

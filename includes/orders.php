@@ -165,8 +165,14 @@ function order_place(array $in): array
                 'made_to_order' => $l['made_to_order'], 'lead_time_days' => $l['lead_time_days'],
                 'is_custom' => $l['is_custom'], 'custom_spec' => $l['custom_spec'] ? json_encode($l['custom_spec'], JSON_UNESCAPED_UNICODE) : null,
             ]);
-            if ((int) $l['product']['track_stock'] && !$l['is_custom']) { // custom pieces are cut to order, not taken from stock
+            if ((int) $l['product']['track_stock'] && (int) $l['is_custom'] !== 1) { // made-to-measure pieces are cut to order; printed designs use a blank from stock
                 inventory_adjust($l['product_id'], $l['variant_id'], -$l['qty'], 'order', $orderNumber);
+            }
+            if ((int) $l['is_custom'] === 2 && !empty($l['design'])) {
+                db_exec("UPDATE designs SET status = 'ordered' WHERE id = ?", [(int) $l['design']['id']]);
+                if (!empty($l['custom_spec']['request'])) {
+                    db_exec("UPDATE design_requests SET status = 'ordered', order_id = ? WHERE id = ? AND status = 'quoted'", [$orderId, (int) $l['custom_spec']['request']]);
+                }
             }
         }
 
@@ -239,7 +245,7 @@ function order_restore_stock(array $order, string $reason, ?int $adminId = null)
         return;
     }
     foreach (order_items((int) $order['id']) as $it) {
-        if (!$it['product_id'] || (int) $it['is_custom']) {
+        if (!$it['product_id'] || (int) $it['is_custom'] === 1) {
             continue;
         }
         $tracks = (int) db_val('SELECT track_stock FROM products WHERE id = ?', [(int) $it['product_id']]);

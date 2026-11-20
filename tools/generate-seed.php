@@ -48,7 +48,7 @@ $perms = [
     ['categories', 'Manage categories', 'Catalogue'], ['collections', 'Manage collections', 'Catalogue'],
     ['attributes', 'Manage sizes & colours', 'Catalogue'], ['inventory', 'Manage inventory', 'Catalogue'],
     ['reviews', 'Moderate reviews & testimonials', 'Catalogue'], ['custom_studio', 'Custom Size Studio settings', 'Catalogue'],
-    ['alterations', 'Alteration requests & price list', 'Sales'],
+    ['alterations', 'Alteration requests & price list', 'Sales'], ['design_studio', 'Design Studio: prices & design requests', 'Sales'],
     ['orders', 'View & process orders', 'Sales'], ['orders.refund', 'Cancel & refund orders', 'Sales'], ['orders.export', 'Export orders', 'Sales'],
     ['customers', 'Manage customers', 'Sales'], ['coupons', 'Manage coupons', 'Sales'],
     ['shipping', 'Manage delivery zones & rates', 'Sales'], ['payments', 'Configure payment methods', 'Sales'],
@@ -70,8 +70,8 @@ $insert('admin_roles', [
     ['id' => 4, 'name' => 'Content Manager', 'slug' => 'content-manager', 'description' => 'Homepage, banners, collections, pages and testimonials', 'is_system' => 1],
 ]);
 $rolePerms = [
-    2 => ['dashboard', 'products', 'categories', 'collections', 'attributes', 'inventory', 'reviews', 'orders', 'orders.refund', 'orders.export', 'customers', 'coupons', 'custom_studio', 'alterations'],
-    3 => ['dashboard', 'orders', 'orders.export', 'shipping', 'customers', 'alterations'],
+    2 => ['dashboard', 'products', 'categories', 'collections', 'attributes', 'inventory', 'reviews', 'orders', 'orders.refund', 'orders.export', 'customers', 'coupons', 'custom_studio', 'alterations', 'design_studio'],
+    3 => ['dashboard', 'orders', 'orders.export', 'shipping', 'customers', 'alterations', 'design_studio'],
     4 => ['dashboard', 'homepage', 'navigation', 'collections', 'content', 'reviews', 'newsletter'],
 ];
 $rp = [];
@@ -176,7 +176,7 @@ $product = function (array $p) use (&$products, &$images, &$variants, &$values, 
     $p += ['sale_price' => null, 'badge' => null, 'is_new' => 0, 'is_bestseller' => 0, 'is_featured' => 0, 'options' => [], 'stock' => 25,
         'fit' => null, 'fabric' => null, 'pattern' => null, 'sleeve_type' => null, 'collar_type' => null, 'waist_type' => null, 'length_type' => null,
         'season' => 'All Season', 'occasion' => null, 'care' => null, 'made_to_order' => 0, 'lead_time_days' => 0, 'is_customizable' => 0,
-        'custom_fields' => null, 'customization_fee' => 0, 'brand' => 'Urban Collections', 'attrs' => [], 'weight' => 0.4, 'days_ago' => 30, 'garment' => null, 'urgent' => 1];
+        'custom_fields' => null, 'customization_fee' => 0, 'brand' => 'Urban Collections', 'attrs' => [], 'weight' => 0.4, 'days_ago' => 30, 'garment' => null, 'urgent' => 1, 'design' => null];
     $hasVariants = $p['options'] ? 1 : 0;
     $products[] = [
         'id' => $pid, 'category_id' => $catId[$p['cat']], 'name' => $p['name'], 'slug' => $p['slug'], 'sku' => $p['sku'],
@@ -187,7 +187,7 @@ $product = function (array $p) use (&$products, &$images, &$variants, &$values, 
         'length_type' => $p['length_type'], 'season' => $p['season'], 'occasion' => $p['occasion'], 'care_instructions' => $p['care'],
         'ready_to_ship' => $p['made_to_order'] ? 0 : 1, 'made_to_order' => $p['made_to_order'], 'lead_time_days' => $p['lead_time_days'],
         'is_customizable' => $p['is_customizable'], 'custom_fields' => $p['custom_fields'], 'customization_fee' => $p['customization_fee'],
-        'custom_garment_id' => $p['garment'], 'allow_urgent' => $p['made_to_order'] ? 0 : $p['urgent'],
+        'custom_garment_id' => $p['garment'], 'allow_urgent' => $p['made_to_order'] ? 0 : $p['urgent'], 'design_type' => $p['design'],
         'is_featured' => $p['is_featured'], 'is_new' => $p['is_new'], 'is_bestseller' => $p['is_bestseller'], 'badge' => $p['badge'],
         'status' => 'published', 'seo_title' => null, 'meta_description' => $p['short'],
         'published_at' => date('Y-m-d H:i:s', strtotime('-' . $p['days_ago'] . ' days')),
@@ -471,6 +471,27 @@ foreach ($graphicTees as $i => [$title, $slug, $color, $price, $sale, $badge]) {
         'attrs' => [['Fabric weight', '180 GSM'], ['Print', 'Screen print, front & back']]]);
 }
 
+// Design Studio blanks: customers print their own artwork on these (see includes/designer.php)
+$blankDesc = '<p>Design it yourself: upload your photos, logos or artwork, add text, place them anywhere on the front and back, and preview the result in 3D. Printed to order with durable DTF printing on soft combed cotton.</p>';
+$P['blank_tee'] = $product(['name' => 'Design Your Own T-Shirt', 'slug' => 'design-your-own-t-shirt', 'sku' => 'UC-DIY-TS', 'cat' => 't-shirts', 'price' => 1990,
+    'short' => 'Plain 180 GSM combed-cotton tee — add your own images and text in the Design Studio.', 'desc' => $blankDesc,
+    'images' => ['assets/images/samples/blanks/tshirt-front.webp', 'assets/images/samples/blanks/tshirt-back.webp'],
+    'options' => ['Color' => ['White', 'Black', 'Navy', 'Maroon', 'Bottle Green', 'Grey'], 'Size' => $apparel], 'fit' => 'Regular Fit', 'fabric' => '100% Combed Cotton',
+    'pattern' => 'Custom Print', 'sleeve_type' => 'Short Sleeve', 'collar_type' => 'Crew Neck', 'occasion' => 'Casual', 'care' => $cottonCare . ' Do not iron on the print.',
+    'design' => 'tshirt', 'badge' => 'Design Your Own', 'is_new' => 1, 'days_ago' => 1, 'weight' => 0.25, 'attrs' => [['Fabric weight', '180 GSM'], ['Print area', 'Front 30 × 40 cm · Back 30 × 40 cm']]]);
+$P['blank_oversized'] = $product(['name' => 'Design Your Own Oversized Tee', 'slug' => 'design-your-own-oversized-tee', 'sku' => 'UC-DIY-OS', 'cat' => 't-shirts', 'price' => 2490,
+    'short' => 'Heavyweight 240 GSM drop-shoulder tee — your own print, front and back.', 'desc' => $blankDesc,
+    'images' => ['assets/images/samples/blanks/oversized-front.webp', 'assets/images/samples/blanks/oversized-back.webp'],
+    'options' => ['Color' => ['Black', 'Off White', 'Charcoal', 'Sand', 'Olive'], 'Size' => ['M', 'L', 'XL', 'XXL']], 'fit' => 'Oversized', 'fabric' => '100% Cotton',
+    'pattern' => 'Custom Print', 'sleeve_type' => 'Short Sleeve', 'collar_type' => 'Crew Neck', 'occasion' => 'Streetwear', 'care' => $cottonCare . ' Do not iron on the print.',
+    'design' => 'oversized', 'badge' => 'Design Your Own', 'days_ago' => 1, 'weight' => 0.32, 'attrs' => [['Fabric weight', '240 GSM'], ['Print area', 'Front 32 × 42 cm · Back 32 × 42 cm']]]);
+$P['blank_hoodie'] = $product(['name' => 'Design Your Own Hoodie', 'slug' => 'design-your-own-hoodie', 'sku' => 'UC-DIY-HD', 'cat' => 'hoodies', 'price' => 4490,
+    'short' => 'Brushed fleece pullover hoodie with kangaroo pocket — print your design on the chest and back.', 'desc' => $blankDesc,
+    'images' => ['assets/images/samples/blanks/hoodie-front.webp', 'assets/images/samples/blanks/hoodie-back.webp'],
+    'options' => ['Color' => ['Black', 'Grey', 'Navy', 'Maroon', 'Off White'], 'Size' => $apparel], 'fit' => 'Regular Fit', 'fabric' => 'Cotton-Poly Fleece',
+    'pattern' => 'Custom Print', 'sleeve_type' => 'Long Sleeve', 'occasion' => 'Casual', 'season' => 'Winter', 'care' => 'Machine wash cold inside out. Do not iron on the print.',
+    'design' => 'hoodie', 'badge' => 'Design Your Own', 'days_ago' => 1, 'weight' => 0.6, 'attrs' => [['Fabric weight', '320 GSM'], ['Print area', 'Front 28 × 26 cm · Back 32 × 38 cm']]]);
+
 $insert('products', $products);
 $insert('product_images', $images);
 $insert('product_variants', $variants);
@@ -736,7 +757,7 @@ $navAdd('header', 'Alterations', 'alterations');
 foreach ([['New Arrivals', 'new-arrivals'], ["Men's Clothing", 'category/clothing'], ['Women', 'category/women'], ['Footwear', 'category/footwear'], ['Accessories', 'category/accessories'], ['Collections', 'collections'], ['Shop All', 'shop']] as [$l, $u]) {
     $navAdd('footer_shop', $l, $u);
 }
-foreach ([['Contact Us', 'contact'], ['Track Your Order', 'track-order'], ['Custom Size Studio', 'custom-size'], ['Measurement Guide', 'measurement-guide'], ['Alterations', 'alterations'], ['Shipping Policy', 'shipping-policy'], ['Returns & Exchanges', 'returns-and-exchanges'], ['Size Guide', 'size-guide'], ['Care Guide', 'care-guide'], ['FAQs', 'faqs']] as [$l, $u]) {
+foreach ([['Contact Us', 'contact'], ['Track Your Order', 'track-order'], ['Custom Size Studio', 'custom-size'], ['Design Your Own Tee', 'design-studio'], ['Measurement Guide', 'measurement-guide'], ['Alterations', 'alterations'], ['Shipping Policy', 'shipping-policy'], ['Returns & Exchanges', 'returns-and-exchanges'], ['Size Guide', 'size-guide'], ['Care Guide', 'care-guide'], ['FAQs', 'faqs']] as [$l, $u]) {
     $navAdd('footer_help', $l, $u);
 }
 foreach ([['About Us', 'about-us'], ["Men's Fashion Guide", 'mens-fashion-guide'], ['Delivery Information', 'delivery-information'], ['Payment Information', 'payment-information'], ['Privacy Policy', 'privacy-policy'], ['Terms & Conditions', 'terms-and-conditions']] as [$l, $u]) {
@@ -814,6 +835,12 @@ $settings = [
     'services' => [
         'urgent_enabled' => '1', 'alteration_pickup_fee' => '400', 'alteration_notify_email' => '',
         'alteration_dropoff_note' => 'Drop off at our store, Mon – Sat 11am – 8pm. Bring the outfit and any accessories (belt, dupatta).',
+    ],
+    'design' => [
+        'design_enabled' => '1', 'design_pricing_mode' => 'auto', 'design_show_estimate' => '1',
+        'design_price_small' => '300', 'design_price_medium' => '500', 'design_price_large' => '800', 'design_price_text' => '150',
+        'design_small_max' => '12', 'design_medium_max' => '35', 'design_multi_discount' => '10', 'design_both_sides_fee' => '0', 'design_min_print' => '0',
+        'design_production_days' => '3', 'design_max_elements' => '8', 'design_ai_daily_limit' => '15', 'design_removebg_key' => '', 'design_notify_email' => '',
     ],
     'mail' => ['mail_enabled' => '0', 'mail_driver' => 'smtp', 'mail_from_email' => '', 'mail_from_name' => 'Urban Collections', 'smtp_host' => '', 'smtp_port' => '465', 'smtp_secure' => 'ssl', 'smtp_user' => ''],
     'seo' => [

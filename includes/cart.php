@@ -203,7 +203,10 @@ function cart_update_qty(int $itemId, int $qty): array
         return ['ok' => true, 'message' => 'Item removed.'];
     }
     $qty = min(UC_CART_MAX_QTY, $qty);
-    if ((int) $line['is_custom']) {
+    if ((int) $line['is_custom'] === 2 && !empty(json_decode((string) $line['custom_spec'], true)['request'])) {
+        return ['ok' => false, 'message' => 'Quoted quantities are fixed. Remove the item and request a new quote to change them.'];
+    }
+    if ((int) $line['is_custom'] === 1) {
         db_exec('UPDATE cart_items SET qty = ? WHERE id = ?', [min(5, $qty), $itemId]);
         return ['ok' => $qty <= 5, 'message' => $qty <= 5 ? 'Bag updated.' : 'Up to 5 custom-made pieces per design.'];
     }
@@ -269,11 +272,15 @@ function cart_lines(bool $lock = false): array
         }
         $price = price_info($product, $variant);
         $isCustom = (int) $l['is_custom'] === 1;
-        $spec = $isCustom ? (json_decode((string) $l['custom_spec'], true) ?: null) : null;
+        $isDesign = (int) $l['is_custom'] === 2;
+        $spec = $isCustom || $isDesign ? (json_decode((string) $l['custom_spec'], true) ?: null) : null;
         $available = $isCustom ? 50 : available_qty($product, $variant);
+        $design = $isDesign ? design_line_pricing((array) $spec) : null;
         $error = null;
         if ($product['status'] !== 'published') {
             $error = 'No longer available';
+        } elseif ($isDesign && $design['error']) {
+            $error = $design['error'];
         } elseif ($isCustom) {
             if (!$spec || (int) ($spec['garment_id'] ?? 0) !== (int) $product['custom_garment_id'] || !studio_garment((int) $spec['garment_id'])) {
                 $error = 'Custom sizing is no longer offered for this product';
@@ -285,13 +292,16 @@ function cart_lines(bool $lock = false): array
         } elseif ((int) $l['qty'] > $available) {
             $error = 'Only ' . $available . ' left';
         }
-        $customFee = $isCustom ? ($spec ? studio_spec_extra($spec) : 0.0) : (cart_has_customization($l) ? (float) $product['customization_fee'] : 0.0);
-        $leadDays = $isCustom && $spec ? studio_spec_lead_days($spec) : (int) $product['lead_time_days'];
+        $customFee = $isDesign ? $design['fee'] : ($isCustom ? ($spec ? studio_spec_extra($spec) : 0.0) : (cart_has_customization($l) ? (float) $product['customization_fee'] : 0.0));
+        $leadDays = $isDesign ? design_production_days() : ($isCustom && $spec ? studio_spec_lead_days($spec) : (int) $product['lead_time_days']);
         $img = db_row('SELECT image FROM product_images WHERE product_id = ? ORDER BY is_main DESC, sort_order, id LIMIT 1', [(int) $product['id']]);
         $colorFor = $optValues['Color'] ?? ($spec['color'] ?? null);
         if ($colorFor) {
             $colorImg = db_row('SELECT image FROM product_images WHERE product_id = ? AND color_name = ? ORDER BY is_main DESC, sort_order LIMIT 1', [(int) $product['id'], $colorFor]);
             $img = $colorImg ?: $img;
+        }
+        if ($isDesign && !empty($design['design']['preview_front'])) {
+            $img = ['image' => $design['design']['preview_front']];
         }
         $out[] = [
             'id' => (int) $l['id'],
@@ -313,12 +323,14 @@ function cart_lines(bool $lock = false): array
             'line_total' => round(($price['final'] + $customFee) * (int) $l['qty'], 2),
             'available' => $available,
             'error' => $error,
-            'made_to_order' => $isCustom ? 1 : (int) $product['made_to_order'],
+            'made_to_order' => $isCustom || $isDesign ? 1 : (int) $product['made_to_order'],
             'lead_time_days' => $leadDays,
-            'is_custom' => $isCustom ? 1 : 0,
+            'is_custom' => $isDesign ? 2 : ($isCustom ? 1 : 0),
             'custom_spec' => $spec,
-            'spec_summary' => $spec ? studio_summary($spec) : [],
-            'allow_urgent' => !$isCustom && (int) $product['allow_urgent'] && !(int) $product['made_to_order'],
+            'spec_summary' => $isDesign ? ($design['design'] ? design_summary($design['design'], $design['request']) : []) : ($spec ? studio_summary($spec) : []),
+            'design' => $isDesign ? $design['design'] : null,
+            'qty_locked' => $isDesign && !empty($spec['request']),
+            'allow_urgent' => !$isCustom && !$isDesign && (int) $product['allow_urgent'] && !(int) $product['made_to_order'],
             'custom_measurements' => $l['custom_measurements'],
             'custom_color' => $l['custom_color'],
             'personalization' => $l['personalization'],

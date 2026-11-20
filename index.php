@@ -105,6 +105,17 @@ switch (true) {
     case $n === 1 && $s0 === 'measurement-guide':
         $page = 'measurement-guide';
         break;
+    case $n === 1 && $s0 === 'design-studio':
+        $page = 'design-studio';
+        break;
+    case $n === 2 && $s0 === 'design-studio':
+        $ROUTE['params']['slug'] = $seg[1];
+        $page = 'design-studio';
+        break;
+    case $n === 3 && $s0 === 'design-studio' && $seg[1] === 'request':
+        $ROUTE['params']['ref'] = $seg[2];
+        $page = 'design-request';
+        break;
     case $n === 1 && $s0 === 'alterations':
         $page = 'alterations';
         break;

@@ -35,7 +35,13 @@ $merch = $totals['subtotal'] + $totals['customization_total'] - $totals['discoun
                 <?php if ($l['options']): ?>
                     <p class="uc-cart-opts"><?php foreach ($l['options'] as $k => $v): ?><span><?= e($k === 'Color' ? 'Colour' : $k) ?>: <?= e($v) ?></span><?php endforeach; ?></p>
                 <?php endif; ?>
-                <?php if ($l['is_custom']): ?>
+                <?php if ($l['is_custom'] === 2): ?>
+                    <details class="uc-cart-custom" open><summary><i class="bi bi-palette"></i> Your design<?= $l['customization_fee'] > 0 ? ' (print +' . e(money($l['customization_fee'])) . ' each)' : '' ?></summary>
+                        <?php foreach ($l['spec_summary'] as $k => $v): ?><p><strong><?= e($k) ?>:</strong> <?= e($v) ?></p><?php endforeach; ?>
+                        <?php if (!empty($l['design']['preview_back'])): ?><p class="uc-cart-design-thumbs"><img src="<?= e(img_url($l['design']['preview_front'])) ?>" alt="Front of your design" width="48" height="56"><img src="<?= e(img_url($l['design']['preview_back'])) ?>" alt="Back of your design" width="48" height="56"></p><?php endif; ?>
+                        <?php if ($l['qty_locked']): ?><p class="small text-muted mb-0">Quoted quantity — fixed.</p><?php endif; ?>
+                    </details>
+                <?php elseif ($l['is_custom']): ?>
                     <details class="uc-cart-custom" open><summary><i class="bi bi-rulers"></i> Made to your measurements<?= $l['customization_fee'] > 0 ? ' (+' . e(money($l['customization_fee'])) . ' each)' : '' ?></summary>
                         <?php foreach ($l['spec_summary'] as $k => $v): ?><p><strong><?= e($k) ?>:</strong> <?= e($v) ?></p><?php endforeach; ?>
                         <a class="small" href="<?= e(url('custom-size/' . $l['slug'])) ?>">Customise another</a>
@@ -48,14 +54,16 @@ $merch = $totals['subtotal'] + $totals['customization_total'] - $totals['discoun
                         <?php if ($l['custom_instructions']): ?><p><strong>Instructions:</strong> <?= e($l['custom_instructions']) ?></p><?php endif; ?>
                     </details>
                 <?php endif; ?>
-                <?php if ($l['made_to_order']): ?><p class="uc-cart-note"><i class="bi bi-hourglass-split"></i> <?= $l['is_custom'] ? 'Stitched for you' : 'Made to order' ?> — up to <?= (int) $l['lead_time_days'] ?> days production</p><?php endif; ?>
+                <?php if ($l['made_to_order']): ?><p class="uc-cart-note"><i class="bi bi-hourglass-split"></i> <?= $l['is_custom'] === 2 ? 'Printed for you' : ($l['is_custom'] ? 'Stitched for you' : 'Made to order') ?> — up to <?= (int) $l['lead_time_days'] ?> days production</p><?php endif; ?>
                 <?php if ($l['error']): ?><p class="uc-cart-error"><i class="bi bi-exclamation-triangle"></i> <?= e($l['error']) ?></p><?php endif; ?>
                 <div class="uc-cart-row">
+                    <?php if ($l['qty_locked'] ?? false): ?><span class="uc-qty-fixed">Qty <?= (int) $l['qty'] ?></span><?php else: ?>
                     <div class="uc-qty uc-qty--sm" data-qty>
                         <button type="button" data-cart-qty="<?= $l['id'] ?>" data-delta="-1" aria-label="Decrease quantity"><i class="bi bi-dash"></i></button>
                         <input type="number" value="<?= $l['qty'] ?>" min="0" max="<?= min(UC_CART_MAX_QTY, $l['available']) ?>" data-cart-qty-input="<?= $l['id'] ?>" aria-label="Quantity">
                         <button type="button" data-cart-qty="<?= $l['id'] ?>" data-delta="1" aria-label="Increase quantity"><i class="bi bi-plus"></i></button>
                     </div>
+                    <?php endif; ?>
                     <span class="uc-cart-price">
                         <?php if ($l['regular_price'] > $l['unit_price']): ?><s><?= e(money(($l['regular_price'] + $l['customization_fee']) * $l['qty'])) ?></s><?php endif; ?>
                         <?= e(money($l['line_total'])) ?>

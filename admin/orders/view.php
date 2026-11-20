@@ -171,7 +171,11 @@ admin_header('Order ' . $order['order_number']);
             <td><?= $it['product_id'] ? '<a href="' . e(url('admin/products/edit.php?id=' . $it['product_id'])) . '">' . e($it['product_name']) . '</a>' : e($it['product_name']) ?>
                 <?php if ($it['variant_label']): ?><div class="small text-muted"><?= e($it['variant_label']) ?></div><?php endif; ?>
                 <?php if ($it['made_to_order']): ?><div class="small text-warning"><i class="bi bi-hourglass-split"></i> Made to order — <?= (int) $it['lead_time_days'] ?> days</div><?php endif; ?>
-                <?php if ((int) $it['is_custom'] && ($spec = json_decode((string) $it['custom_spec'], true))): ?>
+                <?php if ((int) $it['is_custom'] === 2 && ($spec = json_decode((string) $it['custom_spec'], true)) && ($dz = design_by_token((string) ($spec['design'] ?? '')))): ?>
+                    <div class="a-help mt-2 small"><strong><i class="bi bi-palette"></i> Design Studio — print this design (print +<?= e(money($it['customization_fee'])) ?> each)</strong>
+                        <div class="d-flex gap-2 my-2"><?php foreach (['preview_front' => 'Front', 'preview_back' => 'Back'] as $pk => $pl): if ($dz[$pk]): ?><img src="<?= e(img_url($dz[$pk])) ?>" alt="<?= $pl ?>" width="90" height="105" style="object-fit:contain;background:#f1f0ec;border-radius:4px"><?php endif; endforeach; ?></div>
+                        <a class="btn btn-sm btn-outline-dark" href="<?= e(url('admin/designs/design.php?token=' . $dz['token'])) ?>"><i class="bi bi-printer"></i> Print sheet &amp; artwork files</a></div>
+                <?php elseif ((int) $it['is_custom'] && ($spec = json_decode((string) $it['custom_spec'], true))): ?>
                     <div class="a-help mt-2 small"><strong><i class="bi bi-rulers"></i> Custom Size Studio — stitch to these measurements<?= (float) $it['customization_fee'] > 0 ? ' (+' . e(money($it['customization_fee'])) . ' each)' : '' ?></strong>
                         <table class="table table-sm table-borderless mb-0 mt-1"><?php foreach (studio_summary($spec) as $k => $v): if ($k === 'Measurements') continue; ?><tr><td class="text-muted ps-0" style="width:120px"><?= e($k) ?></td><td><?= e($v) ?></td></tr><?php endforeach; ?></table>
                         <table class="table table-sm table-bordered mb-0 mt-1 bg-white"><tr><?php foreach ((array) $spec['measurements'] as $mk => $mv): ?><th class="small fw-normal text-muted"><?= e(studio_definitions()[$spec['garment']]['measurements'][$mk]['label'] ?? $mk) ?></th><?php endforeach; ?></tr>

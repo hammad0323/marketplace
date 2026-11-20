@@ -1,4 +1,4 @@
-# Custom Size Studio, Alterations & Urgent Delivery
+# Custom Size Studio, Design Studio, Alterations & Urgent Delivery
 
 Three services that sit alongside the ready-made catalogue. All three are managed from the admin
 **Services** menu (and *Delivery & Shipping* for urgent rates) and are promoted on the homepage by
@@ -82,6 +82,58 @@ Multan, Hyderabad, Peshawar next-day.
   may ship urgently. Turn it off per product with *Products → Edit → Allow urgent delivery*, or
   for the whole store with *Offer urgent delivery* on the same Delivery & Shipping page.
 
+## 4. Design Studio — customers design their own T-shirt or hoodie
+
+`/design-studio` (linked from the Custom Size page, the footer and every blank product page):
+
+1. **Garment** — Regular T-shirt, Oversized T-shirt or Pullover Hoodie (any product marked as a
+   *Design Studio blank*), with its price.
+2. **Colour** — the blank's colours; the garment redraws instantly.
+3. **Design** — upload JPG/PNG/WebP images (or drag them onto the shirt) and add text, on the
+   **front and back**. Drag to move, corner to resize, rotate handle to turn; centre guides snap.
+   Each item can be mirrored, duplicated, moved to the other side or layered.
+   **Remove background**: one tap removes a plain background in the browser (logos, product
+   photos, plain walls) with a strength slider and *Restore original*. Optional **AI remove**
+   (remove.bg) handles people and busy photos — see below.
+   Text: 7 print fonts, any colour.
+4. **Sizes & quantity** — several sizes of the same design in one go; sold-out sizes are disabled.
+5. **3D preview** — the design on a rotating 3D garment (drag to turn, front/back buttons).
+   Falls back to front + back pictures on devices without WebGL.
+
+The work is kept in the browser, so a refresh never loses a design.
+
+### Two ways to price — *Services → Design Studio Prices*
+- **Automatic price**: price per piece = garment price + print price, shown live with a breakdown.
+  Customers add the design to the bag and check out normally.
+- **Quote**: customers send the design with sizes and contact details (optionally seeing the
+  automatic price as an estimate). The request appears in *Services → Design Requests* with a red
+  counter; open it, check the print sheet, enter the **print price per piece** and save. The customer
+  gets a link (email, or the WhatsApp button) showing the confirmed total and an **Order now**
+  button that puts the design in the bag at that price. Quoted quantities are fixed in the bag.
+
+Print price settings: **small / medium / large image** prices (the size is the share of the print
+area the image covers — defaults: up to 12% small, up to 35% medium, above that large), **each
+text line**, **discount when 2 or more images** (%), **extra for front + back**, **minimum print
+charge**, printing time (added to the delivery estimate) and the maximum items per design.
+The server recalculates every price from the saved design — the browser's numbers are never trusted.
+
+### Orders and printing
+- A design line uses the blank's Colour/Size variant, so blank stock is checked and reduced.
+- The bag, checkout and order pages show the design preview; urgent delivery is not offered.
+- Admin order view → **Print sheet & artwork files**: front/back previews, every image with
+  download links (print file and original upload), exact **print size and position in cm**, rotation,
+  mirroring, text with font and colour, and a warning when an image is low resolution for its size.
+
+### Garments
+Mark any product as a blank: *Products → Edit → Design Studio blank* (Regular T-shirt, Oversized
+T-shirt or Hoodie). It needs Color and Size options; its price, colours, sizes and stock are used.
+Three sample blanks are included.
+
+### AI background removal (optional)
+The built-in remover needs nothing. For better results on photos of people, create an API key at
+remove.bg and paste it under *Design Studio Prices*. It is stored encrypted, used only by the server,
+and limited per customer per day (setting). Each AI removal is charged by remove.bg.
+
 ## Upgrading an existing store
 
 New installs get all of this from `database/urban_collections.sql`. For a store installed before
@@ -92,3 +144,10 @@ this update, back up the database, then import in phpMyAdmin:
    options, alteration price list, urgent rates, homepage section and menu links — safe to re-run)
 
 Then link your shalwar qameez / shirt products to a garment under *Products → Edit*.
+
+For the Design Studio (2026-11-20 update) import, in this order:
+
+3. `database/migrations/2026_11_20_design_studio.sql` (new column and tables)
+4. `database/migrations/2026_11_20_seed_design_studio.sql` (default prices, permission, footer link)
+
+Then mark your plain T-shirt / hoodie products as *Design Studio blank* under *Products → Edit*.
