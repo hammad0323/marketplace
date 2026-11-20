@@ -1,0 +1,42 @@
+# PrintHub — Apache rules (cPanel). Requires mod_rewrite.
+Options -Indexes
+DirectoryIndex index.php
+AddDefaultCharset UTF-8
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # If installed in a sub-folder, set it here, e.g. RewriteBase /printhub/
+    RewriteBase /
+
+    # Pass the Authorization header to PHP (API bearer tokens)
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Never serve private folders or files
+    RewriteRule ^(config|core|database|storage|vendor|cron|tools|mobile|docs|pages|api/modules)(/|$) - [F,L]
+    RewriteRule (^|/)\.(?!well-known/) - [F,L]
+    RewriteRule \.(sql|md|lock|json|log|sh)$ - [F,L,NC]
+    RewriteRule ^composer\.(json|lock)$ - [F,L]
+
+    # Everything that is not a real file or folder goes to the front controller
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L,QSA]
+    RewriteRule ^\.well-known/ index.php [L,QSA]
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    <FilesMatch "sw\.js$">
+        Header set Service-Worker-Allowed "/"
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_php.c>
+    php_value upload_max_filesize 30M
+    php_value post_max_size 32M
+    php_value max_execution_time 120
+    php_value memory_limit 256M
+</IfModule>
