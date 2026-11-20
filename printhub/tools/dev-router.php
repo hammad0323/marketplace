@@ -8,6 +8,11 @@ if (preg_match('#^/(config|core|database|storage|vendor|cron|tools|mobile|docs|p
 }
 $file = $root . $path;
 if ($path !== '/' && is_file($file) && !str_starts_with($path, '/.well-known')) {
+    if (str_ends_with($file, '.mjs')) {
+        header('Content-Type: text/javascript');
+        readfile($file);
+        return true;
+    }
     if (str_ends_with($file, '.php')) {
         chdir(dirname($file));
         require $file;

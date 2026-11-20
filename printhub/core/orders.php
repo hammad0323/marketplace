@@ -182,7 +182,7 @@ function order_item_validate(int $shopId, array $session, array $in, array $cata
         }
     }
     if ($item['cv_id']) {
-        $pages += max(1, min(10, (int) ($in['pages'] ?? 1)));
+        $pages += cv_page_count(db_row('SELECT * FROM customer_cvs WHERE id = ?', [$item['cv_id']]));
     }
     $item['pages'] = max(1, $pages ?: (int) ($in['pages'] ?? 1));
     $item['page_selection'] = count($files) === 1 && $files[0]['page_count'] ? pages_clean($in['page_selection'] ?? [], (int) $files[0]['page_count']) : [];
@@ -288,6 +288,16 @@ function order_create(array $shop, array $session, array $in): array
 function order_build_print_files(int $orderId): void
 {
     foreach (db_all('SELECT * FROM order_items WHERE order_id = ?', [$orderId]) as $item) {
+        if ($item['cv_id'] && !db_val('SELECT 1 FROM order_files WHERE order_item_id = ?', [(int) $item['id']])) {
+            // generated CV: attach the A4 PDF as the item's original file
+            $cv = db_row('SELECT * FROM customer_cvs WHERE id = ?', [(int) $item['cv_id']]);
+            if ($cv) {
+                [$rel, $full] = storage_new_path('orders', 'pdf');
+                file_put_contents($full, cv_pdf($cv));
+                db_insert('order_files', ['order_id' => $orderId, 'order_item_id' => (int) $item['id'], 'kind' => 'original', 'storage_path' => $rel,
+                    'original_name' => 'CV.pdf', 'mime' => 'application/pdf', 'size_bytes' => (int) filesize($full), 'page_count' => pdf_page_count($full)]);
+            }
+        }
         $files = db_all("SELECT * FROM order_files WHERE order_item_id = ? AND kind IN ('original','converted') AND deleted_at IS NULL ORDER BY id", [(int) $item['id']]);
         if (!$files) {
             continue;

@@ -14,6 +14,17 @@ function api_routes_public(): array
             $shop = api_shop($code);
             api_ok(['shop' => shop_public($shop), 'categories' => shop_catalog((int) $shop['id'])]);
         }],
+        ['GET', '/shops/([A-Za-z0-9-]{6,20})/wifi\.png', function ($code) {
+            $shop = api_shop($code);
+            $w = shop_public_wifi((int) $shop['id']);
+            if (!$w) {
+                api_fail('Wi-Fi details are not shared by this shop.', 404); // never expose private networks
+            }
+            header('Content-Type: image/png');
+            header('Cache-Control: private, max-age=300');
+            echo qr_png($w['qr_payload'], ['scale' => 10]);
+            exit;
+        }],
         ['GET', '/catalog/categories', function () {
             api_ok(['categories' => db_all('SELECT id, code, name, name_ur, description, icon, pricing_basis FROM categories WHERE is_active = 1 AND deleted_at IS NULL ORDER BY sort_order'),
                 'options' => db_all('SELECT id, option_group, code, label, width_mm, height_mm FROM printing_options WHERE is_active = 1 ORDER BY option_group, sort_order')]);

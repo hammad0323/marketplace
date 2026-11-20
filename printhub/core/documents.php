@@ -190,11 +190,12 @@ function image_prepare(string $file, array $l, ?float $targetAspect = null): arr
             $src = imagerotate($src, [3 => 180, 6 => -90, 8 => 90][$o], 0);
         }
     }
-    if ($l['rotate']) {
-        $src = imagerotate($src, -$l['rotate'], imagecolorallocate($src, 255, 255, 255));
-    }
+    // same order as the browser editor (CSS rotate() scaleX()): mirror first, then rotate clockwise, then crop
     if ($l['flip']) {
         imageflip($src, IMG_FLIP_HORIZONTAL);
+    }
+    if ($l['rotate']) {
+        $src = imagerotate($src, -$l['rotate'], imagecolorallocate($src, 255, 255, 255));
     }
     $w = imagesx($src);
     $h = imagesy($src);

@@ -80,7 +80,8 @@ function cv_templates_public(): array
 {
     return array_map(fn($t) => ['id' => (int) $t['id'], 'key' => $t['template_key'], 'name' => $t['name'], 'name_ur' => $t['name_ur'], 'category' => $t['category'],
         'description' => $t['description'], 'default_color' => $t['default_color'], 'supports_photo' => (bool) $t['supports_photo'], 'ats_friendly' => (bool) $t['ats_friendly'],
-        'is_featured' => (bool) $t['is_featured'], 'preview_url' => $t['preview_path'] ? url('media/' . $t['preview_path']) : url('cv/template-preview/' . $t['id'])],
+        'is_featured' => (bool) $t['is_featured'], 'preview_url' => $t['preview_path'] ? url('media/' . $t['preview_path']) : url('cv/template-preview/' . $t['id']),
+        'preview_is_image' => (bool) $t['preview_path']],
         db_all('SELECT * FROM cv_templates WHERE is_active = 1 AND deleted_at IS NULL ORDER BY is_featured DESC, sort_order, id'));
 }
 
@@ -242,7 +243,7 @@ function cv_render_html(array $cv, bool $sample = false): string
     include PH_ROOT . '/core/cv_templates/' . $key . '.php';
     $body = (string) ob_get_clean();
     return '<!doctype html><html lang="' . $lang . '" dir="' . $dir . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' . e($name) . ' — CV</title><style>'
-        . '@page { size: A4; margin: 14mm 14mm 16mm; } * { box-sizing: border-box; } body { margin: 0; font-size: 10pt; line-height: 1.45; color: #1f2937; }'
+        . '@page { size: A4; margin: 14mm 14mm 16mm; } * { box-sizing: border-box; } body { margin: 0; font-family: "DejaVu Sans", Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.45; color: #1f2937; }'
         . 'h1, h2, h3, p { margin: 0; } ul { margin: 3px 0 0; padding-left: 16px; } li { margin: 1px 0; } table { border-collapse: collapse; width: 100%; }'
         . '.entry { margin: 0 0 8px; page-break-inside: avoid; } .entry-head td { padding: 0; vertical-align: top; } .entry-date { text-align: right; white-space: nowrap; width: 30%; color: #6b7280; font-size: 9pt; }'
         . '.entry-sub, .muted { color: #6b7280; font-size: 9pt; } .entry-text { margin-top: 2px; } .sec { margin-bottom: 12px; } ul.plain { list-style: none; padding: 0; }'
@@ -265,6 +266,20 @@ function cv_pdf(array $cv): string
     $pdf->setPaper('A4');
     $pdf->render();
     return (string) $pdf->output();
+}
+
+/** Number of A4 pages the CV renders to. */
+function cv_page_count(array $cv): int
+{
+    $opt = new Options();
+    $opt->set('isRemoteEnabled', false);
+    $opt->set('defaultFont', 'DejaVu Sans');
+    $opt->setChroot([PH_ROOT]);
+    $pdf = new Dompdf($opt);
+    $pdf->loadHtml(preg_replace('/@media screen[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/', '', cv_render_html($cv)), 'UTF-8');
+    $pdf->setPaper('A4');
+    $pdf->render();
+    return max(1, (int) $pdf->getCanvas()->get_page_count());
 }
 
 function cv_sample_data(): array

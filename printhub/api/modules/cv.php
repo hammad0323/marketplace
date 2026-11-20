@@ -47,7 +47,8 @@ function api_routes_cv(): array
             api_ok(['html' => $html]);
         }],
         ['GET', '/cv/([a-f0-9]{32})', function ($token) use ($find) {
-            api_ok(cv_payload($find($token)));
+            $cv = $find($token);
+            api_ok(cv_payload($cv) + (isset($_GET['pages']) ? ['pages' => cv_page_count($cv)] : []));
         }],
         ['POST', '/cv/([a-f0-9]{32})', function ($token) use ($find) {
             $cv = $find($token);

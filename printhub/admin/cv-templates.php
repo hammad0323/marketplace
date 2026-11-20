@@ -49,7 +49,7 @@ admin_header('CV templates');
 <?php foreach ($rows as $t): ?>
 <div class="col-sm-6 col-lg-4"><div class="p-card h-100 mb-0"><div style="aspect-ratio:210/297;overflow:hidden;border-bottom:1px solid #E2E8F0;background:#F1F5F9;position:relative">
     <?php if ($t['preview_path']): ?><img src="<?= e(path('media/' . $t['preview_path'])) ?>" alt="" style="width:100%;height:100%;object-fit:cover"><?php else: ?>
-    <iframe src="<?= e(path('cv/template-preview/' . $t['id'])) ?>" title="Preview" loading="lazy" style="width:210mm;height:297mm;border:0;transform:scale(.32);transform-origin:0 0;pointer-events:none;position:absolute"></iframe><?php endif; ?>
+    <iframe src="<?= e(path('cv/template-preview/' . $t['id'] . '?thumb=1')) ?>" title="Preview" loading="lazy" data-thumb style="width:794px;height:1123px;border:0;transform-origin:0 0;pointer-events:none;position:absolute;left:0;top:0"></iframe><?php endif; ?>
     <?php if ((int) $t['is_featured']): ?><span class="badge text-bg-warning position-absolute" style="top:8px;left:8px">Featured</span><?php endif; ?></div>
     <div class="p-card-body py-3"><div class="d-flex align-items-start gap-2"><div><strong><?= e($t['name']) ?></strong><?= $t['name_ur'] ? ' <span dir="rtl" class="text-muted small">' . e($t['name_ur']) . '</span>' : '' ?>
         <div class="small text-muted"><?= e($cats[$t['category']] ?? $t['category']) ?> · <?= (int) $t['used'] ?> CVs<?= (int) $t['ats_friendly'] ? ' · ATS' : '' ?></div></div>
@@ -76,4 +76,5 @@ admin_header('CV templates');
     <button class="btn btn-primary w-100">Save template</button>
 </form></div></div></div>
 </div>
+<script>document.querySelectorAll('[data-thumb]').forEach(function (f) { f.style.transform = 'scale(' + (f.parentNode.clientWidth / 794) + ')'; });</script>
 <?php admin_footer();
