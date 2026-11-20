@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyLists/1.0.dtd">
+<!-- Universal Links: replace yourdomain.com and enable "Associated Domains" for the Runner target in Xcode.
+     The server serves /.well-known/apple-app-site-association once the Team ID / bundle ID are set in Admin → Settings. -->
+<plist version="1.0">
+<dict>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:yourdomain.com</string>
+	</array>
+</dict>
+</plist>

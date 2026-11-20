@@ -33,6 +33,11 @@ send_security_headers();
 if (($seg[0] ?? '') === 'files' && count($seg) === 3 && ctype_digit($seg[2]) && preg_match('/^(order|upload|payment|cvphoto|preview-[a-f0-9]{32})$/', $seg[1])) {
     $kind = $seg[1];
     $id = (int) $seg[2];
+    // signed links carry their own authorisation (no cookies), so configured app origins may fetch them
+    if (($o = $_SERVER['HTTP_ORIGIN'] ?? '') && in_array($o, CORS_ORIGINS, true)) {
+        header('Access-Control-Allow-Origin: ' . $o);
+        header('Vary: Origin');
+    }
     if (!signed_file_check($kind, $id, (int) ($_GET['e'] ?? 0), (string) ($_GET['d'] ?? ''), (string) ($_GET['s'] ?? ''))) {
         http_response_code(403);
         exit('This link has expired. Please open the file again from your order.');
