@@ -64,6 +64,7 @@ $code = preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['code'] ?? ''));
   async function prepareVideos(d) {
     const token = ++prepToken;
     const media = (d.media || []).filter((m) => m.file_type === 'video');
+    if (!R.VideoCache.blobPlayback()) { R.VideoCache.prune([]); return; }   // this TV streams the TV-optimised file instead
     R.VideoCache.prune(media);
     for (let i = 0; i < media.length; i++) {
       if (token !== prepToken) return;
@@ -165,12 +166,14 @@ $code = preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['code'] ?? ''));
     try { if (navigator.storage && navigator.storage.estimate) { const q = await navigator.storage.estimate(); quota = ` · used ${(q.usage / 1048576).toFixed(0)} of ${(q.quota / 1048576).toFixed(0)} MB`; } } catch (e) {}
     lines.push(`Storage: ${window.caches && window.isSecureContext ? 'Cache Storage' : (window.indexedDB ? 'IndexedDB' : 'none (memory only)')}${quota}`);
     const st = R.VideoCache.status();
-    lines.push(`Downloads running: ${st.downloading}${st.downloading ? ' (' + Math.round(st.progress * 100) + '%)' : ''}`);
+    lines.push(`Local video copies: ${R.VideoCache.blobPlayback() ? 'yes' : 'not supported by this browser – playing from the server'} · downloads running: ${st.downloading}${st.downloading ? ' (' + Math.round(st.progress * 100) + '%)' : ''}`);
     lines.push(`Code: ${code}   content: ${hash ? hash.slice(0, 10) : '-'}   online: ${navigator.onLine}`);
     if (!vids.length) lines.push('Videos on screen: none');
     vids.forEach((v, i) => {
       const src = !v.getAttribute('src') ? 'NOT STARTED (downloading first)' : v.src.startsWith('blob:') ? 'LOCAL copy on this TV' : 'STREAM from server';
       lines.push(`Video ${i + 1}: ${src}`);
+      const mm = ((doc && doc.media) || []).find((x) => String(x.media_id) === String(v.dataset.mediaId));
+      if (mm) lines.push(`  file: ${mm.variant === 'tv' ? 'TV version (optimised)' : 'ORIGINAL (not converted yet)'} · ${mm.mime_type || '?'} · ${((mm.file_size || 0) / 1048576).toFixed(1)} MB`);
       lines.push(`  ${v.paused ? 'PAUSED' : 'playing'} · ${v.currentTime.toFixed(1)} / ${isFinite(v.duration) ? v.duration.toFixed(1) : '?'} s · ${v.videoWidth}x${v.videoHeight} · ready ${v.readyState}/4 · network ${v.networkState} · muted ${v.muted}`);
       if (v.error) lines.push(`  ERROR ${v.error.code}: ${ER[v.error.code] || ''} ${v.error.message || ''}`);
     });

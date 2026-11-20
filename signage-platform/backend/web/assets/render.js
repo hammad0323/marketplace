@@ -222,8 +222,19 @@
       for (const [k, u] of blobUrls) if (!keep.has(k)) { URL.revokeObjectURL(u); blobUrls.delete(k); }
     }
     function status() { let n = 0, sum = 0; progress.forEach((v) => { n++; sum += v; }); return { downloading: inflight.size, progress: n ? sum / n : 1 }; }
-    const canCache = (m) => !(m.file_size && m.file_size > MAX_BYTES);
-    return { local, ensure, prune, status, canCache, onChange: (f) => (listeners.add(f), () => listeners.delete(f)), key };
+    /**
+     * Can this browser play a video from a local blob: URL? LG webOS hands video to a separate media
+     * engine that cannot open blob: URLs (error 4 "format not supported", black screen), so there the
+     * TV-optimised file is played straight from the server. Other browsers are switched off the first
+     * time a local copy fails, and that is remembered on the device.
+     */
+    const NO_BLOB_KEY = 'sg_no_blob_video';
+    let blobOk = !/Web0S|webOS|NetCast|Colt\//i.test(navigator.userAgent);
+    try { if (localStorage.getItem(NO_BLOB_KEY) === '1') blobOk = false; } catch (e) {}
+    const blobPlayback = () => blobOk;
+    function blobFailed() { blobOk = false; try { localStorage.setItem(NO_BLOB_KEY, '1'); } catch (e) {} }
+    const canCache = (m) => blobOk && !(m.file_size && m.file_size > MAX_BYTES);
+    return { local, ensure, prune, status, canCache, blobPlayback, blobFailed, onChange: (f) => (listeners.add(f), () => listeners.delete(f)), key };
   })();
 
   /** play() that never leaves a black box: TV browsers block autoplay with sound until the remote is used. */
@@ -261,8 +272,22 @@
     const poster = m.poster_url || (m.file_type === 'video' ? m.thumbnail_url : null);
     if (poster) v.poster = poster;
 
+    v.dataset.mediaId = id;
+    if (!st.onError) {
+      st.onError = () => {
+        const failed = v.error && v.error.code;
+        if (!failed || !st.cur) return;
+        if (String(v.src).startsWith('blob:')) {          // this browser cannot play local copies: stream instead
+          VideoCache.blobFailed();
+          return st.cur.url && st.cur.start(st.cur.url);
+        }
+        setTimeout(() => st.cur && st.cur.alive() && st.cur.start(st.cur.url), 3000);   // network/stream error: retry
+      };
+      v.addEventListener('error', st.onError);
+    }
     const start = (src) => {
       if (!alive() || !src) return;
+      st.cur = { url, start, alive };
       st.lastT = -1; st.since = Date.now();
       v.src = src;
       v.loop = loop;
@@ -281,7 +306,7 @@
       st.since = Date.now();                                 // frozen for 6 s: recover
       VideoCache.local(m, id).then((lu) => {
         if (!alive()) return;
-        if (lu && v.src !== lu) return start(lu);           // switch to the downloaded copy
+        if (lu && v.src !== lu && VideoCache.blobPlayback()) return start(lu);   // switch to the downloaded copy
         const pos = v.currentTime;                           // or reload the stream where it was
         v.load();
         try { v.currentTime = pos; } catch (e) {}
@@ -289,6 +314,7 @@
       });
     }, 2000);
 
+    if (!VideoCache.blobPlayback()) { start(url); return; }   // e.g. LG webOS: play the (TV-optimised) file directly
     VideoCache.local(m, id).then((lu) => {
       if (!alive()) return;
       if (lu || !url) return start(lu);
