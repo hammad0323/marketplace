@@ -25,6 +25,7 @@ $code = preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['code'] ?? ''));
 </style>
 <script src="<?= h(web_asset('vendor/qrcode.js')) ?>"></script>
 <script>window.SIGNAGE = <?= json_encode(['api' => $base . '/api/', 'web' => $base . '/web/', 'token' => '']) ?>;</script>
+<script src="<?= h(web_asset('vendor/mp4box.all.min.js')) ?>"></script>
 <script src="<?= h(web_asset('render.js')) ?>"></script>
 <script src="<?= h(web_asset('player.js')) ?>"></script>
 </head>
@@ -64,12 +65,12 @@ $code = preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['code'] ?? ''));
   async function prepareVideos(d) {
     const token = ++prepToken;
     const media = (d.media || []).filter((m) => m.file_type === 'video');
-    if (!R.VideoCache.blobPlayback()) { R.VideoCache.prune([]); return; }   // this TV streams the TV-optimised file instead
+    if (R.VideoCache.mode() === 'stream') { R.VideoCache.prune([]); return; }   // this TV can only stream
     R.VideoCache.prune(media);
     for (let i = 0; i < media.length; i++) {
       if (token !== prepToken) return;
       const m = media[i];
-      if (await R.VideoCache.local(m, m.media_id)) continue;
+      if (await R.VideoCache.localBlob(m, m.media_id)) continue;
       const off = R.VideoCache.onChange(() => { const st = R.VideoCache.status(); if (st.downloading) showMessage(`Saving video ${i + 1} of ${media.length} for smooth playback… ${Math.round(st.progress * 100)}%`); });
       await R.VideoCache.ensure(m, m.media_id, m.url);
       off();
@@ -166,11 +167,13 @@ $code = preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['code'] ?? ''));
     try { if (navigator.storage && navigator.storage.estimate) { const q = await navigator.storage.estimate(); quota = ` · used ${(q.usage / 1048576).toFixed(0)} of ${(q.quota / 1048576).toFixed(0)} MB`; } } catch (e) {}
     lines.push(`Storage: ${window.caches && window.isSecureContext ? 'Cache Storage' : (window.indexedDB ? 'IndexedDB' : 'none (memory only)')}${quota}`);
     const st = R.VideoCache.status();
-    lines.push(`Local video copies: ${R.VideoCache.blobPlayback() ? 'yes' : 'not supported by this browser – playing from the server'} · downloads running: ${st.downloading}${st.downloading ? ' (' + Math.round(st.progress * 100) + '%)' : ''}`);
+    const modeText = { blob: 'local file (blob)', mse: 'local file via Media Source (LG-compatible)', stream: 'streaming from the server' }[R.VideoCache.mode()];
+    lines.push(`Video playback: ${modeText} · downloads running: ${st.downloading}${st.downloading ? ' (' + Math.round(st.progress * 100) + '%)' : ''}`);
     lines.push(`Code: ${code}   content: ${hash ? hash.slice(0, 10) : '-'}   online: ${navigator.onLine}`);
     if (!vids.length) lines.push('Videos on screen: none');
     vids.forEach((v, i) => {
-      const src = !v.getAttribute('src') ? 'NOT STARTED (downloading first)' : v.src.startsWith('blob:') ? 'LOCAL copy on this TV' : 'STREAM from server';
+      const kind = v._sg && v._sg.kind;
+      const src = !v.getAttribute('src') ? 'NOT STARTED (downloading first)' : kind === 'mse' ? 'LOCAL copy on this TV (Media Source)' : kind === 'local' ? 'LOCAL copy on this TV' : 'STREAM from server';
       lines.push(`Video ${i + 1}: ${src}`);
       const mm = ((doc && doc.media) || []).find((x) => String(x.media_id) === String(v.dataset.mediaId));
       if (mm) lines.push(`  file: ${mm.variant === 'tv' ? 'TV version (optimised)' : 'ORIGINAL (not converted yet)'} · ${mm.mime_type || '?'} · ${((mm.file_size || 0) / 1048576).toFixed(1)} MB`);

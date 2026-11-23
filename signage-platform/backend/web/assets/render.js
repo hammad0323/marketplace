@@ -140,16 +140,23 @@
 
   // ---------------------------------------------------------------- video cache
   /**
-   * Smooth, uninterrupted video: every video is downloaded once, completely, into browser
-   * storage (Cache Storage on HTTPS, IndexedDB on plain HTTP, e.g. smart TVs on a LAN) and then
-   * played from a local blob: URL, so loops and playlist rotations never touch the network again.
+   * Smooth, uninterrupted video: every video is downloaded once, completely, into browser storage
+   * (Cache Storage on HTTPS, IndexedDB on plain HTTP) and then played from the device, so loops,
+   * playlist rotations and restarts never touch the network again. How the stored file reaches the
+   * video player depends on the browser ("mode"):
+   *   'blob'   – a local blob: URL (most browsers);
+   *   'mse'    – Media Source Extensions fed from storage (LG webOS: its media engine cannot open
+   *              blob: file URLs, but plays Media Source like streaming apps do). The MP4 is
+   *              repackaged in the browser with mp4box.js, so it works even without server-side ffmpeg;
+   *   'stream' – last resort when neither works: the (TV-optimised) file is streamed.
+   * A failing mode is stepped down automatically and remembered on the device.
    * The cache key is media id + checksum, not the signed URL (which changes daily).
    */
   const VideoCache = (() => {
     const CACHE = 'sg-video-v1', DB = 'sg-video-cache', STORE = 'videos', PREFIX = '/__sg_video__/';
-    // Smart TVs have 1–2 GB of RAM: keep cached videos small there (larger ones stream from the TV-safe file).
-    const IS_TV = /Tizen|Web0S|webOS|SMART-TV|SmartTV|HbbTV|BRAVIA|NetCast|AFT[A-Z]|CrKey|VIDAA|Hisense|Android TV|GoogleTV/i.test(navigator.userAgent) || (navigator.deviceMemory && navigator.deviceMemory <= 2);
-    const MAX_BYTES = (IS_TV ? 250 : 800) * 1048576;       // larger files are streamed, not cached
+    const UA = navigator.userAgent;
+    const IS_TV = /Tizen|Web0S|webOS|SMART-TV|SmartTV|HbbTV|BRAVIA|NetCast|Colt\/|AFT[A-Z]|CrKey|VIDAA|Hisense|Android TV|GoogleTV/i.test(UA) || (navigator.deviceMemory && navigator.deviceMemory <= 2);
+    const IS_LG = /Web0S|webOS|NetCast|Colt\//i.test(UA);
     const blobUrls = new Map(), inflight = new Map(), progress = new Map(), listeners = new Set();
     const useCaches = typeof caches !== 'undefined' && window.isSecureContext;
     let dbp = null, persistAsked = false;
@@ -176,26 +183,52 @@
         if (!persistAsked && navigator.storage && navigator.storage.persist) { persistAsked = true; navigator.storage.persist().catch(() => {}); }
         if (useCaches) await (await caches.open(CACHE)).put(PREFIX + k, new Response(blob, { headers: { 'Content-Type': blob.type || 'video/mp4', 'Content-Length': String(blob.size) } }));
         else await tx('readwrite', (st) => st.put(blob, k));
-      } catch (e) { /* quota full or storage blocked: the blob still plays from memory this session */ }
+        return true;
+      } catch (e) { return false; /* quota full or storage blocked: still plays from memory this session */ }
     }
     const emit = () => listeners.forEach((f) => { try { f(); } catch (e) {} });
-    /** Local blob: URL if this video is already stored, else null (never downloads). */
-    async function local(m, id) {
+
+    // ---- playback mode for this browser (remembered when a mode fails)
+    const MODE_KEY = 'sg_video_mode';
+    const mseOk = () => !!(window.MediaSource && window.MP4Box);
+    let mode = IS_LG ? (mseOk() ? 'mse' : 'stream') : 'blob';
+    try {
+      const saved = localStorage.getItem(MODE_KEY);
+      const rank = { blob: 0, mse: 1, stream: 2 };
+      if (saved && rank[saved] > rank[mode]) mode = saved;
+      if (localStorage.getItem('sg_no_blob_video') === '1' && mode === 'blob') mode = mseOk() ? 'mse' : 'stream';   // older flag
+    } catch (e) {}
+    if (mode === 'mse' && !mseOk()) mode = 'stream';
+    function downgrade(from) {
+      if (from !== mode) return mode;
+      mode = from === 'blob' && mseOk() ? 'mse' : 'stream';
+      try { localStorage.setItem(MODE_KEY, mode); } catch (e) {}
+      console.warn('video playback mode →', mode);
+      return mode;
+    }
+    // Media Source keeps the whole video in memory: stay well inside TV limits.
+    const maxBytes = () => (mode === 'mse' ? 150 : IS_TV ? 250 : 800) * 1048576;
+    const canCache = (m) => mode !== 'stream' && !(m.file_size && m.file_size > maxBytes());
+
+    /** The stored video (Blob) if it is on this device, else null (never downloads). */
+    const blobs = new Map();
+    async function localBlob(m, id) {
       const k = key(m, id);
-      if (blobUrls.has(k)) return blobUrls.get(k);
+      if (blobs.has(k)) return blobs.get(k);
       const b = await readStored(k);
       if (!b || !b.size) return null;
-      const u = URL.createObjectURL(b); blobUrls.set(k, u); return u;
+      blobs.set(k, b);
+      return b;
     }
-    /** Download the whole file once (shared by every widget using it) → local blob: URL, or null. */
+    /** Download the whole file once (shared by every widget using it) → Blob, or null. */
     function ensure(m, id, url) {
       const k = key(m, id);
-      if (blobUrls.has(k)) return Promise.resolve(blobUrls.get(k));
+      if (blobs.has(k)) return Promise.resolve(blobs.get(k));
       if (inflight.has(k)) return inflight.get(k);
       const p = (async () => {
-        const have = await local(m, id); if (have) return have;
-        if (!url || (m.file_size && m.file_size > MAX_BYTES)) return null;
-        const r = await fetch(url, { cache: 'force-cache' });
+        const have = await localBlob(m, id); if (have) return have;
+        if (!url || !canCache(m)) return null;
+        const r = await fetch(url, { cache: 'no-store' });
         if (!r.ok) throw new Error('HTTP ' + r.status);
         const total = Number(r.headers.get('Content-Length')) || m.file_size || 0;
         let blob;
@@ -205,12 +238,17 @@
           blob = new Blob(parts, { type: r.headers.get('Content-Type') || m.mime_type || 'video/mp4' });
         } else blob = await r.blob();
         if (total && blob.size !== total) throw new Error('incomplete download');
-        const u = URL.createObjectURL(blob); blobUrls.set(k, u);
+        blobs.set(k, blob);
         writeStored(k, blob);                                // save for next time without delaying playback
-        return u;
+        return blob;
       })().catch((e) => { console.warn('video cache', e); return null; }).finally(() => { inflight.delete(k); progress.delete(k); emit(); });
       inflight.set(k, p);
       return p;
+    }
+    function blobUrl(m, id, blob) {
+      const k = key(m, id);
+      if (!blobUrls.has(k)) blobUrls.set(k, URL.createObjectURL(blob));
+      return blobUrls.get(k);
     }
     /** Delete stored videos not in `keepMedia` (list of media rows); used by the TV player. */
     async function prune(keepMedia) {
@@ -220,46 +258,92 @@
         else { const keys = await tx('readonly', (st) => st.getAllKeys()); for (const k of keys || []) if (!keep.has(k)) await tx('readwrite', (st) => st.delete(k)); }
       } catch (e) {}
       for (const [k, u] of blobUrls) if (!keep.has(k)) { URL.revokeObjectURL(u); blobUrls.delete(k); }
+      for (const k of [...blobs.keys()]) if (!keep.has(k)) blobs.delete(k);
     }
     function status() { let n = 0, sum = 0; progress.forEach((v) => { n++; sum += v; }); return { downloading: inflight.size, progress: n ? sum / n : 1 }; }
-    /**
-     * Can this browser play a video from a local blob: URL? LG webOS hands video to a separate media
-     * engine that cannot open blob: URLs (error 4 "format not supported", black screen), so there the
-     * TV-optimised file is played straight from the server. Other browsers are switched off the first
-     * time a local copy fails, and that is remembered on the device.
-     */
-    const NO_BLOB_KEY = 'sg_no_blob_video';
-    let blobOk = !/Web0S|webOS|NetCast|Colt\//i.test(navigator.userAgent);
-    try { if (localStorage.getItem(NO_BLOB_KEY) === '1') blobOk = false; } catch (e) {}
-    const blobPlayback = () => blobOk;
-    function blobFailed() { blobOk = false; try { localStorage.setItem(NO_BLOB_KEY, '1'); } catch (e) {} }
-    const canCache = (m) => blobOk && !(m.file_size && m.file_size > MAX_BYTES);
-    return { local, ensure, prune, status, canCache, blobPlayback, blobFailed, onChange: (f) => (listeners.add(f), () => listeners.delete(f)), key };
+    return { localBlob, ensure, blobUrl, prune, status, canCache, downgrade, mode: () => mode, isLG: IS_LG,
+      blobPlayback: () => mode !== 'stream',   // kept for older callers
+      onChange: (f) => (listeners.add(f), () => listeners.delete(f)), key };
   })();
 
-  /** play() that never leaves a black box: TV browsers block autoplay with sound until the remote is used. */
-  function tryPlay(v) {
-    const p = v.play();
-    if (!p || !p.catch) return;
-    p.catch((e) => {
-      if (e && e.name === 'NotAllowedError' && !v.muted) {
-        v.muted = true;                       // start muted now…
-        v.play().catch(() => {});
-        const evs = ['keydown', 'click', 'touchstart'];
-        const unmute = () => { v.muted = false; evs.forEach((ev) => document.removeEventListener(ev, unmute, true)); };
-        evs.forEach((ev) => document.addEventListener(ev, unmute, true));   // …and turn sound on at the first key press
-      }
+  /**
+   * Feed a stored MP4 to a <video> through Media Source Extensions (works where blob: file URLs do
+   * not, e.g. LG webOS). mp4box.js repackages the file into fragments in the browser; everything is
+   * appended from memory, then the stream is closed so the video loops without any network access.
+   */
+  function attachMse(v, blob) {
+    return new Promise((resolve, reject) => {
+      if (!window.MediaSource || !window.MP4Box) return reject(new Error('Media Source not available'));
+      blob.arrayBuffer().then((buf) => {
+        const file = window.MP4Box.createFile();
+        let info = null, failed = null;
+        file.onError = (e) => (failed = e);
+        file.onReady = (i) => (info = i);
+        buf.fileStart = 0;
+        file.appendBuffer(buf);
+        file.flush();
+        if (!info) return reject(new Error('Cannot read this MP4 (' + (failed || 'no movie header') + ')'));
+        const tracks = [...(info.videoTracks || []).map((t) => ['video', t]), ...(info.audioTracks || []).map((t) => ['audio', t])];
+        if (!tracks.length) return reject(new Error('No video track'));
+        const ms = new MediaSource();
+        const msUrl = URL.createObjectURL(ms);
+        ms.addEventListener('sourceopen', () => {
+          try {
+            ms.duration = info.duration / info.timescale;
+            const queues = [];
+            const pump = (q) => {
+              if (q.sb.updating || ms.readyState !== 'open') return;
+              const next = q.items.shift();
+              if (next) { try { q.sb.appendBuffer(next); } catch (e) { reject(e); } return; }
+              if (q.last && !q.done) {
+                q.done = true;
+                if (queues.every((x) => x.done)) { try { ms.endOfStream(); } catch (e) {} resolve(msUrl); }
+              }
+            };
+            for (const [kind, t] of tracks) {
+              const mime = `${kind}/mp4; codecs="${t.codec}"`;
+              if (!MediaSource.isTypeSupported(mime)) { if (kind === 'video') throw new Error('Unsupported codec ' + t.codec); continue; }
+              const q = { sb: ms.addSourceBuffer(mime), items: [], last: false, done: false };
+              q.sb.addEventListener('updateend', () => pump(q));
+              q.sb.addEventListener('error', () => reject(new Error('Media Source append failed')));
+              queues.push(q);
+              file.setSegmentOptions(t.id, q, { nbSamples: 300 });
+            }
+            if (!queues.length) throw new Error('No playable track');
+            file.onSegment = (tid, q, buffer, sampleNum, isLast) => { q.items.push(buffer); if (isLast) q.last = true; pump(q); };
+            for (const seg of file.initializeSegmentation()) seg.user.items.unshift(seg.buffer);
+            file.start();
+            file.flush();
+            queues.forEach((q) => { if (!q.items.length) q.last = true; pump(q); });
+          } catch (e) { reject(e); }
+        }, { once: true });
+        v.src = msUrl;   // attaching fires 'sourceopen'
+      }).catch(reject);
     });
   }
 
+  /** play() that never leaves a black box: TV browsers block autoplay with sound until the remote is used. */
+  function forceMuted(v) {
+    if (v.muted) return;
+    v.muted = true;                                          // start muted now…
+    const evs = ['keydown', 'click', 'touchstart'];
+    const unmute = () => { v.muted = false; evs.forEach((ev) => document.removeEventListener(ev, unmute, true)); };
+    evs.forEach((ev) => document.addEventListener(ev, unmute, true));   // …and turn sound on at the first key press
+  }
+  function tryPlay(v) {
+    const p = v.play();
+    if (!p || !p.catch) return;
+    p.catch((e) => { if (e && e.name === 'NotAllowedError' && !v.muted) { forceMuted(v); v.play().catch(() => {}); } });
+  }
+
   /**
-   * Play a video so it never stays black:
-   *  - already downloaded → plays from the device immediately;
-   *  - TV player ('live'): downloads the whole file first (poster shown meanwhile), then plays it from
-   *    the device — no stream competing with the download on a slow TV connection;
-   *  - previews: streams at once, and switches to the downloaded copy as soon as it is ready
-   *    (immediately if the stream is not really playing, otherwise at the end of the loop);
-   *  - a watchdog restarts playback (from the downloaded copy when possible) if the picture freezes.
+   * Play a video so it never stays black or stutters:
+   *  - stored on this device → plays locally right away (blob: URL or Media Source, see VideoCache);
+   *  - TV player ('live'): downloads the whole file first (poster + progress shown), then plays it
+   *    locally — no stream competing with the download;
+   *  - previews: stream at once; switch to the local copy when it is ready and the stream struggles;
+   *  - recovery: autoplay silently blocked → muted; frozen local playback → nudged / re-attached;
+   *    a stream is only restarted when it makes no download progress at all for 30 s.
    */
   function playVideo(v, ctx, id, { loop = true, startSec = 0, autoplay = true } = {}) {
     const m = (ctx.media || {})[id] || {};
@@ -271,62 +355,96 @@
     v.preload = 'auto';
     const poster = m.poster_url || (m.file_type === 'video' ? m.thumbnail_url : null);
     if (poster) v.poster = poster;
-
     v.dataset.mediaId = id;
-    if (!st.onError) {
-      st.onError = () => {
-        const failed = v.error && v.error.code;
-        if (!failed || !st.cur) return;
-        if (String(v.src).startsWith('blob:')) {          // this browser cannot play local copies: stream instead
-          VideoCache.blobFailed();
-          return st.cur.url && st.cur.start(st.cur.url);
-        }
-        setTimeout(() => st.cur && st.cur.alive() && st.cur.start(st.cur.url), 3000);   // network/stream error: retry
-      };
-      v.addEventListener('error', st.onError);
-    }
-    const start = (src) => {
-      if (!alive() || !src) return;
-      st.cur = { url, start, alive };
-      st.lastT = -1; st.since = Date.now();
-      v.src = src;
+
+    const begin = (kind) => {
+      st.kind = kind; st.lastT = -1; st.since = Date.now(); st.bufAt = Date.now(); st.lastBuf = -1; st.recoveries = 0;
+      st.cur = { stream, local, alive };
       v.loop = loop;
       if (startSec) { try { v.currentTime = startSec; } catch (e) {} }
       if (autoplay) tryPlay(v);
     };
+    const stream = () => {
+      if (!alive() || !url) return;
+      v.src = url;
+      begin('stream');
+    };
+    const local = (blob) => {
+      if (!alive()) return;
+      const mode = VideoCache.mode();
+      if (mode === 'blob') { v.src = VideoCache.blobUrl(m, id, blob); begin('local'); return; }
+      if (mode === 'mse') {
+        begin('mse');
+        attachMse(v, blob).then(() => { if (alive() && autoplay) tryPlay(v); }).catch((e) => {
+          console.warn('Media Source playback failed:', e && e.message);
+          if (!alive()) return;
+          VideoCache.downgrade('mse');
+          stream();
+        });
+        if (autoplay) tryPlay(v);
+        return;
+      }
+      stream();
+    };
+
+    if (!st.onError) {
+      st.onError = () => {
+        if (!v.error || !st.cur || !st.cur.alive()) return;
+        if (st.kind === 'local' || st.kind === 'mse') {     // this way of playing local copies fails here: step down
+          const next = VideoCache.downgrade(st.kind === 'local' ? 'blob' : 'mse');
+          VideoCache.localBlob(m, id).then((b) => (b && next !== 'stream' ? st.cur.local(b) : st.cur.stream()));
+          return;
+        }
+        // Stream error: after 3 s use the local copy if it arrived meanwhile, else retry the stream —
+        // but only if nothing else has taken over playback in the meantime.
+        const cur = st.cur;
+        setTimeout(() => {
+          if (st.cur !== cur || !cur.alive() || st.kind !== 'stream') return;
+          VideoCache.localBlob(m, id).then((b) => { if (st.cur === cur && st.kind === 'stream') (b && VideoCache.mode() !== 'stream' ? cur.local(b) : cur.stream()); });
+        }, 3000);
+      };
+      v.addEventListener('error', st.onError);
+    }
 
     clearInterval(st.watch);
     if (autoplay) st.watch = setInterval(() => {
-      if (!alive()) return;
-      if (!v.getAttribute('src') || v.ended) { st.since = Date.now(); return; }
+      if (!alive() || !v.getAttribute('src') || v.ended) { st.since = Date.now(); return; }
       const t = v.currentTime;
-      if (!v.paused && v.readyState >= 3 && t !== st.lastT) { st.lastT = t; st.since = Date.now(); return; }   // playing fine
+      if (!v.paused && t !== st.lastT) { st.lastT = t; st.since = Date.now(); return; }   // playing fine
       if (v.paused) tryPlay(v);
-      if (Date.now() - st.since < 6000) return;
-      st.since = Date.now();                                 // frozen for 6 s: recover
-      VideoCache.local(m, id).then((lu) => {
-        if (!alive()) return;
-        if (lu && v.src !== lu && VideoCache.blobPlayback()) return start(lu);   // switch to the downloaded copy
-        const pos = v.currentTime;                           // or reload the stream where it was
-        v.load();
-        try { v.currentTime = pos; } catch (e) {}
-        tryPlay(v);
-      });
-    }, 2000);
-
-    if (!VideoCache.blobPlayback()) { start(url); return; }   // e.g. LG webOS: play the (TV-optimised) file directly
-    VideoCache.local(m, id).then((lu) => {
-      if (!alive()) return;
-      if (lu || !url) return start(lu);
-      if (ctx.mode === 'live' && VideoCache.canCache(m)) {
-        VideoCache.ensure(m, id, url).then((u) => start(u || url));   // download first, then play from the device
+      const stuck = Date.now() - st.since;
+      // Fully loaded but the clock does not move: autoplay with sound was refused silently (LG). Go muted.
+      if (v.readyState >= 3 && !v.muted && stuck > 4000) { forceMuted(v); tryPlay(v); return; }
+      if (st.kind === 'stream') {
+        // Never throw away a download in progress: only restart when nothing arrives for 30 s.
+        const buf = v.buffered.length ? v.buffered.end(v.buffered.length - 1) : 0;
+        if (buf > st.lastBuf) { st.lastBuf = buf; st.bufAt = Date.now(); }
+        if (Date.now() - st.bufAt < 30000) return;
+        st.bufAt = Date.now(); st.since = Date.now();
+        const pos = v.currentTime; v.load(); try { v.currentTime = pos; } catch (e) {} tryPlay(v);
         return;
       }
-      start(url);
-      VideoCache.ensure(m, id, url).then((u) => {
-        if (!alive() || !u || String(v.src).startsWith('blob:')) return;
-        if (v.paused || v.readyState < 3) return start(u);  // the stream is not really playing: switch now
-        if (loop) v.loop = false;                           // switch seamlessly at the end of this loop ('ended')
+      if (stuck < 8000) return;
+      st.since = Date.now();
+      if (++st.recoveries <= 2) { try { v.currentTime = Math.max(0, t + 0.05); } catch (e) {} tryPlay(v); return; }   // nudge past a glitch
+      st.recoveries = 0;
+      VideoCache.localBlob(m, id).then((b) => (b ? local(b) : stream()));   // re-attach the local copy
+    }, 2000);
+
+    if (!url && !Object.keys(m).length) return;
+    VideoCache.localBlob(m, id).then((blob) => {
+      if (!alive()) return;
+      if (blob && VideoCache.mode() !== 'stream') return local(blob);
+      if (!VideoCache.canCache(m)) return stream();
+      if (ctx.mode === 'live') {                             // TV: download first, then play locally
+        VideoCache.ensure(m, id, url).then((b) => (b ? local(b) : stream()));
+        return;
+      }
+      stream();                                              // preview: stream now, local copy when ready
+      VideoCache.ensure(m, id, url).then((b) => {
+        if (!b || !alive() || st.kind !== 'stream') return;
+        if (v.paused || v.readyState < 3) return local(b);   // the stream struggles: switch now
+        if (loop) v.loop = false;                            // otherwise switch at the end of this loop ('ended')
       });
     });
   }

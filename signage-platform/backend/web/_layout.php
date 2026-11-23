@@ -36,6 +36,7 @@ function web_page_start(string $title, string $active, array $user, array $opts 
 <script>window.SIGNAGE = <?= json_encode($cfg, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
 <script src="<?= h(web_asset('vendor/qrcode.js')) ?>"></script>
 <script src="<?= h(web_asset('app.js')) ?>"></script>
+<script src="<?= h(web_asset('vendor/mp4box.all.min.js')) ?>"></script>
 <script src="<?= h(web_asset('render.js')) ?>"></script>
 <script src="<?= h(web_asset('player.js')) ?>"></script>
 <?php foreach ($opts['scripts'] ?? [] as $s): ?><script src="<?= h(web_asset($s)) ?>"></script><?php endforeach; ?>
