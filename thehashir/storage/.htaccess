@@ -1,0 +1,3 @@
+# Private data: never serve over the web
+Require all denied
+Deny from all

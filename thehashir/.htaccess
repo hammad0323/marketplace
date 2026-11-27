@@ -1,0 +1,64 @@
+# =========================================================================
+# The Hashir — Apache configuration (cPanel / shared hosting)
+# =========================================================================
+Options -Indexes
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # Folder this copy is installed in. Beta: /beta/   ·   After going live in the web root: /
+  RewriteBase /beta/
+
+  # --- Force HTTPS and www (uncomment on the live domain only) -------------
+  # Note: rules in the root .htaccess do not apply inside /beta, so add them here if needed.
+  # RewriteCond %{HTTPS} off [OR]
+  # RewriteCond %{HTTP_HOST} !^www\. [NC]
+  # RewriteRule ^ https://www.thehashir.com%{REQUEST_URI} [L,R=301]
+
+  # --- Never serve private folders --------------------------------------
+  RewriteRule ^(config|includes|pages|content|storage|app_admin|app_portal)(/|$) - [F,L]
+  RewriteRule ^api/.+\.php$ - [F,L]
+  RewriteRule (^|/)\.(?!well-known/) - [F,L]
+  RewriteRule \.(sql|sh|md|log|bak|ini)$ - [F,L]
+
+  # --- Pages of the current system ----------------------------------------
+  # BETA (/beta): send these to the live pages at the domain root.
+  RewriteRule ^(sign-in|editor)/?$ /$1 [R=302,L,QSA]
+  # AFTER GOING LIVE in the web root: delete the line above and use these two instead
+  # (adjust the names to match your existing files):
+  # RewriteCond %{DOCUMENT_ROOT}/$1.php -f
+  # RewriteRule ^(sign-in|editor)/?$ $1.php [L,QSA]
+
+  # --- Real files and folders (images/, admin/, assets/ ...) are served as-is
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # --- Everything else goes to the front controller ----------------------
+  RewriteRule ^ index.php [L,QSA]
+</IfModule>
+
+# --- Compression -----------------------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml application/xml text/plain
+</IfModule>
+
+# --- Browser caching for static assets (files are versioned with ?v=) -------
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/jpeg "access plus 1 month"
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(css|js|woff2)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+AddType font/woff2 .woff2
