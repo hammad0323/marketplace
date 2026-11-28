@@ -140,10 +140,21 @@
 
   // ---------------------------------------------------------------- video cache
   /**
-   * Smooth, uninterrupted video: every video is downloaded once, completely, into browser storage
-   * (Cache Storage on HTTPS, IndexedDB on plain HTTP) and then played from the device, so loops,
-   * playlist rotations and restarts never touch the network again. How the stored file reaches the
-   * video player depends on the browser ("mode"):
+   * Smooth, uninterrupted, offline-capable video: every video is downloaded once, completely, into
+   * the browser's IndexedDB and then played from the device, so loops, playlist rotations, reloads
+   * and TV restarts never touch the network again (not even with Wi-Fi switched off).
+   *
+   * Why IndexedDB (and not cookies, localStorage or the HTTP cache): it is the only browser store
+   * built for large binary files (Chromium keeps each Blob as a file on the TV's flash storage),
+   * it survives restarts on LG webOS where the HTTP cache does not, and it is available on plain
+   * HTTP as well as HTTPS. Cache Storage is only used when IndexedDB is unavailable.
+   *
+   * Storage limits: the browser gives each site a quota (about 200 MB on an LG 55NU700BPUA / webOS
+   * 26; it is read live with navigator.storage.estimate()). Before saving, room is made by removing
+   * videos that are no longer in the published content (least recently played first). A video that
+   * still does not fit is played from memory for this session instead of failing.
+   *
+   * How the stored file reaches the video player depends on the browser ("mode"):
    *   'blob'   – a local blob: URL (most browsers);
    *   'mse'    – Media Source Extensions fed from storage (LG webOS: its media engine cannot open
    *              blob: file URLs, but plays Media Source like streaming apps do). The MP4 is
@@ -153,38 +164,114 @@
    * The cache key is media id + checksum, not the signed URL (which changes daily).
    */
   const VideoCache = (() => {
-    const CACHE = 'sg-video-v1', DB = 'sg-video-cache', STORE = 'videos', PREFIX = '/__sg_video__/';
+    const LEGACY_CACHE = 'sg-video-v1', DB = 'sg-video-cache', STORE = 'videos', META = 'meta', PREFIX = '/__sg_video__/';
+    const MB = 1048576;
     const UA = navigator.userAgent;
     const IS_TV = /Tizen|Web0S|webOS|SMART-TV|SmartTV|HbbTV|BRAVIA|NetCast|Colt\/|AFT[A-Z]|CrKey|VIDAA|Hisense|Android TV|GoogleTV/i.test(UA) || (navigator.deviceMemory && navigator.deviceMemory <= 2);
     const IS_LG = /Web0S|webOS|NetCast|Colt\//i.test(UA);
+    const MEM_GB = navigator.deviceMemory || (IS_TV ? 1 : 4);
     const blobUrls = new Map(), inflight = new Map(), progress = new Map(), listeners = new Set();
-    const useCaches = typeof caches !== 'undefined' && window.isSecureContext;
-    let dbp = null, persistAsked = false;
+    const where = new Map();                                   // key → 'saved' | 'memory' | 'nospace'
+    const hasCaches = typeof caches !== 'undefined' && window.isSecureContext;
+    let dbp = null, keep = new Set(), backend = window.indexedDB ? 'indexeddb' : hasCaches ? 'cache' : 'memory';
     const key = (m, id) => 'v' + (m.media_id || id) + '-' + String(m.checksum_sha256 || m.checksum || m.file_size || '0').slice(0, 16);
+
     function idb() {
       if (dbp) return dbp;
       dbp = new Promise((res, rej) => {
-        if (!window.indexedDB) return rej(new Error('no storage'));
-        const r = indexedDB.open(DB, 1);
-        r.onupgradeneeded = () => r.result.createObjectStore(STORE);
-        r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
-      });
+        if (!window.indexedDB) return rej(new Error('no IndexedDB'));
+        let r;
+        try { r = indexedDB.open(DB, 2); } catch (e) { return rej(e); }
+        r.onupgradeneeded = () => {
+          const db = r.result;
+          if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
+          if (!db.objectStoreNames.contains(META)) db.createObjectStore(META);   // key → { size, used, mid }
+        };
+        r.onsuccess = () => { const db = r.result; db.onversionchange = () => { db.close(); dbp = null; }; res(db); };
+        r.onerror = () => rej(r.error);
+        r.onblocked = () => rej(new Error('storage blocked'));
+      }).catch((e) => { backend = hasCaches ? 'cache' : 'memory'; dbp = null; throw e; });
       return dbp;
     }
-    const tx = (mode, fn) => idb().then((db) => new Promise((res, rej) => { const t = db.transaction(STORE, mode); const q = fn(t.objectStore(STORE)); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); }));
-    async function readStored(k) {
+    /** Run fn(stores…) in one transaction; resolves with fn's request result when committed. */
+    const tx = (names, mode, fn) => idb().then((db) => new Promise((res, rej) => {
+      const t = db.transaction(names, mode);
+      const q = fn(...names.map((n) => t.objectStore(n)));
+      t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error('aborted'));
+    }));
+
+    // ---- storage quota (shared by everything this site stores on the TV)
+    async function quota() {
       try {
-        if (useCaches) { const r = await (await caches.open(CACHE)).match(PREFIX + k); return r ? await r.blob() : null; }
-        return (await tx('readonly', (st) => st.get(k))) || null;
-      } catch (e) { return null; }
+        if (navigator.storage && navigator.storage.estimate) { const q = await navigator.storage.estimate(); if (q && q.quota) return { usage: q.usage || 0, quota: q.quota }; }
+      } catch (e) {}
+      const w = navigator.webkitTemporaryStorage;                // older Chromium builds (webOS ≤ 5)
+      if (w && w.queryUsageAndQuota) return new Promise((res) => w.queryUsageAndQuota((u, q) => res(q ? { usage: u, quota: q } : null), () => res(null)));
+      return null;
+    }
+    let persisted = null;
+    async function askPersist() {
+      try {
+        if (!navigator.storage || !navigator.storage.persist) return (persisted = false);
+        persisted = (await navigator.storage.persisted()) || (await navigator.storage.persist());
+      } catch (e) { persisted = false; }
+      return persisted;
+    }
+    async function metas() {
+      try {
+        const [keys, vals] = await Promise.all([tx([META], 'readonly', (s) => s.getAllKeys()), tx([META], 'readonly', (s) => s.getAll())]);
+        return (keys || []).map((k, i) => Object.assign({ k }, vals[i]));
+      } catch (e) { return []; }
+    }
+    async function remove(k) {
+      try { await tx([STORE, META], 'readwrite', (s, mt) => { s.delete(k); return mt.delete(k); }); } catch (e) {}
+      where.delete(k);
+    }
+    /** Make room for `size` bytes: keep 10 % (min 15 MB) of the quota free for pages, images and the browser. */
+    async function ensureRoom(size, k) {
+      const q = await quota();
+      if (!q) return true;                                       // unknown quota: just try (the write fails cleanly if full)
+      const reserve = Math.max(15 * MB, q.quota * 0.1);
+      let free = q.quota - q.usage - reserve;
+      if (size <= free) return true;
+      const old = (await metas()).filter((x) => x.k !== k && !keep.has(x.k)).sort((a, b) => (a.used || 0) - (b.used || 0));
+      for (const x of old) { await remove(x.k); free += x.size || 0; if (size <= free) return true; }
+      return size <= free;
+    }
+
+    // ---- read / write
+    async function legacyRead(k) {                               // videos saved by the previous version (Cache Storage)
+      if (!hasCaches) return null;
+      try { const r = await (await caches.open(LEGACY_CACHE)).match(PREFIX + k); return r ? await r.blob() : null; } catch (e) { return null; }
+    }
+    async function readStored(k) {
+      if (backend === 'indexeddb') {
+        try {
+          const b = await tx([STORE], 'readonly', (s) => s.get(k));
+          if (b && b.size) { tx([META], 'readwrite', (mt) => mt.put({ size: b.size, used: Date.now() }, k)).catch(() => {}); return b; }
+        } catch (e) {}
+        const old = await legacyRead(k);
+        if (old && old.size && (await writeStored(k, old))) {    // move it into IndexedDB once
+          try { await (await caches.open(LEGACY_CACHE)).delete(PREFIX + k); } catch (e) {}
+          return (await tx([STORE], 'readonly', (s) => s.get(k)).catch(() => null)) || old;
+        }
+        return old && old.size ? old : null;
+      }
+      return backend === 'cache' ? legacyRead(k) : null;
     }
     async function writeStored(k, blob) {
+      if (persisted === null) askPersist();
+      if (!(await ensureRoom(blob.size, k))) { where.set(k, 'nospace'); return false; }
       try {
-        if (!persistAsked && navigator.storage && navigator.storage.persist) { persistAsked = true; navigator.storage.persist().catch(() => {}); }
-        if (useCaches) await (await caches.open(CACHE)).put(PREFIX + k, new Response(blob, { headers: { 'Content-Type': blob.type || 'video/mp4', 'Content-Length': String(blob.size) } }));
-        else await tx('readwrite', (st) => st.put(blob, k));
+        if (backend === 'indexeddb') await tx([STORE, META], 'readwrite', (s, mt) => { s.put(blob, k); return mt.put({ size: blob.size, used: Date.now() }, k); });
+        else if (backend === 'cache') await (await caches.open(LEGACY_CACHE)).put(PREFIX + k, new Response(blob, { headers: { 'Content-Type': blob.type || 'video/mp4', 'Content-Length': String(blob.size) } }));
+        else return false;
+        where.set(k, 'saved');
         return true;
-      } catch (e) { return false; /* quota full or storage blocked: still plays from memory this session */ }
+      } catch (e) {                                              // quota full or storage blocked: still plays from memory this session
+        where.set(k, e && e.name === 'QuotaExceededError' ? 'nospace' : 'memory');
+        return false;
+      }
     }
     const emit = () => listeners.forEach((f) => { try { f(); } catch (e) {} });
 
@@ -206,8 +293,9 @@
       console.warn('video playback mode →', mode);
       return mode;
     }
-    // Media Source keeps the whole video in memory: stay well inside TV limits.
-    const maxBytes = () => (mode === 'mse' ? 150 : IS_TV ? 250 : 800) * 1048576;
+    // Media Source holds the whole video in the TV's memory (about twice the file size while it is
+    // being attached): 100 MB on 1 GB TVs such as the LG 55NU700BPUA, 150 MB with more memory.
+    const maxBytes = () => (mode === 'mse' ? (MEM_GB <= 1 ? 100 : 150) : IS_TV ? 250 : 800) * MB;
     const canCache = (m) => mode !== 'stream' && !(m.file_size && m.file_size > maxBytes());
 
     /** The stored video (Blob) if it is on this device, else null (never downloads). */
@@ -217,7 +305,7 @@
       if (blobs.has(k)) return blobs.get(k);
       const b = await readStored(k);
       if (!b || !b.size) return null;
-      blobs.set(k, b);
+      blobs.set(k, b); where.set(k, 'saved');
       return b;
     }
     /** Download the whole file once (shared by every widget using it) → Blob, or null. */
@@ -233,13 +321,16 @@
         const total = Number(r.headers.get('Content-Length')) || m.file_size || 0;
         let blob;
         if (r.body && r.body.getReader) {
-          const reader = r.body.getReader(), parts = []; let got = 0;
+          const reader = r.body.getReader(); let parts = [], got = 0;
           for (;;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); got += value.length; progress.set(k, total ? got / total : 0); emit(); }
           blob = new Blob(parts, { type: r.headers.get('Content-Type') || m.mime_type || 'video/mp4' });
+          parts = null;
         } else blob = await r.blob();
         if (total && blob.size !== total) throw new Error('incomplete download');
-        blobs.set(k, blob);
-        writeStored(k, blob);                                // save for next time without delaying playback
+        blobs.set(k, blob); where.set(k, 'memory');
+        // Save for next time without delaying playback, then swap the in-memory copy for the stored
+        // (disk-backed) one so the TV's RAM is freed.
+        writeStored(k, blob).then((ok) => ok && tx([STORE], 'readonly', (s) => s.get(k)).then((b) => { if (b && b.size === blob.size && blobs.get(k) === blob) blobs.set(k, b); }).catch(() => {}));
         return blob;
       })().catch((e) => { console.warn('video cache', e); return null; }).finally(() => { inflight.delete(k); progress.delete(k); emit(); });
       inflight.set(k, p);
@@ -247,21 +338,44 @@
     }
     function blobUrl(m, id, blob) {
       const k = key(m, id);
-      if (!blobUrls.has(k)) blobUrls.set(k, URL.createObjectURL(blob));
-      return blobUrls.get(k);
+      const old = blobUrls.get(k);
+      if (old && old.blob === blob) return old.url;
+      if (old) URL.revokeObjectURL(old.url);
+      const u = URL.createObjectURL(blob);
+      blobUrls.set(k, { url: u, blob });
+      return u;
     }
-    /** Delete stored videos not in `keepMedia` (list of media rows); used by the TV player. */
+    /** Delete stored videos not in `keepMedia` (media rows of the current content); used by the TV player. */
     async function prune(keepMedia) {
-      const keep = new Set(keepMedia.map((m) => key(m, m.media_id)));
-      try {
-        if (useCaches) { const c = await caches.open(CACHE); for (const req of await c.keys()) { const k = new URL(req.url).pathname.replace(PREFIX, ''); if (!keep.has(k)) await c.delete(req); } }
-        else { const keys = await tx('readonly', (st) => st.getAllKeys()); for (const k of keys || []) if (!keep.has(k)) await tx('readwrite', (st) => st.delete(k)); }
-      } catch (e) {}
-      for (const [k, u] of blobUrls) if (!keep.has(k)) { URL.revokeObjectURL(u); blobUrls.delete(k); }
+      keep = new Set(keepMedia.map((m) => key(m, m.media_id)));
+      if (backend === 'indexeddb') {
+        try { for (const k of (await tx([STORE], 'readonly', (s) => s.getAllKeys())) || []) if (!keep.has(k)) await remove(k); } catch (e) {}
+        try { for (const x of await metas()) if (!keep.has(x.k)) await remove(x.k); } catch (e) {}
+      }
+      if (hasCaches) {
+        try { const c = await caches.open(LEGACY_CACHE); for (const req of await c.keys()) { const k = new URL(req.url).pathname.replace(PREFIX, ''); if (!keep.has(k)) await c.delete(req); } } catch (e) {}
+      }
+      for (const [k, u] of blobUrls) if (!keep.has(k)) { URL.revokeObjectURL(u.url); blobUrls.delete(k); }
       for (const k of [...blobs.keys()]) if (!keep.has(k)) blobs.delete(k);
     }
     function status() { let n = 0, sum = 0; progress.forEach((v) => { n++; sum += v; }); return { downloading: inflight.size, progress: n ? sum / n : 1 }; }
-    return { localBlob, ensure, blobUrl, prune, status, canCache, downgrade, mode: () => mode, isLG: IS_LG,
+    /** Where one video is: 'saved' (on this TV), 'downloading', 'memory', 'nospace', 'toolarge', 'stream' or 'missing'. */
+    function state(m) {
+      const k = key(m, m.media_id);
+      if (inflight.has(k)) return 'downloading';
+      if (where.has(k)) return where.get(k);
+      if (mode === 'stream') return 'stream';
+      if (!canCache(m)) return 'toolarge';
+      return 'missing';
+    }
+    /** Storage facts for the diagnostics screen. */
+    async function storageInfo() {
+      const q = await quota();
+      const items = await metas();
+      return { backend, quota: q && q.quota, usage: q && q.usage, persisted, videoBytes: items.reduce((s, x) => s + (x.size || 0), 0), videos: items.length, maxBytes: maxBytes() };
+    }
+    if (backend === 'indexeddb') idb().catch(() => {});
+    return { localBlob, ensure, blobUrl, prune, status, state, storageInfo, askPersist, canCache, downgrade, mode: () => mode, isLG: IS_LG, maxBytes,
       blobPlayback: () => mode !== 'stream',   // kept for older callers
       onChange: (f) => (listeners.add(f), () => listeners.delete(f)), key };
   })();
@@ -275,7 +389,7 @@
     return new Promise((resolve, reject) => {
       if (!window.MediaSource || !window.MP4Box) return reject(new Error('Media Source not available'));
       blob.arrayBuffer().then((buf) => {
-        const file = window.MP4Box.createFile();
+        let file = window.MP4Box.createFile();
         let info = null, failed = null;
         file.onError = (e) => (failed = e);
         file.onReady = (i) => (info = i);
@@ -294,10 +408,14 @@
             const pump = (q) => {
               if (q.sb.updating || ms.readyState !== 'open') return;
               const next = q.items.shift();
-              if (next) { try { q.sb.appendBuffer(next); } catch (e) { reject(e); } return; }
+              if (next) { try { q.sb.appendBuffer(next); } catch (e) { file = null; buf = null; reject(e); } return; }
               if (q.last && !q.done) {
                 q.done = true;
-                if (queues.every((x) => x.done)) { try { ms.endOfStream(); } catch (e) {} resolve(msUrl); }
+                if (queues.every((x) => x.done)) {
+                  try { ms.endOfStream(); } catch (e) {}
+                  if (file) { try { file.stop(); } catch (e) {} file.onSegment = null; file = null; buf = null; }   // free the repackaging copy (1 GB TVs)
+                  resolve(msUrl);
+                }
               }
             };
             for (const [kind, t] of tracks) {
@@ -378,7 +496,8 @@
         attachMse(v, blob).then(() => { if (alive() && autoplay) tryPlay(v); }).catch((e) => {
           console.warn('Media Source playback failed:', e && e.message);
           if (!alive()) return;
-          VideoCache.downgrade('mse');
+          // Too big for the TV's media memory: stream just this video, keep Media Source for the rest.
+          if (!(e && e.name === 'QuotaExceededError')) VideoCache.downgrade('mse');
           stream();
         });
         if (autoplay) tryPlay(v);

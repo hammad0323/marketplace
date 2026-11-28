@@ -12,8 +12,8 @@ $code = preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['code'] ?? ''));
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Show Display · <?= h(app_setting('app_name', 'Signal Signage')) ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Amatic+SC:wght@700&family=Bebas+Neue&family=Oswald:wght@400;600;700&family=Caveat:wght@500;700&family=Pacifico&family=Playfair+Display:wght@400;700&family=Montserrat:wght@400;600;800&family=Lobster&family=Dancing+Script:wght@600&family=Anton&family=Archivo+Black&family=Permanent+Marker&family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Lato:wght@400;700&family=Raleway:wght@400;700&family=Merriweather:wght@400;700&family=Nunito:wght@400;700&family=Cairo:wght@400;700&family=Noto+Sans:wght@400;700&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Amatic+SC:wght@700&family=Bebas+Neue&family=Oswald:wght@400;600;700&family=Caveat:wght@500;700&family=Pacifico&family=Playfair+Display:wght@400;700&family=Montserrat:wght@400;600;800&family=Lobster&family=Dancing+Script:wght@600&family=Anton&family=Archivo+Black&family=Permanent+Marker&family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Lato:wght@400;700&family=Raleway:wght@400;700&family=Merriweather:wght@400;700&family=Nunito:wght@400;700&family=Cairo:wght@400;700&family=Noto+Sans:wght@400;700&display=swap">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
 <link rel="stylesheet" href="<?= h(web_asset('web.css')) ?>">
 <style>
   html, body { background: #000; height: 100%; overflow: hidden; }
@@ -77,12 +77,35 @@ $code = preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['code'] ?? ''));
     }
     if (token === prepToken && corner.textContent.startsWith('Saving video')) corner.style.display = 'none';
   }
+  // Offline start-up: a service worker keeps the player page, scripts, fonts and every image of the
+  // content on the TV, so the display opens and plays even when the TV is switched on without Wi-Fi.
+  // (Browsers only allow service workers on HTTPS; on plain HTTP videos are still stored, but the
+  // page itself needs the server to open.)
+  let swReg = null, offline = { images: 0, saved: 0, page: null };
+  const swSupported = 'serviceWorker' in navigator && window.isSecureContext;
+  if (swSupported) navigator.serviceWorker.register(S.web + 'sw.js', { scope: S.web + 'display.php' }).then((r) => (swReg = r)).catch((e) => console.warn('offline start-up unavailable:', e && e.message));
+  async function syncOffline(d) {
+    if (!swSupported) return;
+    const reg = swReg || (await navigator.serviceWorker.ready.catch(() => null));
+    const sw = reg && (reg.active || reg.waiting || reg.installing);
+    if (!sw) return;
+    const images = [];
+    (d.media || []).forEach((m) => {
+      if (m.file_type === 'video') { if (m.poster_url || m.thumbnail_url) images.push(m.poster_url || m.thumbnail_url); }
+      else if (m.url) images.push(m.url);
+    });
+    const ch = new MessageChannel();
+    ch.port1.onmessage = (e) => { offline = e.data || offline; };
+    const assets = [...document.querySelectorAll('script[src], link[rel=stylesheet]')].map((el) => el.src || el.href)
+      .concat(performance.getEntriesByType ? performance.getEntriesByType('resource').map((e) => e.name) : []);
+    sw.postMessage({ type: 'sync', images, assets: [...new Set(assets)], page: location.pathname + location.search }, [ch.port2]);
+  }
   const docKey = () => 'sg_display_doc_' + code;
   function remember(d, h) { try { localStorage.setItem(docKey(), JSON.stringify({ doc: d, hash: h })); } catch (e) { /* storage full: still plays */ } }
   function remembered() { try { return JSON.parse(localStorage.getItem(docKey()) || 'null'); } catch (e) { return null; } }
 
   function play() {
-    prepareVideos(doc);
+    prepareVideos(doc).then(() => syncOffline(doc));
     if (player2) player2.update(doc);
     else player2 = window.SignPlayer.start(player, doc, { mode: 'live', onEmpty: (empty) => (empty ? showMessage('Nothing scheduled to play right now.') : (corner.style.display = 'none')) });
   }
@@ -95,6 +118,7 @@ $code = preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['code'] ?? ''));
     R.mount(box, { canvas: { width: 1920, height: 1080 }, background: { type: 'color', value: st.background || '#B00020' }, widgets: [{ widget_uid: 'em', widget_type: 'emergency', position_x: 0, position_y: 0, width: 1, height: 1, configuration: { title: e.title, message: e.body || '', background_color: st.background || '#B00020', color: st.color || '#FFFFFF', flash: st.flash !== false } }] }, { mode: 'live' });
   }
   async function start() {
+    R.VideoCache.askPersist();   // ask the browser not to clear this TV's saved content under storage pressure
     form.style.display = 'none'; document.body.className = ''; player.style.display = '';
     try {
       const d = await fetchContent(true);
@@ -163,12 +187,23 @@ $code = preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['code'] ?? ''));
     lines.push(`Screen: ${screen.width}x${screen.height}  window: ${innerWidth}x${innerHeight}  memory: ${navigator.deviceMemory || '?'} GB`);
     const v0 = document.createElement('video');
     lines.push(`Decoders: H.264 ${v0.canPlayType('video/mp4; codecs="avc1.640028"') || 'no'} · HEVC ${v0.canPlayType('video/mp4; codecs="hvc1.1.6.L120.90"') || 'no'}`);
-    let quota = '';
-    try { if (navigator.storage && navigator.storage.estimate) { const q = await navigator.storage.estimate(); quota = ` · used ${(q.usage / 1048576).toFixed(0)} of ${(q.quota / 1048576).toFixed(0)} MB`; } } catch (e) {}
-    lines.push(`Storage: ${window.caches && window.isSecureContext ? 'Cache Storage' : (window.indexedDB ? 'IndexedDB' : 'none (memory only)')}${quota}`);
+    const si = await R.VideoCache.storageInfo().catch(() => null);
+    const mb = (b) => (b / 1048576).toFixed(0);
+    if (si) {
+      lines.push(`Storage: ${{ indexeddb: 'IndexedDB', cache: 'Cache Storage', memory: 'none (memory only)' }[si.backend]}${si.quota ? ` · used ${mb(si.usage)} of ${mb(si.quota)} MB` : ' · quota unknown'} · videos saved: ${si.videos} (${mb(si.videoBytes)} MB) · protected from clean-up: ${si.persisted === null ? '?' : si.persisted ? 'yes' : 'no'}`);
+    }
     const st = R.VideoCache.status();
     const modeText = { blob: 'local file (blob)', mse: 'local file via Media Source (LG-compatible)', stream: 'streaming from the server' }[R.VideoCache.mode()];
-    lines.push(`Video playback: ${modeText} · downloads running: ${st.downloading}${st.downloading ? ' (' + Math.round(st.progress * 100) + '%)' : ''}`);
+    lines.push(`Video playback: ${modeText} · largest video kept: ${si ? mb(si.maxBytes) : '?'} MB · downloads running: ${st.downloading}${st.downloading ? ' (' + Math.round(st.progress * 100) + '%)' : ''}`);
+    const vmedia = ((doc && doc.media) || []).filter((x) => x.file_type === 'video');
+    const VS = { saved: 'saved on this TV', downloading: 'downloading…', memory: 'in memory only (not saved yet)', nospace: 'NOT SAVED – TV storage full (plays from memory while online)', toolarge: 'too large for this TV – streams', stream: 'streams', missing: 'not downloaded yet' };
+    const vstates = vmedia.map((x) => R.VideoCache.state(x));
+    const ctrl = swSupported && navigator.serviceWorker.controller;
+    const ready = vstates.every((x) => x === 'saved') && (!swSupported || (ctrl && offline.page !== false && offline.saved >= offline.images));
+    lines.push(`Offline: ${ready ? 'READY – keeps playing with Wi-Fi off' + (swSupported ? ', also after a restart' : '') : 'not ready yet'}`
+      + ` · videos ${vstates.filter((x) => x === 'saved').length}/${vmedia.length}`
+      + (swSupported ? ` · images ${offline.saved}/${offline.images} · page ${ctrl ? (offline.page === false ? 'not saved' : 'saved') : 'reload once to save'}` : ' · restart without Wi-Fi needs an HTTPS link'));
+    vmedia.forEach((x, i) => lines.push(`  video ${i + 1} (#${x.media_id}, ${((x.file_size || 0) / 1048576).toFixed(1)} MB): ${VS[vstates[i]] || vstates[i]}`));
     lines.push(`Code: ${code}   content: ${hash ? hash.slice(0, 10) : '-'}   online: ${navigator.onLine}`);
     if (!vids.length) lines.push('Videos on screen: none');
     vids.forEach((v, i) => {
